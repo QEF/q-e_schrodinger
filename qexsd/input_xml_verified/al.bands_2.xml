@@ -1,0 +1,222 @@
+<qes:espresso xmlns:qes="http://www.quantum-espresso.org/ns/qes/qes-1.0"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.quantum-espresso.org/ns/qes/qes-1.0 espresso.xsd">
+  <input>
+    <control_variables>
+      <title></title>
+      <calculation>bands</calculation>
+      <restart_mode>from_scratch</restart_mode>
+      <prefix>al</prefix>
+      <pseudo_dir>/scratch/pdelugas/espresso-xsd/pseudo/</pseudo_dir>
+      <outdir>/scratch/pdelugas/espresso-xsd/tempdir/</outdir>
+      <stress>false</stress>
+      <forces>false</forces>
+      <wf_collect>false</wf_collect>
+      <disk_io>low</disk_io>
+      <max_seconds>
+    10000000
+      </max_seconds>
+      <etot_conv_thr>
+       0.1000000E-03
+      </etot_conv_thr>
+      <forc_conv_thr>
+       0.1000000E-02
+      </forc_conv_thr>
+      <press_conv_thr>
+       0.5000000E+00
+      </press_conv_thr>
+      <verbosity>low</verbosity>
+      <print_every>
+      100000
+      </print_every>
+    </control_variables>
+    <atomic_species ntyp="1">
+      <specie name="Al">
+        <mass>
+       0.2698000E+02
+        </mass>
+        <pseudo_file>Al.pz-vbc.UPF</pseudo_file>
+      </specie>
+    </atomic_species>
+    <atomic_structure nat="1" alat="5.303300858899107E+000">
+      <atomic_positions>
+        <atom name="Al">
+       0.0000000E+00       0.0000000E+00       0.0000000E+00
+        </atom>
+      </atomic_positions>
+      <cell>
+        <a1>
+      -0.3750000E+01       0.0000000E+00       0.3750000E+01
+        </a1>
+        <a2>
+       0.0000000E+00       0.3750000E+01       0.3750000E+01
+        </a2>
+        <a3>
+      -0.3750000E+01       0.3750000E+01       0.0000000E+00
+        </a3>
+      </cell>
+    </atomic_structure>
+    <dft>
+      <functional>PZ</functional>
+    </dft>
+    <spin>
+      <lsda>false</lsda>
+      <noncolin>false</noncolin>
+      <spinorbit>false</spinorbit>
+    </spin>
+    <bands>
+      <nbnd>
+           8
+      </nbnd>
+      <tot_charge>
+       0.0000000E+00
+      </tot_charge>
+      <occupations spin="2">fixed</occupations>
+    </bands>
+    <basis>
+      <ecutwfc>
+       0.1500000E+02
+      </ecutwfc>
+    </basis>
+    <electron_control>
+      <diagonalization>davidson</diagonalization>
+      <mixing_mode>plain</mixing_mode>
+      <mixing_beta>
+       0.7000000E+00
+      </mixing_beta>
+      <conv_thr>
+       0.1000000E-05
+      </conv_thr>
+      <mixing_ndim>
+           8
+      </mixing_ndim>
+      <max_nstep>
+         100
+      </max_nstep>
+      <real_space_q>false</real_space_q>
+      <diago_thr_init>
+       0.0000000E+00
+      </diago_thr_init>
+      <diago_full_acc>false</diago_full_acc>
+      <diago_cg_maxiter>
+          20
+      </diago_cg_maxiter>
+    </electron_control>
+    <k_points_IBZ>
+      <nk>
+          28
+      </nk>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.0000000E+00       0.0000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.0000000E+00       0.1000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.0000000E+00       0.2000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.0000000E+00       0.3000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.0000000E+00       0.4000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.0000000E+00       0.5000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.0000000E+00       0.6000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.0000000E+00       0.7000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.0000000E+00       0.8000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.0000000E+00       0.9000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.0000000E+00       0.1000000E+01
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.0000000E+00       0.0000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.1000000E+00       0.1000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.2000000E+00       0.2000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.3000000E+00       0.3000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.4000000E+00       0.4000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.5000000E+00       0.5000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.6000000E+00       0.6000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.7000000E+00       0.7000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.8000000E+00       0.8000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.9000000E+00       0.9000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.1000000E+01       0.1000000E+01
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.0000000E+00       0.0000000E+00       0.0000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.1000000E+00       0.1000000E+00       0.1000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.2000000E+00       0.2000000E+00       0.2000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.3000000E+00       0.3000000E+00       0.3000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.4000000E+00       0.4000000E+00       0.4000000E+00
+      </k_point>
+      <k_point weight="1.000000000000000E+000">
+       0.5000000E+00       0.5000000E+00       0.5000000E+00
+      </k_point>
+    </k_points_IBZ>
+    <ion_control>
+      <ion_dynamics>none</ion_dynamics>
+      <remove_rigid_rot>false</remove_rigid_rot>
+      <refold_pos>false</refold_pos>
+    </ion_control>
+    <cell_control>
+      <cell_dynamics>none</cell_dynamics>
+      <wmass>
+       0.2459077E+05
+      </wmass>
+      <cell_factor>
+       0.0000000E+00
+      </cell_factor>
+      <free_cell>
+       0.1000000E+01       0.1000000E+01       0.1000000E+01
+       0.1000000E+01       0.1000000E+01       0.1000000E+01
+       0.1000000E+01       0.1000000E+01       0.1000000E+01
+      </free_cell>
+    </cell_control>
+    <symmetry_flags>
+      <nosym>false</nosym>
+      <nosym_evc>false</nosym_evc>
+      <noinv>false</noinv>
+      <no_t_rev>false</no_t_rev>
+      <force_symmorphic>false</force_symmorphic>
+      <use_all_frac>false</use_all_frac>
+    </symmetry_flags>
+  </input>
+</qes:espresso>

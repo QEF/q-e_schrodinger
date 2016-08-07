@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>4.2 Band structure, Fermi surface</TITLE>
+<META NAME="description" CONTENT="4.2 Band structure, Fermi surface">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node8.html">
+<LINK REL="previous" HREF="node6.html">
+<LINK REL="up" HREF="node5.html">
+<LINK REL="next" HREF="node8.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html127"
+  HREF="node8.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html123"
+  HREF="node5.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html117"
+  HREF="node6.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html125"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html128"
+  HREF="node8.html">4.3 Projection over atomic</A>
+<B> Up:</B> <A NAME="tex2html124"
+  HREF="node5.html">4 Usage</A>
+<B> Previous:</B> <A NAME="tex2html118"
+  HREF="node6.html">4.1 Plotting selected quantities</A>
+ &nbsp; <B>  <A NAME="tex2html126"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00052000000000000000">
+4.2 Band structure, Fermi surface</A>
+</H2>
+
+<P>
+The code <TT>bands.x</TT> reads data file(s), extracts eigenvalues,
+regroups them into bands (the algorithm used to order bands and to resolve
+crossings may not work in all circumstances, though). The output is written
+to a file in a simple format that can be directly read and converted to
+plottable format by auxiliary code
+<TT>plotband.x</TT>. Unpredictable plots may results if k-points are not 
+in sequence along lines, or if two consecutive points are the same. 
+The code <TT>bands.x</TT> performs as well a 
+symmetry analysis of the band structure. For a complete input description,
+see<TT>Doc/INPUT_bands.*</TT>. See Example 01, Example 04 and Example 06 
+for simple band plots.
+
+<P>
+The calculation of Fermi surface can be performed using code <TT>fs.x</TT>.
+The resulting file in .bxsf format can be read and plotted
+using XCrySDen. See Example 02 for an example of Fermi surface 
+visualization (Ni, including the spin-polarized case).
+
+<P>
+<BR><HR>
+<ADDRESS>
+Filippo Spiga
+2016-04-24
+</ADDRESS>
+</BODY>
+</HTML>

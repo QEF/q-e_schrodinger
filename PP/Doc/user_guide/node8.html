@@ -1,0 +1,181 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>4.3 Projection over atomic states, DOS</TITLE>
+<META NAME="description" CONTENT="4.3 Projection over atomic states, DOS">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node9.html">
+<LINK REL="previous" HREF="node7.html">
+<LINK REL="up" HREF="node5.html">
+<LINK REL="next" HREF="node9.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html139"
+  HREF="node9.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html135"
+  HREF="node5.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html129"
+  HREF="node7.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html137"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html140"
+  HREF="node9.html">4.4 Wannier functions</A>
+<B> Up:</B> <A NAME="tex2html136"
+  HREF="node5.html">4 Usage</A>
+<B> Previous:</B> <A NAME="tex2html130"
+  HREF="node7.html">4.2 Band structure, Fermi</A>
+ &nbsp; <B>  <A NAME="tex2html138"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00053000000000000000">
+4.3 Projection over atomic states, DOS</A>
+</H2>
+
+<P>
+The code <TT>projwfc.x</TT> calculates projections of wavefunctions
+over atomic orbitals. The atomic wavefunctions are those contained
+in the pseudopotential file(s). The L&#246;wdin population analysis (similar to
+Mulliken analysis) is presently implemented. The projected DOS (or PDOS:
+the DOS projected onto atomic orbitals) can also be calculated and written
+to file(s). More details on the input data are found in file
+<TT>Doc/INPUT_PROJWFC.*</TT>. The ordering of the various 
+angular momentum components (defined in routine <TT>flib/ylmr2.f90</TT>)
+is as follows:
+<!-- MATH
+ $P_{0,0}(t)$
+ -->
+<I>P</I><SUB>0, 0</SUB>(<I>t</I>), <!-- MATH
+ $P_{1,0}(t)$
+ -->
+<I>P</I><SUB>1, 0</SUB>(<I>t</I>), <!-- MATH
+ $P_{1,1}(t)cos\phi$
+ -->
+<I>P</I><SUB>1, 1</SUB>(<I>t</I>)<I>cos</I><IMG
+ WIDTH="16" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img2.png"
+ ALT="$ \phi$">, <!-- MATH
+ $P_{1,1}(t)sin\phi$
+ -->
+<I>P</I><SUB>1, 1</SUB>(<I>t</I>)<I>sin</I><IMG
+ WIDTH="16" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img2.png"
+ ALT="$ \phi$">,
+ <!-- MATH
+ $P_{2,0}(t)$
+ -->
+<I>P</I><SUB>2, 0</SUB>(<I>t</I>), <!-- MATH
+ $P_{2,1}(t)cos\phi$
+ -->
+<I>P</I><SUB>2, 1</SUB>(<I>t</I>)<I>cos</I><IMG
+ WIDTH="16" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img2.png"
+ ALT="$ \phi$">, <!-- MATH
+ $P_{2,1}(t)sin\phi$
+ -->
+<I>P</I><SUB>2, 1</SUB>(<I>t</I>)<I>sin</I><IMG
+ WIDTH="16" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img2.png"
+ ALT="$ \phi$">, 
+ <!-- MATH
+ $P_{2,2}(t)cos2\phi$
+ -->
+<I>P</I><SUB>2, 2</SUB>(<I>t</I>)<I>cos</I>2<IMG
+ WIDTH="16" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img2.png"
+ ALT="$ \phi$">, <!-- MATH
+ $P_{2,2}(t)sin2\phi$
+ -->
+<I>P</I><SUB>2, 2</SUB>(<I>t</I>)<I>sin</I>2<IMG
+ WIDTH="16" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img2.png"
+ ALT="$ \phi$">
+and so on, where <I>P</I><SUB>l, m</SUB>=Legendre Polynomials, 
+<!-- MATH
+ $t = cos\theta = z/r$
+ -->
+<I>t</I> = <I>cos</I><IMG
+ WIDTH="14" HEIGHT="20" ALIGN="BOTTOM" BORDER="0"
+ SRC="img3.png"
+ ALT="$ \theta$"> = <I>z</I>/<I>r</I>, <!-- MATH
+ $\phi= atan(y /x)$
+ -->
+<IMG
+ WIDTH="16" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img2.png"
+ ALT="$ \phi$"> = <I>atan</I>(<I>y</I>/<I>x</I>).
+
+<P>
+Data produced by code <TT>projwfc.x</TT> can be further 
+analysed using auxiliary codes <TT>sumpdos.x</TT> (sums selected PDOS
+by specifying the names of files containing the desired PDOS: type 
+<TT>sumpdos.x -h</TT> or look into the source code for more details) 
+and <TT>plotproj.x</TT> . 
+
+<P>
+The total electronic DOS can also be calculated by code <TT>dos.x</TT>,
+whose complete input documentation is in <TT>Doc/INPUT_DOS.*</TT>
+See Example 02 for total and projected electronic DOS calculations;
+see Example 03 for projected and local DOS calculations.
+
+<P>
+The DOS projected over <EM>molecular</EM> states (e.g. for a molecule on
+a surface system) can be computed using code <TT>molecularpdos.x</TT>
+(courtesy of Guido Fratesi). See file <TT>Doc/INPUT_MOLDOS.*</TT>
+for input documentation and directory <TT>MolDos_example/</TT> for
+an example.
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html139"
+  HREF="node9.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html135"
+  HREF="node5.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html129"
+  HREF="node7.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html137"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html140"
+  HREF="node9.html">4.4 Wannier functions</A>
+<B> Up:</B> <A NAME="tex2html136"
+  HREF="node5.html">4 Usage</A>
+<B> Previous:</B> <A NAME="tex2html130"
+  HREF="node7.html">4.2 Band structure, Fermi</A>
+ &nbsp; <B>  <A NAME="tex2html138"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+Filippo Spiga
+2016-04-24
+</ADDRESS>
+</BODY>
+</HTML>

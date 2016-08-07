@@ -1,0 +1,119 @@
+input_description -distribution {Quantum Espresso} -package PWscf -program dos.x {
+
+    toc {}
+
+    intro {
+	Purpose of dos.x:
+	    calculates the Density of States (DOS) 
+	    (separated into up and down components for DSDA)
+
+
+	Structure of the input data:
+	============================
+
+	   &DOS
+	     ...
+	   /
+        IMPORTANT: since v.5 namelist name is &dos and no longer &inputpp
+    }
+
+    namelist DOS {
+
+	var prefix -type CHARACTER {
+	    default { 'pwscf' } 
+	    info {
+		prefix of input file produced by pw.x    
+		(wavefunctions are not needed)
+	    }
+	}
+
+        var outdir -type CHARACTER {
+            info {
+                   directory containing the input data,
+                   i.e. the same as in pw.x }
+            default {
+                      value of the ESPRESSO_TMPDIR environment variable if set;
+                      current directory ('./') otherwise }
+        }
+
+	var ngauss -type INTEGER {       
+	    default { 0 }
+	    status { optional }
+	    info {
+		Type of gaussian broadening: 
+
+		    =  0  Simple Gaussian (default)
+		
+		    =  1  Methfessel-Paxton of order 1
+		    
+		    = -1  Marzari-Vanderbilt "cold smearing"
+		    
+		    =-99  Fermi-Dirac function
+	    }
+	}
+
+	var degauss -type REAL {       
+	    info {
+		gaussian broadening, Ry (not eV!)          see below
+	    }
+	}
+	
+	vargroup -type REAL {
+	    var Emin
+	    var Emax    
+	    default { band extrema }
+	    info {
+		min, max energy (eV) for DOS plot. If unspecified, the
+                lower and/or upper band value, plus/minus 3 times the
+                value of the gaussian smearing if present, will be used.
+                
+	    }
+	}
+	
+	var DeltaE -type REAL {       
+	    info {
+		energy grid step (eV)
+	    }
+	}
+
+	var fildos -type CHARACTER {
+	    default { "prefix".dos }
+	    info {
+		output file containing DOS(E)
+	    }
+	}
+    }
+
+    section -title Notes {
+	subsection -title Output {
+	    text {
+		The total DOS (states/eV plotted vs E in eV) is written to file "fildos"
+	    }
+	}
+
+	subsection -title {Important !} {
+	    text {	    
+		The tetrahedron method is used if
+
+		    - the input data file has been produced by pw.x using the option
+		      occupations='tetrahedra', AND
+		    
+		    - a value for degauss is not given as input to namelist &dos
+
+
+		Gaussian broadening is used in all other cases:
+
+		    - if degauss is set to some value in namelist &dos, that value
+		      (and the optional value for ngauss) is used
+		    
+		    - if degauss is NOT set to any value in namelist &dos, the 
+		      value of degauss and of ngauss are read from the input data
+		      file (they will be the same used in the pw.x calculations)
+		    
+		    - if degauss is NOT set to any value in namelist &dos, AND
+		      there is no value of degauss and of ngauss in the input data
+		      file, degauss=DeltaE (in Ry) and ngauss=0 will be used
+	    }
+	}
+    }
+}

@@ -1,0 +1,220 @@
+<qes:espresso xmlns:qes="http://www.quantum-espresso.org/ns/qes/qes-1.0"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.quantum-espresso.org/ns/qes/qes-1.0 ../qespresso/scheme/qes.xsd">
+  <input>
+    <control_variables>
+      <title>Si_molecular_dynamics</title>
+      <calculation>md</calculation>
+      <restart_mode>from_scratch</restart_mode>
+      <prefix>pwscf</prefix>
+      <pseudo_dir>/scratch/pdelugas/espresso-xsd/pseudo/</pseudo_dir>
+      <outdir>/scratch/pdelugas/espresso-xsd/tempdir/</outdir>
+      <stress>
+        false
+      </stress>
+      <forces>
+        false
+      </forces>
+      <wf_collect>
+        false
+      </wf_collect>
+      <disk_io>high</disk_io>
+      <max_seconds>
+    10000000
+      </max_seconds>
+      <etot_conv_thr>
+       0.1000000E-03
+      </etot_conv_thr>
+      <forc_conv_thr>
+       0.1000000E-02
+      </forc_conv_thr>
+      <press_conv_thr>
+       0.5000000E+00
+      </press_conv_thr>
+      <verbosity>low</verbosity>
+      <print_every>
+      100000
+      </print_every>
+    </control_variables>
+    <atomic_species ntyp="1">
+      <species name="Si">
+        <mass>
+       0.2808600E+02
+        </mass>
+        <pseudo_file>Si.pz-vbc.UPF</pseudo_file>
+      </species>
+    </atomic_species>
+    <atomic_structure nat="8" alat="1.018000000000000E+001">
+      <atomic_positions>
+        <atom name="Si">
+      -0.1208251E-01      -0.1208251E-01      -0.1208251E-01
+        </atom>
+        <atom name="Si">
+       0.3703340E-01       0.3703340E-01      -0.1208251E-01
+        </atom>
+        <atom name="Si">
+       0.3703340E-01      -0.1208251E-01       0.3703340E-01
+        </atom>
+        <atom name="Si">
+      -0.1208251E-01       0.3703340E-01       0.3703340E-01
+        </atom>
+        <atom name="Si">
+       0.1208251E-01       0.1208251E-01       0.1208251E-01
+        </atom>
+        <atom name="Si">
+       0.6119843E-01       0.6119843E-01       0.1208251E-01
+        </atom>
+        <atom name="Si">
+       0.6119843E-01       0.1208251E-01       0.6119843E-01
+        </atom>
+        <atom name="Si">
+       0.1208251E-01       0.6119843E-01       0.6119843E-01
+        </atom>
+      </atomic_positions>
+      <cell>
+        <a1>
+       0.1000000E+01       0.0000000E+00       0.0000000E+00
+        </a1>
+        <a2>
+       0.0000000E+00       0.1000000E+01       0.0000000E+00
+        </a2>
+        <a3>
+       0.0000000E+00       0.0000000E+00       0.1000000E+01
+        </a3>
+      </cell>
+    </atomic_structure>
+    <dft>
+      <functional>PZ</functional>
+    </dft>
+    <spin>
+      <lsda>
+        false
+      </lsda>
+      <noncolin>
+        false
+      </noncolin>
+      <spinorbit>
+        false
+      </spinorbit>
+    </spin>
+    <bands>
+      <tot_charge>
+       0.0000000E+00
+      </tot_charge>
+      <occupations>fixed</occupations>
+    </bands>
+    <basis>
+      <ecutwfc>
+       0.8000000E+01
+      </ecutwfc>
+    </basis>
+    <electron_control>
+      <diagonalization>davidson</diagonalization>
+      <mixing_mode>plain</mixing_mode>
+      <mixing_beta>
+       0.7000000E+00
+      </mixing_beta>
+      <conv_thr>
+       0.1000000E-07
+      </conv_thr>
+      <mixing_ndim>
+           8
+      </mixing_ndim>
+      <max_nstep>
+         100
+      </max_nstep>
+      <real_space_q>
+        false
+      </real_space_q>
+      <diago_thr_init>
+       0.0000000E+00
+      </diago_thr_init>
+      <diago_full_acc>
+        false
+      </diago_full_acc>
+      <diago_cg_maxiter>
+          20
+      </diago_cg_maxiter>
+    </electron_control>
+    <k_points_IBZ>
+      <monkhorst_pack nk1="1" nk2="1" nk3="1" k1="0" k2="0" k3="0">
+Monckhort-Pack
+      </monkhorst_pack>
+    </k_points_IBZ>
+    <ion_control>
+      <ion_dynamics>
+verlet
+      </ion_dynamics>
+      <remove_rigid_rot>
+        false
+      </remove_rigid_rot>
+      <refold_pos>
+        false
+      </refold_pos>
+      <md>
+        <pot_extrapolation>second-order</pot_extrapolation>
+        <wfc_extrapolation>second-order</wfc_extrapolation>
+        <ion_temperature>not_controlled</ion_temperature>
+        <timestep>
+            0.2000000E+02
+        </timestep>
+        <tempw>
+            0.3000000E+03
+        </tempw>
+        <tolp>
+            0.1000000E+03
+        </tolp>
+        <deltaT>
+            0.1000000E+01
+        </deltaT>
+        <nraise>
+           1
+        </nraise>
+      </md>
+    </ion_control>
+    <cell_control>
+      <cell_dynamics>none</cell_dynamics>
+      <wmass>
+       0.2047906E+06
+      </wmass>
+      <cell_factor>
+       0.0000000E+00
+      </cell_factor>
+      <free_cell>
+          1 1 1
+          1 1 1
+          1 1 1
+      </free_cell>
+    </cell_control>
+    <symmetry_flags>
+      <nosym>
+        true
+      </nosym>
+      <nosym_evc>
+        true
+      </nosym_evc>
+      <noinv>
+        true
+      </noinv>
+      <no_t_rev>
+        true
+      </no_t_rev>
+      <force_symmorphic>
+        false
+      </force_symmorphic>
+      <use_all_frac>
+        false
+      </use_all_frac>
+    </symmetry_flags>
+    <free_positions>
+        1 1 1
+        1 1 1
+        1 1 1
+        1 1 1
+        1 1 1
+        1 1 1
+        1 1 1
+        1 1 1
+    </free_positions>
+  </input>
+</qes:espresso>

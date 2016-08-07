@@ -1,0 +1,153 @@
+<?xml version="1.0"?>
+<!--
+Copyright (c), 2016, Quantum Espresso Foundation. All rights reserved.
+This file is distributed under the terms of the MIT License. See the
+file 'LICENSE' in the root directory of the present distribution, or
+http://opensource.org/licenses/MIT.
+Authors: Paolo Giannozzi, Pietro Delugas
+-->
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+        xmlns:qes="http://www.quantum-espresso.org/ns/qes/qes-1.0"
+        targetNamespace="http://www.quantum-espresso.org/ns/qes/qes-1.0">
+    <import id="qes" schemaLocation="./qes.xsd"/>
+    <element name="NebInput" type="qes:NebInputType"/>
+    <element name="NebRun" type="qes:NebRunType"/>
+    <complexType name="NebRunType">
+        <sequence>
+            <element name="GeneralInfo" type="qes:general_infoType"/>
+            <element name="ParallelInfo" type="qes:ParallelInfoType" minOccurs="0"/>
+            <element name="Input" type="qes:NebInputType"/>
+            <element name="NebStep" type="qes:NebStepType" minOccurs="0" maxOccurs="unbounded" />
+            <element name="NebOutput" type="qes:NebOutputType" minOccurs="0" maxOccurs="1"/>
+            <element type="nonNegativeInteger" name="CpuTime" minOccurs="0"/>
+            <element type="qes:statusType" name="status" minOccurs="0" />
+            <element type="qes:closedType" name="closed" minOccurs="0"/>
+        </sequence>
+    </complexType>
+    <complexType name="ParallelInfoType">
+        <sequence>
+            <element type="positiveInteger" name="nimages"/>
+            <element type="positiveInteger" name="nprocs"/>
+            <element type="positiveInteger" name="nthreads"/>
+            <element type="positiveInteger" name="ntasks"/>
+            <element type="positiveInteger" name="nbgrp"/>
+            <element type="positiveInteger" name="npool"/>
+            <element type="positiveInteger" name="ndiag"/>
+        </sequence>
+    </complexType>
+    <complexType name="NebStepType">
+        <sequence>
+            <element name="Iteration" type="positiveInteger"/>
+            <element name="ActivationEnergyForward" type="double" />
+            <element name="ActivationEnergyBack" type="double"/>
+            <element name="Bead" type="qes:nebBeadType" maxOccurs="unbounded"/>
+            <element name="pathLength" type="double"/>
+            <element name="InterBeadDistance" type="double"/>
+        </sequence>
+    </complexType>
+    <complexType name="NebOutputType">
+        <sequence>
+            <element name="FinalNebStep" type="qes:NebStepType"/>
+            <element name="NebControl" type="qes:NebPathInputType"  />
+            <element name="NebPlot" type="qes:PlotType"/>
+            <element name="FinalImageGradient" type="qes:ImageGradientType" maxOccurs="unbounded"/>
+        </sequence>
+    </complexType>
+    <complexType name="ImageGradientType">
+        <sequence>
+            <element name="ImageNumber" type="positiveInteger"/>
+            <element name="Gradient" type="qes:matrixType"/>
+        </sequence>
+    </complexType>
+    <complexType name="PlotType">
+        <sequence>
+            <element name="Abscissae" type="qes:vectorType"/>
+            <element name="Ordinates" type="qes:vectorType"/>
+        </sequence>
+    </complexType>
+    <complexType name="nebBeadType">
+        <sequence>
+            <element name="ImageIndex" type="positiveInteger"/>
+            <element name="Energy" type="double"/>
+            <element name="Error" type="double"/>
+            <element name="FrozenFlag" type="boolean"/>
+            <element name="Structure" type="qes:atomic_structureType"/>
+        </sequence>
+    </complexType>
+    <complexType name="NebInputType">
+        <sequence>
+            <element name="NebPathInput" type="qes:NebPathInputType"/>
+            <element name="NebImagesInput"  type="qes:NebImagesInputType"/>
+        </sequence>
+    </complexType>
+    <complexType name="NebPathInputType">
+        <sequence>
+            <element name="StringMethod" type="qes:StringMethodType"/>
+            <element type="qes:controlRestartModeType" name="restart_mode" maxOccurs="1" default="from_scratch"/>
+            <element name="NumOfImages" type="positiveInteger" maxOccurs="1" minOccurs="1"/>
+            <element name="OptimizationScheme" type="qes:OptimizationSchemeType" minOccurs="1" maxOccurs="1"/>
+            <element name="ClimbingImage" type="qes:ClimbingImageType" maxOccurs="1" default="no-CI"/>
+            <element name="EndImagesOptimizationFlag" type="boolean" maxOccurs="1" default="false"/>
+            <element name="MinimumImageFlag" type="boolean" maxOccurs="1" default="false"/>
+            <element name="temperature" type="double" minOccurs="0" maxOccurs="1" />
+            <element name="OptimizatioStepLength" type="double" minOccurs="1" maxOccurs="1" />
+            <element name="ElasticConstMax" type="double" minOccurs="1" maxOccurs="1" />
+            <element name="ElasticConstMin" type="double" minOccurs="1" maxOccurs="1"/>
+            <element name="OrthoForceThreshold" type="double" minOccurs="1" maxOccurs="1"/>
+            <element name="UseMassesFlag" type="boolean" default="false" maxOccurs="1"/>
+            <element name="UseFreezingFlag" type="boolean" default="false" maxOccurs="1"/>
+            <element name="ConstantBiasFlag" type="boolean" default="false" maxOccurs="1"/>
+            <element name="TargetFermiEnergy" type="double" minOccurs="0" maxOccurs="1"/>
+            <element name="TotChargeFirst" type="double" minOccurs="0" maxOccurs="1"/>
+            <element name="TotChargeLast" type="double" minOccurs="0" maxOccurs="1" />
+            <element name="ClimbingImageIndex" type="positiveInteger" minOccurs="0" maxOccurs="unbounded"/>
+        </sequence>
+    </complexType>
+    <simpleType name="StringMethodType">
+        <restriction base="string">
+            <enumeration value="neb"/>
+            <enumeration value="smd"/>
+        </restriction>
+    </simpleType>
+    <simpleType name="OptimizationSchemeType">
+        <restriction base="string">
+            <enumeration value="sd"/>
+            <enumeration value="broyden"/>
+            <enumeration value="broyden2"/>
+            <enumeration value="quick-min"/>
+            <enumeration value="langevin"/>
+        </restriction>
+    </simpleType>
+    <simpleType name="ClimbingImageType">
+        <restriction base="string">
+            <enumeration value="no-CI"/>
+            <enumeration value="auto"/>
+            <enumeration value="manual"/>
+        </restriction>
+    </simpleType>
+    <complexType name="NebImagesInputType">
+        <sequence>
+              <element type="qes:control_variablesType" name="control_variables"/>
+              <element type="qes:atomic_speciesType" name="atomic_species"/>
+              <element type="qes:atomic_structureType" name="FirstImageAtomicStructure"/>
+              <element type="qes:atomic_structureType" name="LastImageAtomicStructure"/>
+              <element type="qes:dftType" name="dft"/>
+              <element type="qes:spinType" name="spin"/>
+              <element type="qes:bandsType" name="bands"/>
+              <element type="qes:basisType" name="basis"/>
+              <element type="qes:electron_controlType" name="electron_control"/>
+              <element type="qes:k_points_IBZType" name="k_points_IBZ"/>
+              <element type="qes:ion_controlType" name="ion_control"/>
+              <element type="qes:cell_controlType" name="cell_control"/>
+              <element type="qes:symmetry_flagsType" name="symmetry_flags" minOccurs="0" />
+              <element type="qes:boundary_conditionsType" name="boundary_conditions" minOccurs="0" />
+              <element type="qes:ekin_functionalType" name="ekin_functional" minOccurs="0" />
+              <element type="qes:matrixType" name="external_atomic_forces" minOccurs="0" />
+              <element type="qes:matrixType" name="free_positions" minOccurs="0" />
+              <element type="qes:matrixType" name="starting_atomic_velocities" minOccurs="0" />
+              <element type="qes:electric_fieldType" name="electric_field" minOccurs="0" />
+              <element type="qes:atomic_constraintsType" name="atomic_constraints" minOccurs="0" />
+              <element type="qes:spin_constraintsType" name="spin_constraints" minOccurs="0" />
+        </sequence>
+    </complexType>
+</schema>

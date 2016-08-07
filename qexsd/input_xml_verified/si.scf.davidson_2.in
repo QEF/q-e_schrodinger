@@ -1,0 +1,85 @@
+============= START OF PW INPUT =============
+&CONTROL
+ calculation='scf'
+ dipfield=.false.
+ disk_io='low'
+ dt=20.0
+ etot_conv_thr=0.0001
+ forc_conv_thr=0.001
+ iprint=100000
+ max_seconds=10000000
+ outdir='/scratch/pdelugas/espresso-xsd/tempdir/'
+ prefix='silicon'
+ pseudo_dir='/scratch/pdelugas/espresso-xsd/pseudo/'
+ restart_mode='from_scratch'
+ title=''
+ tprnfor=.true.
+ tstress=.true.
+ verbosity='low'
+ wf_collect=.false.
+/
+&SYSTEM
+ ecutwfc=18.0
+ force_symmorphic=.false.
+ ibrav=0
+ input_dft='PZ'
+ lspinorb=.false.
+ nat=2
+ no_t_rev=.false.
+ noinv=.false.
+ noncolin=.false.
+ nosym=.false.
+ nosym_evc=.false.
+ nspin=1
+ ntyp=1
+ occupations='fixed'
+ starting_magnetization(1)=0.0
+ tot_charge=0.0
+ use_all_frac=.false.
+/
+&ELECTRONS
+ conv_thr=1e-08
+ diago_cg_maxiter=20
+ diago_full_acc=.false.
+ diago_thr_init=0.0
+ diagonalization='davidson'
+ electron_maxstep=100
+ mixing_beta=0.7
+ mixing_mode='plain'
+ mixing_ndim=8
+ tqr=.false.
+/
+&IONS
+ ion_dynamics='none'
+ refold_pos=.false.
+ remove_rigid_rot=.false.
+/
+&CELL
+ cell_dynamics='none'
+ cell_factor=0.0
+ press_conv_thr=0.5
+ wmass=51197.65
+/
+ATOMIC_SPECIES
+ Si 28.086 Si.pz-vbc.UPF
+ATOMIC_POSITIONS bohr
+ Si 0.0 0.0 0.0
+ Si 2.55 2.55 2.55
+K_POINTS
+ 10
+ 0.125 0.125 0.125 1.0
+ 0.125 0.125 0.375 3.0
+ 0.125 0.125 0.625 3.0
+ 0.125 0.125 0.875 3.0
+ 0.125 0.375 0.375 3.0
+ 0.125 0.375 0.625 6.0
+ 0.125 0.375 0.875 6.0
+ 0.125 0.625 0.625 3.0
+ 0.375 0.375 0.375 1.0
+ 0.375 0.375 0.625 3.0
+CELL_PARAMETERS bohr
+ -5.1 0.0 5.1
+ 0.0 5.1 5.1
+ -5.1 5.1 0.0
+============= END OF PW INPUT =============
+

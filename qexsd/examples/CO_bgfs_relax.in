@@ -1,0 +1,84 @@
+&CONTROL
+ calculation='relax'
+ dipfield=.false.
+ disk_io='low'
+ dt=20.0
+ etot_conv_thr=0.0001
+ forc_conv_thr=0.001
+ input_xml_schema_file='CO_bgfs_relax.xml'
+ iprint=100000
+ max_seconds=10000000
+ outdir='/scratch/pdelugas/espresso-xsd/tempdir'
+ prefix='CO'
+ pseudo_dir='/scratch/pdelugas/espresso-xsd/pseudo'
+ restart_mode='from_scratch'
+ title='CO bfgs relaxation'
+ tprnfor=.false.
+ tstress=.false.
+ verbosity='low'
+ wf_collect=.false.
+/
+&SYSTEM
+ ecutrho=144.0
+ ecutwfc=24.0
+ force_symmorphic=.false.
+ ibrav=0
+ input_dft='PZ'
+ lspinorb=.false.
+ nat=2
+ no_t_rev=.false.
+ noinv=.false.
+ noncolin=.false.
+ nosym=.false.
+ nosym_evc=.false.
+ nspin=1
+ ntyp=2
+ occupations='fixed'
+ starting_magnetization(1)=0.0
+ starting_magnetization(2)=0.0
+ tot_charge=0.0
+ use_all_frac=.false.
+/
+&ELECTRONS
+ conv_thr=1e-07
+ diago_cg_maxiter=20
+ diago_full_acc=.false.
+ diago_thr_init=0.0
+ diagonalization='davidson'
+ electron_maxstep=100
+ mixing_beta=0.7
+ mixing_mode='plain'
+ mixing_ndim=8
+ tqr=.false.
+/
+&IONS
+ bfgs_ndim=1
+ ion_dynamics='bfgs'
+ refold_pos=.false.
+ remove_rigid_rot=.false.
+ trust_radius_ini=0.5
+ trust_radius_max=0.8
+ trust_radius_min=0.0001
+ upscale=100.0
+ w_1=0.01
+ w_2=0.5
+/
+&CELL
+ cell_dynamics='none'
+ cell_factor=0.0
+ press_conv_thr=0.5
+ wmass=1822.888
+/
+ATOMIC_SPECIES
+ O 1.0 O.pz-rrkjus.UPF
+ C 1.0 C.pz-rrkjus.UPF
+ATOMIC_POSITIONS bohr
+ C 0.188 0.0 0.0 1 1 1
+ O 0.0 0.0 0.0 0 0 0
+K_POINTS
+ 1
+ 0.0 0.0 0.0 1.0
+CELL_PARAMETERS bohr
+ 1.0 0.0 0.0
+ 0.0 1.0 0.0
+ 0.0 0.0 1.0

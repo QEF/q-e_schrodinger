@@ -1,0 +1,86 @@
+&CONTROL
+ calculation='md'
+ dipfield=.false.
+ disk_io='high'
+ dt=20.0
+ etot_conv_thr=0.0001
+ forc_conv_thr=0.001
+ input_xml_schema_file='Si_md.xml'
+ iprint=100000
+ max_seconds=10000000
+ outdir='/scratch/pdelugas/espresso-xsd/tempdir/'
+ prefix='pwscf'
+ pseudo_dir='/scratch/pdelugas/espresso-xsd/pseudo/'
+ restart_mode='from_scratch'
+ title='Si_molecular_dynamics'
+ tprnfor=.false.
+ tstress=.false.
+ verbosity='low'
+ wf_collect=.false.
+/
+&SYSTEM
+ ecutwfc=8.0
+ force_symmorphic=.false.
+ ibrav=0
+ input_dft='PZ'
+ lspinorb=.false.
+ nat=8
+ no_t_rev=.true.
+ noinv=.true.
+ noncolin=.false.
+ nosym=.true.
+ nosym_evc=.true.
+ nspin=1
+ ntyp=1
+ occupations='fixed'
+ starting_magnetization(1)=0.0
+ tot_charge=0.0
+ use_all_frac=.false.
+/
+&ELECTRONS
+ conv_thr=1e-08
+ diago_cg_maxiter=20
+ diago_full_acc=.false.
+ diago_thr_init=0.0
+ diagonalization='davidson'
+ electron_maxstep=100
+ mixing_beta=0.7
+ mixing_mode='plain'
+ mixing_ndim=8
+ tqr=.false.
+/
+&IONS
+ delta_t=1.0
+ ion_dynamics='verlet'
+ ion_temperature='not_controlled'
+ nraise=1
+ pot_extrapolation='second-order'
+ refold_pos=.false.
+ remove_rigid_rot=.false.
+ tempw=300.0
+ tolp=100.0
+ wfc_extrapolation='second-order'
+/
+&CELL
+ cell_dynamics='none'
+ cell_factor=0.0
+ press_conv_thr=0.5
+ wmass=204790.6
+/
+ATOMIC_SPECIES
+ Si 28.086 Si.pz-vbc.UPF
+ATOMIC_POSITIONS bohr
+ Si -0.01208251 -0.01208251 -0.01208251 1 1 1
+ Si 0.0370334 0.0370334 -0.01208251 1 1 1
+ Si 0.0370334 -0.01208251 0.0370334 1 1 1
+ Si -0.01208251 0.0370334 0.0370334 1 1 1
+ Si 0.01208251 0.01208251 0.01208251 1 1 1
+ Si 0.06119843 0.06119843 0.01208251 1 1 1
+ Si 0.06119843 0.01208251 0.06119843 1 1 1
+ Si 0.01208251 0.06119843 0.06119843 1 1 1
+K_POINTS automatic
+ 1 1 1 0 0 0
+CELL_PARAMETERS bohr
+ 1.0 0.0 0.0
+ 0.0 1.0 0.0
+ 0.0 0.0 1.0

@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="input_xx.xsl"?>
+<!-- FILE AUTOMATICALLY CREATED: DO NOT EDIT, CHANGES WILL BE LOST -->
+    
+<input_description distribution="Quantum Espresso" package="NEB" program="neb.x" >
+   <toc>
+   </toc>
+   <intro>
+Input data format: { } = optional, [ ] = it depends, | = or
+
+All quantities whose dimensions are not explicitly specified are in
+RYDBERG ATOMIC UNITS
+
+BEWARE: TABS, DOS &lt;CR&gt;&lt;LF&gt; CHARACTERS ARE POTENTIAL SOURCES OF TROUBLE
+
+General input file structure:
+===============================================================================
+
+neb.x DOES NOT READ FROM STANDARD INPUT
+There are two ways for running a calculation with neb.x:
+1) specifying a file to parse with the ./neb.x -inp or
+ neb.x -input command line option.
+2) or specifying the number of copies of PWscf input ./neb.x -input\_images.
+
+For case 1) a file containing KEYWORDS has to be written (see below).
+These KEYWORDS tells the parser which part of the file regards neb specifics
+and which part regards the energy/force engine (at the moment only PW).
+After the parsing different files are generated: neb.dat, with
+neb specific variables and a set of pw_*.in PWscf input files like
+one for each input position. All options for a single SCF calculation apply.
+
+The general structure of the file to be parsed is:
+
+BEGIN
+BEGIN_PATH_INPUT
+... neb specific namelists and cards
+END_PATH_INPUT
+BEGIN_ENGINE_INPUT
+...pw specific namelists and cards
+BEGIN_POSITIONS
+FIRST_IMAGE
+...pw ATOMIC_POSITIONS card
+INTERMEDIATE_IMAGE
+...pw ATOMIC_POSITIONS card
+LAST_IMAGE
+...pw ATOMIC_POSITIONS card
+END_POSITIONS
+... other pw specific cards
+END_ENGINE_INPUT
+END
+
+For case 2) neb.dat and all pw_1.in, pw_2.in ... should be already present.
+
+Structure of the input data (file neb.dat) :
+===============================================================================
+
+&amp;PATH
+  ...
+/
+
+[ CLIMBING_IMAGES
+   list of images, separated by a comma ]
+   </intro>
+   <namelist name="PATH" >
+      <var name="string_method" type="CHARACTER" >
+         <default> &apos;neb&apos;
+         </default>
+         <info>
+a string describing the task to be performed:
+   &apos;neb&apos;,
+   &apos;smd&apos;
+         </info>
+      </var>
+      <var name="restart_mode" type="CHARACTER" >
+         <default> &apos;from_scratch&apos;
+         </default>
+         <info>
+&apos;from_scratch&apos;  : from scratch
+
+&apos;restart&apos;       : from previous interrupted run
+         </info>
+      </var>
+      <var name="nstep_path" type="INTEGER" >
+         <info>
+number of ionic + electronic steps
+         </info>
+         <default>
+1
+         </default>
+      </var>
+      <var name="num_of_images" type="INTEGER" >
+         <default> 0
+         </default>
+         <info>
+Number of points used to discretize the path
+(it must be larger than 3).
+         </info>
+      </var>
+      <var name="opt_scheme" type="CHARACTER" >
+         <default> &apos;quick-min&apos;
+         </default>
+         <info>
+Specify the type of optimization scheme:
+
+&apos;sd&apos;         : steepest descent
+
+&apos;broyden&apos;    : quasi-Newton Broyden&apos;s second method (suggested)
+
+&apos;broyden2&apos;   : another variant of the quasi-Newton Broyden&apos;s
+               second method to be tested and compared with the
+               previous one.
+
+&apos;quick-min&apos;  : an optimisation algorithm based on the
+               projected velocity Verlet scheme
+
+&apos;langevin&apos;   : finite temperature langevin dynamics of the
+               string (smd only). It is used to compute the
+               average path and the free-energy profile.
+         </info>
+      </var>
+      <var name="CI_scheme" type="CHARACTER" >
+         <default> &apos;no-CI&apos;
+         </default>
+         <info>
+Specify the type of Climbing Image scheme:
+
+&apos;no-CI&apos;      : climbing image is not used
+
+&apos;auto&apos;       : original CI scheme. The image highest in energy
+               does not feel the effect of springs and is
+               allowed to climb along the path
+
+&apos;manual&apos;     : images that have to climb are manually selected.
+               See also CLIMBING_IMAGES card
+         </info>
+      </var>
+      <var name="first_last_opt" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+Also the first and the last configurations are optimized
+&quot;on the fly&quot; (these images do not feel the effect of the springs).
+         </info>
+      </var>
+      <var name="minimum_image" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+Assume a &quot;minimum image criterion&quot; to build the path. If an atom
+moves by more than half the length of a crystal axis between one
+image and the next in the input (before interpolation),
+an appropriate periodic replica of that atom is chosen.
+Useful to avoid jumps in the initial reaction path.
+         </info>
+      </var>
+      <var name="temp_req" type="REAL" >
+         <default> 0.D0 Kelvin
+         </default>
+         <info>
+Temperature used for the langevin dynamics of the string.
+         </info>
+      </var>
+      <var name="ds" type="REAL" >
+         <default> 1.D0
+         </default>
+         <info>
+Optimisation step length ( Hartree atomic units ).
+If opt_scheme=&quot;broyden&quot;, ds is used as a guess for the
+diagonal part of the Jacobian matrix.
+         </info>
+      </var>
+      <vargroup type="REAL" >
+         <var name="k_max" >
+         </var>
+         <var name="k_min" >
+         </var>
+         <default> 0.1D0 Hartree atomic units
+         </default>
+         <info>
+Set them to use a Variable Elastic Constants scheme
+elastic constants are in the range [ k_min, k_max ]
+this is useful to rise the resolution around the saddle point.
+         </info>
+      </vargroup>
+      <var name="path_thr" type="REAL" >
+         <default> 0.05D0 eV / Angstrom
+         </default>
+         <info>
+The simulation stops when the error ( the norm of the force
+orthogonal to the path in eV/A ) is less than path_thr.
+         </info>
+      </var>
+      <var name="use_masses" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+If. TRUE. the optimisation of the path is performed using
+mass-weighted coordinates. Useful together with quick-min
+optimization scheme, if some bonds are much stiffer than
+others. By assigning a larger (fictitious) mass to atoms
+with stiff bonds, one may use a longer time step &quot;ds&quot;
+         </info>
+      </var>
+      <var name="use_freezing" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+If. TRUE. the images are optimised according to their error:
+only those images with an error larger than half of the largest
+are optimised. The other images are kept frozen.
+         </info>
+      </var>
+      <var name="lfcpopt" type="LOGICAL" >
+         <see> fcp_mu
+         </see>
+         <default> .FALSE.
+         </default>
+         <info>
+If .TRUE. perform a constant bias potential (constant-mu)
+calculation with ESM method (assume_isolated = &apos;esm&apos; and
+esm_bc = &apos;bc2&apos; or &apos;bc3&apos; must be set in SYSTEM namelist).
+&apos;fcp_mu&apos; gives the target Fermi energy.
+See the header of PW/src/fcp.f90 for documentation
+         </info>
+      </var>
+      <var name="fcp_mu" type="REAL" >
+         <see> lfcpopt
+         </see>
+         <default> 0.d0
+         </default>
+         <info>
+If lfcpopt = .TRUE., gives the target Fermi energy [Ry].
+One can specify the total charge of the system for the first
+and last image by giving &apos;fcp_tot_charge_first&apos; and &apos;fcp_tot_charge_last&apos;
+so that the Fermi energy of these systems will be the target value,
+otherwise &apos;first_last_opt&apos; should be .TRUE.
+         </info>
+      </var>
+      <var name="fcp_tot_charge_first" type="REAL" >
+         <see> lfcpopt
+         </see>
+         <default> 0.d0
+         </default>
+         <info>
+Total charge of the system (&apos;tot_charge&apos;) for the first image.
+Initial &apos;tot_charge&apos; for intermediate images will be given by
+linear interpolation of &apos;fcp_tot_charge_first&apos; and &apos;fcp_tot_charge_last&apos;
+         </info>
+      </var>
+      <var name="fcp_tot_charge_last" type="REAL" >
+         <see> lfcpopt
+         </see>
+         <default> 0.d0
+         </default>
+         <info>
+Total charge of the system (&apos;tot_charge&apos;) for the last image.
+Initial &apos;tot_charge&apos; for intermediate images will be given by
+linear interpolation of &apos;fcp_tot_charge_first&apos; and &apos;fcp_tot_charge_last&apos;
+         </info>
+      </var>
+   </namelist>
+   <card name="CLIMBING_IMAGES" >
+      <label>
+Optional card, needed only if CI_scheme = &apos;manual&apos;, ignored otherwise !
+      </label>
+      <syntax>
+         <list name="climbing_images_list" type="INTEGER" >
+            <format> index1, index2, ... indexN
+            </format>
+            <info>
+index1, index2, ..., indexN are indices of the images to which the
+Climbing-Image procedure apply. If more than one image is specified
+they must be separated by a comma.
+            </info>
+         </list>
+      </syntax>
+   </card>
+</input_description>

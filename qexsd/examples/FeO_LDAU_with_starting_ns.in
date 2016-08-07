@@ -1,0 +1,89 @@
+&CONTROL
+ calculation='scf'
+ dipfield=.false.
+ disk_io='low'
+ dt=20.0
+ etot_conv_thr=0.0001
+ forc_conv_thr=0.001
+ input_xml_schema_file='FeO_LDAU_with_starting_ns.xml'
+ iprint=100000
+ max_seconds=10000000
+ outdir='./'
+ prefix='pwscf'
+ pseudo_dir='/u/cm/pdelugas/espresso/pseudo/'
+ restart_mode='from_scratch'
+ title=''
+ tprnfor=.false.
+ tstress=.false.
+ verbosity='low'
+ wf_collect=.false.
+/
+&SYSTEM
+ degauss=0.01
+ ecutrho=240.0
+ ecutwfc=30.0
+ force_symmorphic=.false.
+ Hubbard_U(2)=0.3160442
+ Hubbard_U(3)=0.3160442
+ ibrav=0
+ input_dft='PZ'
+ lda_plus_u_kind=0
+ lspinorb=.false.
+ nat=4
+ nbnd=20
+ no_t_rev=.false.
+ noinv=.false.
+ noncolin=.false.
+ nosym=.false.
+ nosym_evc=.false.
+ nspin=2
+ ntyp=3
+ occupations='smearing'
+ smearing='gaussian'
+ starting_magnetization(1)=0.0
+ starting_magnetization(2)=0.5
+ starting_magnetization(3)=-0.5
+ starting_ns_eigenvalue(3,3)=1.0
+ starting_ns_eigenvalue(3,2)=1.0
+ tot_charge=0.0
+ U_projection_type='atomic'
+ use_all_frac=.false.
+/
+&ELECTRONS
+ conv_thr=1e-08
+ diago_cg_maxiter=20
+ diago_full_acc=.false.
+ diago_thr_init=0.0
+ diagonalization='davidson'
+ electron_maxstep=100
+ mixing_beta=0.3
+ mixing_mode='plain'
+ mixing_ndim=8
+ tqr=.false.
+/
+&IONS
+ ion_dynamics='none'
+ refold_pos=.false.
+ remove_rigid_rot=.false.
+/
+&CELL
+ cell_dynamics='none'
+ cell_factor=0.0
+ press_conv_thr=0.5
+ wmass=3645.777
+/
+ATOMIC_SPECIES
+ O1 1.0 O.pz-rrkjus.UPF
+ Fe1 1.0 Fe.pz-nd-rrkjus.UPF
+ Fe2 1.0 Fe.pz-nd-rrkjus.UPF
+ATOMIC_POSITIONS bohr
+ O1 4.095 4.095 4.095
+ O1 12.285 12.285 12.285
+ Fe1 0.0 0.0 0.0
+ Fe2 8.19 8.19 8.19
+K_POINTS automatic
+ 2 2 2 0 0 0
+CELL_PARAMETERS bohr
+ 4.095 4.095 8.19
+ 4.095 8.19 4.095
+ 8.19 4.095 4.095

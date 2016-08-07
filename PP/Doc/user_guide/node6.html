@@ -1,0 +1,189 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>4.1 Plotting selected quantities</TITLE>
+<META NAME="description" CONTENT="4.1 Plotting selected quantities">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node7.html">
+<LINK REL="previous" HREF="node5.html">
+<LINK REL="up" HREF="node5.html">
+<LINK REL="next" HREF="node7.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html112"
+  HREF="node7.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html108"
+  HREF="node5.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html102"
+  HREF="node5.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html110"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html113"
+  HREF="node7.html">4.2 Band structure, Fermi</A>
+<B> Up:</B> <A NAME="tex2html109"
+  HREF="node5.html">4 Usage</A>
+<B> Previous:</B> <A NAME="tex2html103"
+  HREF="node5.html">4 Usage</A>
+ &nbsp; <B>  <A NAME="tex2html111"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><UL>
+<LI><A NAME="tex2html114"
+  HREF="node6.html#SECTION00051010000000000000">4.1.0.1 Planar averages</A>
+<LI><A NAME="tex2html115"
+  HREF="node6.html#SECTION00051020000000000000">4.1.0.2 All-electron charge</A>
+<LI><A NAME="tex2html116"
+  HREF="node6.html#SECTION00051030000000000000">4.1.0.3 About Bader's analysis</A>
+</UL></UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H2><A NAME="SECTION00051000000000000000">
+4.1 Plotting selected quantities</A>
+</H2>
+
+<P>
+The main postprocessing code <TT>pp.x</TT> extracts the specified data
+from the data files produced by <TT>PWscf</TT> (<TT>pw.x</TT> executable) or <TT>CP</TT> 
+(<TT>cp.x</TT> executable); prepares data for plotting by writing them into 
+formats that can be read by several plotting programs.
+
+<P>
+Quantities that can be read or calculated are:
+<BLOCKQUOTE>
+charge density
+<BR>
+spin polarization
+<BR>
+various potentials
+<BR>
+local density of states at <I>E</I><SUB>F</SUB>
+<BR>
+local density of electronic entropy
+<BR>
+STM images
+<BR>
+selected squared wavefunction
+<BR>
+ELF (electron localization function)
+<BR>
+RDG (reduced density gradient)
+<BR>
+integrated local density of states
+
+</BLOCKQUOTE>
+Various types of plotting (along a line, on a plane, three-dimensional, polar)
+and output formats (including the popular cube format) can be specified.
+Moreover data can be saved to an intermediate (formatted) file so that
+more data set can be summed or subracted in a later run.
+The output files can be directly read by the free plotting system Gnuplot
+(1D or 2D plots), or by code <TT>plotrho.x</TT> that comes with <TT>PostProc</TT> 
+and produces PostScript 2D plots,
+or by advanced plotting software XCrySDen and gOpenMol (3D plots).
+
+<P>
+See file <TT>Doc/INPUT_PP.*</TT> for a detailed description of the input
+for code <TT>pp.x</TT>.
+See Example 01 for an example of a charge density plot, Example 03
+for an example of STM image simulation.
+
+<P>
+
+<H4><A NAME="SECTION00051010000000000000">
+4.1.0.1 Planar averages</A>
+</H4>
+Code <TT>plan_avg.x</TT> calculates planar averages of Kohn-Sham orbitals.
+Code <TT>average.x</TT> calculates planar averages of quantities calculated
+by <TT>pp.x</TT> (e.g. potentials, charge, magnetization densities).
+Note that <TT>average.x</TT> reads the intermediate file produced
+by <TT>pp.x</TT>, not data files produced by <TT>pw.x</TT>. Examples of usage 
+of <TT>average.x</TT> can be found in <TT>examples/WorcFct_example/</TT> 
+and in <TT>examples/dipole_example/</TT>.
+
+<P>
+
+<H4><A NAME="SECTION00051020000000000000">
+4.1.0.2 All-electron charge</A>
+</H4>
+<TT>pawplot.x</TT> produces plots of the all-electron charge
+for PAW calculations.
+
+<P>
+
+<H4><A NAME="SECTION00051030000000000000">
+4.1.0.3 About Bader's analysis</A>
+</H4>
+In <TT>http://theory.cm.utexas.edu/henkelman/code/bader/</TT> 
+one can find a software that performs Bader's analysis starting 
+from charge on a regular grid. One should use PAW to compute the
+charge density. The required "cube" format can be produced using 
+<TT>pp.x</TT> (info by G. Lapenna who has successfully used this 
+technique, but adds: ``Problems occur with polar X-H bonds or in
+all cases where the zero-flux of density comes too close to atoms 
+described with pseudo-potentials"). This code should perform 
+decomposition into Voronoi polyhedra as well, in place of obsolete
+code  <TT>voronoy.x</TT> (removed from distribution since v.4.2).
+Alternatively, you can use <I>CRITIC2</I>, available at
+<TT>https://github.com/aoterodelaroza/critic2</TT>, which can
+read directly <TT>pw.x</TT> output and ``XSF'' files. <I>CRITIC2</I>
+functionaly include Bader's AIM, ELF, laplacian of density and
+potentials, non-covalente interaction (NCI) plots and much more.
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html112"
+  HREF="node7.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html108"
+  HREF="node5.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html102"
+  HREF="node5.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html110"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html113"
+  HREF="node7.html">4.2 Band structure, Fermi</A>
+<B> Up:</B> <A NAME="tex2html109"
+  HREF="node5.html">4 Usage</A>
+<B> Previous:</B> <A NAME="tex2html103"
+  HREF="node5.html">4 Usage</A>
+ &nbsp; <B>  <A NAME="tex2html111"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+Filippo Spiga
+2016-04-24
+</ADDRESS>
+</BODY>
+</HTML>

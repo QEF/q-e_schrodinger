@@ -1,0 +1,131 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>5 Troubleshooting</TITLE>
+<META NAME="description" CONTENT="5 Troubleshooting">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node13.html">
+<LINK REL="previous" HREF="node5.html">
+<LINK REL="up" HREF="user_guide.html">
+<LINK REL="next" HREF="node13.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html185"
+  HREF="node13.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html181"
+  HREF="user_guide.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html175"
+  HREF="node11.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html183"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html186"
+  HREF="node13.html">About this document ...</A>
+<B> Up:</B> <A NAME="tex2html182"
+  HREF="user_guide.html">User's Guide for the</A>
+<B> Previous:</B> <A NAME="tex2html176"
+  HREF="node11.html">4.6 Other tools</A>
+ &nbsp; <B>  <A NAME="tex2html184"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION00060000000000000000">
+5 Troubleshooting</A>
+</H1>
+
+<P>
+Almost all problems in Q<SMALL>UANTUM </SMALL>ESPRESSO arise from incorrect input data and result in
+error stops. Error messages should be self-explanatory, but unfortunately
+this is not always true. If the code issues a warning messages and continues,
+pay attention to it but do not assume that something is necessarily wrong in
+your calculation: most warning messages signal harmless problems.
+
+<P>
+
+<H4><A NAME="SECTION00060010000000000000">
+5.0.0.1 Some postprocessing codes complain that they do not find some files</A>
+</H4>
+For Linux PC clusters in parallel execution: in at least some versions
+of MPICH, the current directory is set to the directory where the executable
+code resides, instead of being set to the directory where the code is executed.
+This MPICH weirdness may cause unexpected failures in some postprocessing
+codes that expect a data file in the current directory. Workaround: use
+symbolic links, or copy the executable to the current directory.
+
+<P>
+
+<H4><A NAME="SECTION00060020000000000000">
+5.0.0.2 <EM>error in davcio</EM> in postprocessing codes</A>
+</H4>
+Most likely you are not reading the correct data files, or you are not
+following the correct procedure for postprocessing. In parallel execution: 
+if you did not set <TT>wf_collect=.true.</TT>, the number of processors and 
+pools for the phonon run should be the same as for the
+self-consistent run; all files must be visible to all processors.
+
+<P>
+<BR><HR>
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><UL>
+<LI><UL>
+<LI><A NAME="tex2html187"
+  HREF="node12.html#SECTION00060010000000000000">5.0.0.1 Some postprocessing codes complain that they do not find some files</A>
+<LI><A NAME="tex2html188"
+  HREF="node12.html#SECTION00060020000000000000">5.0.0.2 <EM>error in davcio</EM> in postprocessing codes</A>
+</UL></UL></UL>
+<!--End of Table of Child-Links-->
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html185"
+  HREF="node13.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html181"
+  HREF="user_guide.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html175"
+  HREF="node11.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html183"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html186"
+  HREF="node13.html">About this document ...</A>
+<B> Up:</B> <A NAME="tex2html182"
+  HREF="user_guide.html">User's Guide for the</A>
+<B> Previous:</B> <A NAME="tex2html176"
+  HREF="node11.html">4.6 Other tools</A>
+ &nbsp; <B>  <A NAME="tex2html184"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+Filippo Spiga
+2016-04-24
+</ADDRESS>
+</BODY>
+</HTML>

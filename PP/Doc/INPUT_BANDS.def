@@ -1,0 +1,126 @@
+input_description -distribution {Quantum Espresso} -package PWscf -program bands.x {
+
+    toc {}
+
+    intro {
+	Purpose of bands.x:
+	    Rewrite the bands ordering them using the overlap 
+	    of the wave-functions on neighbor k points
+	    and calculate properties of each eigen-function.
+
+	Presently it can calculate:
+
+	   (a) The expectation value of the spin operator on each spinor
+               wave-function.
+           (b) The symmetry properties of each wavefunction. With this option
+               the bands are not ordered according to the overlap.
+
+        The input data of this program are read from standard input
+        or from a file and have the following format:
+	
+
+        Structure of the input data:
+	============================
+
+	   &BANDS
+	     ...
+	   /
+    }
+
+    namelist BANDS {
+
+	var prefix -type CHARACTER {   
+	    info {
+		prefix of files saved by program pw.x
+	    }
+	}
+
+        var outdir -type CHARACTER {
+            info {
+                   directory containing the input data,
+                   i.e. the same as in pw.x }
+            default {
+                      value of the ESPRESSO_TMPDIR environment variable if set;
+                      current directory ('./') otherwise }
+        }
+
+	var filband -type CHARACTER {     
+	    info {
+		file "filband" contains the bands
+	    }
+	}
+
+	var spin_component -type INTEGER { 
+	    info {
+		In the lsda case select:
+		
+		   1 = spin-up
+		   2 = spin-down
+	    }
+	}
+
+	dimension lsigma  -start 1 -end 3 -type LOGICAL { 
+	    info {
+		If true writes a file filband.i with the expectation
+		values of the spin operator on the spinor wave-functions.
+		(only in the noncollinear case).
+	    }
+	}
+
+        var lp -type LOGICAL {
+            default { .false. }
+            info {
+                If .true. matrix elements of the momentum operator p between
+                conduction and valence bands are written to file "filp" 
+            }
+
+        }      
+        var filp -type CHARACTER {
+            default { 'p_avg.dat' }
+            info {
+                If "lp" is set to .true., file name for matrix elements of p
+	    }
+
+        }      
+	var lsym -type LOGICAL {
+	    info {
+		If .true. the bands are classified according to the
+		irreducible representations of the small group of k. A
+		file "filband".rap with the same format of "filband"
+		is written.
+	    }
+	}
+	 
+	var no_overlap -type LOGICAL { 
+	    default { .false. }
+	    info {		
+		If .true. writes the eigenvalues in the output file
+		without changing their order.
+
+	    }
+	}
+
+        var plot_2d -type LOGICAL {
+            default { .false. }
+            info {
+                If .true. writes the eigenvalues in the output file
+                in a 2D format readable by gnuplot. Band ordering is not 
+                changed. Each band is written in a different file called 
+                filband.# with the format:
+                xk, yk, energy
+                xk, yk, energy
+                ..  ..  ..
+                energies are written in eV and xk in units 2\pi/a.
+        }
+
+      }           
+	vargroup -type INTEGER {
+	    var firstk
+	    var lastk 
+	    info {		
+		if lsym=.true. makes the symmetry analysis only for k
+		points between firstk to lastk		
+	    }
+	}
+    }
+}
