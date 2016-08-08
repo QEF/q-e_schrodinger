@@ -33,7 +33,7 @@ def parse_args():
                         help='Use a specific XSD schema for XML translation.')
     parser.add_argument("-y", "--yes", action="store_true", default=False,
                         help="Automatically answer yes for all questions.")
-    parser.add_argument('xml_file', help="XML input filename.")
+    parser.add_argument('-in', help="XML input filename.")
     return parser.parse_args()
 
 
@@ -52,35 +52,26 @@ if __name__ == '__main__':
         sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
 
     import qespresso
+    import os
 
     qespresso.set_logger(args.verbosity)
 
     xml_conf = qespresso.PwDocument()
-    xml_conf.read(args.xml_file)
+    input_fn = args.__dict__['in']
+    xml_conf.read(input_fn)
     pw_in = xml_conf.get_qe_input()
 
-    if not args.nofile:
-        import os
+    input_fn_name, input_fn_ext = os.path.splitext(input_fn)
+    outfile = input_fn_name + '.in'
 
-        if args.output:
-            outfile = args.output
-        else:
-            outfile = '{}.in'.format(args.xml_file.rsplit('.', 1)[0])
+    choice = 'y'
 
-        if not args.yes and os.path.isfile(outfile):
-            try:
-                choice = raw_input("File exists, overwrite? (y/n) ")
-            except NameError:
-                choice = input("File exists, overwrite? (y/n) ")
-        else:
-            choice = 'y'
+    if choice.lower() in ("yes", 'y'):
+        with open(outfile, mode='w') as f:
+            f.write(pw_in)
+            print("Input configuration written to file '%s' ..." % outfile)
 
-        if choice.lower() in ("yes", 'y'):
-            with open(outfile, mode='w') as f:
-                f.write(pw_in)
-                print("Input configuration written to file '%s' ..." % outfile)
-
-        sys.exit(0)
+    sys.exit(0)
 
     print("=" * 13 + " START OF PW INPUT " + "=" * 13)
     print(pw_in)
