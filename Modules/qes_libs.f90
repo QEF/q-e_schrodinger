@@ -3248,6 +3248,12 @@ SUBROUTINE qes_write_band_structure(iun, obj)
       CALL iotk_write_begin(iun, 'nelec')
          WRITE(iun, '(E20.7)') obj%nelec
       CALL iotk_write_end(iun, 'nelec')
+      IF(obj%num_of_atomic_wfc_ispresent) THEN
+         CALL iotk_write_begin(iun, 'num_of_atomic_wfc')
+            WRITE(iun, '(I12)') obj%num_of_atomic_wfc
+         CALL iotk_write_end(iun, 'num_of_atomic_wfc')
+      ENDIF
+      !
       IF(obj%fermi_energy_ispresent) THEN
          CALL iotk_write_begin(iun, 'fermi_energy')
             WRITE(iun, '(E20.7)') obj%fermi_energy
@@ -3281,7 +3287,8 @@ END SUBROUTINE qes_write_band_structure
 
 SUBROUTINE qes_init_band_structure(obj, tagname, lsda, noncolin, spinorbit, nbnd, &
                               nbnd_up_ispresent, nbnd_up, nbnd_dw_ispresent, nbnd_dw, &
-                              nelec, fermi_energy_ispresent, fermi_energy, &
+                              nelec, num_of_atomic_wfc_ispresent, num_of_atomic_wfc, &
+                              fermi_energy_ispresent, fermi_energy, &
                               highestOccupiedLevel_ispresent, highestOccupiedLevel, &
                               two_fermi_energies_ispresent, &
                               ndim_two_fermi_energies, two_fermi_energies, nks, &
@@ -3300,6 +3307,8 @@ SUBROUTINE qes_init_band_structure(obj, tagname, lsda, noncolin, spinorbit, nbnd
    LOGICAL  :: nbnd_dw_ispresent
    INTEGER  :: nbnd_dw
    REAL(DP) :: nelec
+   LOGICAL  :: num_of_atomic_wfc_ispresent
+   INTEGER  :: num_of_atomic_wfc
    LOGICAL  :: fermi_energy_ispresent
    REAL(DP) :: fermi_energy
    LOGICAL  :: highestOccupiedLevel_ispresent
@@ -3325,6 +3334,10 @@ SUBROUTINE qes_init_band_structure(obj, tagname, lsda, noncolin, spinorbit, nbnd
       obj%nbnd_dw = nbnd_dw
    ENDIF
    obj%nelec = nelec
+   obj%num_of_atomic_wfc_ispresent = num_of_atomic_wfc_ispresent
+   IF(obj%num_of_atomic_wfc_ispresent) THEN
+      obj%num_of_atomic_wfc = num_of_atomic_wfc
+   ENDIF
    obj%fermi_energy_ispresent = fermi_energy_ispresent
    IF(obj%fermi_energy_ispresent) THEN
       obj%fermi_energy = fermi_energy
@@ -3360,6 +3373,9 @@ SUBROUTINE qes_reset_band_structure(obj)
    ENDIF
    IF(obj%nbnd_dw_ispresent) THEN
       obj%nbnd_dw_ispresent = .FALSE.
+   ENDIF
+   IF(obj%num_of_atomic_wfc_ispresent) THEN
+      obj%num_of_atomic_wfc_ispresent = .FALSE.
    ENDIF
    IF(obj%fermi_energy_ispresent) THEN
       obj%fermi_energy_ispresent = .FALSE.
@@ -3662,6 +3678,20 @@ SUBROUTINE qes_write_electron_control(iun, obj)
             WRITE(iun, '(A)',advance='no')  'false'
          ENDIF
       CALL iotk_write_end(iun, 'real_space_q',indentation=.FALSE.)
+      CALL iotk_write_begin(iun, 'tq_smoothing',new_line=.FALSE.)
+         IF (obj%tq_smoothing) THEN
+            WRITE(iun, '(A)',advance='no')  'true'
+         ELSE
+            WRITE(iun, '(A)',advance='no')  'false'
+         ENDIF
+      CALL iotk_write_end(iun, 'tq_smoothing',indentation=.FALSE.)
+      CALL iotk_write_begin(iun, 'tbeta_smoothing',new_line=.FALSE.)
+         IF (obj%tbeta_smoothing) THEN
+            WRITE(iun, '(A)',advance='no')  'true'
+         ELSE
+            WRITE(iun, '(A)',advance='no')  'false'
+         ENDIF
+      CALL iotk_write_end(iun, 'tbeta_smoothing',indentation=.FALSE.)
       CALL iotk_write_begin(iun, 'diago_thr_init')
          WRITE(iun, '(E20.7)') obj%diago_thr_init
       CALL iotk_write_end(iun, 'diago_thr_init')
@@ -3681,7 +3711,8 @@ END SUBROUTINE qes_write_electron_control
 
 SUBROUTINE qes_init_electron_control(obj, tagname, diagonalization, mixing_mode, &
                               mixing_beta, conv_thr, mixing_ndim, max_nstep, real_space_q, &
-                              diago_thr_init, diago_full_acc, diago_cg_maxiter)
+                              tq_smoothing, tbeta_smoothing, diago_thr_init, &
+                              diago_full_acc, diago_cg_maxiter)
    IMPLICIT NONE
 
    TYPE(electron_control_type) :: obj
@@ -3694,6 +3725,8 @@ SUBROUTINE qes_init_electron_control(obj, tagname, diagonalization, mixing_mode,
    INTEGER  :: mixing_ndim
    INTEGER  :: max_nstep
    LOGICAL  :: real_space_q
+   LOGICAL  :: tq_smoothing
+   LOGICAL  :: tbeta_smoothing
    REAL(DP) :: diago_thr_init
    LOGICAL  :: diago_full_acc
    INTEGER  :: diago_cg_maxiter
@@ -3706,6 +3739,8 @@ SUBROUTINE qes_init_electron_control(obj, tagname, diagonalization, mixing_mode,
    obj%mixing_ndim = mixing_ndim
    obj%max_nstep = max_nstep
    obj%real_space_q = real_space_q
+   obj%tq_smoothing = tq_smoothing
+   obj%tbeta_smoothing = tbeta_smoothing
    obj%diago_thr_init = diago_thr_init
    obj%diago_full_acc = diago_full_acc
    obj%diago_cg_maxiter = diago_cg_maxiter
