@@ -279,17 +279,10 @@ install : touch-dummy
 clean : 
 	touch make.inc 
 	for dir in \
-<<<<<<< HEAD
 		LAXlib FFTXlib Modules PP PW \
 		NEB PWCOND \
 		atomic clib LR_Modules pwtools upftools \
 		dev-tools extlibs \
-=======
-		CPV LAXlib FFTXlib Modules PP PW EPW \
-		NEB ACFDT COUPLE GWW XSpectra PWCOND \
-		atomic clib LR_Modules pwtools upftools \
-		dev-tools extlibs Environ TDDFPT PHonon GWW \
->>>>>>> 66ecac84e8b5571070181ca92a1b74b60546690a
 	; do \
 	    if test -d $$dir ; then \
 		( cd $$dir ; \
