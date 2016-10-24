@@ -34,7 +34,7 @@ PROGRAM wannier_ham
 
   ! initialise environment
   !
-#ifdef __MPI
+#if defined(__MPI)
   CALL mp_startup ( )
 #endif
   CALL environment_start ( 'WANNIER_HAM')
@@ -85,10 +85,9 @@ SUBROUTINE new_hamiltonian(form, plot_bands)
   USE io_files
   USE kinds, ONLY: DP
   USE wannier_new, ONLY: nwan, pp, wannier_occ, wannier_energy, wan_in
-  USE klist, ONLY: nks, xk, wk, igk_k
+  USE klist, ONLY: nks, xk, wk
   USE lsda_mod, ONLY: isk, current_spin, lsda, nspin
-  USE wvfct, ONLY: nbnd, npwx, igk, npw, g2kin, et
-  USE gvecw, ONLY : gcutw
+  USE wvfct, ONLY: nbnd, npwx, et
   USE gvect
   USE constants,  ONLY : rytoev , tpi
   USE buffers
@@ -127,12 +126,6 @@ SUBROUTINE new_hamiltonian(form, plot_bands)
   CALL init_us_1
   CALL init_at_1
 
-  ! Generating igk for orthoatwfc()
-
-  DO ik = 1, nks
-     CALL gk_sort( xk(1,ik), ngm, g, gcutw, npw, igk_k(1,ik), g2kin )
-  ENDDO
-  !
   CALL orthoatwfc( .true. )
 
   wan_func = ZERO
@@ -141,7 +134,6 @@ SUBROUTINE new_hamiltonian(form, plot_bands)
 
   DO ik = 1, nks
      write(stdout,*) '       Computing k-point', ik
-     CALL gk_sort (xk (1, ik), ngm, g, gcutw, npw, igk, g2kin)
      IF (lsda) current_spin  = isk(ik)
      CALL wannier_proj(ik,wan_func)
 
@@ -214,6 +206,8 @@ SUBROUTINE new_hamiltonian(form, plot_bands)
       nelec = nelec + SUM(wannier_occ(i,i,:))
     END DO
 
+    IF (nspin == 1) nelec = nelec*2.d0
+
     CALL write_systemdata_amulet(seconds,nelec,118)
 
   ELSE
@@ -285,6 +279,7 @@ SUBROUTINE plot_wannier_bands(ek)
 
   INTEGER :: i,j,k,ik,ios
   REAL(DP) :: x, emax, emin
+  CHARACTER(len=1) :: backslash
 
   OPEN (unit = 113, file = 'wannier_bands.dat', status = 'unknown', form = 'formatted', err = 400, iostat = ios)
   OPEN (unit = 114, file = 'original_bands.dat', status = 'unknown', form = 'formatted', err = 401, iostat = ios)
@@ -349,7 +344,7 @@ SUBROUTINE plot_wannier_bands(ek)
   ENDIF
 
   WRITE(115,*)'reset'
-  WRITE(115,*)'set term post eps'
+  WRITE(115,*)'set terminal postscript eps enhanced color'
   WRITE(115,*)'set output "wannier_bands.eps"'
   WRITE(115,*)'unset xtics'
   WRITE(115,'(a12,f7.3,a,f7.3,a)')'set yrange [',emin-1.5,':',emax+1.5,']'
@@ -357,9 +352,12 @@ SUBROUTINE plot_wannier_bands(ek)
   WRITE(115,*)'set style line 2 lt 2 lc rgb "red" lw 2'
   WRITE(115,*)'set style line 3 lt 1 lc rgb "green" lw 1'
   WRITE(115,*)'set ylabel "Energy (eV)"'
-  WRITE(115,*)'plot \\'
-  WRITE(115,*)'"original_bands.dat" title "LDA bands" with lines linestyle 1,\\'
-  WRITE(115,*)'"wannier_bands.dat" title "Wannier bands" with lines linestyle 2,\\'
+  backslash = char(92)
+  WRITE(115,*)'plot '//backslash
+  WRITE(115,*)'"original_bands.dat" title "LDA bands" with lines linestyle 1,'&
+            & //backslash
+  WRITE(115,*)'"wannier_bands.dat" title "Wannier bands" with lines linestyle 2,'&
+            & //backslash
   WRITE(115,'(f7.3,a44)') ef*rytoev,'title "Fermi energy" with lines linestyle 3'
 
   CLOSE(113)

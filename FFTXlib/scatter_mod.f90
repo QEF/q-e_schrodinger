@@ -15,7 +15,8 @@
    MODULE scatter_mod
 !=----------------------------------------------------------------------=!
 
-        USE fft_types, ONLY: fft_dlay_descriptor
+        USE fft_types, ONLY: fft_type_descriptor
+        USE task_groups, ONLY: task_groups_descriptor
 
         IMPLICIT NONE
 
@@ -33,7 +34,7 @@
 
         PRIVATE
 
-        PUBLIC :: fft_dlay_descriptor
+        PUBLIC :: fft_type_descriptor
         PUBLIC :: fft_scatter, gather_grid, scatter_grid
         PUBLIC :: cgather_sym, cgather_sym_many, cscatter_sym_many
         PUBLIC :: maps_sticks_to_3d
@@ -49,7 +50,7 @@
 !   with a defined topology, like on bluegene and cray machine
 !
 !-----------------------------------------------------------------------
-SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg )
+SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, dtgs )
   !-----------------------------------------------------------------------
   !
   ! transpose the fft grid across nodes
@@ -78,8 +79,7 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
   !    f_aux contains input planes, is destroyed on output
   !    f_in  contains output columns
   !
-  !
-  !  If optional argument "use_tg" is true the subroutines performs
+  !  If optional argument "dtgs" is present the subroutines performs
   !  the trasposition using the Task Groups distribution
   !
   IMPLICIT NONE
@@ -87,14 +87,14 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
   INCLUDE 'mpif.h'
 #endif
 
-  TYPE (fft_dlay_descriptor), INTENT(in) :: dfft
+  TYPE (fft_type_descriptor), INTENT(in) :: dfft
   INTEGER, INTENT(in)           :: nr3x, nxx_, isgn, ncp_ (:), npp_ (:)
   COMPLEX (DP), INTENT(inout)   :: f_in (nxx_), f_aux (nxx_)
-  LOGICAL, OPTIONAL, INTENT(in) :: use_tg
+  TYPE (task_groups_descriptor), OPTIONAL, INTENT(in) :: dtgs
 
 #if defined(__MPI)
 
-  INTEGER :: dest, from, k, offset, proc, ierr, me, nprocp, gproc, gcomm, i, kdest, kfrom
+  INTEGER :: k, offset, proc, ierr, me, nprocp, gproc, gcomm, i, kdest, kfrom
   INTEGER :: me_p, nppx, mc, j, npp, nnp, ii, it, ip, ioff, sendsiz, ncpx, ipp, nblk, nsiz
   !
   LOGICAL :: use_tg_
@@ -104,13 +104,13 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
 
   use_tg_ = .false.
 
-  IF( present( use_tg ) ) use_tg_ = use_tg
+  IF( present( dtgs ) ) use_tg_ = .true.
 
   me     = dfft%mype + 1
   !
   IF( use_tg_ ) THEN
     !  This is the number of procs. in the plane-wave group
-     nprocp = dfft%npgrp
+     nprocp = dtgs%npgrp
   ELSE
      nprocp = dfft%nproc
   ENDIF
@@ -120,9 +120,9 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
   ncpx = 0
   nppx = 0
   IF( use_tg_ ) THEN
-     ncpx   = dfft%tg_ncpx
-     nppx   = dfft%tg_nppx
-     gcomm  = dfft%pgrp_comm
+     ncpx   = dtgs%tg_ncpx
+     nppx   = dtgs%tg_nppx
+     gcomm  = dtgs%pgrp_comm
   ELSE
      DO proc = 1, nprocp
         ncpx = max( ncpx, ncp_ ( proc ) )
@@ -144,20 +144,17 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
      !
      ! step one: store contiguously the slices
      !
-     offset = 1
+     offset = 0
 
      DO proc = 1, nprocp
         IF( use_tg_ ) THEN
-           gproc = dfft%nplist(proc)+1
+           gproc = dtgs%nplist(proc)+1
         ELSE
            gproc = proc
         ENDIF
         !
-        from = offset
-        dest = 1 + ( proc - 1 ) * sendsiz
-        !
-        kdest = dest - 1
-        kfrom = from - 1
+        kdest = ( proc - 1 ) * sendsiz
+        kfrom = offset
         !
         DO k = 1, ncp_ (me)
            DO i = 1, npp_ ( gproc )
@@ -177,7 +174,7 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
      ! step two: communication
      !
      IF( use_tg_ ) THEN
-        gcomm = dfft%pgrp_comm
+        gcomm = dtgs%pgrp_comm
      ELSE
         gcomm = dfft%comm
      ENDIF
@@ -207,7 +204,7 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
      ELSE
 
         IF( use_tg_ ) THEN
-           npp  = dfft%tg_npp( me )
+           npp  = dtgs%tg_npp( me )
            nnp  = dfft%nr1x * dfft%nr2x
         ELSE
            npp  = dfft%npp( me )
@@ -215,8 +212,8 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
         ENDIF
 
         IF( use_tg_ ) THEN
-           nblk = dfft%nproc / dfft%nogrp
-           nsiz = dfft%nogrp
+           nblk = dfft%nproc / dtgs%nogrp
+           nsiz = dtgs%nogrp
         ELSE
            nblk = dfft%nproc 
            nsiz = 1
@@ -275,7 +272,7 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
      ELSE
 
         IF( use_tg_ ) THEN
-           npp  = dfft%tg_npp( me )
+           npp  = dtgs%tg_npp( me )
            nnp  = dfft%nr1x * dfft%nr2x
         ELSE
            npp  = dfft%npp( me )
@@ -283,8 +280,8 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
         ENDIF
 
         IF( use_tg_ ) THEN
-           nblk = dfft%nproc / dfft%nogrp
-           nsiz = dfft%nogrp
+           nblk = dtgs%nproc / dtgs%nogrp
+           nsiz = dtgs%nogrp
         ELSE
            nblk = dfft%nproc 
            nsiz = 1
@@ -327,12 +324,10 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
      !  step two: communication
      !
      IF( use_tg_ ) THEN
-        gcomm = dfft%pgrp_comm
+        gcomm = dtgs%pgrp_comm
      ELSE
         gcomm = dfft%comm
      ENDIF
-
-     ! CALL mpi_barrier (gcomm, ierr)  ! why barrier? for buggy openmpi over ib
 
      CALL mpi_alltoall (f_in(1), sendsiz, MPI_DOUBLE_COMPLEX, f_aux(1), sendsiz, MPI_DOUBLE_COMPLEX, gcomm, ierr)
 
@@ -342,19 +337,17 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
      !
      !! f_in = 0.0_DP
      !
-     offset = 1
+     offset = 0
 
      DO proc = 1, nprocp
-        from = offset
         IF( use_tg_ ) THEN
-           gproc = dfft%nplist(proc)+1
+           gproc = dtgs%nplist(proc)+1
         ELSE
            gproc = proc
         ENDIF
-        dest = 1 + ( proc - 1 ) * sendsiz
         !
-        kdest = dest - 1
-        kfrom = from - 1
+        kdest = ( proc - 1 ) * sendsiz
+        kfrom = offset 
         !
         DO k = 1, ncp_ (me)
            DO i = 1, npp_ ( gproc )  
@@ -384,7 +377,7 @@ END SUBROUTINE fft_scatter
 !   like infiniband, ethernet, myrinet
 !
 !-----------------------------------------------------------------------
-SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg )
+SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, dtgs )
   !-----------------------------------------------------------------------
   !
   ! transpose the fft grid across nodes
@@ -411,7 +404,7 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
   !
   !  The output is overwritten on f_in ; f_aux is used as work space
   !
-  !  If optional argument "use_tg" is true the subroutines performs
+  !  If optional argument "dtgs" is present the subroutines performs
   !  the trasposition using the Task Groups distribution
   !
   IMPLICIT NONE
@@ -419,14 +412,14 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
   INCLUDE 'mpif.h'
 #endif
 
-  TYPE (fft_dlay_descriptor), INTENT(in) :: dfft
+  TYPE (fft_type_descriptor), INTENT(in) :: dfft
   INTEGER, INTENT(in)           :: nr3x, nxx_, isgn, ncp_ (:), npp_ (:)
   COMPLEX (DP), INTENT(inout)   :: f_in (nxx_), f_aux (nxx_)
-  LOGICAL, OPTIONAL, INTENT(in) :: use_tg
+  TYPE (task_groups_descriptor), OPTIONAL, INTENT(in) :: dtgs
 
 #if defined(__MPI)
 
-  INTEGER :: dest, from, k, offset, proc, ierr, me, nprocp, gproc, gcomm, i, kdest, kfrom
+  INTEGER :: k, offset, proc, ierr, me, nprocp, gproc, gcomm, i, kdest, kfrom
   INTEGER :: me_p, nppx, mc, j, npp, nnp, ii, it, ip, ioff, sendsiz, ncpx, ipp, nblk, nsiz, ijp
   INTEGER :: sh(dfft%nproc), rh(dfft%nproc)
   INTEGER :: istat( MPI_STATUS_SIZE )
@@ -443,7 +436,7 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
 
   use_tg_ = .false.
 
-  IF( present( use_tg ) ) use_tg_ = use_tg
+  IF( present( dtgs ) ) use_tg_ = .true.
 
   me     = dfft%mype + 1
   !
@@ -451,10 +444,10 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
   nppx = 0
   IF( use_tg_ ) THEN
      !  This is the number of procs. in the plane-wave group
-     nprocp = dfft%npgrp
-     ncpx   = dfft%tg_ncpx
-     nppx   = dfft%tg_nppx
-     gcomm  = dfft%pgrp_comm
+     nprocp = dtgs%npgrp
+     ncpx   = dtgs%tg_ncpx
+     nppx   = dtgs%tg_nppx
+     gcomm  = dtgs%pgrp_comm
   ELSE
      nprocp = dfft%nproc
      DO proc = 1, nprocp
@@ -475,13 +468,13 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
      !
      ! step one: store contiguously the slices
      !
-     offset = 1
+     offset = 0
 
      IF( use_tg_ ) THEN
         DO proc = 1, nprocp
-           gproc = dfft%nplist(proc)+1
+           gproc = dtgs%nplist(proc)+1
            kdest = ( proc - 1 ) * sendsiz
-           kfrom = offset - 1
+           kfrom = offset 
            DO k = 1, ncp_ (me)
               DO i = 1, npp_ ( gproc )
                  f_aux ( kdest + i ) =  f_in ( kfrom + i )
@@ -497,7 +490,7 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
      ELSE
         DO proc = 1, nprocp
            kdest = ( proc - 1 ) * sendsiz
-           kfrom = offset - 1
+           kfrom = offset 
            DO k = 1, ncp_ (me)
               DO i = 1, npp_ ( proc )
                  f_aux ( kdest + i ) =  f_in ( kfrom + i )
@@ -551,10 +544,10 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
      ELSE
 
         IF( use_tg_ ) THEN
-           npp  = dfft%tg_npp( me )
+           npp  = dtgs%tg_npp( me )
            nnp  = dfft%nr1x * dfft%nr2x
-           nblk = dfft%nproc / dfft%nogrp
-           nsiz = dfft%nogrp
+           nblk = dtgs%nproc / dtgs%nogrp
+           nsiz = dtgs%nogrp
         ELSE
            npp  = dfft%npp( me )
            nnp  = dfft%nnp
@@ -635,10 +628,10 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
      ELSE
 
         IF( use_tg_ ) THEN
-           npp  = dfft%tg_npp( me )
+           npp  = dtgs%tg_npp( me )
            nnp  = dfft%nr1x * dfft%nr2x
-           nblk = dfft%nproc / dfft%nogrp
-           nsiz = dfft%nogrp
+           nblk = dtgs%nproc / dtgs%nogrp
+           nsiz = dtgs%nogrp
         ELSE
            npp  = dfft%npp( me )
            nnp  = dfft%nnp
@@ -705,13 +698,13 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
      call mpi_waitall( nblk, rh, MPI_STATUSES_IGNORE, ierr )
      call mpi_waitall( nblk, sh, MPI_STATUSES_IGNORE, ierr )
      !
-     offset = 1
+     offset = 0
 
      IF( use_tg_ ) THEN
         DO proc = 1, nprocp
-           gproc = dfft%nplist(proc) + 1
+           gproc = dtgs%nplist(proc) + 1
            kdest = ( proc - 1 ) * sendsiz
-           kfrom = offset - 1
+           kfrom = offset 
            DO k = 1, ncp_ (me)
               DO i = 1, npp_ ( gproc )  
                  f_in ( kfrom + i ) = f_aux ( kdest + i )
@@ -724,7 +717,7 @@ SUBROUTINE fft_scatter ( dfft, f_in, nr3x, nxx_, f_aux, ncp_, npp_, isgn, use_tg
      ELSE
         DO proc = 1, nprocp
            kdest = ( proc - 1 ) * sendsiz 
-           kfrom = offset - 1
+           kfrom = offset 
            DO k = 1, ncp_ (me)
               DO i = 1, npp_ ( proc )  
                  f_in ( kfrom + i ) = f_aux ( kdest + i )
@@ -749,7 +742,7 @@ END SUBROUTINE fft_scatter
 #endif
 !
 !
-SUBROUTINE maps_sticks_to_3d( dffts, f_in, nxx_, f_aux, isgn )
+SUBROUTINE maps_sticks_to_3d( dffts, dtgs, f_in, nxx_, f_aux, isgn )
   !
   ! this subroutine copy sticks stored in 1D array into the 3D array
   ! to be used with 3D FFT. 
@@ -761,7 +754,8 @@ SUBROUTINE maps_sticks_to_3d( dffts, f_in, nxx_, f_aux, isgn )
   INCLUDE 'mpif.h'
 #endif
 
-  TYPE (fft_dlay_descriptor), INTENT(in) :: dffts
+  TYPE (fft_type_descriptor), INTENT(in) :: dffts
+  TYPE (task_groups_descriptor), INTENT(in) :: dtgs
   INTEGER, INTENT(in)           :: nxx_, isgn
   COMPLEX (DP), INTENT(in)      :: f_in (nxx_)
   COMPLEX (DP), INTENT(out)     :: f_aux (nxx_)
@@ -773,14 +767,14 @@ SUBROUTINE maps_sticks_to_3d( dffts, f_in, nxx_, f_aux, isgn )
   IF( isgn == 2 ) THEN
      ip = 1
      nr12x = dffts%nr1x * dffts%nr2x
-     DO gproc = 1, dffts%nproc / dffts%nogrp
+     DO gproc = 1, dtgs%nproc / dtgs%nogrp
         ii = 0
-        DO ipp = 1, dffts%nogrp
+        DO ipp = 1, dtgs%nogrp
            ioff = dffts%iss( ip )
            DO i = 1, dffts%nsw( ip )
               mc = dffts%ismap( i + ioff )
-              it = ( ii + ( gproc - 1 ) * dffts%tg_ncpx ) * dffts%tg_nppx
-              DO j = 1, dffts%tg_npp( dffts%mype + 1 )
+              it = ( ii + ( gproc - 1 ) * dtgs%tg_ncpx ) * dtgs%tg_nppx
+              DO j = 1, dtgs%tg_npp( dffts%mype + 1 )
                  f_aux( mc + ( j - 1 ) * nr12x ) = f_in( j + it )
               ENDDO
               ii = ii + 1
@@ -812,7 +806,7 @@ SUBROUTINE gather_real_grid ( dfft, f_in, f_out )
   !
   REAL(DP), INTENT(in) :: f_in (:)
   REAL(DP), INTENT(inout):: f_out(:)
-  TYPE ( fft_dlay_descriptor ), INTENT(IN) :: dfft
+  TYPE ( fft_type_descriptor ), INTENT(IN) :: dfft
   !
 #if defined(__MPI)
   !
@@ -878,7 +872,7 @@ SUBROUTINE gather_complex_grid ( dfft, f_in, f_out )
   !
   COMPLEX(DP), INTENT(in) :: f_in (:)
   COMPLEX(DP), INTENT(inout):: f_out(:)
-  TYPE ( fft_dlay_descriptor ), INTENT(IN) :: dfft
+  TYPE ( fft_type_descriptor ), INTENT(IN) :: dfft
   !
 #if defined(__MPI)
   !
@@ -944,7 +938,7 @@ SUBROUTINE scatter_real_grid ( dfft, f_in, f_out )
   !
   REAL(DP), INTENT(in) :: f_in (:)
   REAL(DP), INTENT(inout):: f_out(:)
-  TYPE ( fft_dlay_descriptor ), INTENT(IN) :: dfft
+  TYPE ( fft_type_descriptor ), INTENT(IN) :: dfft
   !
 #if defined(__MPI)
   !
@@ -1012,7 +1006,7 @@ SUBROUTINE scatter_complex_grid ( dfft, f_in, f_out )
   !
   COMPLEX(DP), INTENT(in) :: f_in (:)
   COMPLEX(DP), INTENT(inout):: f_out(:)
-  TYPE ( fft_dlay_descriptor ), INTENT(IN) :: dfft
+  TYPE ( fft_type_descriptor ), INTENT(IN) :: dfft
   !
 #if defined(__MPI)
   !
@@ -1081,7 +1075,7 @@ SUBROUTINE cgather_sym( dfftp, f_in, f_out )
   INCLUDE 'mpif.h'
 #endif
   !
-  TYPE (fft_dlay_descriptor), INTENT(in) :: dfftp
+  TYPE (fft_type_descriptor), INTENT(in) :: dfftp
   COMPLEX(DP) :: f_in( : ), f_out(:)
   !
 #if defined(__MPI)
@@ -1142,7 +1136,7 @@ SUBROUTINE cgather_sym_many( dfftp, f_in, f_out, nbnd, nbnd_proc, start_nbnd_pro
   INCLUDE 'mpif.h'
 #endif
   !
-  TYPE (fft_dlay_descriptor), INTENT(in) :: dfftp
+  TYPE (fft_type_descriptor), INTENT(in) :: dfftp
   INTEGER :: nbnd, nbnd_proc(dfftp%nproc), start_nbnd_proc(dfftp%nproc)
   COMPLEX(DP) :: f_in(dfftp%nnr,nbnd)
   COMPLEX(DP) :: f_out(dfftp%nnp*dfftp%nr3x,nbnd_proc(dfftp%mype+1))
@@ -1220,7 +1214,7 @@ SUBROUTINE cscatter_sym_many( dfftp, f_in, f_out, target_ibnd, nbnd, nbnd_proc, 
   INCLUDE 'mpif.h'
 #endif
   !
-  TYPE (fft_dlay_descriptor), INTENT(in) :: dfftp
+  TYPE (fft_type_descriptor), INTENT(in) :: dfftp
   INTEGER :: nbnd, nbnd_proc(dfftp%nproc), start_nbnd_proc(dfftp%nproc)
   COMPLEX(DP) :: f_in(dfftp%nnp*dfftp%nr3x,nbnd_proc(dfftp%mype+1))
   COMPLEX(DP) :: f_out(dfftp%nnr)

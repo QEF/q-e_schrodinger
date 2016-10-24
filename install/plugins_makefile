@@ -8,126 +8,37 @@
 #
 # Makefile for plugins
 
-sinclude ../make.sys
+sinclude ../make.inc
 include plugins_list
+include install_utils
 
 # MAIN target
-EXTLIBS=liblapack libblas libiotk
-
-
-###########################################################
-# Template function
-# $(1) = package name
-# $(2) = package URL
-# $(3) = directory name
-# $(4) = plugin/code name
-###########################################################
-
-define download_and_unpack
-	@(if test ! -s ../archive/$(1).tar.gz && test ! -d ../$(3) ; then \
-	wget -O ../archive/$(1).tar.gz $(2) > /dev/null 2>&1; \
-	if test "`echo $$?`" -ne "0" ; then \
-	curl -o ../archive/$(1).tar.gz $(2) > /dev/null 2>&1; \
-	if test "`echo $$?`" -ne "0" ; then \
-	echo "*** Unable to download $(4). Test whether curl or wget is installed and working," ; \
-	echo "*** if you have direct access to internet. If not, copy into archive/ the file" ; \
-	      echo "*** $(1).tar.gz from $(2)." ; \
-	exit 1 ; fi ; fi ; fi)
-	if test ! -d ../$(3); then \
-	(gzip -dc ../archive/$(1).tar.gz | (cd ../ ; tar -xvf -)) ; fi
-	if test ! -d ../$(3); then \
-	(cd ../ ; ln -s $(1) $(3)) ; fi
-endef
-
+EXTLIBS=liblapack libiotk
 
 ###########################################################
-# LD1
+# D3Q
 ###########################################################
 
-ld1:  uncompress-ld1
-	if test -d ../atomic; then \
-	cd ../atomic; $(MAKE) all || exit 1; cd ../bin; ln -fs ../atomic/src/ld1.x . ; fi
-	touch make-ld1
-
-uncompress-ld1: touch-dummy
-	$(call download_and_unpack,$(LD1),$(LD1_URL),atomic,ld1)
-	touch uncompress-ld1
-
-###########################################################
-# XSpectra
-###########################################################
-
-xspectra:  uncompress-xspectra
-	if test -d ../XSpectra; then \
-	cd ../XSpectra; $(MAKE) all || exit 1; cd ../bin; ln -fs ../XSpectra/src/xspectra.x . ; fi
-	touch make-xspectra
-
-uncompress-xspectra: touch-dummy
-	$(call download_and_unpack,$(XSPECTRA),$(XSPECTRA_URL),XSpectra,xspectra)
-	touch uncompress-xspectra
-
-###########################################################
-# PWCOND
-###########################################################
-
-pwcond:  uncompress-pwcond
-	if test -d ../PWCOND; then \
-	cd ../PWCOND; $(MAKE) all || exit 1; cd ../bin; ln -fs ../PWCOND/src/pwcond.x . ; fi
-	touch make-pwcond
-
-uncompress-pwcond: touch-dummy
-	$(call download_and_unpack,$(PWCOND),$(PWCOND_URL),PWCOND,pwcond)
-	touch uncompress-pwcond
-
-###########################################################
-# NEB
-###########################################################
-
-neb:  uncompress-neb
-	if test -d ../NEB; then \
-	cd ../NEB; $(MAKE) all || exit 1; cd ../bin; ln -fs ../NEB/src/neb.x . ; fi
-	touch make-neb
-
-uncompress-neb: touch-dummy
-	$(call download_and_unpack,$(NEB),$(NEB_URL),NEB,neb)
-	touch uncompress-neb
-
-###########################################################
-# TDDFPT
-###########################################################
-
-tddfpt:  uncompress-tddfpt
-	if test -d ../TDDFPT; then \
-	cd ../TDDFPT; $(MAKE) all || exit 1; cd ../bin; ln -fs ../TDDFPT/src/turbo_lanczos.x . ; \
-	ln -fs ../TDDFPT/tools/turbo_spectrum.x . ; fi
-	touch make-tddfpt
-
-uncompress-tddfpt: touch-dummy
-	$(call download_and_unpack,$(TDDFPT),$(TDDFPT_URL),TDDFPT,tddfpt)
-	touch uncompress-tddfpt
-
-###########################################################
-# PHonon
-###########################################################
-
-phonon:  uncompress-phonon
-	if test -d ../PHonon; then \
-	cd ../PHonon; $(MAKE) all || exit 1; cd ../bin; \
-	ln -fs ../PHonon/PH/ph.x . ; \
-	ln -fs ../PHonon/PH/dynmat.x . ; \
-	ln -fs ../PHonon/PH/matdyn.x . ; \
-	ln -fs ../PHonon/PH/q2r.x . ; \
-	ln -fs ../PHonon/PH/q2qstar.x . ; \
-	ln -fs ../PHonon/PH/lambda.x . ; \
-	ln -fs ../PHonon/PH/fqha.x . ; \
-	ln -fs ../PHonon/Gamma/phcg.x . ; \
-	ln -fs ../PHonon/D3/d3.x . ; \
+d3q:  uncompress-d3q
+	if test -d ../D3Q; then \
+	cd ../D3Q; $(MAKE) || exit 1; \
 	fi
-	touch make-phonon
+	touch make-d3q
 
-uncompress-phonon: touch-dummy
-	$(call download_and_unpack,$(PHONON),$(PHONON_URL),PHonon,phonon)
-	touch uncompress-phonon
+uncompress-d3q: touch-dummy
+	$(call download_and_unpack,$(D3Q),$(D3Q_URL),D3Q,d3q)
+	touch uncompress-d3q
+
+d3q_clean:
+	if test -d ../D3Q; then (cd ../D3Q; $(MAKE) clean); fi
+	rm -f ../bin/d3q.x
+	rm -f ../bin/d3_*.x
+
+d3q_veryclean: d3q_clean
+	rm -f ../D3Q
+
+d3q_distclean: d3q_clean
+	rm -f ../archive/$(D3Q)
 
 ###########################################################
 # test-suite
@@ -138,8 +49,18 @@ test-suite: uncompress-test-suite
 	( cd ../test-suite ; $(MAKE) TLDEPS= run-tests || exit 1) ; fi
 
 uncompress-test-suite: touch-dummy
-	$(call download_and_unpack,$(TESTSUITE),$(TESTSUITE_URL),test-suite,test-suite)
+	$(call download_and_unpack,$(TESTSUITE),$(TESTSUITE_URL),test-suite,test-suite-6.0)
 	touch uncompress-test-suite
+
+###########################################################
+# Examples
+###########################################################
+
+examples: uncompress-examples
+
+uncompress-examples: touch-dummy
+	$(call download_and_unpack,$(EXAMPLES),$(EXAMPLES_URL),Examples,Examples-6.0)
+	touch uncompress-examples
 
 ##########################################################
 # GIPAW
@@ -160,20 +81,6 @@ configure-gipaw: touch-dummy
 	touch ./configure-gipaw
 
 ###########################################################
-# EPW
-###########################################################
-
-epw: extlibs uncompress-epw
-	if test -d ../EPW; then \
-	cd ../EPW ; $(MAKE) all ; $(MAKE) all || exit 1; cd ../bin; ln -fs ../EPW/bin/epw.x . ; fi
-	-(cd ../bin; ln -fs ../EPW/src/epw.x .)
-	touch ./make-epw
-
-uncompress-epw: touch-dummy
-	$(call download_and_unpack,$(EPW),$(EPW_URL),EPW,EPW)
-	touch uncompress-epw
-
-###########################################################
 # wannier90
 ###########################################################
 
@@ -190,7 +97,7 @@ uncompress-w90: touch-dummy
 configure-w90: touch-dummy
 	cd ../W90 ; \
 	if (test -e ../install/make_wannier90.sys) || (test -d ../W90); then \
-	(cp ../install/make_wannier90.sys ../W90/make.sys); fi 
+	(cp ../install/make_wannier90.inc ../W90/make.sys); fi 
 	touch ./configure-w90
 
 ###########################################################
@@ -247,7 +154,7 @@ uncompress-yambo: touch-dummy
 
 configure-yambo: touch-dummy
 	@(if test -z "$(F90)" ; then \
-	echo "*** F90 is not defined; please define F90 or edit make.sys" ; exit 1 ; fi)
+	echo "*** F90 is not defined; please define F90 or edit make.inc" ; exit 1 ; fi)
 	cd ../YAMBO ; \
 	./configure \
 	 --with-blas-libs="$(BLAS_LIBS)" \
@@ -272,7 +179,7 @@ uncompress-yambo-devel: touch-dummy
 
 configure-yambo-devel: touch-dummy
 	@(if test -z "$(F90)" ; then \
-	echo "*** F90 is not defined; please define F90 or edit make.sys" ; exit 1 ; fi)
+	echo "*** F90 is not defined; please define F90 or edit make.inc" ; exit 1 ; fi)
 	cd ../YAMBO_DEVEL ; \
 	./configure \
 	 --with-blas-libs="$(BLAS_LIBS)" \
@@ -371,121 +278,8 @@ extlibs:
 	test -n "$(EXTLIBS)" && ( cd .. ; $(MAKE) $(EXTLIBS) || exit 1) || :
 
 ###########################################################
-# GUI
-###########################################################
-
-gui:  uncompress-gui
-	touch make-gui
-
-uncompress-gui: touch-dummy
-	$(call download_and_unpack,$(GUI),$(GUI_URL),GUI,pwGUI)
-	touch uncompress-gui
-
-###########################################################
-# GPU
-###########################################################
-
-gpu:  uncompress-gpu
-	touch make-gpu
-
-uncompress-gpu: touch-dummy
-	$(call download_and_unpack,$(GPU),$(GPU_URL),GPU,QE-GPU)
-	@ echo ""
-	@ echo " *****************************************************************************"
-	@ echo " * QE-GPU has been downloaded under ./archive Please follow the instructions *"
-	@ echo " *   reported here: http://qe-forge.org/gf/project/q-e-gpu/                  *" 
-	@ echo " *****************************************************************************"
-	@ echo ""
-	touch uncompress-gpu
-
-###########################################################
 # cleaning
 ###########################################################
-
-# each lib independently
-ld1_clean:
-	if test -d ../atomic; then (cd ../atomic; \
-	$(MAKE) clean); fi
-	rm -f ../bin/ld1.x
-	rm -rf ./make-ld1 
-
-ld1_veryclean: ld1_clean
-# dir is not deleted for compatibility with the repository
-
-ld1_distclean: 
-	rm -f ../archive/$(LD1).tar.gz
-
-xspectra_clean:
-	if test -d ../XSpectra; then (cd ../XSpectra; \
-	$(MAKE) clean); fi
-	rm -f ../bin/xspectra.x
-	rm -rf ./make-xspectra
-
-xspectra_veryclean: xspectra_clean
-# dir is not deleted for compatibility with the repository
-
-xspectra_distclean: 
-	rm -f ../archive/$(XSPECTRA).tar.gz
-
-pwcond_clean:
-	if test -d ../PWCOND; then (cd ../PWCOND; \
-	$(MAKE) clean); fi
-	rm -f ../bin/pwcond.x
-	rm -rf ./make-pwcond
-
-pwcond_veryclean: pwcond_clean
-# dir is not deleted for compatibility with the repository
-
-pwcond_distclean:
-	rm -f ../archive/$(PWCOND).tar.gz
-
-neb_clean:
-	if test -d ../NEB; then (cd ../NEB; \
-	$(MAKE) clean); fi
-	rm -f ../bin/neb.x
-	rm -rf ./make-neb
- 
-neb_veryclean: neb_clean
-# dir is not deleted for compatibility with the repository
-
-neb_distclean: 
-	rm -f ../archive/$(NEB).tar.gz
-
-tddfpt_clean:
-	if test -d ../TDDFPT; then (cd ../TDDFPT; \
-	$(MAKE) clean); fi
-	rm -f ../bin/turbo_lanczos.x
-	rm -f ../bin/turbo_davidson.x
-	rm -f ../bin/turbo_eels.x
-	rm -f ../bin/turbo_spectrum.x
-	rm -rf ./make-tddfpt
-
-tddfpt_veryclean: tddfpt_clean 
-# dir is not deleted for compatibility with the repository
-
-tddfpt_distclean: 
-	rm -f ../archive/$(TDDFPT).tar.gz
-
-phonon_clean:
-	if test -d ../PHonon; then (cd ../PHonon; \
-	$(MAKE) clean); fi
-	rm -rf ../bin/ph.x
-	rm -rf ../bin/dynmat.x
-	rm -rf ../bin/matdyn.x
-	rm -rf ../bin/q2r.x
-	rm -rf ../bin/q2qstar.x
-	rm -rf ../bin/lambda.x
-	rm -rf ../bin/fqha.x
-	rm -rf ../bin/phcg.x
-	rm -rf ../bin/d3.x
-	rm -rf ./make-phonon 
-
-phonon_veryclean: phonon_clean
-# dir is not deleted for compatibility with the repository
-# exe links to main bin dir are deleted by PHonon Makefile
-
-phonon_distclean:
-	rm -f ../archive/$(PHONON).tar.gz
 
 gipaw_clean:
 	if test -d ../GIPAW; then (cd ../GIPAW; $(MAKE) clean); fi
@@ -501,19 +295,6 @@ gipaw_distclean:
 	#if test -d ../GIPAW; then (rm -R -f ../GIPAW ); fi
 	#if test -d ../$(GIPAW); then (rm -R -f ../$(GIPAW) ); fi
 	rm -f ../archive/$(GIPAW).tar.gz
-
-epw_clean:
-	if test -d ../EPW; then (cd ../EPW; \
-	$(MAKE) clean); fi
-	- rm -rf ./make-epw ./configure-epw
-
-epw_veryclean: epw_clean
-# dir is not deleted for compatibility with the repository
-
-epw_distclean:
-	if test -d ../EPW; then (cd ../EPW; \
-	$(MAKE) distclean); fi
-	rm -f ../archive/$(EPW).tar.gz
 
 w90_clean:
 	if test -d ../W90; then (cd ../W90; \
@@ -533,13 +314,13 @@ w90_distclean:
 want_clean:
 	if test -d ../WANT; then (cd ../WANT; \
 	$(MAKE) clean); fi
-	- rm -rf ./configure.h ./make-want ./configure-want
+	- rm -rf ./make-want ./configure-want
 
 want_veryclean: want_clean
 	if test -d ../WANT; then (rm -R -f ../WANT); fi
 	if test -d ../$(WANT); then (rm -R -f ../$(WANT)); fi
 	if test -e ../archive/$(WANT).tar.gz ; then (rm -f ../archive/$(WANT).tar.gz); fi
-	- rm -rf ./uncompress-want
+	- rm -rf ./uncompress-want ./configure.h
 
 want_distclean: 
 	rm -f ../archive/$(WANT).tar.gz
@@ -609,15 +390,7 @@ west_veryclean: west_clean
 # dir is not deleted for compatibility with the repository
 
 west_distclean: 
-	   rm -f ../archive/$(WEST).tar.gz
-
-gui_clean:
-	rm -rf ./make-gui 
-
-gui_veryclean: gui_clean
-# dir is not deleted for compatibility with the repository
-
-gui_distclean: 
+	rm -f ../archive/$(WEST).tar.gz
 
 test-suite_clean:
 	if test -d ../test-suite; then (cd ../test-suite; \
@@ -625,36 +398,26 @@ test-suite_clean:
 
 test-suite_veryclean: test-suite_clean
 
-test-suite_distclean:
+test-suite_distclean: test-suite_clean
 	rm -f ../archive/$(TESTSUITE).tar.gz
 
-gpu_clean:
-	rm -f ./make-gpu 
-
-gpu_veryclean: gpu_clean
-# dir is not deleted for compatibility with the repository
-
-gpu_distclean: 
-	rm -f ../archive/$(GPU).tar.gz
+examples_distclean:
+	rm -f ../archive/$(EXAMPLES).tar.gz
 
 ##########################################################
 # general cleaning
 ##########################################################
 
 clean: w90_clean want_clean yambo_clean yambo-devel_clean plumed_clean \
-	epw_clean gui_clean phonon_clean tddfpt_clean xspectra_clean neb_clean \
-	pwcond_clean ld1_clean gipaw_clean gpu_clean west_clean test-suite_clean \
-	sax_clean
+	gipaw_clean west_clean test-suite_clean \
+	sax_clean d3q_clean
 
 veryclean: w90_veryclean want_veryclean yambo_veryclean yambo-devel_veryclean \
-	plumed_veryclean epw_veryclean gui_veryclean phonon_veryclean \
-	tddfpt_veryclean xspectra_veryclean neb_veryclean pwcond_veryclean \
-	ld1_veryclean gipaw_veryclean gpu_veryclean west_veryclean \
-	test-suite_veryclean sax_veryclean
+	plumed_veryclean gipaw_veryclean west_veryclean \
+	test-suite_veryclean sax_veryclean d3q_veryclean
 
 #distclean : veryclean
 distclean: w90_distclean want_distclean yambo_distclean yambo-devel_distclean \
-  epw_distclean gui_distclean phonon_distclean test-suite_distclean \
-  tddfpt_distclean xspectra_distclean neb_distclean pwcond_distclean \
-  ld1_distclean gipaw_distclean gpu_distclean west_distclean sax_distclean
+  test-suite_distclean gipaw_distclean west_distclean \
+	sax_distclean d3q_distclean examples_distclean
 

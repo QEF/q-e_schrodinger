@@ -1,0 +1,14 @@
+\contentsline {section}{\numberline {1}Introduction}{2}{section.1}
+\contentsline {subsection}{\numberline {1.1}Overview}{2}{subsection.1.1}
+\contentsline {subsection}{\numberline {1.2}Collective variables}{3}{subsection.1.2}
+\contentsline {section}{\numberline {2}Step-by-step metadynamics calculations}{4}{section.2}
+\contentsline {subsection}{\numberline {2.1}Compile {\sc Quantum ESPRESSO}\ with \texttt {PLUMED} plugin}{4}{subsection.2.1}
+\contentsline {subsection}{\numberline {2.2}Running metadynamics in {\sc Quantum ESPRESSO}}{5}{subsection.2.2}
+\contentsline {subsection}{\numberline {2.3}Units in the input and output files}{5}{subsection.2.3}
+\contentsline {subsection}{\numberline {2.4}Postprocessing}{5}{subsection.2.4}
+\contentsline {section}{\numberline {3}First worked example: SN2 reaction}{6}{section.3}
+\contentsline {subsection}{\numberline {3.1}SN2 reaction in vacuum}{6}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Choice of CVs and simulation details}{6}{subsection.3.2}
+\contentsline {subsection}{\numberline {3.3}Metadynamics with Born-Oppenheimer molecular dynamics}{7}{subsection.3.3}
+\contentsline {subsubsection}{\numberline {3.3.1}Free energy reconstruction}{13}{subsubsection.3.3.1}
+\contentsline {section}{\numberline {4}Second worked example: H-H}{13}{section.4}

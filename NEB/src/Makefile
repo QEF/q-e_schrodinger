@@ -1,6 +1,6 @@
 # Makefile for NEB
 
-include ../../make.sys
+include ../../make.inc
 
 # location of needed modules and included files (if any)
 MODFLAGS= $(MOD_FLAG)../../iotk/src \
@@ -9,9 +9,6 @@ MODFLAGS= $(MOD_FLAG)../../iotk/src \
 	  $(MOD_FLAG)../../Modules \
 	  $(MOD_FLAG)../../PW/src $(MOD_FLAG).
 IFLAGS=
-
-#location of needed libraries
-LIBOBJS= ../../iotk/src/libiotk.a ../../clib/clib.a
 
 NEBOBJS = \
 neb.o \
@@ -66,7 +63,7 @@ tldeps :
 	( cd ../.. ; $(MAKE) $(TLDEPS) || exit 1 ) ; fi
 
 clean :
-	- /bin/rm -f *.x *.o *.a *~ *.F90 *.d *.mod *.i *.L
+	- /bin/rm -f *.x *.o *.a *~ *_tmp.f90 *.d *.mod *.i *.L
 	- /bin/rm -f ../../bin/neb.x
 	- /bin/rm -f ../../bin/path_interpolation.x
 

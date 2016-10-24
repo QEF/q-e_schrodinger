@@ -4,21 +4,11 @@ AC_DEFUN([X_AC_QE_LAPACK], [
 
 have_lapack=0
 
-AC_ARG_WITH(internal-lapack,
-   [AS_HELP_STRING([--with-internal-lapack],
-       [compile with internal lapack (default: no)])],
-    [if   test "$withval" = "yes" ; then
-      use_internal_lapack=1
-   else
-      use_internal_lapack=0
-   fi],
-   [use_internal_lapack=0])
-   
-# check for lapack
+# check for lapack - almost all cases implemented here are OBSOLETE
 #
 # same supported vendor replacements as for blas
 # internal version is used if none is found
-if test "$use_internal_lapack" -eq 0
+if test "$use_netlib" -eq 0
    then
    if test "$lapack_libs" = ""
    then
@@ -30,7 +20,7 @@ if test "$use_internal_lapack" -eq 0
 
         ia32:* | ia64:*| x86_64:* )
                 # check for mkl_lapack (if mkl found and acml not found)
-                # OBSOLESCENT - recent versions of mkl contain lapack
+                # OBSOLETE - recent versions of mkl contain lapack
                 if test "$have_mkl" -ne 0 && test "$have_acml" -eq 0
                 then
                         unset ac_cv_search_dspev ac_lib # clear cached value
@@ -43,7 +33,7 @@ if test "$use_internal_lapack" -eq 0
                 ;;
 
         sparc:* )
-                # check for SUNperf library
+                # check for SUNperf library - likely OBSOLETE 
                 unset ac_cv_search_dspev # clear cached value
                 FFLAGS="$test_fflags"
                 LDFLAGS="$test_ldflags"
@@ -52,7 +42,7 @@ if test "$use_internal_lapack" -eq 0
                                lapack_libs="-xlic_lib=sunperf $LIBS")
                 ;;
         aix:* )
-                # check for essl
+                # check for essl - OBSOLETE 
                 unset ac_cv_search_dspev # clear cached value
                 FFLAGS="$test_fflags"
                 LDFLAGS="$test_ldflags"
@@ -77,8 +67,7 @@ if test "$use_internal_lapack" -eq 0
                 ;;
 
         necsx:* )
-                #sx5-nec or sx6-nec or sx8-nec: check in (/SX)/usr/lib
-                #sx8-nec-idris: check in /SX/opt/mathkeisan/inst/lib0
+                # OBSOLETE
                 try_libdirs="/SX/usr/lib /SX/opt/mathkeisan/inst/lib0"
                 for dir in none $try_libdirs
                 do
@@ -138,22 +127,16 @@ if test "$use_internal_lapack" -eq 0
    fi
 fi
 
-# no lapack library found, or incomplete lapack found (atlas, essl),
-# or internal lapack esplicitly required
 
-if test "$have_lapack" -eq 0 -o "$use_internal_lapack" -eq 1 ; then
-    lapack_libs="$topdir/lapack-3.2/lapack.a"
+# No lapack library found or internal lapack esplicitly required
+
+if test "$have_lapack" -eq 0 -o "$have_blas" -eq 0 -o "$use_netlib" -eq 1 ; then
+    lapack_libs="\$(TOPDIR)/LAPACK/liblapack.a \$(TOPDIR)/LAPACK/libblas.a"
     lapack_libs_switch="internal"
+    blas_libs_switch="external"
 else
-    if test "$have_essl" -eq 1 -o "$have_atlas" -eq 1 ; then
-    # IBM essl or atlas: add missing lapack routines - must be loaded after lib
-    # atlas: add missing lapack routines so as to complete atlas
-    # note that some compilers do not like to have multiple symbols
-      lapack_libs="$lapack_libs $topdir/lapack-3.2/lapack.a"
-      lapack_libs_switch="internal"
-    else
-      lapack_libs_switch="external"
-    fi
+    lapack_libs_switch="external"
+    blas_libs_switch="external"
 fi
 
   lapack_line="LAPACK_LIBS=$lapack_libs"
@@ -161,6 +144,9 @@ fi
   AC_SUBST(lapack_libs)
   AC_SUBST(lapack_libs_switch)  
   AC_SUBST(lapack_line)
+
+  AC_SUBST(blas_libs_switch)
+  AC_SUBST(lapack_libs_switch)
   
   AC_CONFIG_FILES(install/make_lapack.inc)
   

@@ -5,6 +5,10 @@
 ! in the root directory of the present distribution,
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
+!----------------------------------------------------------------------------
+! TB
+! included monopole related variables, search for 'TB'
+!----------------------------------------------------------------------------
 !
 !----------------------------------------------------------------------------
 MODULE pw_restart
@@ -17,17 +21,6 @@ MODULE pw_restart
   !
   USE iotk_module
   !
-#ifdef __XSD
-  USE qes_module
-  USE qexsd_module, ONLY: qexsd_init_schema, qexsd_openschema, qexsd_closeschema, &
-                          qexsd_init_convergence_info, qexsd_init_algorithmic_info, & 
-                          qexsd_init_atomic_species, qexsd_init_atomic_structure, &
-                          qexsd_init_symmetries, qexsd_init_basis_set, qexsd_init_dft, &
-                          qexsd_init_magnetization,qexsd_init_band_structure,  &
-                          qexsd_init_total_energy,qexsd_init_forces,qexsd_init_stress, &
-                          qexsd_init_outputElectricField
-            
-#endif
   USE qexml_module, ONLY: qexml_init,qexml_openfile, qexml_closefile, &
                           qexml_write_header, qexml_write_control ,   &
                           qexml_write_cell, qexml_write_moving_cell,  &
@@ -51,10 +44,7 @@ MODULE pw_restart
   USE kinds,     ONLY : DP
   USE constants, ONLY : e2, PI
   !
-#ifdef __XSD
-  USE io_files,  ONLY : iunpun_xsd, xmlpun_schema
-#endif
-USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
+  USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
                         qexml_version, qexml_version_init, pseudo_dir
   !
   USE io_global, ONLY : ionode, ionode_id
@@ -73,10 +63,8 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
   !
   PRIVATE
   !
-  PUBLIC :: pw_writefile, pw_readfile
-#ifdef __XSD
-  PUBLIC :: pw_write_schema
-#endif
+  PUBLIC :: pw_readfile, pw_writefile
+  PUBLIC :: gk_l2gmap, gk_l2gmap_kdip
   !
   INTEGER, PRIVATE :: iunout
   !
@@ -96,394 +84,15 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
   !
   CONTAINS
   !
-#ifdef __XSD
-    !------------------------------------------------------------------------
-    SUBROUTINE pw_write_schema( what )
-      !------------------------------------------------------------------------
-      !
-      USE control_flags,        ONLY : istep, twfcollect, conv_ions, &
-                                       lscf, lkpoint_dir, gamma_only, &
-                                       tqr, noinv, do_makov_payne, smallmem, &
-                                       llondon, lxdm, ts_vdw, scf_error, n_scf_steps
-      USE realus,               ONLY : real_space
-      USE uspp,                 ONLY : okvan
-      USE paw_variables,        ONLY : okpaw
-      USE uspp_param,           ONLY : upf
-      USE global_version,       ONLY : version_number
-      USE cell_base,            ONLY : at, bg, alat, tpiba, tpiba2, &
-                                       ibrav, celldm
-      USE gvect,                ONLY : ig_l2g
-      USE ions_base,            ONLY : nsp, ityp, atm, nat, tau, if_pos
-      USE noncollin_module,     ONLY : noncolin, npol
-      USE io_files,             ONLY : nwordwfc, iunwfc, psfile
-      USE buffers,              ONLY : get_buffer
-      USE wavefunctions_module, ONLY : evc
-      USE klist,                ONLY : nks, nkstot, xk, ngk, wk, qnorm, &
-                                       lgauss, ngauss, degauss, nelec, &
-                                       two_fermi_energies, nelup, neldw
-      USE start_k,              ONLY : nk1, nk2, nk3, k1, k2, k3, &
-                                       nks_start, xk_start, wk_start
-      USE ktetra,               ONLY : ntetra, tetra, ltetra
-      USE gvect,                ONLY : ngm, ngm_g, g, mill
-      USE fft_base,             ONLY : dfftp
-      USE basis,                ONLY : natomwfc
-      USE gvecs,                ONLY : ngms_g, dual
-      USE fft_base,             ONLY : dffts
-      USE wvfct,                ONLY : npwx, et, wg, nbnd
-      USE ener,                 ONLY : ef, ef_up, ef_dw, vtxc, etxc, ewld, etot, &
-                                       ehart, eband, demet 
-      USE gvecw,                ONLY : ecutwfc
-      USE fixed_occ,            ONLY : tfixed_occ, f_inp
-      USE ldaU,                 ONLY : lda_plus_u, lda_plus_u_kind, U_projection, &
-                                       Hubbard_lmax, Hubbard_l, Hubbard_U, Hubbard_J, &
-                                       Hubbard_alpha, Hubbard_J0, Hubbard_beta,&
-                                       is_hubbard
-      USE spin_orb,             ONLY : lspinorb, domag
-      USE symm_base,            ONLY : nrot, nsym, invsym, s, ft, irt, &
-                                       t_rev, sname, time_reversal, no_t_rev
-      USE lsda_mod,             ONLY : nspin, isk, lsda, starting_magnetization, magtot, absmag
-      USE noncollin_module,     ONLY : angle1, angle2, i_cons, mcons, bfield, magtot_nc, &
-                                       lambda
-      USE ions_base,            ONLY : amass
-      USE funct,                ONLY : get_dft_name, get_inlc, get_nonlocc_name, dft_is_nonlocc
-      USE kernel_table,         ONLY : vdw_table_name
-      USE scf,                  ONLY : rho
-      USE force_mod,            ONLY : lforce, sumfor, force, sigma, lstres
-      USE extfield,             ONLY : tefield, dipfield, edir, etotefield, &
-                                       emaxpos, eopreg, eamp
-      USE io_rho_xml,           ONLY : write_rho
-      USE mp_world,             ONLY : nproc
-      USE mp_images,            ONLY : nproc_image
-      USE mp_pools,             ONLY : kunit, nproc_pool, me_pool, root_pool, &
-                                       intra_pool_comm, inter_pool_comm
-      USE mp_bands,             ONLY : nproc_bgrp, me_bgrp, root_bgrp, &
-                                       intra_bgrp_comm, nbgrp, ntask_groups
-      USE mp_diag,              ONLY : nproc_ortho
-      USE funct,                ONLY : get_exx_fraction, dft_is_hybrid, &
-                                       get_gau_parameter, &
-                                       get_screening_parameter, exx_is_active
-      USE exx,                  ONLY : x_gamma_extrapolation, nq1, nq2, nq3, &
-                                       exxdiv_treatment, yukawa, ecutvcut, ecutfock
-      USE cellmd,               ONLY : lmovecell, cell_factor 
-      USE martyna_tuckerman,    ONLY : do_comp_mt
-      USE esm,                  ONLY : do_comp_esm, esm_nfit, esm_efield, esm_w, &
-                                       esm_a, esm_bc
-      USE london_module,        ONLY : scal6, lon_rcut, in_c6
-      USE xdm_module,           ONLY : xdm_a1=>a1i, xdm_a2=>a2i
-      USE tsvdw_module,         ONLY : vdw_isolated, vdw_econv_thr
-      USE input_parameters,     ONLY : space_group, verbosity, calculation, ion_dynamics, starting_ns_eigenvalue, &
-                                       vdw_corr, london, input_parameters_occupations => occupations
-      USE bp,                   ONLY : lelfield, lberry, bp_mod_el_pol => el_pol, bp_mod_ion_pol => ion_pol
-      !
-      USE rap_point_group,      ONLY : elem, nelem, name_class
-      USE rap_point_group_so,   ONLY : elem_so, nelem_so, name_class_so
-      USE bfgs_module,          ONLY : bfgs_get_n_iter
-      USE qexsd_module,         ONLY : qexsd_dipol_obj, qexsd_bp_obj
-     
-      !
-      IMPLICIT NONE
-      !
-      CHARACTER(LEN=*), INTENT(IN) :: what
-      !
-      CHARACTER(15)         :: subname="pw_write_schema"
-      CHARACTER(LEN=20)     :: dft_name
-      CHARACTER(LEN=256)    :: dirname, filename
-      CHARACTER(LEN=80)     :: vdw_corr_
-      INTEGER               :: i, ig, ik, ngg, ierr, ipol, num_k_points
-      INTEGER               :: npool, nkbl, nkl, nkr, npwx_g
-      INTEGER               :: ike, iks, npw_g, ispin, inlc
-      INTEGER,  ALLOCATABLE :: ngk_g(:)
-      INTEGER,  ALLOCATABLE :: igk_l2g(:,:), igk_l2g_kdip(:,:), mill_g(:,:)
-      LOGICAL               :: lwfc, lrho, lxsd, occupations_are_fixed
-      CHARACTER(iotk_attlenx)  :: attr
-      INTEGER                  :: iclass, isym, ielem
-      CHARACTER(LEN=15)        :: symop_2_class(48)
-      LOGICAL                  :: opt_conv_ispresent
-      INTEGER                  :: n_opt_steps, h_band
-      REAL(DP)                 :: h_energy
-      !
-      TYPE(output_type) :: output
-      
-      !
-      ! PW dimensions need to be properly computed 
-      ! reducing across MPI tasks
-      !
-      ALLOCATE( ngk_g( nkstot ) )
-      !
-      ngk_g(1:nks) = ngk(:)
-      CALL mp_sum( ngk_g(1:nks), intra_bgrp_comm )
-      CALL ipoolrecover( ngk_g, 1, nkstot, nks )
-      !CALL mp_bcast( ngk_g, root_bgrp, intra_bgrp_comm )
-      !CALL mp_bcast( ngk_g, root_bgrp, inter_bgrp_comm )
-
-      !
-      ! ... compute the maximum number of G vector among all k points
-      !
-      npwx_g = MAXVAL( ngk_g(1:nkstot) )
-      !
-      !DEALLOCATE( ngk_g )
-      ! do not deallocate ngk_g here, please, I need it for band_structure_init
-      ! P. Delugas 
-      !
-      ! ... find out the global number of G vectors: ngm_g
-      !
-      ngm_g = ngm
-      CALL mp_sum( ngm_g, intra_bgrp_comm )
-      ! 
-      IF (tefield .AND. dipfield ) THEN 
-          CALL init_dipole_info(qexsd_dipol_obj, rho%of_r)   
-          qexsd_dipol_obj%tagname = "dipoleInfo"
-      END IF
-      ! 
-      !
-      ! XML descriptor
-      ! 
-      dirname = TRIM( tmp_dir ) // TRIM( prefix ) // '.save'
-      !
-      CALL qexsd_init_schema( iunpun_xsd )
-      !
-      !
-      IF ( ionode ) THEN  
-         !
-         ! ... here we init the variables and finally write them to file
-         !
-!-------------------------------------------------------------------------------
-! ... HEADER
-!-------------------------------------------------------------------------------
-         !
-         CALL qexsd_openschema(TRIM( dirname ) // '/' // TRIM( xmlpun_schema ))
-         output%tagname="output"
-         !
-!-------------------------------------------------------------------------------
-! ... CONVERGENCE_INFO
-!-------------------------------------------------------------------------------
-         !
-         ! AF: convergence vars should be better traced
-         !     n_opt_steps var still missing
-         !
-         SELECT CASE (TRIM( calculation )) 
-            CASE ( "relax","vc-relax" )
-                opt_conv_ispresent = .TRUE.
-                IF (TRIM( ion_dynamics) == 'bfgs' ) THEN 
-                    n_opt_steps = bfgs_get_n_iter('bfgs_iter ') 
-                ELSE 
-                    n_opt_steps = istep 
-                END IF 
-            CASE default
-                opt_conv_ispresent = .FALSE.
-                n_opt_steps        = 0 
-         END SELECT
-         ! 
-         call qexsd_init_convergence_info(output%convergence_info, &
-                                          n_scf_steps=n_scf_steps, scf_error=scf_error, &
-                                          opt_conv_ispresent=lforce, &
-                                          n_opt_steps=n_opt_steps, grad_norm=sumfor )
-         !
-!-------------------------------------------------------------------------------
-! ... ALGORITHMIC_INFO
-!-------------------------------------------------------------------------------
-         !
-         CALL qexsd_init_algorithmic_info(output%algorithmic_info, &
-                                          real_space_q=real_space, uspp=okvan, paw=okpaw)
-         !
-!-------------------------------------------------------------------------------
-! ... ATOMIC_SPECIES
-!-------------------------------------------------------------------------------
-         !
-         ! while amass's are always present, starting_mag should not be passed
-         ! for nspin==1 or contrained magnetization calculations
-         !
-         IF (noncolin) THEN
-             CALL qexsd_init_atomic_species(output%atomic_species, nsp, atm, psfile, &
-                                        amass, angle1=angle1,angle2=angle2)
-         ELSE IF (nspin==2) THEN 
-             CALL qexsd_init_atomic_species(output%atomic_species, nsp, atm, psfile, &
-                                           amass,starting_magnetization=starting_magnetization)
-         ELSE 
-             CALL qexsd_init_atomic_species(output%atomic_species, nsp, atm,psfile, &
-                                          amass)
-         END IF
-         !
-!-------------------------------------------------------------------------------
-! ... ATOMIC_STRUCTURE
-!-------------------------------------------------------------------------------
-         !         
-         CALL qexsd_init_atomic_structure(output%atomic_structure, nsp, atm, ityp, &
-                       nat, tau, 'Bohr', alat, at(:,1), at(:,2), at(:,3), ibrav )
-         !
-!-------------------------------------------------------------------------------
-! ... SYMMETRIES
-!-------------------------------------------------------------------------------
-         !
-         symop_2_class="not found"
-         IF (TRIM (verbosity) == 'medium' .OR. TRIM(verbosity) == 'high') THEN
-            IF ( noncolin )  THEN 
-               symmetries_so_loop:DO isym = 1, nsym 
-                  classes_so_loop:DO iclass = 1, 24
-                     elements_so_loop:DO ielem=1, nelem_so(iclass)
-                        IF ( elem_so(ielem,iclass) == isym) THEN 
-                           symop_2_class(isym) = name_class_so(iclass)
-                           EXIT symmetries_so_loop
-                        END IF
-                     END DO elements_so_loop 
-                  END DO classes_so_loop
-               END DO symmetries_so_loop
-            !
-            ELSE
-               symmetries_loop:DO isym = 1, nsym
-                  classes_loop:DO iclass = 1, 12
-                     elements_loop:DO ielem=1, nelem (iclass)
-                        IF ( elem(ielem,iclass) == isym) THEN
-                           symop_2_class(isym) = name_class(iclass)
-                           EXIT classes_loop
-                        END IF
-                     END DO elements_loop
-                  END DO classes_loop
-               END DO symmetries_loop
-            END IF
-         END IF
-         CALL qexsd_init_symmetries(output%symmetries, nsym, nrot, space_group, &
-                                    s, ft, sname, t_rev, nat, irt,symop_2_class(1:nsym), verbosity, &
-                                    noncolin)
-         !
-!-------------------------------------------------------------------------------
-! ... BASIS SET
-!-------------------------------------------------------------------------------
-         !
-         CALL qexsd_init_basis_set(output%basis_set, gamma_only, ecutwfc, ecutwfc*dual, &
-                                   dfftp%nr1, dfftp%nr2, dfftp%nr3, dffts%nr1, dffts%nr2, dffts%nr3, &
-                                   .FALSE., dfftp%nr1, dfftp%nr2, dfftp%nr3, ngm_g, ngms_g, npwx_g, &
-                                   bg(:,1), bg(:,2), bg(:,3) )
-         !
-!-------------------------------------------------------------------------------
-! ... DFT
-!-------------------------------------------------------------------------------
-         !
-         dft_name = get_dft_name()
-         inlc = get_inlc()
-         !
-         IF ( lda_plus_u .AND. noncolin) CALL errore(subname,"LDA+U and non-collinear case not implemented in qexsd",10)
-         !
-         vdw_corr_ = vdw_corr
-         IF ( london ) vdw_corr_ = 'grimme-d2'
-         CALL qexsd_init_dft(output%dft, dft_name, .TRUE., &
-                             dft_is_hybrid(), nq1, nq2, nq3, ecutfock, &
-                             get_exx_fraction(), get_screening_parameter(), exxdiv_treatment, &
-                             x_gamma_extrapolation, ecutvcut, lda_plus_u, lda_plus_u_kind, 2*Hubbard_lmax+1, &
-                             nspin, nsp, 2*Hubbard_lmax+1, nat, atm, ityp, Hubbard_U, Hubbard_J0, Hubbard_alpha, &
-                             Hubbard_beta, Hubbard_J, starting_ns_eigenvalue, rho%ns, rho%ns_nc, U_projection, &
-                             dft_is_nonlocc(), TRIM(vdw_corr_), TRIM ( get_nonlocc_name()), scal6, in_c6, lon_rcut, xdm_a1, xdm_a2,&
-                             vdw_econv_thr, vdw_isolated, is_hubbard, upf(1:nsp)%psd)
-         !
-!-------------------------------------------------------------------------------
-! ... MAGNETIZATION
-!-------------------------------------------------------------------------------
-         !
-         CALL qexsd_init_magnetization(output%magnetization, lsda, noncolin, lspinorb, &
-                                       magtot, magtot_nc, absmag, domag )
-         !
-
-!--------------------------------------------------------------------------------------
-! ... BAND STRUCTURE
-!-------------------------------------------------------------------------------------
-         !
-         IF (TRIM(input_parameters_occupations) == 'fixed') THEN 
-            occupations_are_fixed = .TRUE. 
-            IF ( nspin == 1 ) THEN 
-               h_band = NINT ( nelec/2.d0) 
-            ELSE 
-               h_band = NINT ( nelec ) 
-            END IF  
-            h_energy =MAXVAL (et(h_band, 1:nkstot))
-         ELSE 
-            occupations_are_fixed = .FALSE. 
-            h_energy  = ef 
-         END IF 
-         CALL  qexsd_init_band_structure(output%band_structure,lsda,noncolin,lspinorb, &
-                                         nbnd,nelec,occupations_are_fixed, h_energy,two_fermi_energies, [ef_up,ef_dw],&
-                                         et,wg,nkstot,xk,ngk_g,wk)
-         !
-!-------------------------------------------------------------------------------------------
-! ... TOTAL ENERGY
-!-------------------------------------------------------------------------------------------
-         !
-         IF (tefield) THEN
-            CALL  qexsd_init_total_energy(output%total_energy,etot,eband,ehart,vtxc,etxc, &
-                                       ewld,degauss,demet, etotefield)
-         ELSE 
-            CALL  qexsd_init_total_energy(output%total_energy,etot,eband,ehart,vtxc,etxc, &
-                                       ewld,degauss,demet)
-         END IF
-         !
-!---------------------------------------------------------------------------------------------
-! ... FORCES
-!----------------------------------------------------------------------------------------------
-         !
-         IF ( lforce ) THEN
-            output%forces_ispresent = .TRUE.
-            CALL qexsd_init_forces(output%forces,nat,force,lforce)
-         ELSE
-            output%forces_ispresent = .FALSE.
-            output%forces%lwrite = .FALSE.
-         END IF
-         !
-!------------------------------------------------------------------------------------------------
-! ... STRESS 
-!------------------------------------------------------------------------------------------------
-         IF ( lstres) THEN
-            output%stress_ispresent=.TRUE.
-            CALL qexsd_init_stress(output%stress, sigma, lstres ) 
-         ELSE 
-            output%stress_ispresent=.FALSE.
-            output%stress%lwrite=.FALSE.
-         END IF
-!-------------------------------------------------------------------------------------------------
-! ... ELECTRIC FIELD
-!-------------------------------------------------------------------------------------------------
-         IF ( lelfield ) THEN
-            output%electric_field_ispresent = .TRUE. 
-            CALL qexsd_init_outputElectricField(output%electric_field, lelfield, tefield, dipfield, &
-                                                lberry, el_pol = bp_mod_el_pol, ion_pol = bp_mod_ion_pol) 
-         ELSE IF ( lberry ) THEN 
-            output%electric_field_ispresent = .TRUE.
-            CALL qexsd_init_outputElectricField(output%electric_field, lelfield, tefield, dipfield, & 
-                                                lberry, bp_obj=qexsd_bp_obj) 
-         ELSE IF ( tefield .AND. dipfield  ) THEN 
-            output%electric_field_ispresent = .TRUE.
-            CALL  qexsd_init_outputElectricField(output%electric_field, lelfield, tefield, dipfield, &
-                                                  lberry, dipole_obj = qexsd_dipol_obj )                     
-         ELSE 
-            output%electric_field_ispresent = .FALSE.
-         ENDIF
-!------------------------------------------------------------------------------------------------
-! ... ACTUAL WRITING
-!-------------------------------------------------------------------------------
-         !
-         CALL qes_write_output(iunpun_xsd,output)
-         CALL qes_reset_output(output)
-         !
-!-------------------------------------------------------------------------------
-! ... CLOSING
-!-------------------------------------------------------------------------------
-         !
-         CALL qexsd_closeschema()
-         !
-      END IF
-      DEALLOCATE (ngk_g)
-      !
-      RETURN
-       !
-    END SUBROUTINE pw_write_schema
-    !
-#endif
     !------------------------------------------------------------------------
     SUBROUTINE pw_writefile( what )
       !------------------------------------------------------------------------
       !
       USE control_flags,        ONLY : twfcollect, conv_ions, &
                                        lscf, lkpoint_dir, gamma_only, &
-                                       tqr, noinv, do_makov_payne, smallmem, &
-                                       llondon, lxdm, ts_vdw
+                                       tqr, tq_smoothing, tbeta_smoothing, &
+                                       noinv, do_makov_payne, smallmem, &
+                                       llondon, lxdm, ts_vdw 
       USE realus,               ONLY : real_space
       USE global_version,       ONLY : version_number
       USE cell_base,            ONLY : at, bg, alat, tpiba, tpiba2, &
@@ -523,7 +132,9 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
       USE kernel_table,         ONLY : vdw_table_name
       USE scf,                  ONLY : rho
       USE extfield,             ONLY : tefield, dipfield, edir, &
-                                       emaxpos, eopreg, eamp
+                                       emaxpos, eopreg, eamp, & !TB
+                                       monopole, zmon, block, block_1, &
+                                       block_2, block_height, relaxz
       USE io_rho_xml,           ONLY : write_rho
       USE mp_world,             ONLY : nproc
       USE mp_images,            ONLY : nproc_image
@@ -553,8 +164,9 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
       CHARACTER(LEN=20)     :: dft_name
       CHARACTER(LEN=256)    :: dirname, filename
       INTEGER               :: i, ig, ik, ngg, ierr, ipol, num_k_points
-      INTEGER               :: npool, nkbl, nkl, nkr, npwx_g
+      INTEGER               :: nkl, nkr, npwx_g
       INTEGER               :: ike, iks, npw_g, ispin, inlc
+      INTEGER, EXTERNAL     :: global_kpoint_index
       INTEGER,  ALLOCATABLE :: ngk_g(:)
       INTEGER,  ALLOCATABLE :: igk_l2g(:,:), igk_l2g_kdip(:,:), mill_g(:,:)
       LOGICAL               :: lwfc, lrho, lxsd
@@ -621,39 +233,8 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
          !
       END IF
       !
-      IF ( nkstot > 0 ) THEN
-         !
-         ! ... find out the number of pools
-         !
-         npool = nproc_image / nproc_pool
-         !
-         ! ... find out number of k points blocks
-         !
-         nkbl = nkstot / kunit
-         !
-         ! ... k points per pool
-         !
-         nkl = kunit * ( nkbl / npool )
-         !
-         ! ... find out the reminder
-         !
-         nkr = ( nkstot - nkl * npool ) / kunit
-         !
-         ! ... Assign the reminder to the first nkr pools
-         !
-         IF ( my_pool_id < nkr ) nkl = nkl + kunit
-         !
-         ! ... find out the index of the first k point in this pool
-         !
-         iks = nkl*my_pool_id + 1
-         !
-         IF ( my_pool_id >= nkr ) iks = iks + nkr*kunit
-         !
-         ! ... find out the index of the last k point in this pool
-         !
-         ike = iks + nkl - 1
-         !
-      END IF
+      iks =  global_kpoint_index (nkstot, 1  )
+      ike = iks + nks - 1
       !
       ! ... find out the global number of G vectors: ngm_g
       !
@@ -761,7 +342,8 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
 !-------------------------------------------------------------------------------
          !
          CALL qexml_write_control( PP_CHECK_FLAG=conv_ions, LKPOINT_DIR=lkpoint_dir, &
-                             Q_REAL_SPACE=tqr, BETA_REAL_SPACE=real_space )
+                            Q_REAL_SPACE=tqr, TQ_SMOOTHING=tq_smoothing, &
+                            BETA_REAL_SPACE=real_space, TBETA_SMOOTHING=tbeta_smoothing )
          !
 !-------------------------------------------------------------------------------
 ! ... CELL
@@ -793,7 +375,9 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
 ! ... ELECTRIC FIELD
 !-------------------------------------------------------------------------------
          !
-         CALL qexml_write_efield( tefield, dipfield, edir, emaxpos, eopreg, eamp) 
+         CALL qexml_write_efield( tefield, dipfield, edir, emaxpos, eopreg, eamp, &
+                                  monopole, zmon, relaxz, block, block_1, block_2,&
+                                  block_height ) 
          !
 !
 !-------------------------------------------------------------------------------
@@ -985,6 +569,10 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
       !
       CALL errore( 'pw_writefile ', 'cannot save history', ierr )
       !
+      CALL mp_bcast( ierr, ionode_id, intra_image_comm )
+      !
+      CALL errore( 'pw_writefile ', 'cannot save history', ierr )
+      !
       RETURN
       !
       CONTAINS
@@ -993,6 +581,12 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
         SUBROUTINE write_gk( iun, ik, filename )
           !--------------------------------------------------------------------
           !
+#if defined __HDF5
+          USE hdf5_qe,   ONLY :  prepare_for_writing_final, write_gkhdf5, &
+                                 gk_hdf5_write, h5fclose_f
+          USE io_files,  ONLY : tmp_dir
+#endif
+
           IMPLICIT NONE
           !
           INTEGER,            INTENT(IN) :: iun, ik
@@ -1000,6 +594,8 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
           !
           INTEGER, ALLOCATABLE :: igwk(:,:)
           INTEGER, ALLOCATABLE :: itmp(:)
+          CHARACTER(LEN = 256) :: filename_hdf5
+          INTEGER              :: ierr 
           !
           !
           ALLOCATE( igwk( npwx_g, nkstot ) )
@@ -1041,6 +637,14 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
           !
           IF ( ionode ) THEN
              !
+#if defined __HDF5
+             filename_hdf5=trim(tmp_dir) //"gk.hdf5"
+             CALL prepare_for_writing_final(gk_hdf5_write,inter_pool_comm,filename_hdf5,ik)
+             CALL write_gkhdf5(gk_hdf5_write,xk(:,ik),igwk(1:ngk_g(ik),ik), &
+                              mill_g(1:3,igwk(1:ngk_g(ik),ik)),ik)
+             CALL h5fclose_f(gk_hdf5_write%file_id, ierr)
+#else
+
              CALL iotk_open_write( iun, FILE = TRIM( filename ), &
                                    ROOT="GK-VECTORS", BINARY = .TRUE. )
              !
@@ -1057,11 +661,13 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
              !
              CALL iotk_close_write( iun )
              !
+#endif
           END IF
           !
           DEALLOCATE( igwk )
           !
         END SUBROUTINE write_gk
+        !
         !
         !--------------------------------------------------------------------
         SUBROUTINE write_this_wfc ( iun, ik )
@@ -1077,7 +683,7 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
           ! ...                 read only if on this pool (iks <= ik <= ike )
           !
           IF ( ( nks > 1 ) .AND. ( ik >= iks ) .AND. ( ik <= ike ) ) THEN
-              CALL get_buffer ( evc, nwordwfc, iunwfc, (ik-iks+1) )
+             CALL get_buffer ( evc, nwordwfc, iunwfc, (ik-iks+1) )
           END IF
           !
           IF ( nspin == 2 ) THEN
@@ -1090,20 +696,20 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
              IF ( ionode ) THEN
                 !
                 filename = qexml_wfc_filename( ".", 'evc', ik, ispin, &
-                                                     DIR=lkpoint_dir )
+                     DIR=lkpoint_dir )
                 !
                 CALL iotk_link( iunpun, "WFC" // TRIM( iotk_index (ispin) ), &
-                                  filename, CREATE = .FALSE., BINARY = .TRUE. )
+                     filename, CREATE = .FALSE., BINARY = .TRUE. )
                 !
                 filename = qexml_wfc_filename( dirname, 'evc', ik, ispin, & 
-                                           DIR=lkpoint_dir )
+                     DIR=lkpoint_dir )
                 !
              END IF
              !
              CALL write_wfc( iunout, ik, nkstot, kunit, ispin, nspin, &
-                             evc, npw_g, gamma_only, nbnd, igk_l2g_kdip(:,ik-iks+1),   &
-                             ngk(ik-iks+1), filename, 1.D0, &
-                             ionode, root_pool, intra_pool_comm, inter_pool_comm, intra_image_comm )
+                  evc, npw_g, gamma_only, nbnd, igk_l2g_kdip(:,ik-iks+1),   &
+                  ngk(ik-iks+1), filename, 1.D0, &
+                  ionode, root_pool, intra_pool_comm, inter_pool_comm, intra_image_comm )
              !
              ik_eff = ik + num_k_points
              !
@@ -1121,20 +727,20 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
              IF ( ionode ) THEN
                 !
                 filename = qexml_wfc_filename( ".", 'evc', ik, ispin, &
-                                                     DIR=lkpoint_dir )
+                     DIR=lkpoint_dir )
                 !
                 CALL iotk_link( iunpun, "WFC"//TRIM( iotk_index( ispin ) ), &
-                                filename, CREATE = .FALSE., BINARY = .TRUE. )
+                     filename, CREATE = .FALSE., BINARY = .TRUE. )
                 !
                 filename = qexml_wfc_filename( dirname, 'evc', ik, ispin, &
-                            DIR=lkpoint_dir )
+                     DIR=lkpoint_dir )
                 !
              END IF
              !
              CALL write_wfc( iunout, ik_eff, nkstot, kunit, ispin, nspin, &
-                             evc, npw_g, gamma_only, nbnd, igk_l2g_kdip(:,ik_eff-iks+1), &
-                             ngk(ik_eff-iks+1), filename, 1.D0, &
-                             ionode, root_pool, intra_pool_comm, inter_pool_comm, intra_image_comm )
+                  evc, npw_g, gamma_only, nbnd, igk_l2g_kdip(:,ik_eff-iks+1), &
+                  ngk(ik_eff-iks+1), filename, 1.D0, &
+                  ionode, root_pool, intra_pool_comm, inter_pool_comm, intra_image_comm )
              !
           ELSE
              !
@@ -1145,13 +751,13 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
                    IF ( ionode ) THEN
                       !
                       filename = qexml_wfc_filename( ".", 'evc', ik, ipol, &
-                                              DIR=lkpoint_dir )
+                           DIR=lkpoint_dir )
                       !
                       CALL iotk_link(iunpun,"WFC"//TRIM(iotk_index(ipol)), &
-                               filename, CREATE = .FALSE., BINARY = .TRUE. )
+                           filename, CREATE = .FALSE., BINARY = .TRUE. )
                       !
                       filename = qexml_wfc_filename( dirname, 'evc', ik, ipol, &
-                             DIR=lkpoint_dir)
+                           DIR=lkpoint_dir)
                       !
                    END IF
                    !
@@ -1161,10 +767,10 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
                    nkl=(ipol-1)*npwx+1
                    nkr= ipol   *npwx
                    CALL write_wfc( iunout, ik, nkstot, kunit, ipol, npol,   &
-                                   evc(nkl:nkr,:), npw_g, gamma_only, nbnd, &
-                                   igk_l2g_kdip(:,ik-iks+1), ngk(ik-iks+1), &
-                                   filename, 1.D0, &
-                                   ionode, root_pool, intra_pool_comm, inter_pool_comm, intra_image_comm )
+                        evc(nkl:nkr,:), npw_g, gamma_only, nbnd, &
+                        igk_l2g_kdip(:,ik-iks+1), ngk(ik-iks+1), &
+                        filename, 1.D0, &
+                        ionode, root_pool, intra_pool_comm, inter_pool_comm, intra_image_comm )
                    !
                 END DO
                 !
@@ -1177,26 +783,26 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
                    filename = qexml_wfc_filename( ".", 'evc', ik, DIR=lkpoint_dir )
                    !
                    CALL iotk_link( iunpun, "WFC", filename, &
-                                   CREATE = .FALSE., BINARY = .TRUE. )
+                        CREATE = .FALSE., BINARY = .TRUE. )
                    !
                    filename =qexml_wfc_filename( dirname, 'evc', ik, &
-                                                      DIR=lkpoint_dir )
+                        DIR=lkpoint_dir )
                    !
                 END IF
                 !
                 CALL write_wfc( iunout, ik, nkstot, kunit, ispin, nspin, &
-                                evc, npw_g, gamma_only, nbnd,            &
-                                igk_l2g_kdip(:,ik-iks+1),                &
-                                ngk(ik-iks+1), filename, 1.D0, &
-                                ionode, root_pool, intra_pool_comm, inter_pool_comm, intra_image_comm )
+                     evc, npw_g, gamma_only, nbnd,            &
+                     igk_l2g_kdip(:,ik-iks+1),                &
+                     ngk(ik-iks+1), filename, 1.D0, &
+                     ionode, root_pool, intra_pool_comm, inter_pool_comm, intra_image_comm )
                 !
              END IF
              !
           END IF
           !
-       END SUBROUTINE write_this_wfc
-       !
-    END SUBROUTINE pw_writefile
+        END SUBROUTINE write_this_wfc
+        !
+      END SUBROUTINE pw_writefile
     !
     !------------------------------------------------------------------------
     SUBROUTINE pw_readfile( what, ierr )
@@ -1560,8 +1166,6 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
 
 
 100   CALL errore('pw_readfile',TRIM(errmsg),ierr)
-
-
       !
     END SUBROUTINE pw_readfile
     !
@@ -1733,8 +1337,8 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
       RETURN
       !
     END SUBROUTINE read_dim
-    !
-    !------------------------------------------------------------------------
+    ! 
+    !--------------------------------------------------------------------------
     SUBROUTINE read_cell( ierr )
       !------------------------------------------------------------------------
       !
@@ -1871,6 +1475,7 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
       RETURN
       !
     END SUBROUTINE read_cell
+    !
     !
     !------------------------------------------------------------------------
     SUBROUTINE read_ions( dirname, ierr )
@@ -2043,7 +1648,8 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
     SUBROUTINE read_efield( ierr )
       !----------------------------------------------------------------------
       !
-      USE extfield, ONLY : tefield, dipfield, edir, emaxpos, eopreg, eamp
+      USE extfield, ONLY : tefield, dipfield, edir, emaxpos, eopreg, eamp, & !TB
+                           monopole, zmon, relaxz, block, block_1, block_2, block_height
       !
       IMPLICIT NONE
       !
@@ -2058,7 +1664,9 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
          !
          CALL qexml_read_efield( TEFIELD=tefield, DIPFIELD=dipfield, EDIR=edir, &
                                  EMAXPOS=emaxpos, EOPREG=eopreg, EAMP=eamp, &
-                                 FOUND=found, IERR=ierr )
+                                 MONOPOLE=monopole, ZMON=zmon, RELAXZ=relaxz, & !TB
+                                 BLOCK=block, BLOCK_1=block_1, BLOCK_2=block_2, &
+                                 BLOCK_HEIGHT=block_height, FOUND=found, IERR=ierr )
       ENDIF
       !
       CALL mp_bcast( ierr, ionode_id, intra_image_comm )
@@ -2069,6 +1677,7 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
          !
          tefield  = .FALSE.
          dipfield = .FALSE.
+         monopole = .FALSE.
          !
       END IF
       !
@@ -2078,6 +1687,13 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
       CALL mp_bcast( emaxpos,  ionode_id, intra_image_comm )
       CALL mp_bcast( eopreg,   ionode_id, intra_image_comm )
       CALL mp_bcast( eamp,     ionode_id, intra_image_comm )
+      CALL mp_bcast( monopole, ionode_id, intra_image_comm )
+      CALL mp_bcast( zmon,     ionode_id, intra_image_comm )
+      CALL mp_bcast( relaxz,   ionode_id, intra_image_comm )
+      CALL mp_bcast( block,    ionode_id, intra_image_comm )
+      CALL mp_bcast( block_1,  ionode_id, intra_image_comm )
+      CALL mp_bcast( block_2,  ionode_id, intra_image_comm )
+      CALL mp_bcast( block_height, ionode_id, intra_image_comm )
       !
       lefield_read = .TRUE.
       !
@@ -2321,6 +1937,21 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
          CALL mp_bcast( Hubbard_beta,  ionode_id, intra_image_comm )
          !
       END IF
+      !
+      IF ( llondon ) THEN
+         CALL mp_bcast( scal6, ionode_id, intra_image_comm )
+         CALL mp_bcast( lon_rcut, ionode_id, intra_image_comm )
+      END IF
+      !
+      IF ( ts_vdw ) THEN
+         CALL mp_bcast( vdw_isolated, ionode_id, intra_image_comm )
+      END IF
+      !
+      ! SCF EXX/RPA
+      !
+      CALL mp_bcast( acfdt_in_pw, ionode_id, intra_image_comm )
+      !
+      IF (acfdt_in_pw) dft_name = 'NOX-NOC'
 
       IF ( inlc == 1 .OR. inlc == 2 ) THEN
          CALL mp_bcast( vdw_table_name,  ionode_id, intra_image_comm )
@@ -2350,6 +1981,7 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
       !
     END SUBROUTINE read_xc
     !
+
     !------------------------------------------------------------------------
     SUBROUTINE read_brillouin_zone( ierr )
       !------------------------------------------------------------------------
@@ -2561,6 +2193,8 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
       !
     END SUBROUTINE read_occupations
     !
+        
+ 
     !------------------------------------------------------------------------
     SUBROUTINE read_band_structure( dirname, ierr )
       !------------------------------------------------------------------------
@@ -2671,6 +2305,12 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
       USE mp_bands,             ONLY : me_bgrp, nbgrp, root_bgrp, &
                                        intra_bgrp_comm
       !
+#if defined __HDF5
+      USE hdf5_qe,              ONLY : evc_hdf5_write, read_attributes_hdf5, &
+                                       prepare_for_reading_final
+      USE mp_pools,             ONLY : inter_pool_comm
+#endif
+
       IMPLICIT NONE
       !
       CHARACTER(LEN=*), INTENT(IN)  :: dirname
@@ -2679,8 +2319,9 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
       CHARACTER(LEN=256)   :: filename
       INTEGER              :: ik, ipol, ik_eff, num_k_points
       INTEGER, ALLOCATABLE :: kisort(:)
-      INTEGER              :: npool, nkbl, nkl, nkr, npwx_g
+      INTEGER              :: nkl, nkr, npwx_g
       INTEGER              :: nupdwn(2), ike, iks, npw_g, ispin
+      INTEGER, EXTERNAL    :: global_kpoint_index
       INTEGER, ALLOCATABLE :: ngk_g(:)
       INTEGER, ALLOCATABLE :: igk_l2g(:,:), igk_l2g_kdip(:,:)
       LOGICAL              :: opnd
@@ -2693,47 +2334,8 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
       !
       ierr = 0
       !
-      IF ( iunwfc > 0 ) THEN
-         !
-         INQUIRE( UNIT = iunwfc, OPENED = opnd )
-         !
-         IF ( .NOT. opnd ) CALL errore( 'read_wavefunctions', &
-                    & 'wavefunctions unit (iunwfc) is not opened', 1 )
-      END IF
-      !
-      IF ( nkstot > 0 ) THEN
-         !
-         ! ... find out the number of pools
-         !
-         npool = nproc_image / nproc_pool
-         !
-         ! ... find out number of k points blocks
-         !
-         nkbl = nkstot / kunit
-         !
-         !  k points per pool
-         !
-         nkl = kunit * ( nkbl / npool )
-         !
-         ! ... find out the reminder
-         !
-         nkr = ( nkstot - nkl * npool ) / kunit
-         !
-         ! ... Assign the reminder to the first nkr pools
-         !
-         IF ( my_pool_id < nkr ) nkl = nkl + kunit
-         !
-         ! ... find out the index of the first k point in this pool
-         !
-         iks = nkl * my_pool_id + 1
-         !
-         IF ( my_pool_id >= nkr ) iks = iks + nkr * kunit
-         !
-         ! ... find out the index of the last k point in this pool
-         !
-         ike = iks + nkl - 1
-         !
-      END IF
+      iks = global_kpoint_index (nkstot, 1)
+      ike = iks + nks - 1
       !
       ! ... find out the global number of G vectors: ngm_g  
       !
@@ -3276,3 +2878,4 @@ USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
     END SUBROUTINE gk_l2gmap_kdip
     !
 END MODULE pw_restart
+

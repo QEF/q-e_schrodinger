@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="input_xx.xsl"?>
+<!-- FILE AUTOMATICALLY CREATED: DO NOT EDIT, CHANGES WILL BE LOST -->
+    
+<input_description distribution="Quantum Espresso" package="PWscf" program="bgw2pw.x" >
+   <toc>
+   </toc>
+   <intro>
+<b>Purpose of bgw2pw.x:</b>
+   Converts BerkeleyGW WFN and RHO files to the format of pw.x.
+   This can be useful, for example, if you generate the plane waves
+   on top of the valence bands and want to diagonalize them in pw.x.
+   Look at the documentation for SAPO code in BerkeleyGW for more information.
+
+bgw2pw.x reads common parameters from file <ref>prefix</ref>.save/data-file.xml and
+writes files <ref>prefix</ref>.save/charge-density.dat (charge density in R-space),
+<ref>prefix</ref>.save/gvectors.dat (G-vectors for charge density and potential),
+<ref>prefix</ref>.save/K$n/eigenval.xml (eigenvalues and occupations for nth k-point),
+<ref>prefix</ref>.save/K$n/evc.dat (wavefunctions in G-space for nth k-point), and
+<ref>prefix</ref>.save/K$n/gkvectors.dat (G-vectors for nth k-point).
+
+bgw2pw.x doesn&apos;t modify file <ref>prefix</ref>.save/data-file.xml so make changes to this
+file manually (for example, you will need to change the number of bands if you
+are using bgw2pw.x in conjunction with SAPO code in BerkeleyGW).
+
+<b>Structure of the input data:</b>
+============================
+
+   <b>&amp;INPUT_BGW2PW</b>
+     ...
+   <b>/</b>
+   </intro>
+   <namelist name="INPUT_BGW2PW" >
+      <var name="prefix" type="STRING" >
+         <status> MANDATORY
+         </status>
+         <info>
+prefix of files saved by program pw.x
+         </info>
+      </var>
+      <var name="outdir" type="STRING" >
+         <default> &apos;./&apos;
+         </default>
+         <info>
+the scratch directory where the massive data-files are written
+         </info>
+      </var>
+      <var name="real_or_complex" type="INTEGER" >
+         <default> 2
+         </default>
+         <info>
+1 | 2
+<b>1</b> for real flavor of BerkeleyGW (for systems with inversion symmetry and
+time-reversal symmetry) or <b>2</b> for complex flavor of BerkeleyGW (for systems
+without inversion symmetry and time-reversal symmetry)
+         </info>
+      </var>
+      <var name="wfng_flag" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+read wavefunctions in G-space from BerkeleyGW WFN file
+         </info>
+      </var>
+      <var name="wfng_file" type="STRING" >
+         <default> &apos;WFN&apos;
+         </default>
+         <info>
+name of BerkeleyGW WFN input file. Not used if <ref>wfng_flag</ref> = .FALSE.
+         </info>
+      </var>
+      <var name="wfng_nband" type="INTEGER" >
+         <default> 0
+         </default>
+         <info>
+number of bands to write (0 = all). Not used if <ref>wfng_flag</ref> = .FALSE.
+         </info>
+      </var>
+      <var name="rhog_flag" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+read charge density in G-space from BerkeleyGW RHO file
+         </info>
+      </var>
+      <var name="rhog_file" type="STRING" >
+         <default> &apos;RHO&apos;
+         </default>
+         <info>
+name of BerkeleyGW RHO input file. Not used if <ref>rhog_flag</ref> = .FALSE.
+         </info>
+      </var>
+   </namelist>
+</input_description>

@@ -1,0 +1,454 @@
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdflatex 2015.6.20)  4 OCT 2016 14:25
+entering extended mode
+ restricted \write18 enabled.
+ %&-line parsing enabled.
+**brillouin_zones.tex
+(./brillouin_zones.tex
+LaTeX2e <2011/06/27>
+Babel <3.9h> and hyphenation patterns for 2 languages loaded.
+(/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2007/10/19 v1.4h Standard LaTeX document class
+(/usr/share/texlive/texmf-dist/tex/latex/base/size12.clo
+File: size12.clo 2007/10/19 v1.4h Standard LaTeX file (size option)
+)
+\c@part=\count79
+\c@section=\count80
+\c@subsection=\count81
+\c@subsubsection=\count82
+\c@paragraph=\count83
+\c@subparagraph=\count84
+\c@figure=\count85
+\c@table=\count86
+\abovecaptionskip=\skip41
+\belowcaptionskip=\skip42
+\bibindent=\dimen102
+)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
+Package: graphicx 1999/02/16 v1.0f Enhanced LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty
+Package: keyval 1999/03/16 v1.13 key=value parser (DPC)
+\KV@toks@=\toks14
+)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
+Package: graphics 2009/02/05 v1.0o Standard LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/trig.sty
+Package: trig 1999/03/16 v1.09 sin cos tan (DPC)
+)
+(/usr/share/texlive/texmf-dist/tex/latex/latexconfig/graphics.cfg
+File: graphics.cfg 2010/04/23 v1.9 graphics configuration of TeX Live
+)
+Package graphics Info: Driver file: pdftex.def on input line 91.
+
+(/usr/share/texlive/texmf-dist/tex/latex/pdftex-def/pdftex.def
+File: pdftex.def 2011/05/27 v0.06d Graphics/color for pdfTeX
+
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/infwarerr.sty
+Package: infwarerr 2010/04/08 v1.3 Providing info/warning/error messages (HO)
+)
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ltxcmds.sty
+Package: ltxcmds 2011/11/09 v1.22 LaTeX kernel commands for general use (HO)
+)
+\Gread@gobject=\count87
+))
+\Gin@req@height=\dimen103
+\Gin@req@width=\dimen104
+)
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amssymb.sty
+Package: amssymb 2013/01/14 v3.01 AMS font symbols
+
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amsfonts.sty
+Package: amsfonts 2013/01/14 v3.01 Basic AMSFonts support
+\@emptytoks=\toks15
+\symAMSa=\mathgroup4
+\symAMSb=\mathgroup5
+LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
+(Font)                  U/euf/m/n --> U/euf/b/n on input line 106.
+))
+(./brillouin_zones.aux)
+\openout1 = `brillouin_zones.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 27.
+LaTeX Font Info:    ... okay on input line 27.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 27.
+LaTeX Font Info:    ... okay on input line 27.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 27.
+LaTeX Font Info:    ... okay on input line 27.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 27.
+LaTeX Font Info:    ... okay on input line 27.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 27.
+LaTeX Font Info:    ... okay on input line 27.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 27.
+LaTeX Font Info:    ... okay on input line 27.
+
+(/usr/share/texlive/texmf-dist/tex/context/base/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+\scratchcounter=\count88
+\scratchdimen=\dimen105
+\scratchbox=\box26
+\nofMPsegments=\count89
+\nofMParguments=\count90
+\everyMPshowfont=\toks16
+\MPscratchCnt=\count91
+\MPscratchDim=\dimen106
+\MPnumerator=\count92
+\makeMPintoPDFobject=\count93
+\everyMPtoPDFconversion=\toks17
+) (/usr/share/texlive/texmf-dist/tex/generic/oberdiek/pdftexcmds.sty
+Package: pdftexcmds 2011/11/29 v0.20 Utility functions of pdfTeX for LuaTeX (HO
+)
+
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ifluatex.sty
+Package: ifluatex 2010/03/01 v1.3 Provides the ifluatex switch (HO)
+Package ifluatex Info: LuaTeX not detected.
+)
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ifpdf.sty
+Package: ifpdf 2011/01/30 v2.3 Provides the ifpdf switch (HO)
+Package ifpdf Info: pdfTeX in PDF mode is detected.
+)
+Package pdftexcmds Info: LuaTeX not detected.
+Package pdftexcmds Info: \pdf@primitive is available.
+Package pdftexcmds Info: \pdf@ifprimitive is available.
+Package pdftexcmds Info: \pdfdraftmode found.
+)
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
+Package: epstopdf-base 2010/02/09 v2.5 Base part for package epstopdf
+
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/grfext.sty
+Package: grfext 2010/08/19 v1.1 Manage graphics extensions (HO)
+
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/kvdefinekeys.sty
+Package: kvdefinekeys 2011/04/07 v1.3 Define keys (HO)
+))
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/kvoptions.sty
+Package: kvoptions 2011/06/30 v3.11 Key value format for package options (HO)
+
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/kvsetkeys.sty
+Package: kvsetkeys 2012/04/25 v1.16 Key value parser (HO)
+
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/etexcmds.sty
+Package: etexcmds 2011/02/16 v1.5 Avoid name clashes with e-TeX commands (HO)
+Package etexcmds Info: Could not find \expanded.
+(etexcmds)             That can mean that you are not using pdfTeX 1.50 or
+(etexcmds)             that some package has redefined \expanded.
+(etexcmds)             In the latter case, load this package earlier.
+)))
+Package grfext Info: Graphics extension search list:
+(grfext)             [.png,.pdf,.jpg,.mps,.jpeg,.jbig2,.jb2,.PNG,.PDF,.JPG,.JPE
+G,.JBIG2,.JB2,.eps]
+(grfext)             \AppendGraphicsExtensions on input line 452.
+
+(/usr/share/texlive/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
+File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
+e
+))
+LaTeX Font Info:    Try loading font information for U+msa on input line 36.
+
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
+File: umsa.fd 2013/01/14 v3.01 AMS symbols A
+)
+LaTeX Font Info:    Try loading font information for U+msb on input line 36.
+
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd
+File: umsb.fd 2013/01/14 v3.01 AMS symbols B
+) [1
+
+{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
+LaTeX Font Info:    Font shape `OT1/cmtt/bx/n' in size <14.4> not available
+(Font)              Font shape `OT1/cmtt/m/n' tried instead on input line 86.
+
+<images/cubic_bi.png, id=8, 940.51375pt x 908.39375pt>
+File: images/cubic_bi.png Graphic file (type png)
+
+<use images/cubic_bi.png>
+Package pdftex.def Info: images/cubic_bi.png used on input line 103.
+(pdftex.def)             Requested size: 213.39566pt x 206.09853pt.
+ [2]
+<images/fcc_sc.png, id=18, 920.43875pt x 905.3825pt>
+File: images/fcc_sc.png Graphic file (type png)
+ <use images/fcc_sc.png>
+Package pdftex.def Info: images/fcc_sc.png used on input line 124.
+(pdftex.def)             Requested size: 213.39566pt x 209.90521pt.
+
+<images/fcc_bi.png, id=19, 943.525pt x 916.42375pt>
+File: images/fcc_bi.png Graphic file (type png)
+ <use images/fcc_bi.png>
+Package pdftex.def Info: images/fcc_bi.png used on input line 125.
+(pdftex.def)             Requested size: 213.39566pt x 207.26317pt.
+
+[3 <./images/cubic_bi.png (PNG copy)>]
+<images/bcc_bi.png, id=23, 826.08624pt x 837.1275pt>
+File: images/bcc_bi.png Graphic file (type png)
+ <use images/bcc_bi.png>
+Package pdftex.def Info: images/bcc_bi.png used on input line 148.
+(pdftex.def)             Requested size: 213.39566pt x 216.24292pt.
+
+[4 <./images/fcc_sc.png (PNG copy)> <./images/fcc_bi.png (PNG copy)>]
+<images/hex.png, id=27, 1243.64626pt x 836.12375pt>
+File: images/hex.png Graphic file (type png)
+ <use images/hex.png>
+Package pdftex.def Info: images/hex.png used on input line 170.
+(pdftex.def)             Requested size: 213.39566pt x 143.466pt.
+
+[5 <./images/bcc_bi.png (PNG copy)> <./images/hex.png (PNG copy)>]
+<images/tri_1.png, id=31, 865.2325pt x 887.315pt>
+File: images/tri_1.png Graphic file (type png)
+ <use images/tri_1.png>
+Package pdftex.def Info: images/tri_1.png used on input line 204.
+(pdftex.def)             Requested size: 213.39566pt x 218.83601pt.
+
+<images/tri_2.png, id=32, 831.105pt x 897.3525pt>
+File: images/tri_2.png Graphic file (type png)
+ <use images/tri_2.png>
+Package pdftex.def Info: images/tri_2.png used on input line 209.
+(pdftex.def)             Requested size: 213.39566pt x 230.40334pt.
+
+[6 <./images/tri_1.png (PNG copy)>]
+<images/st.png, id=38, 1315.91624pt x 898.35625pt>
+File: images/st.png Graphic file (type png)
+ <use images/st.png>
+Package pdftex.def Info: images/st.png used on input line 229.
+(pdftex.def)             Requested size: 213.39566pt x 145.67273pt.
+ [7 <./images/tri_2.png (PNG copy)> <./images/st.png (PNG copy)>]
+<images/stc1.png, id=43, 725.71124pt x 892.33376pt>
+File: images/stc1.png Graphic file (type png)
+ <use images/stc1.png>
+Package pdftex.def Info: images/stc1.png used on input line 251.
+(pdftex.def)             Requested size: 213.39566pt x 262.392pt.
+
+<images/stc2_sc.png, id=44, 984.67876pt x 911.405pt>
+File: images/stc2_sc.png Graphic file (type png)
+ <use images/stc2_sc.png>
+Package pdftex.def Info: images/stc2_sc.png used on input line 255.
+(pdftex.def)             Requested size: 213.39566pt x 197.50583pt.
+
+<images/stc2.png, id=45, 922.44624pt x 898.35625pt>
+File: images/stc2.png Graphic file (type png)
+ <use images/stc2.png>
+Package pdftex.def Info: images/stc2.png used on input line 256.
+(pdftex.def)             Requested size: 213.39566pt x 207.82387pt.
+
+[8 <./images/stc1.png (PNG copy)>]
+Overfull \hbox (33.00586pt too wide) in paragraph at lines 258--261
+\OT1/cmr/m/n/12 The fig-ure has been ob-tained with $\OML/cmm/m/it/12 c=a \OT1/
+cmr/m/n/12 = 1\OML/cmm/m/it/12 :\OT1/cmr/m/n/12 4$ ($\OML/cmm/m/it/12 a < c$\OT
+1/cmr/m/n/12 ). La-bels cor-re-spond-ing to $[]$
+ []
+
+<images/so.png, id=49, 1177.39874pt x 908.39375pt>
+File: images/so.png Graphic file (type png)
+ <use images/so.png>
+Package pdftex.def Info: images/so.png used on input line 278.
+(pdftex.def)             Requested size: 213.39566pt x 164.64041pt.
+ [9 <./images/stc2_sc.png (PNG copy)> <./images/stc2.png (PNG copy)> <./images/
+so.png (PNG copy)>] <images/ofco_2.png, id=53, 1604.99625pt x 731.73375pt>
+File: images/ofco_2.png Graphic file (type png)
+
+<use images/ofco_2.png>
+Package pdftex.def Info: images/ofco_2.png used on input line 300.
+(pdftex.def)             Requested size: 213.39566pt x 97.28363pt.
+ <images/ofco_1.png, id=54, 1774.63pt x 888.31876pt>
+File: images/ofco_1.png Graphic file (type png)
+
+<use images/ofco_1.png>
+Package pdftex.def Info: images/ofco_1.png used on input line 301.
+(pdftex.def)             Requested size: 184.9429pt x 92.56459pt.
+ [10 <./images/ofco_2.png (PNG copy)> <./images/ofco_1.png (PNG copy)>] <images
+/ofc_1.png, id=58, 1049.9225pt x 898.35625pt>
+File: images/ofc_1.png Graphic file (type png)
+
+<use images/ofc_1.png>
+Package pdftex.def Info: images/ofc_1.png used on input line 362.
+(pdftex.def)             Requested size: 213.39566pt x 182.58781pt.
+ <images/ofc_2.png, id=59, 814.04124pt x 907.39pt>
+File: images/ofc_2.png Graphic file (type png)
+
+<use images/ofc_2.png>
+Package pdftex.def Info: images/ofc_2.png used on input line 363.
+(pdftex.def)             Requested size: 184.9429pt x 206.1477pt.
+ <images/ofc_13.png, id=60, 1314.9125pt x 891.33pt>
+File: images/ofc_13.png Graphic file (type png)
+
+<use images/ofc_13.png>
+Package pdftex.def Info: images/ofc_13.png used on input line 371.
+(pdftex.def)             Requested size: 213.39566pt x 144.6422pt.
+ <images/ofc_14.png, id=61, 698.61pt x 894.34125pt>
+File: images/ofc_14.png Graphic file (type png)
+
+<use images/ofc_14.png>
+Package pdftex.def Info: images/ofc_14.png used on input line 372.
+(pdftex.def)             Requested size: 156.49014pt x 200.33107pt.
+ [11 <./images/ofc_1.png (PNG copy)> <./images/ofc_2.png (PNG copy)>] <images/o
+fc_7.png, id=68, 1481.535pt x 853.1875pt>
+File: images/ofc_7.png Graphic file (type png)
+
+<use images/ofc_7.png>
+Package pdftex.def Info: images/ofc_7.png used on input line 379.
+(pdftex.def)             Requested size: 184.9429pt x 106.50496pt.
+ <images/ofc_8.png, id=69, 572.1375pt x 914.41624pt>
+File: images/ofc_8.png Graphic file (type png)
+
+<use images/ofc_8.png>
+Package pdftex.def Info: images/ofc_8.png used on input line 380.
+(pdftex.def)             Requested size: 113.81102pt x 181.88936pt.
+ <images/ofc_3.png, id=70, 1160.335pt x 904.37875pt>
+File: images/ofc_3.png Graphic file (type png)
+
+<use images/ofc_3.png>
+Package pdftex.def Info: images/ofc_3.png used on input line 391.
+(pdftex.def)             Requested size: 213.39566pt x 166.31387pt.
+ <images/ofc_4.png, id=71, 997.7275pt x 915.42pt>
+File: images/ofc_4.png Graphic file (type png)
+
+<use images/ofc_4.png>
+Package pdftex.def Info: images/ofc_4.png used on input line 392.
+(pdftex.def)             Requested size: 213.39566pt x 195.79178pt.
+ [12 <./images/ofc_13.png (PNG copy)> <./images/ofc_14.png (PNG copy)> <./image
+s/ofc_7.png (PNG copy)> <./images/ofc_8.png (PNG copy)>]
+<images/ofc_15.png, id=75, 1373.13pt x 903.375pt>
+File: images/ofc_15.png Graphic file (type png)
+ <use images/ofc_15.png>
+Package pdftex.def Info: images/ofc_15.png used on input line 399.
+(pdftex.def)             Requested size: 213.39566pt x 140.38007pt.
+
+<images/ofc_16.png, id=76, 1087.06125pt x 879.285pt>
+File: images/ofc_16.png Graphic file (type png)
+ <use images/ofc_16.png>
+Package pdftex.def Info: images/ofc_16.png used on input line 400.
+(pdftex.def)             Requested size: 213.39566pt x 172.60703pt.
+
+<images/ofc_9.png, id=77, 1430.34375pt x 765.86125pt>
+File: images/ofc_9.png Graphic file (type png)
+ <use images/ofc_9.png>
+Package pdftex.def Info: images/ofc_9.png used on input line 407.
+(pdftex.def)             Requested size: 213.39566pt x 114.25487pt.
+
+<images/ofc_10.png, id=78, 977.6525pt x 907.39pt>
+File: images/ofc_10.png Graphic file (type png)
+ <use images/ofc_10.png>
+Package pdftex.def Info: images/ofc_10.png used on input line 408.
+(pdftex.def)             Requested size: 213.39566pt x 198.048pt.
+
+[13 <./images/ofc_3.png (PNG copy)> <./images/ofc_4.png (PNG copy)> <./images/o
+fc_15.png (PNG copy)> <./images/ofc_16.png (PNG copy)> <./images/ofc_9.png (PNG
+ copy)> <./images/ofc_10.png (PNG copy)>]
+<images/ofc_5.png, id=83, 721.69624pt x 887.315pt>
+File: images/ofc_5.png Graphic file (type png)
+ <use images/ofc_5.png>
+Package pdftex.def Info: images/ofc_5.png used on input line 418.
+(pdftex.def)             Requested size: 184.9429pt x 227.37932pt.
+
+<images/ofc_6.png, id=84, 835.12pt x 896.34875pt>
+File: images/ofc_6.png Graphic file (type png)
+ <use images/ofc_6.png>
+Package pdftex.def Info: images/ofc_6.png used on input line 419.
+(pdftex.def)             Requested size: 213.39566pt x 229.03777pt.
+
+<images/ofc_17.png, id=85, 633.36626pt x 884.30376pt>
+File: images/ofc_17.png Graphic file (type png)
+ <use images/ofc_17.png>
+Package pdftex.def Info: images/ofc_17.png used on input line 426.
+(pdftex.def)             Requested size: 156.49014pt x 218.48466pt.
+
+<images/ofc_18.png, id=86, 814.04124pt x 896.34875pt>
+File: images/ofc_18.png Graphic file (type png)
+ <use images/ofc_18.png>
+Package pdftex.def Info: images/ofc_18.png used on input line 427.
+(pdftex.def)             Requested size: 213.39566pt x 234.97366pt.
+
+<images/ofc_11.png, id=87, 545.03625pt x 902.37125pt>
+File: images/ofc_11.png Graphic file (type png)
+ <use images/ofc_11.png>
+Package pdftex.def Info: images/ofc_11.png used on input line 436.
+(pdftex.def)             Requested size: 142.26378pt x 235.53351pt.
+
+<images/ofc_12.png, id=88, 845.1575pt x 895.345pt>
+File: images/ofc_12.png Graphic file (type png)
+ <use images/ofc_12.png>
+Package pdftex.def Info: images/ofc_12.png used on input line 437.
+(pdftex.def)             Requested size: 213.39566pt x 226.06258pt.
+
+[14 <./images/ofc_5.png (PNG copy)> <./images/ofc_6.png (PNG copy)> <./images/o
+fc_17.png (PNG copy)> <./images/ofc_18.png (PNG copy)>]
+<images/bco_4.png, id=92, 944.52875pt x 903.375pt>
+File: images/bco_4.png Graphic file (type png)
+ <use images/bco_4.png>
+Package pdftex.def Info: images/bco_4.png used on input line 469.
+(pdftex.def)             Requested size: 213.39566pt x 204.09145pt.
+
+<images/bco_5.png, id=93, 838.13126pt x 881.2925pt>
+File: images/bco_5.png Graphic file (type png)
+ <use images/bco_5.png>
+Package pdftex.def Info: images/bco_5.png used on input line 470.
+(pdftex.def)             Requested size: 213.39566pt x 224.3837pt.
+
+[15 <./images/ofc_11.png (PNG copy)> <./images/ofc_12.png (PNG copy)>]
+<images/bco_2.png, id=97, 920.43875pt x 893.3375pt>
+File: images/bco_2.png Graphic file (type png)
+ <use images/bco_2.png>
+Package pdftex.def Info: images/bco_2.png used on input line 478.
+(pdftex.def)             Requested size: 213.39566pt x 207.11267pt.
+
+<images/bco_3.png, id=98, 836.12375pt x 892.33376pt>
+File: images/bco_3.png Graphic file (type png)
+ <use images/bco_3.png>
+Package pdftex.def Info: images/bco_3.png used on input line 479.
+(pdftex.def)             Requested size: 199.16928pt x 212.5578pt.
+
+<images/bco_1.png, id=99, 906.38625pt x 889.3225pt>
+File: images/bco_1.png Graphic file (type png)
+ <use images/bco_1.png>
+Package pdftex.def Info: images/bco_1.png used on input line 487.
+(pdftex.def)             Requested size: 213.39566pt x 209.37077pt.
+
+<images/bco_6.png, id=100, 941.5175pt x 901.3675pt>
+File: images/bco_6.png Graphic file (type png)
+ <use images/bco_6.png>
+Package pdftex.def Info: images/bco_6.png used on input line 488.
+(pdftex.def)             Requested size: 213.39566pt x 204.29808pt.
+
+[16 <./images/bco_4.png (PNG copy)> <./images/bco_5.png (PNG copy)> <./images/b
+co_2.png (PNG copy)> <./images/bco_3.png (PNG copy)>]
+<images/monoc.png, id=104, 1463.4675pt x 993.7125pt>
+File: images/monoc.png Graphic file (type png)
+ <use images/monoc.png>
+Package pdftex.def Info: images/monoc.png used on input line 509.
+(pdftex.def)             Requested size: 213.39566pt x 144.89583pt.
+
+[17 <./images/bco_1.png (PNG copy)> <./images/bco_6.png (PNG copy)> <./images/m
+onoc.png>] <images/monob.png, id=109, 1474.50874pt x 982.67125pt>
+File: images/monob.png Graphic file (type png)
+
+<use images/monob.png>
+Package pdftex.def Info: images/monob.png used on input line 528.
+(pdftex.def)             Requested size: 213.39566pt x 142.20628pt.
+ [18 <./images/monob.png>] (./brillouin_zones.aux) ) 
+Here is how much of TeX's memory you used:
+ 2015 strings out of 495028
+ 28553 string characters out of 6181497
+ 79876 words of memory out of 5000000
+ 5172 multiletter control sequences out of 15000+600000
+ 13962 words of font info for 54 fonts, out of 8000000 for 9000
+ 14 hyphenation exceptions out of 8191
+ 37i,7n,26p,247b,192s stack positions out of 5000i,500n,10000p,200000b,80000s
+</usr/share/texlive/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/share/texlive/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmcsc10.pfb></usr/share/texlive/texmf-dist/fonts/t
+ype1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texmf-dist/fonts/type1/p
+ublic/amsfonts/cm/cmmi12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/
+amsfonts/cm/cmmi8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfont
+s/cm/cmr12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cm
+r17.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb>
+</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/sh
+are/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/te
+xlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/share/texlive/t
+exmf-dist/fonts/type1/public/amsfonts/cm/cmtt12.pfb></usr/share/texlive/texmf-d
+ist/fonts/type1/public/amsfonts/symbols/msam10.pfb>
+Output written on brillouin_zones.pdf (18 pages, 1063611 bytes).
+PDF statistics:
+ 156 PDF objects out of 1000 (max. 8388607)
+ 80 compressed objects within 1 object stream
+ 0 named destinations out of 1000 (max. 500000)
+ 201 words of extra memory for PDF output out of 10000 (max. 10000000)
+

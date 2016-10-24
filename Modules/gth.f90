@@ -13,8 +13,8 @@ module m_gth
   implicit none
   !
   private
-  public :: gth_parameters, readgth, vloc_gth, dvloc_gth, mk_ffnl_gth, &
-       mk_dffnl_gth, deallocate_gth
+  public :: gth_parameters, readgth, vloc_gth, dvloc_gth, setlocq_gth, &
+       mk_ffnl_gth, mk_dffnl_gth, deallocate_gth
   !
   type gth_parameters
      integer  :: itype, lloc, lmax
@@ -22,7 +22,7 @@ module m_gth
      integer,  pointer :: lll(:), ipr(:)
      real(dp), pointer :: rrl(:)
   end type gth_parameters
-  type (gth_parameters), pointer, dimension(:), public, save :: gth_p
+  type (gth_parameters), pointer, dimension(:), private, save :: gth_p
   !
 contains
   !-----------------------------------------------------------------------
@@ -423,16 +423,80 @@ subroutine dvloc_gth(itype, zion, tpiba2, ngl, gl, omega, dvloc)
   !
 end subroutine dvloc_gth
 !-----------------------------------------------------------------------
-subroutine deallocate_gth()
+subroutine setlocq_gth(itype, xq, zion, tpiba2, ngm, g, omega, vloc)
+!----------------------------------------------------------------------
+  !
+  USE kinds,        ONLY: dp
+  USE constants,    ONLY: pi, fpi, e2, eps8
+
+  implicit none
+  !  
+  ! I/O
+  integer,  intent(in)  :: itype, ngm
+  real(dp), intent(in)  :: xq (3), zion, tpiba2, omega, g(3,ngm)
+  real(dp), intent(out) :: vloc (ngm)
+  !  
+  ! Local variables
+  integer  :: ii, ig, my_gth
+  real(dp) :: cc1, cc2, cc3, cc4, rloc, g2a, gx, gx2, rq2, rl3, e_rq2h, fact
+  !
+  ! Find gtp param. set for type itype
+  my_gth=0
+  do ii=1,size(gth_p)
+    if (gth_p(ii)%itype==itype) then
+      my_gth=ii
+      exit
+    endif
+  enddo
+  if (my_gth==0) call errore('vloc_gth', 'cannot map itype in some gth param. set', itype)
+  rloc=gth_p(my_gth)%rloc
+  cc1=gth_p(my_gth)%cc(1)
+  cc2=gth_p(my_gth)%cc(2)
+  cc3=gth_p(my_gth)%cc(3)
+  cc4=gth_p(my_gth)%cc(4)
+  !
+  do ig = 1, ngm
+    g2a = (xq (1) + g (1, ig) ) **2 + &
+          (xq (2) + g (2, ig) ) **2 + &
+          (xq (3) + g (3, ig) ) **2
+    if (g2a < eps8) then
+      vloc (ig) = 0.d0
+    else
+      gx     = sqrt (g2a * tpiba2)
+      gx2    = gx**2
+      rq2    = (gx*rloc)**2
+      rl3    = rloc**3
+      e_rq2h = exp(-0.5_dp*rq2)
+      vloc (ig) = &
+         fpi * e_rq2h*(-zion/gx2 + sqrt(pi/2._dp)*rl3* &
+           ( &
+             cc1 + &
+             cc2*(3._dp-rq2) + &
+             cc3*(15._dp-10._dp*rq2+rq2**2) + &
+             cc4*(105._dp-rq2*(105._dp-rq2*(21._dp-rq2))) &
+           ) &
+        )
+    endif
+  enddo
+  !
+  fact = e2 / omega
+  vloc (:) = vloc(:) * fact
+  !
+end subroutine setlocq_gth
+!-----------------------------------------------------------------------
+subroutine deallocate_gth( lflag )
   !-----------------------------------------------------------------------
   !
 
   implicit none
+  !  
+  ! I/O 
+  logical, intent(in) :: lflag
   !
   ! Local variables
   integer :: ii
   !
-  IF ( ASSOCIATED( gth_p ) ) THEN
+  IF ( lflag .and. ASSOCIATED( gth_p ) ) THEN
      DO ii=1, SIZE(gth_p)
         DEALLOCATE ( gth_p(ii)%lll, gth_p(ii)%ipr, gth_p(ii)%rrl )
      ENDDO
@@ -445,7 +509,7 @@ subroutine readgth (iunps, np, upf)
   !-----------------------------------------------------------------------
   !
   USE kinds,        ONLY: dp
-  USE constants,    ONLY: e2
+  USE constants,    ONLY: e2, tpi
   USE parameters,   ONLY: lmaxx
   USE funct,        ONLY: set_dft_from_name, dft_is_hybrid
   USE pseudo_types, ONLY: pseudo_upf
@@ -459,7 +523,7 @@ subroutine readgth (iunps, np, upf)
   ! Local variables
   integer  :: ios, pspdat, pspcod, pspxc, lmax, lloc, mmax, ii, jj, ll, nn, nnonloc, &
               nprl, os, ns, iv, jv
-  real(dp) :: znucl, r2well, rloc, rrl, cc(4)
+  real(dp) :: rcore, qcore, rc2, prefact, znucl, r2well, rloc, rrl, cc(4)
   character(len=256)            :: info
   character(len=  1), parameter :: ch10=char(10), spdf(0:3) = ['S','P','D','F']
   character(len=  2), external  :: atom_name
@@ -483,9 +547,9 @@ subroutine readgth (iunps, np, upf)
   upf%author   ="Goedecker/Hartwigsen/Hutter/Teter/Krack"
   upf%comment  ="GTH analytical, separable"
   upf%tvanp=.false.; upf%tpawp=.false.; upf%nlcc=.false.; upf%tcoulombp=.false.; upf%has_so=.false.
-  upf%rel = 'scalar'; upf%typ = 'NC'; upf%lmax_rho = 0; upf%nwfc=0; upf%nqf = 0; upf%nqlc= 0
+  upf%rel = 'scalar'; upf%typ = 'NC'; upf%lmax_rho = 0; upf%nwfc=0; upf%nqf = 0; upf%nqlc= 0; upf%kkbeta=-1
   upf%etotps =0._dp; upf%ecutrho=0._dp; upf%ecutwfc=0._dp
-  allocate(upf%rcut(upf%nbeta), upf%rcutus(upf%nbeta))
+  allocate(upf%rcut(upf%nbeta), upf%rcutus(upf%nbeta), upf%lchi(upf%nwfc))
   upf%rcut(:) = 0._dp
   upf%rcutus(:) = 0._dp
 
@@ -496,6 +560,14 @@ subroutine readgth (iunps, np, upf)
   call gth_grid_for_rho(upf,znucl)
 
   read (iunps, *, err=400) pspcod,pspxc,lmax,lloc,mmax,r2well
+  IF ( pspcod /= 10 .AND. pspcod /= 12 ) &
+     call errore ('readgth', 'unknown/invalid pspcod:', pspcod )
+  IF ( pspcod == 12 ) THEN
+     ! pseudo with NLCC
+     upf%nlcc=.true.
+     upf%generated="New Soft-Accurate NLCC pseudopotentials, generated by Santanu Saha"
+     upf%author=upf%author//"/Saha"
+  ENDIF
   IF ( lmax-1 > lmaxx ) call errore ('readgth', 'strange lmax', lmax-1)
   IF ( lmax == lloc) THEN
      upf%lmax = lmax-1
@@ -516,6 +588,8 @@ subroutine readgth (iunps, np, upf)
      upf%dft = 'PBE'
   ELSE IF (pspxc == 18) THEN
      upf%dft = 'BLYP'
+  ELSE IF (pspxc == -101130) THEN ! PBE from libXC
+     upf%dft = 'PBE'
   ELSE
      call errore ('readgth', 'pspxc cod. cannot be understood', abs (np) )
   ENDIF
@@ -555,6 +629,16 @@ subroutine readgth (iunps, np, upf)
     !&   '        k22, k23 =', (kij(ll,2,jj),jj=2,3),ch10,&
     !&   '             k33 =', (kij(ll,3,jj),jj=3,3)
   end do prjloop
+  !
+  if (upf%nlcc) then
+    read (iunps, *, err=400) rcore, qcore
+    ALLOCATE ( upf%rho_atc(upf%mesh) )
+    rc2 = rcore**2
+    prefact = qcore * (znucl-upf%zp) / (sqrt(tpi)*rcore)**3
+    do ii=1,upf%mesh
+      upf%rho_atc(ii) = prefact * exp(-0.5_dp * upf%r(ii)**2 / rc2)
+    enddo
+  end if
   !
   allocate(upf%lll(upf%nbeta), upf%els_beta(upf%nbeta), upf%dion(upf%nbeta,upf%nbeta))
   allocate(gth_p(ns)%lll(upf%nbeta), gth_p(ns)%ipr(upf%nbeta))

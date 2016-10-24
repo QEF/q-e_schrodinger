@@ -5,6 +5,10 @@
 ! in the root directory of the present distribution,
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
+!---------------------------------------------
+! TB
+! included monopole related stuff, search 'TB'
+!---------------------------------------------
 !
 !=----------------------------------------------------------------------------=!
 !
@@ -193,6 +197,11 @@ MODULE input_parameters
           ! if .TRUE. a sawtooth potential simulating a finite electric field
           ! is added to the local potential = only used in PW
 
+          ! TB - added monopole also below to the namelist
+        LOGICAL :: monopole = .FALSE.
+          ! if .TRUE. a monopole plane in charged systems is added with a
+          ! total charge which is opposite to the charge of the system
+
           LOGICAL :: tefield2  = .false.
           ! if .TRUE. a second finite electric field is added to the local potential
           ! only used in CP
@@ -210,12 +219,6 @@ MODULE input_parameters
 
         LOGICAL :: lberry = .false.
           ! if .TRUE., use modern theory of the polarization
-
-        LOGICAL :: lcalc_z2 = .false.
-          ! if .TRUE., calculate Z2 without inversion symmetry
-
-        REAL(DP) :: z2_m_threshold = 0.8d0, z2_z_threshold = 0.05d0
-          ! threshold for realizing the parallel transport gauge
 
         INTEGER :: gdir = 0
           ! G-vector for polarization calculation ( related to lberry )
@@ -282,8 +285,7 @@ MODULE input_parameters
           gdir, nppstr, wf_collect, lelfield, nberrycyc, refg,            &
           tefield2, saverho, tabps, lkpoint_dir, use_wannier, lecrpa,     &
           tqmmm, vdw_table_name, lorbm, memory, point_label_type,         &
-          lcalc_z2, z2_m_threshold, z2_z_threshold, lfcpopt, lfcpdyn,     &
-          input_xml_schema_file                                                  
+          lfcpopt, lfcpdyn, input_xml_schema_file, monopole                                        
 !
 !=----------------------------------------------------------------------------=!
 !  SYSTEM Namelist Input Parameters
@@ -441,6 +443,16 @@ MODULE input_parameters
         REAL(DP) :: eopreg = 0.0_DP
         REAL(DP) :: eamp = 0.0_DP
 
+          ! TB parameters for monopole representing the gate
+          ! and a possible potential barrier
+          ! added also below to the namelist
+        REAL(DP) :: zmon  = 0.5
+        LOGICAL  :: relaxz = .false.
+        LOGICAL  :: block = .false.
+        REAL(DP) :: block_1 = 0.45
+        REAL(DP) :: block_2 = 0.55
+        REAL(DP) :: block_height = 0.1
+
           ! Various parameters for noncollinear calculations
         LOGICAL  :: noncolin = .false.
         LOGICAL  :: lspinorb = .false.
@@ -595,7 +607,8 @@ MODULE input_parameters
              esm_bc, esm_efield, esm_w, esm_nfit, esm_debug, esm_debug_gpmax, &
              esm_a, esm_zb, fcp_mu, fcp_mass, fcp_tempw, fcp_relax_step,      &
              fcp_relax_crit,                                                  &
-             space_group, uniqueb, origin_choice, rhombohedral
+             space_group, uniqueb, origin_choice, rhombohedral,               &
+             zmon, relaxz, block, block_1, block_2, block_height
 
 !=----------------------------------------------------------------------------=!
 !  ELECTRONS Namelist Input Parameters
@@ -903,6 +916,12 @@ MODULE input_parameters
         LOGICAL :: tqr = .false.
           ! US contributions are added in real space
 
+        LOGICAL :: tq_smoothing = .false.
+          ! US augmentation charge is smoothed before use
+
+        LOGICAL :: tbeta_smoothing = .false.
+          ! beta function are smoothed before use
+
         LOGICAL :: occupation_constraints = .false.
           ! If true perform CP dynamics with constrained occupations
           ! to be used together with penalty functional ...
@@ -940,7 +959,8 @@ MODULE input_parameters
           diis_temp, diis_achmix, diis_g0chmix, diis_g1chmix,          &
           diis_nchmix, diis_nrot, diis_rothr, diis_ethr, diis_chguess, &
           mixing_mode, mixing_beta, mixing_ndim, mixing_fixed_ns,      &
-          tqr, diago_cg_maxiter, diago_david_ndim, diagonalization,    &
+          tqr, tq_smoothing, tbeta_smoothing,                          &
+          diago_cg_maxiter, diago_david_ndim, diagonalization,         &
           startingpot, startingwfc , conv_thr,                         &
           adaptive_thr, conv_thr_init, conv_thr_multi,                 &
           diago_thr_init, n_inner, fermi_energy, rotmass, occmass,     &
@@ -1105,6 +1125,13 @@ MODULE input_parameters
 
         REAL(DP)  :: w_1 = 0.5E-1_DP
         REAL(DP)  :: w_2 = 0.5_DP
+
+        LOGICAL :: l_mplathe=.false. !if true apply Muller Plathe strategy
+        INTEGER :: n_muller=0!number of intermediate sub-cells
+        INTEGER :: np_muller=1!period for velocity exchange
+        LOGICAL :: l_exit_muller=.false.!if true do muller exchange after last MD step
+
+        
         !
         NAMELIST / ions / ion_dynamics, iesr, ion_radius, ion_damping,         &
                           ion_positions, ion_velocities, ion_temperature,      &
@@ -1113,7 +1140,8 @@ MODULE input_parameters
                           refold_pos, upscale, delta_t, pot_extrapolation,     &
                           wfc_extrapolation, nraise, remove_rigid_rot,         &
                           trust_radius_max, trust_radius_min,                  &
-                          trust_radius_ini, w_1, w_2, bfgs_ndim
+                          trust_radius_ini, w_1, w_2, bfgs_ndim,l_mplathe,     &
+                          n_muller,np_muller,l_exit_muller
 
 
 !=----------------------------------------------------------------------------=!

@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>3.2 Running on parallel machines</TITLE>
+<META NAME="description" CONTENT="3.2 Running on parallel machines">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node18.html">
+<LINK REL="previous" HREF="node16.html">
+<LINK REL="up" HREF="node15.html">
+<LINK REL="next" HREF="node18.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html355"
+  HREF="node18.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html351"
+  HREF="node15.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html345"
+  HREF="node16.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html353"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html356"
+  HREF="node18.html">3.3 Parallelization levels</A>
+<B> Up:</B> <A NAME="tex2html352"
+  HREF="node15.html">3 Parallelism</A>
+<B> Previous:</B> <A NAME="tex2html346"
+  HREF="node16.html">3.1 Understanding Parallelism</A>
+ &nbsp; <B>  <A NAME="tex2html354"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00042000000000000000">
+3.2 Running on parallel machines</A>
+</H2>
+
+<P>
+Parallel execution is strongly system- and installation-dependent.
+Typically one has to specify:
+
+<OL>
+<LI>a launcher program (not always needed),
+such as <TT>poe</TT>, <TT>mpirun</TT>, <TT>mpiexec</TT>,
+  with the  appropriate options (if any);
+</LI>
+<LI>the number of processors, typically as an option to the launcher
+  program, but in some cases to be specified after the name of the
+  program to be
+  executed;
+</LI>
+<LI>the program to be executed, with the proper path if needed;
+</LI>
+<LI>other Q<SMALL>UANTUM </SMALL>ESPRESSO-specific parallelization options, to be
+  read and interpreted by the running code.
+</LI>
+</OL>
+Items 1) and 2) are machine- and installation-dependent, and may be
+different for interactive and batch execution. Note that large
+parallel machines are  often configured so as to disallow interactive
+execution: if in doubt, ask your system administrator.
+Item 3) also depend on your specific configuration (shell, execution path, etc).
+Item 4) is optional but it is very important
+for good performances. We refer to the next
+section for a description of the various
+possibilities.
+
+<P>
+<BR><HR>
+<ADDRESS>
+Filippo Spiga
+2016-10-04
+</ADDRESS>
+</BODY>
+</HTML>

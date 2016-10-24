@@ -15,6 +15,10 @@
 !   the calculation of the dipole is split in the ionic (compute_ion_dip)
 !   and electronic (compute_el_dip) contributions.
 !
+! TB
+! included monopole in the calculation of the dipole
+! search for 'TB'
+!
 SUBROUTINE compute_ion_dip(emaxpos, eopreg, edir, ion_dipole)
   !
   !
@@ -25,6 +29,8 @@ SUBROUTINE compute_ion_dip(emaxpos, eopreg, edir, ion_dipole)
   USE constants, ONLY : fpi
   USE kinds,      ONLY : DP
   USE cell_base,  ONLY : at, bg, omega, alat, saw
+  USE klist,      ONLY : nelec !TB
+  USE extfield,   ONLY : monopole, dipfield, zmon !TB
   !
   IMPLICIT NONE
   !
@@ -34,7 +40,7 @@ SUBROUTINE compute_ion_dip(emaxpos, eopreg, edir, ion_dipole)
   !
   REAL(DP) :: bmod
   INTEGER  :: na
-  REAL(DP) :: sawarg, tvectb, zvia
+  REAL(DP) :: sawarg, tvectb, zvia, ionic_charge !TB added ionic_charge
 
   !--------------------------
   !  Fix some values for later calculations
@@ -65,6 +71,15 @@ SUBROUTINE compute_ion_dip(emaxpos, eopreg, edir, ion_dipole)
  
   END DO
 
+  !
+  ! if the monopole is used to represent the background charge we need to include
+  ! the charged plane in the calculation of the dipole
+  !
+  IF (monopole.AND.dipfield) THEN
+     ionic_charge = SUM( zv(ityp(1:nat)) )
+     ion_dipole = ion_dipole + (nelec-ionic_charge) * saw(emaxpos,eopreg, zmon ) &
+                                                * (alat/bmod) * (fpi/omega)
+  ENDIF
   
   RETURN
   
@@ -107,7 +122,7 @@ SUBROUTINE compute_el_dip(emaxpos, eopreg, edir, charge, e_dipole)
   !--------------------------  
   
   !
-  ! Case with edir = 3 (in the formula changes only tha rgument of saw, i for
+  ! Case with edir = 3 (in the formula changes only the argument of saw, i for
   ! edir=1 and j for edir = 2)
   !
   ! P_{ele} = \sum_{ijk} \rho_{r_{ijk}} Saw\left( \frac{k}{nr3} \right) 

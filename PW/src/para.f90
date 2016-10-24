@@ -13,12 +13,16 @@ SUBROUTINE poolscatter( length, nkstot, f_in, nks, f_out )
   !----------------------------------------------------------------------------
   !
   ! ... This routine distributes a real array (e.g. eigenvalues) from the
-  ! ... first pool to all other pools. On input:
-  ! ... f_in(length,nkstot) contains data for all "nkstot" k-points,
-  ! ... it is required only on the first processor of the first pool.
+  ! ... first processor of the first pool to all other pools. On input:
+  ! ... f_in(length,nkstot) contains data for all "nkstot" k-points
   ! ... On output: f_out(length,nks) contains the data for the "nks" k-point
-  ! ... belonging to the current pool (f_in and f_out may coincide)
-  ! ... Honors "kunit". Quick-and-dirty implementation.
+  ! ... belonging to the current pool. f_in and f_out may coincide.
+  !
+  ! FIXME: Quick-and-dirty implementation; does not behave in the same way
+  ! FIXME: for parallel and non-parallel cases if f_in and f_out differ;
+  ! FIXME: It shouldn't broadcast the first proc, just distribute each proc
+  ! FIXME: of the first pool to each corresponding proc of other pools
+  ! ... 
   !
   USE kinds,     ONLY : DP
   USE mp_pools,  ONLY : intra_pool_comm, inter_pool_comm, &
@@ -27,19 +31,20 @@ SUBROUTINE poolscatter( length, nkstot, f_in, nks, f_out )
   !
   IMPLICIT NONE
   !
-  INTEGER :: length, nkstot, nks
-    ! first dimension of vectors f_in and f_out
-    ! number of k-points per pool
-    ! total number of k-points
-  REAL(DP) :: f_in(length,nkstot), f_out(length,nks)
-    ! input  ( contains values for all k-point )
-    ! output ( only for k-points of mypool )
+  INTEGER, INTENT(IN) :: length, nkstot, nks
+  ! first dimension of vectors f_in and f_out
+  ! number of k-points per pool
+  ! total number of k-points
+  REAL(DP), INTENT(IN) :: f_in(length,nkstot)
+  ! input  ( contains values for all k-point )
+  REAL(DP), INTENT(OUT) :: f_out(length,nks)
+  ! output ( only for k-points of mypool )
   !
-#if defined (__MPI)  
+#if defined (__MPI)
   !
   INTEGER :: rest, nbase
-    ! the rest of the integer division nkstot / npo
-    ! the position in the original list
+  ! the rest of the integer division nkstot / npo
+  ! the position in the original list
   !
   ! ... copy from the first node of the first pool
   ! ... to the first node of all the other pools
@@ -57,8 +62,7 @@ SUBROUTINE poolscatter( length, nkstot, f_in, nks, f_out )
   !
   f_out(:,1:nks) = f_in(:,(nbase+1):(nbase+nks))
   !
-  ! ... copy from the first node of every pool
-  ! ... to the other nodes of every pool
+  ! ... copy from the first proc of a pool to the other procs of the same pool
   !
   CALL mp_bcast( f_out, root_pool, intra_pool_comm )
   !
@@ -68,18 +72,76 @@ SUBROUTINE poolscatter( length, nkstot, f_in, nks, f_out )
   !
 END SUBROUTINE poolscatter
 !
+!----------------------------------------------------------------------------
+SUBROUTINE poolcollect( length, nks, f_in, nkstot, f_out )
+  !----------------------------------------------------------------------------
+  !
+  ! ... collects a real array f_in, distributed across pools, from all pools,
+  ! ... into a real array f_out
+  ! ... On input: f_in(length,nks) contains data for the "nks" k-points
+  ! ... of the current pool, on all pools
+  ! ... On output: f_out(length,nkstot) contains data for all "nkstot" k-points
+  ! ... on all pools
+  ! ... f_in and f_out must differ! Honors "kunit"
+  !
+  USE kinds,     ONLY : DP
+  USE mp_pools,  ONLY : my_pool_id, npool, kunit, &
+                        inter_pool_comm, intra_pool_comm
+  USE mp,        ONLY : mp_sum
+  !
+  IMPLICIT NONE
+  !
+  INTEGER, INTENT(IN) :: length, nks, nkstot
+  ! first dimension of arrays
+  ! number of k-points per pool
+  ! total number of k-points
+  REAL (DP), INTENT(IN)  :: f_in (length,nks)
+  ! pool-distributed function
+  REAL (DP), INTENT(OUT) :: f_out(length,nkstot)
+  ! pool-collected function
+  !
+  INTEGER :: nbase, rest, nks1
+  !
+  nks1    = kunit * ( nkstot / kunit / npool )
+  !
+  rest = ( nkstot - nks1 * npool ) / kunit
+  !
+  IF ( ( my_pool_id + 1 ) <= rest ) nks1 = nks1 + kunit
+  !
+  IF (nks1.ne.nks) &
+     call errore('xk_collect','inconsistent number of k-points',1)
+  !
+  ! ... calculates nbase = the position in the list of the first point that
+  ! ...                    belong to this npool - 1
+  !
+  nbase = nks * my_pool_id
+  !
+  IF ( ( my_pool_id + 1 ) > rest ) nbase = nbase + rest * kunit
+  !
+  ! copy the original points in the correct position of the list
+  !
+  f_out=0.d0
+  f_out(:,nbase+1:nbase+nks) = f_in(:,1:nks)
+  !
+  CALL mp_sum( f_out, inter_pool_comm )
+  !
+  RETURN
+  !
+END SUBROUTINE poolcollect
+!
 !-----------------------------------------------------------------------
 SUBROUTINE poolrecover( vec, length, nkstot, nks )
   !----------------------------------------------------------------------- 
   !
   ! ... gathers a real array (e.g. eigenvalues) distributed across pools
-  ! ... from all pools into the first pool.
+  ! ... from all pools into the first pool. Differences from "poolcollect":
+  ! ... 1) in-place, 2) result available only on first proc of first pool
   ! ... On input: vec(length,nks) contains data for the "nks" k-points
-  ! ... of the current pool (TODO: on all processors of the pool?_
+  ! ... of the current pool
   ! ... On output: vec(length,nkstot) contains data for all "nkstot" k-points
   ! ... on the first processor of the first pool.
   ! ... vec(1:lenghts,1:nks) is unchanged on output
-  ! ... Honors "kunit"
+  ! ... Opposite of "poolscatter". Honors "kunit"
   !
   USE kinds,     ONLY : DP
   USE mp_images, ONLY : intra_image_comm
@@ -156,7 +218,7 @@ END SUBROUTINE poolrecover
 SUBROUTINE ipoolrecover( ivec, length, nkstot, nks )
   !------------------------------------------------------------------------
   !
-  ! ... as above, for an integer vector
+  ! ... as poolrecover, for an integer vector
   !
   USE mp_images, ONLY : intra_image_comm
   USE mp_pools,  ONLY : inter_pool_comm, npool, me_pool, root_pool, &
@@ -227,27 +289,3 @@ SUBROUTINE ipoolrecover( ivec, length, nkstot, nks )
   RETURN
   !
 END SUBROUTINE ipoolrecover
-!
-!----------------------------------------------------------------------------
-SUBROUTINE poolcollect( vec, length, nkstot, nks )
-  !----------------------------------------------------------------------------
-  !
-  ! ... Like poolrecover, but the final result is broadcast to all processors
-  ! ... of all pools - Quick-and-dirty implementation
-  !
-  USE kinds,     ONLY : DP
-  USE mp_pools,  ONLY : root_pool, inter_pool_comm, intra_pool_comm
-  USE mp,        ONLY : mp_bcast
-  !
-  IMPLICIT NONE
-  !
-  INTEGER, INTENT(IN) :: length, nkstot, nks
-  REAL (DP) :: vec(length,nkstot)
-  !
-  CALL poolrecover ( vec, length, nkstot, nks )
-  CALL mp_bcast( vec, root_pool, intra_pool_comm )
-  CALL mp_bcast( vec, root_pool, inter_pool_comm )
-  !
-  RETURN
-  !
-END SUBROUTINE poolcollect

@@ -1,0 +1,16 @@
+\contentsline {section}{\numberline {1}Introduction}{1}{section.1}
+\contentsline {section}{\numberline {2}People and terms of use}{2}{section.2}
+\contentsline {section}{\numberline {3}Compilation}{2}{section.3}
+\contentsline {section}{\numberline {4}Usage}{2}{section.4}
+\contentsline {subsection}{\numberline {4.1}Plotting selected quantities}{3}{subsection.4.1}
+\contentsline {paragraph}{Planar averages}{3}{section*.2}
+\contentsline {paragraph}{All-electron charge}{3}{section*.3}
+\contentsline {paragraph}{About Bader's analysis}{3}{section*.4}
+\contentsline {subsection}{\numberline {4.2}Band structure, Fermi surface}{4}{subsection.4.2}
+\contentsline {subsection}{\numberline {4.3}Projection over atomic states, DOS}{4}{subsection.4.3}
+\contentsline {subsection}{\numberline {4.4}Wannier functions}{4}{subsection.4.4}
+\contentsline {subsection}{\numberline {4.5}Interfaces to/from other code}{5}{subsection.4.5}
+\contentsline {subsection}{\numberline {4.6}Other tools}{5}{subsection.4.6}
+\contentsline {section}{\numberline {5}Troubleshooting}{5}{section.5}
+\contentsline {paragraph}{Some postprocessing codes complain that they do not find some files}{5}{section*.5}
+\contentsline {paragraph}{{\em error in davcio} in postprocessing codes}{5}{section*.6}

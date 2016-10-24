@@ -374,7 +374,7 @@
 !=----------------------------------------------------------------------=!
 !
 
-   SUBROUTINE cfft3d( f, nx, ny, nz, ldx, ldy, ldz, isign )
+   SUBROUTINE cfft3d( f, nx, ny, nz, ldx, ldy, ldz, howmany, isign )
 
   !     driver routine for 3d complex fft of lengths nx, ny, nz
   !     input  :  f(ldx*ldy*ldz)  complex, transform is in-place
@@ -389,7 +389,7 @@
 
      IMPLICIT NONE
 
-     INTEGER, INTENT(IN) :: nx, ny, nz, ldx, ldy, ldz, isign
+     INTEGER, INTENT(IN) :: nx, ny, nz, ldx, ldy, ldz, howmany, isign
      COMPLEX (DP) :: f(:)
      INTEGER :: i, k, j, err, idir, ip
      REAL(DP) :: tscale
@@ -404,7 +404,9 @@
      IF ( ny < 1 ) &
          call fftx_error__('cfft3d',' ny is less than 1 ', 1)
      IF ( nz < 1 ) &
-         call fftx_error__('cfft3',' nz is less than 1 ', 1)
+         call fftx_error__('cfft3d',' nz is less than 1 ', 1)
+     IF( howmany /= 1 ) &
+         CALL fftx_error__('cfft3d', ' howmany different from 1, not yet implemented for FFTW3 ', 1 )
 
      !
      !   Here initialize table only if necessary
@@ -484,13 +486,13 @@
 !=----------------------------------------------------------------------=!
 !
 
-SUBROUTINE cfft3ds (f, nx, ny, nz, ldx, ldy, ldz, isign, &
-     do_fft_x, do_fft_y)
+SUBROUTINE cfft3ds (f, nx, ny, nz, ldx, ldy, ldz, howmany, isign, &
+     do_fft_z, do_fft_y)
   !
   !     driver routine for 3d complex "reduced" fft - see cfft3d
   !     The 3D fft are computed only on lines and planes which have
   !     non zero elements. These lines and planes are defined by
-  !     the two integer vectors do_fft_x(ldy*nz) and do_fft_y(nz)
+  !     the two integer vectors do_fft_y(nx) and do_fft_z(ldx*ldy)
   !     (1 = perform fft, 0 = do not perform fft)
   !     This routine is implemented only for fftw, essl, acml
   !     If not implemented, cfft3d is called instead
@@ -498,15 +500,16 @@ SUBROUTINE cfft3ds (f, nx, ny, nz, ldx, ldy, ldz, isign, &
   !----------------------------------------------------------------------
   !
   implicit none
+     INTEGER, PARAMETER  :: stdout = 6
 
-  integer :: nx, ny, nz, ldx, ldy, ldz, isign
+  integer :: nx, ny, nz, ldx, ldy, ldz, howmany, isign
   !
   !   logical dimensions of the fft
   !   physical dimensions of the f array
   !   sign of the transformation
 
   complex(DP) :: f ( ldx * ldy * ldz )
-  integer :: do_fft_x(:), do_fft_y(:)
+  integer :: do_fft_y(:), do_fft_z(:)
   !
   integer :: m, incx1, incx2
   INTEGER :: i, k, j, err, idir, ip,  ii, jj
@@ -520,13 +523,10 @@ SUBROUTINE cfft3ds (f, nx, ny, nz, ldx, ldy, ldz, isign, &
 
   tscale = 1.0_DP
 
-  ! WRITE( stdout, fmt="('DEBUG cfft3ds :',6I6)") nx, ny, nz, ldx, ldy, ldz
-  ! WRITE( stdout, fmt="('DEBUG cfft3ds :',24I2)") do_fft_x
-  ! WRITE( stdout, fmt="('DEBUG cfft3ds :',24I2)") do_fft_y
-
-
      IF( ny /= ldy ) &
        CALL fftx_error__(' cfft3ds ', ' wrong dimensions: ny /= ldy ', 1 )
+     IF( howmany /= 1 ) &
+       CALL fftx_error__(' cfft3ds ', ' howmany different from 1, not yet implemented for FFTW3 ', 1 )
 
      CALL lookup()
 
@@ -543,80 +543,76 @@ SUBROUTINE cfft3ds (f, nx, ny, nz, ldx, ldy, ldz, isign, &
      IF ( isign > 0 ) THEN
 
         !
-        !  i - direction ...
+        !  k-direction ...
         !
 
-        incx1 = 1;  incx2 = ldx;  m = 1
+        incx1 = ldx * ldy;  incx2 = 1;  m = 1
 
-        do k = 1, nz
-           do j = 1, ny
-              jj = j + ( k - 1 ) * ldy
-              ii = 1 + ldx * ( jj - 1 )
-              if ( do_fft_x( jj ) == 1 ) THEN
-                call dfftw_execute_dft( bw_plan( 1, ip), f( ii: ), f( ii: ) )
-              endif
-           enddo
-        enddo
+        do i =1, nx
+           do j =1, ny
+              ii = i + ldx * (j-1)
+              if ( do_fft_z(ii) > 0) then
+                 call dfftw_execute_dft( bw_plan( 3, ip), f( ii:), f( ii:) )
+              end if
+           end do
+        end do
 
         !
         !  ... j-direction ...
         !
 
-        incx1 = ldx;  incx2 = 1;  m = nx
+        incx1 = ldx;  incx2 = ldx*ldy;  m = nz
 
-        do k = 1, nz
-           ii = 1 + ldx * ldy * ( k - 1 )
-           if ( do_fft_y( k ) == 1 ) then
-             call dfftw_execute_dft( bw_plan( 2, ip), f( ii: ), f( ii: ) )
+        do i = 1, nx
+           if ( do_fft_y( i ) == 1 ) then
+             call dfftw_execute_dft( bw_plan( 2, ip), f( i: ), f( i: ) )
            endif
         enddo
 
         !
-        !     ... k-direction
+        !  ... i - direction
         !
 
-        incx1 = ldx * ldy;  incx2 = 1;  m = ldx * ny
+        incx1 = 1;  incx2 = ldx;  m = ldy*nz
 
-        call dfftw_execute_dft( bw_plan( 3, ip), f(1:), f(1:) )
+        call dfftw_execute_dft( bw_plan( 1, ip), f( 1: ), f( 1: ) )
 
      ELSE
 
         !
-        !     ... k-direction
+        !  i - direction ...
         !
 
-        incx1 = ldx * ny;  incx2 = 1;  m = ldx * ny
+        incx1 = 1;  incx2 = ldx;  m = ldy*nz
 
-        call dfftw_execute_dft( fw_plan( 3, ip), f(1:), f(1:) )
+        call dfftw_execute_dft( fw_plan( 1, ip), f( 1: ), f( 1: ) )
 
         !
-        !     ... j-direction ...
+        !  ... j-direction ...
         !
 
-        incx1 = ldx;  incx2 = 1;  m = nx
+        incx1 = ldx;  incx2 = ldx*ldy;  m = nz
 
-        do k = 1, nz
-           ii = 1 + ldx * ldy * ( k - 1 )
-           if ( do_fft_y ( k ) == 1 ) then
-             call dfftw_execute_dft( fw_plan( 2, ip), f( ii: ), f( ii: ) )
+        do i = 1, nx
+           if ( do_fft_y ( i ) == 1 ) then
+             call dfftw_execute_dft( fw_plan( 2, ip), f( i: ), f( i: ) )
            endif
         enddo
 
         !
-        !     i - direction ...
+        !  ... k-direction
         !
 
-        incx1 = 1;  incx2 = ldx;  m = 1
-
-        do k = 1, nz
+        incx1 = ldx * ny;  incx2 = 1;  m = 1
+ 
+        do i = 1, nx
            do j = 1, ny
-              jj = j + ( k - 1 ) * ldy
-              ii = 1 + ldx * ( jj - 1 )
-              if ( do_fft_x( jj ) == 1 ) then
-                call dfftw_execute_dft( fw_plan( 1, ip), f( ii: ), f( ii: ) )
-              endif
-           enddo
-        enddo
+              ii = i + ldx * (j-1)
+              if ( do_fft_z ( ii) > 0) then
+                 call dfftw_execute_dft( fw_plan( 3, ip), f(ii:), f(ii:) )
+              end if
+           end do
+        end do
 
         call DSCAL (2 * ldx * ldy * nz, 1.0_DP/(nx * ny * nz), f(1), 1)
 
@@ -654,27 +650,27 @@ SUBROUTINE cfft3ds (f, nx, ny, nz, ldx, ldy, ldz, isign, &
             CALL dfftw_destroy_plan( bw_plan( 3, icurrent) )
        idir = -1
        CALL dfftw_plan_many_dft( fw_plan( 1, icurrent), &
-            1, nx, 1, f(1:), (/ldx, ldy, ldz/), 1, ldx, &
+            1, nx, ny*nz, f(1:), (/ldx, ldy, ldz/), 1, ldx, &
             f(1:), (/ldx, ldy, ldz/), 1, ldx, idir, FFTW_ESTIMATE)
        idir = 1
        CALL dfftw_plan_many_dft( bw_plan( 1, icurrent), &
-            1, nx, 1, f(1:), (/ldx, ldy, ldz/), 1, ldx, &
+            1, nx, ny*nz, f(1:), (/ldx, ldy, ldz/), 1, ldx, &
             f(1:), (/ldx, ldy, ldz/), 1, ldx, idir, FFTW_ESTIMATE)
        idir = -1
        CALL dfftw_plan_many_dft( fw_plan( 2, icurrent), &
-            1, ny, nx, f(1:), (/ldx, ldy, ldz/), ldx, 1, &
-            f(1:), (/ldx, ldy, ldz/), ldx, 1, idir, FFTW_ESTIMATE)
+            1, ny, nz, f(1:), (/ldx, ldy, ldz/), ldx, ldx*ldy, &
+            f(1:), (/ldx, ldy, ldz/), ldx, ldx*ldy, idir, FFTW_ESTIMATE)
        idir = 1
        CALL dfftw_plan_many_dft( bw_plan( 2, icurrent), &
-            1, ny, nx, f(1:), (/ldx, ldy, ldz/), ldx, 1, &
-            f(1:), (/ldx, ldy, ldz/), ldx, 1, idir, FFTW_ESTIMATE)
+            1, ny, nz, f(1:), (/ldx, ldy, ldz/), ldx, ldx*ldy, &
+            f(1:), (/ldx, ldy, ldz/), ldx, ldx*ldy, idir, FFTW_ESTIMATE)
        idir = -1
        CALL dfftw_plan_many_dft( fw_plan( 3, icurrent), &
-            1, nz, nx*ny, f(1:), (/ldx, ldy, ldz/), ldx*ldy, 1, &
+            1, nz, 1, f(1:), (/ldx, ldy, ldz/), ldx*ldy, 1, &
             f(1:), (/ldx, ldy, ldz/), ldx*ldy, 1, idir, FFTW_ESTIMATE)
        idir = 1
        CALL dfftw_plan_many_dft( bw_plan( 3, icurrent), &
-            1, nz, nx*ny, f(1:), (/ldx, ldy, ldz/), ldx*ldy, 1, &
+            1, nz, 1, f(1:), (/ldx, ldy, ldz/), ldx*ldy, 1, &
             f(1:), (/ldx, ldy, ldz/), ldx*ldy, 1, idir, FFTW_ESTIMATE)
 
        dims(1,icurrent) = nx; dims(2,icurrent) = ny; dims(3,icurrent) = nz

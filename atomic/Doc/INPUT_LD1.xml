@@ -1,0 +1,1108 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="input_xx.xsl"?>
+<!-- FILE AUTOMATICALLY CREATED: DO NOT EDIT, CHANGES WILL BE LOST -->
+    
+<input_description distribution="Quantum Espresso" program="ld1.x" >
+   <toc>
+   </toc>
+   <intro>
+Input data cards for ld1.x program:
+
+Always present:
+  1   namelist &amp;input
+  1.1 optional cards for all-electron calculations
+
+Needed for PP generation:
+  2   namelist &amp;inputp
+  2.1 additional cards for PP generation
+
+Needed for pseudo-potential (PP) test. optional for PP generation:
+  3   namelist &amp;test
+  3.1 optional cards for PP test
+   </intro>
+   <namelist name="INPUT" >
+      <label> This namelist is always needed !
+      </label>
+      <var name="title" type="CHARACTER" >
+         <info> A string describing the job.
+         </info>
+         <status> OPTIONAL
+         </status>
+      </var>
+      <group>
+         <label> Either:
+         </label>
+         <var name="zed" type="REAL" >
+            <see> atom
+            </see>
+            <info>
+The nuclear charge (1 &lt; zed &lt; 100).
+
+<b>IMPORTANT:</b>
+Specify either <ref>zed</ref> OR <ref>atom</ref>, not both!
+            </info>
+         </var>
+         <label> Or:
+         </label>
+         <var name="atom" type="CHARACTER" >
+            <see> zed
+            </see>
+            <info>
+Atomic symbol: atom=&apos;H&apos;, &apos;He&apos;, &apos;Be&apos;, etc.
+
+<b>IMPORTANT:</b>
+Specify either <ref>atom</ref> OR <ref>zed</ref>, not both!
+            </info>
+         </var>
+      </group>
+      <group>
+         <label> Radial grid parameters:
+         </label>
+         <var name="xmin" type="REAL" >
+            <see> dx
+            </see>
+            <default>
+-7.0 if <ref>iswitch</ref>&gt;1 or <ref>rel</ref>=0,
+-8.0 otherwise
+            </default>
+            <info> Radial grid parameter.
+            </info>
+         </var>
+         <var name="dx" type="REAL" >
+            <info>
+Radial grid parameter.
+
+The radial grid is: r(i+1) = exp(xmin+i*dx)/zed  a.u.
+            </info>
+            <default>
+0.0125 if <ref>iswitch</ref>&gt;1,
+0.008 otherwise
+            </default>
+         </var>
+         <var name="rmax" type="REAL" >
+            <info> Outermost grid point.
+            </info>
+            <default> 100.0 a.u.
+            </default>
+         </var>
+      </group>
+      <var name="beta" type="REAL" >
+         <info> parameter for potential mixing
+         </info>
+         <default> 0.2
+         </default>
+      </var>
+      <var name="tr2" type="REAL" >
+         <info> convergence threshold for scf
+         </info>
+         <default> 1e-14
+         </default>
+      </var>
+      <var name="iswitch" type="INTEGER" >
+         <info>
+1    all-electron calculation
+2    PP test calculation
+3    PP generation
+4    LDA-1/2 correction, needs a previously generated PP file
+         </info>
+         <default> 1
+         </default>
+      </var>
+      <group>
+         <label> Parameters for logarithmic derivatives:
+         </label>
+         <var name="nld" type="INTEGER" >
+            <info> the number of logarithmic derivatives to be calculated
+            </info>
+         </var>
+         <var name="rlderiv" type="REAL" >
+            <info> radius (a.u.) at which logarithmic derivatives are calculated
+            </info>
+         </var>
+         <vargroup type="REAL" >
+            <var name="eminld" >
+            </var>
+            <var name="emaxld" >
+            </var>
+            <info>
+Energy range (min, max energy, in Ry) at which
+logarithmic derivatives are calculated.
+            </info>
+         </vargroup>
+         <var name="deld" type="REAL" >
+            <info>
+Delta e (Ry) of energy for logarithmic derivatives.
+            </info>
+         </var>
+         <var name="rpwe" type="REAL" >
+            <info> radius (a.u.) at which partial wave expansions are calculated
+            </info>
+            <default> rlderiv
+            </default>
+         </var>
+         <message>
+If the above parameters are not specified, logarithmic
+derivatives and partial wave expansions are not calculated.
+         </message>
+      </group>
+      <var name="rel" type="INTEGER" >
+         <info>
+0 ... non relativistic calculation
+1 ... scalar relativistic calculation
+2 ... full relativistic calculation with spin-orbit
+         </info>
+         <default>
+0 for Z &lt;= 18;
+1 for Z &gt;  18
+         </default>
+      </var>
+      <var name="lsmall" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+if .true. writes on files the small component
+         </info>
+      </var>
+      <var name="max_out_wfc" type="INTEGER" >
+         <default> 7
+         </default>
+         <info>
+Maximum number of atomic wavefunctions written in the output
+file.
+         </info>
+      </var>
+      <var name="noscf" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+if .true. the charge is not computed. The occupations are
+not used and the eigenvalues and eigenfunctions are those
+of a hydrogen-like atom.
+         </info>
+      </var>
+      <var name="lsd" type="INTEGER" >
+         <info>
+0 ... non spin polarized calculation
+1 ... spin-polarized calculation
+
+<b>BEWARE:</b>
+not allowed if iswitch=3 (PP generation) or with full
+relativistic calculation
+         </info>
+         <default> 0
+         </default>
+      </var>
+      <var name="dft" type="CHARACTER" >
+         <info>
+Exchange-correlation functional.
+
+Examples:
+<b>&apos;PZ&apos;</b>    Perdew and Zunger formula for LDA
+<b>&apos;PW91&apos;</b>  Perdew and Wang GGA
+<b>&apos;BP&apos;</b>    Becke and Perdew GGA
+<b>&apos;PBE&apos;</b>   Perdew, Becke and Ernzerhof GGA
+<b>&apos;BLYP&apos;</b>  ...
+
+For the complete list, see module &quot;functionals&quot; in ../Modules/
+The default is <b>&apos;PZ&apos;</b> for all-electron calculations,
+it is read from the PP file in a PP calculation.
+         </info>
+      </var>
+      <var name="latt" type="INTEGER" >
+         <info>
+0 ... no Latter correction
+1 ... apply Latter correction
+         </info>
+         <default> 0
+         </default>
+      </var>
+      <var name="isic" type="INTEGER" >
+         <info>
+0 ... no Self-interaction correction
+1 ... apply Self-interaction correction
+         </info>
+         <default> 0
+         </default>
+         <status>
+only for all-electron calculation
+         </status>
+      </var>
+      <var name="rytoev_fact" type="REAL" >
+         <default> as specified in file Modules/constants.f90
+         </default>
+         <info>
+Factor used to convert Ry into eV.
+         </info>
+      </var>
+      <var name="cau_fact" type="REAL" >
+         <default> as specified in file Modules/constants.f90
+         </default>
+         <info>
+Speed of light in a.u..
+
+(Be careful the default value is always used in the
+ relativistic exchange.)
+         </info>
+      </var>
+      <var name="vdw" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+If .true., the frequency dependent polarizability and van der
+Waals coefficient C6 will be computed in Thomas-Fermi and
+von Weizsaecker approximation(only for closed-shell ions).
+         </info>
+         <status>
+Gradient-corrected DFT not yet implemented.
+         </status>
+      </var>
+      <var name="prefix" type="CHARACTER" >
+         <default> &apos;ld1&apos;
+         </default>
+         <info>
+Prefix for file names - only for output file names
+containing the orbitals, logarithmic derivatives, tests
+See below for file names and the content of the file.
+         </info>
+      </var>
+      <var name="verbosity" type="CHARACTER" >
+         <default> &apos;low&apos;
+         </default>
+         <info>
+<b>&apos;low&apos;</b> or <b>&apos;high&apos;</b>
+
+if <b>&apos;high&apos;</b> with iswitch=2,3 prints separately core and
+valence contributions to the energies. Print the
+frozen-core energy.
+         </info>
+      </var>
+      <var name="file_charge" type="CHARACTER" >
+         <default> &apos; &apos;
+         </default>
+         <info>
+Name of the file where the code writes the all-electron
+total charge. No charge is written if file_charge=&apos; &apos;.
+         </info>
+      </var>
+      <var name="config" type="CHARACTER" >
+         <default> &apos; &apos;
+         </default>
+         <info>
+A string with the electronic configuration.
+
+Example:
+  &apos;[Ar] 3d10 4s2 4p2.5&apos;
+
+* If <ref>lsd</ref>=1, spin-up and spin-down state may appear twice
+  with the respective occupancy: 3p4 3p2 = 4 up,
+  2 down. Otherwise, the Hund&apos;s rule is assumed.
+
+* If <ref>rel</ref>=2, states with jj=l-1/2 are filled first.
+  If a state appears twice, the first one has jj=l-1/2,
+  the second one jj=l+1/2 (except S states)
+  (Use rel_dist if you want to average the electrons
+  over all available states.)
+
+* If config=&apos;default&apos; the code uses <ref>zed</ref> to set the ground
+  state electronic configuration for the atom.
+
+Negative occupancies are used to flag unbound states;
+they are not actually used.
+         </info>
+      </var>
+      <var name="relpert" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+If .true. the relativistic corrections to the non-relativistic
+Kohn-Sham energy levels (<ref>rel</ref>=0 .and. <ref>lsd</ref>=0) are computed using
+first-order perturbation theory in all-electron calculations.
+The corrections consist of the following terms:
+   E_vel: velocity (p^4) correction
+   E_Dar: Darwin term
+   E_S-O: spin-orbit coupling
+The spin-orbit term vanishes for s-electron states and gives
+rise to a splitting of (2*l+1)*E_S-O for the other states.
+The separate contributions are printed only if verbosity=&apos;high&apos;.
+
+Formulas and notation are based on the Herman-Skillman book:
+F. Herman and S. Skillman, &quot;Atomic Structure Calculations&quot;,
+Prentice-Hall, Inc., Englewood Cliffs, New Jersey, 1963
+         </info>
+      </var>
+      <var name="rel_dist" type="CHARACTER" >
+         <default> &apos;energy&apos;
+         </default>
+         <info>
+<b>&apos;energy&apos;</b> or <b>&apos;average&apos;</b>
+
+* if <b>&apos;energy&apos;</b> the relativistic l-1/2 states are filled first.
+
+* if <b>&apos;average&apos;</b> the electrons are uniformly distributed
+  among all the states with the given l.
+         </info>
+      </var>
+      <var name="write_coulomb" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+If .true., a fake pseudo-potential file with name X.UPF,
+where X is the atomic symbol, is written. It contains
+the radial grid and the wavefunctions as specified in input,
+plus the info needed to build the Coulomb potential
+for an all-electron calculation - for testing only.
+         </info>
+      </var>
+   </namelist>
+   <card name="AllElectronCards" nameless="1" >
+      <label>
+If config is empty the electronic configuration is read from
+the following cards:
+      </label>
+      <choose>
+         <when test="rel &lt; 2" >
+            <syntax>
+               <line>
+                  <var name="nwf" type="INTEGER" >
+                     <info>
+number of wavefunctions
+                     </info>
+                  </var>
+               </line>
+               <table name="AE_wfs" >
+                  <rows start="1" end="nwf" >
+                     <col name="nl" type="CHARACTER" >
+                        <info> wavefunction label (e.g. 1s, 2s, etc.)
+                        </info>
+                     </col>
+                     <col name="n" type="INTEGER" >
+                        <info> principal quantum number
+                        </info>
+                     </col>
+                     <col name="l" type="INTEGER" >
+                        <info> angular quantum number
+                        </info>
+                     </col>
+                     <col name="oc" type="REAL" >
+                        <info> occupation number
+                        </info>
+                     </col>
+                     <col name="isw" type="INTEGER" >
+                        <info> the spin index (1-2) used only in the lsda case
+                        </info>
+                     </col>
+                  </rows>
+               </table>
+            </syntax>
+         </when>
+         <elsewhen test="rel = 2" >
+            <syntax>
+               <line>
+                  <var name="nwf" >
+                  </var>
+               </line>
+               <table name="AE_wfs" >
+                  <rows start="1" end="nwf" >
+                     <col name="nl" >
+                     </col>
+                     <col name="n" >
+                     </col>
+                     <col name="l" >
+                     </col>
+                     <col name="oc" >
+                     </col>
+                     <col name="jj" type="REAL" >
+                        <info>
+The total angular momentum (0.0 is allowed for complete
+shells: the codes fills 2l states with jj=l-1/2,
+2l+2 with jj=l+1/2).
+                        </info>
+                     </col>
+                  </rows>
+               </table>
+            </syntax>
+         </elsewhen>
+      </choose>
+   </card>
+   <namelist name="INPUTP" >
+      <var name="zval" type="REAL" >
+         <default> (calculated)
+         </default>
+         <info>
+Valence charge.
+
+zval is automatically calculated from available data.
+If the value of zval is provided in input, it will be
+checked versus the calculated value. The only case in
+which you need to explicitly provide the value of zval
+for noninteger zval (i.e. half core-hole pseudo-potentials).
+         </info>
+      </var>
+      <var name="pseudotype" type="INTEGER" >
+         <info>
+1 ... norm-conserving, single-projector PP
+      IMPORTANT: if pseudotype=1 all calculations are done
+      using the SEMILOCAL form, not the separable nonlocal form
+
+2 ... norm-conserving PP in separable form (obsolescent)
+      All calculations are done using SEPARABLE non-local form
+      IMPORTANT: multiple projectors allowed but not properly
+      implemented, use only if you know what you are doing
+
+3 ... ultrasoft PP or PAW
+         </info>
+      </var>
+      <var name="file_pseudopw" type="CHARACTER" >
+         <status> REQUIRED
+         </status>
+         <info>
+File where the generated PP is written.
+
+* if the file name ends with &quot;upf&quot; or &quot;UPF&quot;,
+or in any case for spin-orbit PP (rel=2),
+the file is written in UPF format;
+
+* if the file name ends with &apos;psp&apos; it is
+written in native CPMD format (this is currently
+an experimental feature); otherwise it is written
+in the old &quot;NC&quot; format if pseudotype=1, or
+in the old RRKJ format if pseudotype=2 or 3
+(no default, must be specified).
+         </info>
+      </var>
+      <var name="file_recon" type="CHARACTER" >
+         <info>
+File containing data needed for GIPAW reconstruction
+of all-electron wavefunctions from PP results.
+If you want to use additional states to perform the
+reconstruction, add them at the end of the list
+of all-electron states.
+         </info>
+         <default> &apos; &apos;
+         </default>
+      </var>
+      <var name="lloc" type="INTEGER" >
+         <default> -1
+         </default>
+         <info>
+Angular momentum of the local channel.
+
+* lloc=-1 or lloc=-2 pseudizes the all-electron potential
+  if lloc=-2 the original recipe of Troullier-Martins
+  is used (zero first and second derivatives at r=0)
+* lloc&gt;-1 uses the corresponding channel as local PP
+
+NB: if lloc&gt;-1, the corresponding channel must be the last in the
+list of wavefunctions appearing after the namelist &amp;inputp
+In the relativistic case, if lloc &gt; 0 both the j=lloc-1/2 and
+the j=lloc+1/2 wavefunctions must be at the end of the list.
+         </info>
+      </var>
+      <var name="rcloc" type="REAL" >
+         <status>
+Must be specified only if <ref>lloc</ref>=-1, otherwise the
+corresponding value of <ref>rcut</ref> is used.
+         </status>
+         <info>
+Matching radius (a.u.) for local pseudo-potential (no default).
+         </info>
+      </var>
+      <var name="nlcc" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+If .true. produce a PP with the nonlinear core
+correction of Louie, Froyen, and Cohen
+[<a href="https://journals.aps.org/prb/abstract/10.1103/PhysRevB.26.1738">PRB 26, 1738 (1982)</a>].
+         </info>
+      </var>
+      <var name="new_core_ps" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <status> requires nlcc=.true.
+         </status>
+         <info>
+If .true. pseudizes the core charge with bessel functions.
+         </info>
+      </var>
+      <var name="rcore" type="REAL" >
+         <info>
+Matching radius (a.u.) for the smoothing of the core charge.
+If not specified, the matching radius is determined
+by the condition:  rho_core(rcore) = 2*rho_valence(rcore)
+         </info>
+      </var>
+      <var name="tm" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+* .true. for Troullier-Martins pseudization [<a href="https://journals.aps.org/prb/abstract/10.1103/PhysRevB.43.1993">PRB 43, 1993 (1991)</a>]
+
+* .false. for Rappe-Rabe-Kaxiras-Joannopoulos pseudization
+  [<a href="https://journals.aps.org/prb/abstract/10.1103/PhysRevB.41.1227">PRB 41, 1227 (1990)</a>, erratum <a href="https://journals.aps.org/prb/abstract/10.1103/PhysRevB.44.13175">PRB 44, 13175 (1991)</a>]
+         </info>
+      </var>
+      <var name="rho0" type="REAL" >
+         <info>
+Charge at the origin: when the Rappe-Rabe-Kaxiras-Joannopoulos
+method with 3 Bessel functions fails, specifying rho0 &gt; 0
+may allow to override the problem (using 4 Bessel functions).
+Typical values are in the order of 0.01-0.02
+         </info>
+         <default> 0.0
+         </default>
+      </var>
+      <var name="lpaw" type="LOGICAL" >
+         <info>
+If .true. produce a PAW dataset, experimental feature
+only for <ref>pseudotype</ref>=3
+         </info>
+         <default> .false.
+         </default>
+      </var>
+      <group>
+         <var name="which_augfun" type="CHARACTER" >
+            <default>
+<tt>&apos;AE&apos;</tt> for Vanderbilt-Ultrasoft pseudo-potentials and &apos;BESSEL&apos; for PAW datasets.
+            </default>
+            <info>
+If different from <b>&apos;AE&apos;</b> the augmentation functions are pseudized
+before <ref>rmatch_augfun</ref>. The pseudization options are:
+
+* <b>&apos;PSQ&apos;</b>        Use Bessel functions to pseudize Q
+               from the origin to rmatch_augfun.
+
+These features are available only for PAW:
+
+* <b>&apos;BESSEL&apos;</b>     Use Bessel functions to pseudize the Q.
+* <b>&apos;GAUSS&apos;</b>      Use 2 Gaussian functions to pseudize the Q.
+* <b>&apos;BG&apos;</b>         Use original Bloechl&apos;s recipe with a single gaussian.
+
+Note: if lpaw is true and which_augfun is set to AE real all-
+electron charge will be used, which will produce extremely
+hard augmentation.
+            </info>
+         </var>
+         <var name="rmatch_augfun" type="REAL" >
+            <default> 0.5 a.u.
+            </default>
+            <status> Used only if which_augfun is different from &apos;AE&apos;.
+            </status>
+            <info>
+Pseudization radius for the augmentation functions. Presently
+it has the same value for all L.
+            </info>
+         </var>
+         <var name="rmatch_augfun_nc" type="REAL" >
+            <default> .false.
+            </default>
+            <status> Used only if which_augfun is &apos;PSQ&apos;.
+            </status>
+            <info>
+If .true. the augmentation functions are pseudized
+from the origin to min(rcut(ns),rcut(ns1)) where ns
+and ns1 are the two channels for that Q. In this case
+rmatch_augfun is not used.
+            </info>
+         </var>
+      </group>
+      <var name="lsave_wfc" type="LOGICAL" >
+         <default> .false. if .not. lpaw, otherwise .true.
+         </default>
+         <info>
+Set it to .true. to save all-electron and pseudo wavefunctions
+used in the pseudo-potential generation in the UPF file. Only
+works for UPFv2 format.
+         </info>
+      </var>
+      <var name="lgipaw_reconstruction" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+Set it to .true. to generate pseudo-potentials containing the
+additional info required for reconstruction of all-electron
+orbitals, used by GIPAW. You will typically need to specify
+additional projectors beyond those used in the generation of
+pseudo-potentials. You should also specify <ref>file_recon</ref>.
+
+All projectors used in the reconstruction must be listed BOTH
+in the test configuration after namelist &amp;test AND in the
+all-electron configuration (variable &apos;config&apos;, namelist &amp;inputp,
+Use negative occupancies for projectors on unbound states). The
+core radii in the test configuration should be the same as in
+the pseudo-potential generation section and will be used as the
+radius of reconstruction. Projectors not used to generate the
+pseudo-potential should have zero occupation number.
+         </info>
+      </var>
+      <var name="use_paw_as_gipaw" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+When generating a PAW dataset, setting this option to .true. will
+save the core all-electron wavefunctions to the UPF file.
+The GIPAW reconstruction to be performed using the PAW data and
+projectors for the valence wavefunctions.
+
+In the default case, the GIPAW valence wavefunction and projectors
+are independent from the PAW ones and must be then specified as
+explained above in lgipaw_reconstruction.
+
+Setting this to .true. always implies <ref>lgipaw_reconstruction</ref> = .true.
+         </info>
+      </var>
+      <var name="author" type="CHARACTER" >
+         <info> Name of the author.
+         </info>
+         <default> &apos;anonymous&apos;
+         </default>
+      </var>
+      <var name="file_chi" type="CHARACTER" >
+         <info> file containing output PP chi functions
+         </info>
+         <default> &apos; &apos;
+         </default>
+      </var>
+      <var name="file_beta" type="CHARACTER" >
+         <info> file containing output PP beta functions
+         </info>
+         <default> &apos; &apos;
+         </default>
+      </var>
+      <var name="file_qvan" type="CHARACTER" >
+         <info> file containing output PP qvan functions
+         </info>
+         <default> &apos; &apos;
+         </default>
+      </var>
+      <var name="file_screen" type="CHARACTER" >
+         <info> file containing output screening potential
+         </info>
+         <default> &apos; &apos;
+         </default>
+      </var>
+      <var name="file_core" type="CHARACTER" >
+         <info> file containing output total and core charge
+         </info>
+         <default> &apos; &apos;
+         </default>
+      </var>
+      <var name="file_wfcaegen" type="CHARACTER" >
+         <info> file with the all-electron wfc for generation
+         </info>
+         <default> &apos; &apos;
+         </default>
+      </var>
+      <var name="file_wfcncgen" type="CHARACTER" >
+         <info> file with the norm-conserving wfc for generation
+         </info>
+         <default> &apos; &apos;
+         </default>
+      </var>
+      <var name="file_wfcusgen" type="CHARACTER" >
+         <info> file with the ultra-soft wfc for generation
+         </info>
+         <default> &apos; &apos;
+         </default>
+      </var>
+   </namelist>
+   <card name="PseudoPotentialGenerationCards" nameless="1" >
+      <choose>
+         <when test="rel=0  OR  rel=2" >
+            <syntax>
+               <line>
+                  <var name="nwfs" type="INTEGER" >
+                     <info> number of wavefunctions to be pseudized
+                     </info>
+                  </var>
+               </line>
+               <table name="PP_wfs" >
+                  <rows start="1" end="nwfs" >
+                     <col name="nls" type="CHARACTER" >
+                        <info>
+Wavefunction label (same as in the all-electron configuration).
+                        </info>
+                     </col>
+                     <col name="nns" type="INTEGER" >
+                        <info>
+Principal quantum number (referred to the PSEUDOPOTENTIAL case;
+nns=1 for lowest s, nns=2 for lowest p, and so on).
+                        </info>
+                     </col>
+                     <col name="lls" type="INTEGER" >
+                        <info> Angular momentum quantum number.
+                        </info>
+                     </col>
+                     <col name="ocs" type="REAL" >
+                        <info> Occupation number  (same as in the all-electron configuration).
+                        </info>
+                     </col>
+                     <col name="ener" type="REAL" >
+                        <info>
+Energy (Ry) used to pseudize the corresponding state.
+If 0.d0, use the one-electron energy of the all-electron state.
+Do not use 0.d0 for unbound states!
+                        </info>
+                     </col>
+                     <col name="rcut" type="REAL" >
+                        <info> Matching radius (a.u.) for norm conserving PP.
+                        </info>
+                     </col>
+                     <col name="rcutus" type="REAL" >
+                        <info> Matching radius (a.u.) for ultrasoft PP - only for pseudotype=3.
+                        </info>
+                     </col>
+                     <col name="jjs" type="REAL" >
+                        <info> The total angular momentum (0.0 is allowed for complete shells).
+                        </info>
+                     </col>
+                  </rows>
+               </table>
+            </syntax>
+            <message>
+* if <ref>lloc</ref>&gt;-1 the state with <ref>lls</ref>=<ref>lloc</ref> must be the last
+
+* if <ref>lloc</ref>&gt;0 in the relativistic case, both states with <ref>jjs</ref>=<ref>lloc</ref>-1/2
+  and <ref>jjs</ref>=<ref>lloc</ref>+1/2 must be the last two
+            </message>
+         </when>
+         <otherwise>
+            <syntax>
+               <line>
+                  <var name="nwfs" >
+                  </var>
+               </line>
+               <table name="PP_wfs" >
+                  <rows start="1" end="nwfs" >
+                     <col name="nls" >
+                     </col>
+                     <col name="nns" >
+                     </col>
+                     <col name="lls" >
+                     </col>
+                     <col name="ocs" >
+                     </col>
+                     <col name="ener" >
+                     </col>
+                     <col name="rcut" >
+                     </col>
+                     <col name="rcutus" >
+                     </col>
+                  </rows>
+               </table>
+            </syntax>
+         </otherwise>
+      </choose>
+   </card>
+   <namelist name="TEST" >
+      <label> needed only if iswitch=2 or iswitch=4, optional if iswitch=3
+      </label>
+      <var name="nconf" type="INTEGER" >
+         <info> the number of configurations to be tested. For iswitch = 4 nconf=2
+         </info>
+         <default> 1
+         </default>
+      </var>
+      <var name="file_pseudo" type="CHARACTER" >
+         <status> ignored if iswitch=3
+         </status>
+         <info>
+File containing the PP.
+
+* If the file name contains  &quot;.upf&quot; or &quot;.UPF&quot;,
+the file is assumed to be in UPF format;
+
+* else if the file name contains &quot;.rrkj3&quot; or &quot;.RRKJ3&quot;,
+the old RRKJ format is first tried;
+
+* otherwise, the old NC format is read.
+
+IMPORTANT: in the latter case, all calculations are done
+using the SEMILOCAL form, not the separable nonlocal form.
+Use the UPF format if you want to test the separable form!
+         </info>
+         <default> &apos; &apos;
+         </default>
+      </var>
+      <vargroup type="REAL" >
+         <var name="ecutmin" >
+         </var>
+         <var name="ecutmax" >
+         </var>
+         <var name="decut" >
+         </var>
+         <info>
+Parameters (Ry) used for test with a basis set of spherical
+Bessel functions j_l(qr) . The hamiltonian at fixed scf
+potential is diagonalized for various values of ecut:
+<ref>ecutmin</ref>, <ref>ecutmin</ref>+<ref>decut</ref>, <ref>ecutmin</ref>+2*<ref>decut</ref> ... up to <ref>ecutmax</ref>.
+This yields an indication of convergence with the
+corresponding plane-wave cutoff in solids, and shows
+in an unambiguous way if there are &quot;ghost&quot; states
+         </info>
+         <default>
+decut=5.0 Ry; ecutmin=ecutmax=0Ry
+         </default>
+         <status> specify <ref>ecutmin</ref> and <ref>ecutmax</ref> if you want to perform this test
+         </status>
+      </vargroup>
+      <var name="rm" type="REAL" >
+         <info> Radius of the box used with spherical Bessel functions.
+         </info>
+         <default> 30 a.u.
+         </default>
+      </var>
+      <dimension name="configts" start="1" end="nconf" type="CHARACTER" >
+         <info>
+A string containing the test valence electronic
+configuration nc, nc=1,nconf. Same syntax as for &quot;config&quot;.
+If configts(i) is not set, the electron configuration
+is read from the cards following the namelist.
+         </info>
+      </dimension>
+      <dimension name="lsdts" start="1" end="nconf" type="INTEGER" >
+         <default> 1
+         </default>
+         <see> lsd
+         </see>
+         <info>
+0 or 1. It is the value of lsd used in the i-th test.
+Allows to make simultaneously spin-polarized and
+spin-unpolarized tests.
+         </info>
+      </dimension>
+      <var name="frozen_core" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+If .true. only the core wavefunctions of the first
+configuration are calculated. The eigenvalues, orbitals
+and energies of the other configurations are calculated
+with the core of the first configuration.
+The first configuration must be spin-unpolarized.
+         </info>
+      </var>
+      <var name="rcutv" type="REAL" >
+         <info>
+Cutoff distance (CUT) for the inclusion of LDA-1/2 potential.
+                  Needed (mandatory) only if iswitch = 4
+         </info>
+         <default> -1.0
+         </default>
+      </var>
+   </namelist>
+   <card name="PseudoPotentialTestCards" nameless="1" >
+      <label> IMPORTANT: this card has to be specified for each missing configts(i)
+      </label>
+      <choose>
+         <when test="lsd=1" >
+            <syntax>
+               <line>
+                  <var name="nwfts" type="INTEGER" >
+                     <info> number of wavefunctions
+                     </info>
+                  </var>
+               </line>
+               <table name="test_wfs" >
+                  <rows start="1" end="nwfts" >
+                     <col name="elts" type="CHARACTER" >
+                        <see> nls
+                        </see>
+                     </col>
+                     <col name="nnts" type="INTEGER" >
+                        <see> nns
+                        </see>
+                     </col>
+                     <col name="llts" type="INTEGER" >
+                        <see> lls
+                        </see>
+                     </col>
+                     <col name="octs" type="REAL" >
+                        <see> ocs
+                        </see>
+                     </col>
+                     <col name="enerts" type="REAL" >
+                        <status> not used
+                        </status>
+                     </col>
+                     <col name="rcutts" type="REAL" >
+                        <status> not used
+                        </status>
+                     </col>
+                     <col name="rcutusts" type="REAL" >
+                        <status> not used
+                        </status>
+                     </col>
+                     <col name="iswts" type="INTEGER" >
+                        <info> spin index (1 or 2, used in lsda case)
+                        </info>
+                     </col>
+                  </rows>
+               </table>
+            </syntax>
+         </when>
+         <elsewhen test="rel=2" >
+            <syntax>
+               <line>
+                  <var name="nwfts" >
+                  </var>
+               </line>
+               <table name="test_wfs" >
+                  <rows start="1" end="nwfts" >
+                     <col name="elts" >
+                     </col>
+                     <col name="nnts" >
+                     </col>
+                     <col name="llts" >
+                     </col>
+                     <col name="octs" >
+                     </col>
+                     <col name="enerts" >
+                     </col>
+                     <col name="rcutts" >
+                     </col>
+                     <col name="rcutusts" >
+                     </col>
+                     <col name="jjts" type="REAL" >
+                        <info> total angular momentum of the state
+                        </info>
+                     </col>
+                  </rows>
+               </table>
+            </syntax>
+         </elsewhen>
+         <otherwise>
+            <syntax>
+               <line>
+                  <var name="nwfts" >
+                  </var>
+               </line>
+               <table name="test_wfs" >
+                  <rows start="1" end="nwfts" >
+                     <col name="elts" >
+                     </col>
+                     <col name="nnts" >
+                     </col>
+                     <col name="llts" >
+                     </col>
+                     <col name="octs" >
+                     </col>
+                     <col name="enerts" >
+                     </col>
+                     <col name="rcutts" >
+                     </col>
+                     <col name="rcutusts" >
+                     </col>
+                  </rows>
+               </table>
+            </syntax>
+         </otherwise>
+      </choose>
+   </card>
+   <section title="Notes" >
+      <text>
+For PP generation you do not need to specify namelist &amp;test, UNLESS:
+
+1. you want to use a different configuration for unscreening wrt the
+one used to generate the PP. This is useful for PP with semicore
+states: use semicore states ONLY to produce the PP, use semicore
+AND valence states (if occupied) to make the unscreening
+
+2. you want to specify some more states for PAW style reconstruction of
+all-electron orbitals from pseudo-orbitals
+      </text>
+      <subsection title="Output files written" >
+         <text>
+* file_tests            &quot;prefix&quot;.test    results of transferability test
+
+for each testing configuration N:
+
+* file_wavefunctions    &quot;prefix&quot;N.wfc     all-electron KS orbitals
+* file_wavefunctionsps  &quot;prefix&quot;Nps.wfc   pseudo KS orbitals
+
+if lsd=1:
+
+* file_wavefunctions    &quot;prefix&quot;N.wfc.up  all-electron KS up orbitals
+* file_wavefunctions    &quot;prefix&quot;N.wfc.dw  all-electron KS down orbitals
+
+if rel=2 and lsmall=.true.:
+
+* file_wavefunctions    &quot;prefix&quot;.wfc.small  all-electron KS small component
+
+if parameters for logarithmic derivatives are specified:
+
+* file_logder           &quot;prefix&quot;Nps.dlog  all-electron logarithmic derivatives
+* file_logderps         &quot;prefix&quot;Nps.dlog  pseudo logarithmic derivatives
+
+&quot;N&quot; is not present if there is just one testing configuration.
+         </text>
+      </subsection>
+      <subsection title="Recipes to reproduce old all-electron atomic results with the ld1 program" >
+         <text>
+* The Hartree results in Phys. Rev. 59, 299 (1940) or in
+  Phys. Rev. 59, 306 (1940) can be reproduced with:
+
+    rel=0,
+    isic=1,
+    dft=&apos;NOX-NOC&apos;
+
+* The Herman-Skillman tables can be reproduced with:
+
+    rel=0,
+    isic=0,
+    latt=1,
+    dft=&apos;SL1-NOC&apos;
+
+* Data on the paper Liberman, Waber, Cromer Phys. Rev. 137, A27 (1965) can be
+reproduced with:
+
+    rel=2,
+    isic=0,
+    latt=1,
+    dft=&apos;SL1-NOC&apos;
+
+* Data on the paper S. Cohen Phys. Rev. 118, 489 (1960) can be reproduced with:
+
+    rel=2,
+    isic=1,
+    latt=0,
+    dft=&apos;NOX-NOC&apos;
+
+* The revised PBE described in <a href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.80.890">PRL 80, 890 (1998)</a> can be obtained with:
+
+    isic=0
+    latt=0
+    dft=&apos;SLA-PW-RPB-PBC&apos; or &apos;dft=&apos;revPBE&apos;
+
+* The relativistic energies of closed shell atoms reported in <a href="https://journals.aps.org/prb/abstract/10.1103/PhysRevB.64.235126">PRB 64 235126 (2001)</a>
+can be reproduced with:
+
+    isic=0
+    latt=0
+    cau_fact=137.0359895
+    dft=&apos;sla-vwn&apos; for the LDA case
+    dft=&apos;PBE&apos;     for the PBE case
+
+* The NIST results in PRA 55, 191 (1997):
+
+    LDA:
+        rel=0
+        dft=&apos;sla-vwn&apos;
+
+    LSD:
+        rel=0
+        lsd=1
+        dft=&apos;sla-vwn&apos;
+
+    RLDA
+        rel=2
+        rel_dist=&apos;average&apos;
+        dft=&apos;rxc-vwn&apos;
+
+    ScRLDA:
+        rel=1
+        dft=&apos;rxc-vwn&apos;
+         </text>
+      </subsection>
+   </section>
+</input_description>

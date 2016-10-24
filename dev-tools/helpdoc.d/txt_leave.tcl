@@ -126,6 +126,21 @@ switch -exact -- $tag {
 	incr txtDepth -1
 	printf "===END OF NAMELIST======================================================\n\n"
     }
+    supercard {
+	set name [supercardStarttag]
+	set end  [arr endtag]
+
+	if { $end   ne "" } { set name $name/$end }
+	
+	incr txtDepth -1
+	set str "### END OF SUPERCARD :  $name "
+	set l [string length $str]
+	for {set i $l} {$i < 72} {incr i} {
+	    append str #
+	}
+	
+	printf $str\n\n
+    }
     card {
     }
     linecard { 
@@ -172,6 +187,12 @@ switch -exact -- $tag {
 	if { ! [::tclu::lpresent $mode description] } {
 	    printf " "
 	    incr txtDepth -1
+	}
+    }
+    options {
+	if { ! [::tclu::lpresent $mode syntax] } {
+	    set options 0
+	    set options_first 0
 	}
     }
 }

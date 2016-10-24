@@ -1,0 +1,376 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="input_xx.xsl"?>
+<!-- FILE AUTOMATICALLY CREATED: DO NOT EDIT, CHANGES WILL BE LOST -->
+    
+<input_description distribution="Quantum Espresso" package="NEB" program="neb.x" >
+   <toc>
+   </toc>
+   <intro>
+<b>Input data format:</b> { } = optional, [ ] = it depends, | = or
+
+All quantities whose dimensions are not explicitly specified are in
+RYDBERG ATOMIC UNITS
+
+<b>BEWARE:</b> TABS, DOS &lt;CR&gt;&lt;LF&gt; CHARACTERS ARE POTENTIAL SOURCES OF TROUBLE
+
+<b>neb.x DOES NOT READ FROM STANDARD INPUT !</b>
+
+There are two ways for running a calculation with neb.x:
+
+(1) specifying a file to parse with the <b>./neb.x -inp</b> or <b>./neb.x -input</b>
+    command line option.
+
+(2) or specifying the number of copies of PWscf inputs with the <b>./neb.x -input_images</b>
+
+<b>For case (1)</b> a file containing special KEYWORDS (aka SUPERCARDS) has to be
+written (see below). These KEYWORDS tell the parser which part of the file
+contains the neb specifics and which part contains the energy/force engine
+input (at the moment only PW).  After the parsing, different files are
+generated: neb.dat, with the neb specific variables, and a set of pw_*.in
+PWscf input files, i.e., one for each input position. All options for a
+single SCF calculation apply.
+
+The general structure of the file to be parsed is:
+==================================================
+
+<b>BEGIN</b>
+  <b>BEGIN_PATH_INPUT</b>
+    ... neb specific namelists and cards
+  <b>END_PATH_INPUT</b>
+
+  <b>BEGIN_ENGINE_INPUT</b>
+    ...pw specific namelists and cards
+    <b>BEGIN_POSITIONS</b>
+      <b>FIRST_IMAGE</b>
+      ...pw ATOMIC_POSITIONS card
+      <b>INTERMEDIATE_IMAGE</b>
+      ...pw ATOMIC_POSITIONS card
+      <b>LAST_IMAGE</b>
+      ...pw ATOMIC_POSITIONS card
+    <b>END_POSITIONS</b>
+    ... other pw specific cards
+  <b>END_ENGINE_INPUT</b>
+<b>END</b>
+
+
+<b>For case (2)</b> neb.dat and all pw_1.in, pw_2.in ... should be already present.
+
+Structure of the NEB-only input data (file neb.dat):
+====================================================
+
+<b>&amp;PATH</b>
+  ...
+<b>/</b>
+
+[ <b>CLIMBING_IMAGES</b>
+   list of images, separated by a comma ]
+   </intro>
+   <supercard name="BEGIN" endtag="END" >
+      <supercard name="BEGIN_PATH_INPUT" endtag="END_PATH_INPUT" >
+         <namelist name="PATH" >
+            <var name="string_method" type="CHARACTER" >
+               <default> &apos;neb&apos;
+               </default>
+               <options>
+                  <info>
+A string describing the task to be performed. Options are:
+                  </info>
+                  <opt val="'neb'" > nudget-elastic-band
+                  </opt>
+                  <opt val="'smd'" > string-method-dynamics
+                  </opt>
+               </options>
+            </var>
+            <var name="restart_mode" type="CHARACTER" >
+               <default> &apos;from_scratch&apos;
+               </default>
+               <options>
+                  <info> Options are:
+                  </info>
+                  <opt val="'from_scratch'" > from scratch
+                  </opt>
+                  <opt val="'restart'" > from previous interrupted run
+                  </opt>
+               </options>
+            </var>
+            <var name="nstep_path" type="INTEGER" >
+               <info>
+number of ionic + electronic steps
+               </info>
+               <default>
+1
+               </default>
+            </var>
+            <var name="num_of_images" type="INTEGER" >
+               <default> 0
+               </default>
+               <info>
+Number of points used to discretize the path
+(it must be larger than 3).
+               </info>
+            </var>
+            <var name="opt_scheme" type="CHARACTER" >
+               <default> &apos;quick-min&apos;
+               </default>
+               <options>
+                  <info>
+Specify the type of optimization scheme:
+                  </info>
+                  <opt val="'sd'" >
+steepest descent
+                  </opt>
+                  <opt val="'broyden'" >
+quasi-Newton Broyden&apos;s second method (suggested)
+                  </opt>
+                  <opt val="'broyden2'" >
+another variant of the quasi-Newton Broyden&apos;s
+second method to be tested and compared with the
+previous one.
+                  </opt>
+                  <opt val="'quick-min'" >
+an optimisation algorithm based on the
+projected velocity Verlet scheme
+                  </opt>
+                  <opt val="'langevin'" >
+finite temperature langevin dynamics of the
+string (smd only). It is used to compute the
+average path and the free-energy profile.
+                  </opt>
+               </options>
+            </var>
+            <var name="CI_scheme" type="CHARACTER" >
+               <default> &apos;no-CI&apos;
+               </default>
+               <options>
+                  <info>
+Specify the type of Climbing Image scheme:
+                  </info>
+                  <opt val="'no-CI'" >
+climbing image is not used
+                  </opt>
+                  <opt val="'auto'" >
+original CI scheme. The image highest in energy
+does not feel the effect of springs and is
+allowed to climb along the path
+                  </opt>
+                  <opt val="'manual'" >
+images that have to climb are manually selected.
+See also <ref>CLIMBING_IMAGES</ref> card
+                  </opt>
+               </options>
+            </var>
+            <var name="first_last_opt" type="LOGICAL" >
+               <default> .FALSE.
+               </default>
+               <info>
+Also the first and the last configurations are optimized
+&quot;on the fly&quot; (these images do not feel the effect of the springs).
+               </info>
+            </var>
+            <var name="minimum_image" type="LOGICAL" >
+               <default> .FALSE.
+               </default>
+               <info>
+Assume a &quot;minimum image criterion&quot; to build the path. If an atom
+moves by more than half the length of a crystal axis between one
+image and the next in the input (before interpolation),
+an appropriate periodic replica of that atom is chosen.
+Useful to avoid jumps in the initial reaction path.
+               </info>
+            </var>
+            <var name="temp_req" type="REAL" >
+               <default> 0.D0 Kelvin
+               </default>
+               <info>
+Temperature used for the langevin dynamics of the string.
+               </info>
+            </var>
+            <var name="ds" type="REAL" >
+               <default> 1.D0
+               </default>
+               <info>
+Optimisation step length ( Hartree atomic units ).
+If <ref>opt_scheme</ref>==&quot;broyden&quot;, ds is used as a guess for the
+diagonal part of the Jacobian matrix.
+               </info>
+            </var>
+            <vargroup type="REAL" >
+               <var name="k_max" >
+               </var>
+               <var name="k_min" >
+               </var>
+               <default> 0.1D0 Hartree atomic units
+               </default>
+               <info>
+Set them to use a Variable Elastic Constants scheme
+elastic constants are in the range [ k_min, k_max ]
+this is useful to rise the resolution around the saddle point.
+               </info>
+            </vargroup>
+            <var name="path_thr" type="REAL" >
+               <default> 0.05D0 eV / Angstrom
+               </default>
+               <info>
+The simulation stops when the error ( the norm of the force
+orthogonal to the path in eV/A ) is less than path_thr.
+               </info>
+            </var>
+            <var name="use_masses" type="LOGICAL" >
+               <default> .FALSE.
+               </default>
+               <info>
+If. TRUE. the optimisation of the path is performed using
+mass-weighted coordinates. Useful together with quick-min
+optimization scheme, if some bonds are much stiffer than
+others. By assigning a larger (fictitious) mass to atoms
+with stiff bonds, one may use a longer time step &quot;ds&quot;
+               </info>
+            </var>
+            <var name="use_freezing" type="LOGICAL" >
+               <default> .FALSE.
+               </default>
+               <info>
+If. TRUE. the images are optimised according to their error:
+only those images with an error larger than half of the largest
+are optimised. The other images are kept frozen.
+               </info>
+            </var>
+            <var name="lfcpopt" type="LOGICAL" >
+               <see> fcp_mu
+               </see>
+               <default> .FALSE.
+               </default>
+               <info>
+If .TRUE. perform a constant bias potential (constant-mu)
+calculation with ESM method (assume_isolated = &apos;esm&apos; and
+esm_bc = &apos;bc2&apos; or &apos;bc3&apos; must be set in SYSTEM namelist).
+<ref>fcp_mu</ref> gives the target Fermi energy.
+See the header of PW/src/fcp.f90 for documentation
+               </info>
+            </var>
+            <var name="fcp_mu" type="REAL" >
+               <see> lfcpopt
+               </see>
+               <default> 0.d0
+               </default>
+               <info>
+If <ref>lfcpopt</ref> == .TRUE., gives the target Fermi energy [Ry].
+One can specify the total charge of the system for the first
+and last image by giving <ref>fcp_tot_charge_first</ref> and <ref>fcp_tot_charge_last</ref>
+so that the Fermi energy of these systems will be the target value,
+otherwise <ref>first_last_opt</ref> should be .TRUE.
+               </info>
+            </var>
+            <var name="fcp_tot_charge_first" type="REAL" >
+               <see> lfcpopt
+               </see>
+               <default> 0.d0
+               </default>
+               <info>
+Total charge of the system (&apos;tot_charge&apos;) for the first image.
+Initial &apos;tot_charge&apos; for intermediate images will be given by
+linear interpolation of <ref>fcp_tot_charge_first</ref> and <ref>fcp_tot_charge_last</ref>
+               </info>
+            </var>
+            <var name="fcp_tot_charge_last" type="REAL" >
+               <see> lfcpopt
+               </see>
+               <default> 0.d0
+               </default>
+               <info>
+Total charge of the system (&apos;tot_charge&apos;) for the last image.
+Initial &apos;tot_charge&apos; for intermediate images will be given by
+linear interpolation of <ref>fcp_tot_charge_first</ref> and <ref>fcp_tot_charge_last</ref>
+               </info>
+            </var>
+         </namelist>
+         <card name="CLIMBING_IMAGES" >
+            <label>
+Optional card, needed only if <ref>CI_scheme</ref> == &apos;manual&apos;, ignored otherwise !
+            </label>
+            <syntax>
+               <list name="climbing_images_list" type="INTEGER" >
+                  <format> index1, index2, ... indexN
+                  </format>
+                  <info>
+index1, index2, ..., indexN are indices of the images to which the
+Climbing-Image procedure apply. If more than one image is specified
+they must be separated by a comma.
+                  </info>
+               </list>
+            </syntax>
+         </card>
+      </supercard>
+      <supercard name="BEGIN_ENGINE_INPUT" endtag="END_ENGINE_INPUT" >
+         <message>
+Here comes the pw.x specific namelists and cards (see file: <link>INPUT_PW.html</link> or INPUT_PW.txt)
+with the exception of <ref>ATOMIC_POSITIONS</ref> cards, which are specified separately within the
+<ref>BEGIN_POSITIONS</ref>/END_POSITIONS supercard as described below.
+
+So the input that follows here is of the following structure:
+
+   <b>&amp;CONTROL</b>
+      ...
+   <b>/</b>
+   <b>&amp;SYSTEM</b>
+     ...
+   <b>/</b>
+   <b>&amp;ELECTRONS</b>
+     ...
+   <b>/</b>
+   ...
+         </message>
+         <supercard name="BEGIN_POSITIONS" endtag="END_POSITIONS" >
+            <message>
+NB:
+Atomic positions for all the images are specified within the <ref>BEGIN_POSITIONS</ref> / END_POSITIONS
+supercard, where each instance of <ref>ATOMIC_POSITIONS</ref> card is prefixed either by <ref>FIRST_IMAGE</ref>,
+<ref>INTERMEDIATE_IMAGE</ref>, or <ref>LAST_IMAGE</ref> keywords.
+
+Note that intermediate images are optional, i.e., there can be none or any number of
+<ref>INTERMEDIATE_IMAGE</ref> images.
+            </message>
+            <supercard name="FIRST_IMAGE" >
+               <card name="ATOMIC_POSITIONS" >
+                  <message>
+For the description of ATOMIC_POSITIONS card see file: <link>INPUT_PW.html</link> or INPUT_PW.txt
+                  </message>
+                  <flag name="atompos_unit" use="optional" >
+                     <enum> alat | bohr | angstrom | crystal | crystal_sg
+                     </enum>
+                  </flag>
+               </card>
+            </supercard>
+            <optional>
+               <supercard name="INTERMEDIATE_IMAGE" remark="
+			There can be any number (including zero) of INTERMEDIATE_IMAGE supercards.
+		    " >
+                  <card name="ATOMIC_POSITIONS" >
+                     <message>
+For the description of ATOMIC_POSITIONS card see file: <link>INPUT_PW.html</link> or INPUT_PW.txt
+                     </message>
+                     <flag name="atompos_unit" use="optional" >
+                        <enum> alat | bohr | angstrom | crystal | crystal_sg
+                        </enum>
+                     </flag>
+                  </card>
+               </supercard>
+            </optional>
+            <supercard name="LAST_IMAGE" >
+               <card name="ATOMIC_POSITIONS" >
+                  <message>
+For the description of ATOMIC_POSITIONS card see file: <link>INPUT_PW.html</link> or INPUT_PW.txt
+                  </message>
+                  <flag name="atompos_unit" use="optional" >
+                     <enum> alat | bohr | angstrom | crystal | crystal_sg
+                     </enum>
+                  </flag>
+               </card>
+            </supercard>
+         </supercard>
+         <message>
+Here can follow other <b>pw</b> specific <b>cards</b> ...
+         </message>
+      </supercard>
+   </supercard>
+</input_description>

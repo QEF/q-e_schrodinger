@@ -9,35 +9,6 @@
 !----------------------------------------------------------------------------
 SUBROUTINE rdiaghg( n, m, h, s, ldh, e, v )
   !----------------------------------------------------------------------------
-  !
-  ! ... calculates eigenvalues and eigenvectors of the generalized problem
-  ! ... Hv=eSv, with H symmetric matrix, S overlap matrix.
-  ! ... On output both matrix are unchanged
-  !
-  USE kinds,            ONLY : DP
-  !
-  IMPLICIT NONE
-  !
-  INTEGER, INTENT(IN) :: n, m, ldh
-  REAL(DP), INTENT(INOUT) :: h(ldh,n), s(ldh,n)
-  REAL(DP), INTENT(OUT) :: e(n)
-  REAL(DP), INTENT(OUT) :: v(ldh,m)
-  !
-#if defined(__CUDA) && defined(__MAGMA)
-  CALL rdiaghg_gpu( n, m, h, s, ldh, e, v )
-#else
-  CALL rdiaghg_compute( n, m, h, s, ldh, e, v )
-#endif
-  !
-  RETURN
-  !
-END SUBROUTINE rdiaghg
-
-!----------------------------------------------------------------------------
-SUBROUTINE rdiaghg_compute( n, m, h, s, ldh, e, v )
-  !----------------------------------------------------------------------------
-  !
-  ! ... calculates eigenvalues and eigenvectors of the generalized problem
   ! ... Hv=eSv, with H symmetric matrix, S overlap matrix.
   ! ... On output both matrix are unchanged
   !
@@ -196,7 +167,7 @@ SUBROUTINE rdiaghg_compute( n, m, h, s, ldh, e, v )
   !
   RETURN
   !
-END SUBROUTINE rdiaghg_compute
+END SUBROUTINE rdiaghg
 !
 !----------------------------------------------------------------------------
 SUBROUTINE prdiaghg( n, h, s, ldh, e, v, desc )
@@ -239,7 +210,7 @@ SUBROUTINE prdiaghg( n, h, s, ldh, e, v, desc )
   REAL(DP), PARAMETER   :: zero = 0_DP
   REAL(DP), ALLOCATABLE :: hh(:,:)
   REAL(DP), ALLOCATABLE :: ss(:,:)
-#ifdef __SCALAPACK
+#if defined(__SCALAPACK)
   INTEGER     :: desch( 16 ), info
 #endif
   !
@@ -266,13 +237,13 @@ SUBROUTINE prdiaghg( n, h, s, ldh, e, v, desc )
   !
   IF( desc%active_node > 0 ) THEN
      !
-#ifdef __SCALAPACK
+#if defined(__SCALAPACK)
      CALL descinit( desch, n, n, desc%nrcx, desc%nrcx, 0, 0, ortho_cntx, SIZE( hh, 1 ) , info )
   
      IF( info /= 0 ) CALL errore( ' rdiaghg ', ' descinit ', ABS( info ) )
 #endif
      !
-#ifdef __SCALAPACK
+#if defined(__SCALAPACK)
      CALL PDPOTRF( 'L', n, ss, 1, 1, desch, info )
      IF( info /= 0 ) CALL errore( ' rdiaghg ', ' problems computing cholesky ', ABS( info ) )
 #else
@@ -289,7 +260,7 @@ SUBROUTINE prdiaghg( n, h, s, ldh, e, v, desc )
   !
   IF( desc%active_node > 0 ) THEN
      !
-#ifdef __SCALAPACK
+#if defined(__SCALAPACK)
      ! 
      CALL sqr_dsetmat( 'U', n, zero, ss, size(ss,1), desc )
 
@@ -328,7 +299,7 @@ SUBROUTINE prdiaghg( n, h, s, ldh, e, v, desc )
      ! 
      !  Compute local dimension of the cyclically distributed matrix
      !
-#ifdef __SCALAPACK
+#if defined(__SCALAPACK)
      CALL pdsyevd_drv( .true., n, desc%nrcx, hh, SIZE(hh,1), e, ortho_cntx, ortho_comm )
 #else
      CALL qe_pdsyevd( .true., n, desc, hh, SIZE(hh,1), e )

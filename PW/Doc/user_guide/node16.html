@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>4.2 Memory requirements</TITLE>
+<META NAME="description" CONTENT="4.2 Memory requirements">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node17.html">
+<LINK REL="previous" HREF="node15.html">
+<LINK REL="up" HREF="node14.html">
+<LINK REL="next" HREF="node17.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html350"
+  HREF="node17.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html346"
+  HREF="node14.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html340"
+  HREF="node15.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html348"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html351"
+  HREF="node17.html">4.3 File space requirements</A>
+<B> Up:</B> <A NAME="tex2html347"
+  HREF="node14.html">4 Performances</A>
+<B> Previous:</B> <A NAME="tex2html341"
+  HREF="node15.html">4.1 Execution time</A>
+ &nbsp; <B>  <A NAME="tex2html349"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00052000000000000000">
+4.2 Memory requirements</A>
+</H2>
+
+<P>
+A typical self-consistency or molecular-dynamics run requires a maximum
+memory in the order of <I>O</I> double precision complex numbers, where
+<P><!-- MATH
+ \begin{displaymath}
+O = m M N + P N + p N_1 N_2 N_3 + q N_{r1} N_{r2} N_{r3}
+\end{displaymath}
+ -->
+</P>
+<DIV ALIGN="CENTER">
+<I>O</I> = <I>mMN</I> + <I>PN</I> + <I>pN</I><SUB>1</SUB><I>N</I><SUB>2</SUB><I>N</I><SUB>3</SUB> + <I>qN</I><SUB>r1</SUB><I>N</I><SUB>r2</SUB><I>N</I><SUB>r3</SUB>
+</DIV><P></P>
+with <I>m</I>, <I>p</I>, <I>q</I> = small factors; all other variables have the same meaning as
+above. Note that if the <IMG
+ WIDTH="16" HEIGHT="16" ALIGN="BOTTOM" BORDER="0"
+ SRC="img8.png"
+ ALT="$ \Gamma$"> -point only (<I>k</I> = 0) is used to sample the 
+Brillouin Zone, the value of N will be cut into half.
+
+<P>
+For hybrid DFTs, additional storage of <I>O</I><SUB>x</SUB> double precision complex 
+numbers is needed (for Fourier-transformed Kohn-Sham states), with
+<!-- MATH
+ $O_x = x N_q M N_1N_2N_3$
+ -->
+<I>O</I><SUB>x</SUB> = <I>xN</I><SUB>q</SUB><I>MN</I><SUB>1</SUB><I>N</I><SUB>2</SUB><I>N</I><SUB>3</SUB> and <I>x</I> = 0.5 for <IMG
+ WIDTH="16" HEIGHT="16" ALIGN="BOTTOM" BORDER="0"
+ SRC="img8.png"
+ ALT="$ \Gamma$"> -only 
+calculations, <I>x</I> = 1 otherwise.
+
+<P>
+The memory required by the phonon code follows the same patterns, with
+somewhat larger factors <I>m</I>, <I>p</I>, <I>q</I>.
+
+<P>
+<BR><HR>
+<ADDRESS>
+Filippo Spiga
+2016-10-04
+</ADDRESS>
+</BODY>
+</HTML>

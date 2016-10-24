@@ -5,6 +5,9 @@
 ! in the root directory of the present distribution,
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
+! TB
+! included monopole related variables in qexml_write_efield and qexml_read_efield
+!
 !----------------------------------------------------------------------------
 MODULE qexml_module
   !----------------------------------------------------------------------------
@@ -528,6 +531,7 @@ CONTAINS
     END FUNCTION qexml_wfc_filename
     !
     !
+    !
     !------------------------------------------------------------------------
     SUBROUTINE qexml_copy_file( file_in, file_out, ierr )
       !------------------------------------------------------------------------
@@ -648,11 +652,11 @@ CONTAINS
     !
     !
     !------------------------------------------------------------------------  
-    SUBROUTINE qexml_write_control( pp_check_flag, lkpoint_dir, q_real_space, beta_real_space)
+    SUBROUTINE qexml_write_control( pp_check_flag, lkpoint_dir, q_real_space, tq_smoothing, tbeta_smoothing, beta_real_space)
       !------------------------------------------------------------------------
       !
       IMPLICIT NONE
-      LOGICAL, OPTIONAL, INTENT(IN) :: pp_check_flag, lkpoint_dir, q_real_space, beta_real_space
+      LOGICAL, OPTIONAL, INTENT(IN) :: pp_check_flag, lkpoint_dir, q_real_space, tq_smoothing, tbeta_smoothing, beta_real_space
 
 
       CALL iotk_write_begin( ounit, "CONTROL" )
@@ -671,6 +675,12 @@ CONTAINS
       ! This flag says if Beta functions were treated in real space
       IF ( PRESENT( beta_real_space ) ) &
          CALL iotk_write_dat( ounit, "BETA_REAL_SPACE", beta_real_space )
+      ! This flag says if the Q are being smoothed 
+      IF ( PRESENT( tq_smoothing ) ) &
+         CALL iotk_write_dat( ounit, "TQ_SMOOTHING", tq_smoothing )
+      ! This flag says if the beta are being smoothed 
+      IF ( PRESENT( tbeta_smoothing ) ) &
+         CALL iotk_write_dat( ounit, "TBETA_SMOOTHING", tbeta_smoothing )
       !
       CALL iotk_write_end( ounit, "CONTROL" )
       !
@@ -992,16 +1002,25 @@ CONTAINS
     !
     !
     !------------------------------------------------------------------------
-    SUBROUTINE qexml_write_efield( tefield, dipfield, edir, emaxpos, eopreg, eamp )
-      !------------------------------------------------------------------------
-      !
+    SUBROUTINE qexml_write_efield( tefield, dipfield, edir, emaxpos, eopreg, eamp, &
+                                   monopole, zmon, relaxz, block, block_1, block_2,&
+                                   block_height)
+     !------------------------------------------------------------------------
+     !
       LOGICAL, INTENT(in)   :: tefield        ! if .TRUE. a finite electric field
                                               ! is added to the local potential
       LOGICAL, INTENT(in)   :: dipfield       ! if .TRUE. the dipole field is subtracted
+      LOGICAL, INTENT(in)   :: monopole       ! if .TRUE. counter charge is represented by monopole (gate)
+      LOGICAL, INTENT(in)   :: block          ! add potential barrier
+      LOGICAL, INTENT(in)   :: relaxz         ! relax in z direction  
       INTEGER, INTENT(in)   :: edir           ! direction of the field
       REAL(DP), INTENT(in) :: emaxpos        ! position of the maximum of the field (0<emaxpos<1)
       REAL(DP), INTENT(in) :: eopreg         ! amplitude of the inverse region (0<eopreg<1)
       REAL(DP), INTENT(in) :: eamp           ! field amplitude (in a.u.) (1 a.u. = 51.44 10^11 V/m)
+      REAL(DP), INTENT(in) :: zmon           ! position of monopole plane in units of cell vector in z direction
+      REAL(DP), INTENT(in) :: block_1        ! potential barrier
+      REAL(DP), INTENT(in) :: block_2
+      REAL(DP), INTENT(in) :: block_height
       !
       !
       CALL iotk_write_begin( ounit, "ELECTRIC_FIELD" )
@@ -1018,6 +1037,20 @@ CONTAINS
       !
       CALL iotk_write_dat( ounit, "FIELD_AMPLITUDE", eamp )
       !
+      CALL iotk_write_dat( ounit, "MONOPOLE_PLANE", monopole )
+      !
+      CALL iotk_write_dat( ounit, "MONOPOLE_POS", zmon )
+      !
+      CALL iotk_write_dat( ounit, "RELAX_Z", relaxz )
+      !
+      CALL iotk_write_dat( ounit, "BLOCK", block )
+      !
+      CALL iotk_write_dat( ounit, "BLOCK_1", block_1 )
+      !
+      CALL iotk_write_dat( ounit, "BLOCK_2", block_2 )
+      !
+      CALL iotk_write_dat( ounit, "BLOCK_HEIGHT", block_height )
+      !
       CALL iotk_write_end( ounit, "ELECTRIC_FIELD" )
       !
     END SUBROUTINE qexml_write_efield
@@ -1028,6 +1061,13 @@ CONTAINS
                                        nr1, nr2, nr3,  ngm,  nr1s, nr2s, nr3s, ngms, &
                                        nr1b, nr2b, nr3b, igv, lgvec, cutoff_units )
       !------------------------------------------------------------------------
+#if defined __HDF5
+      USE hdf5_qe
+      USE mp_pools,  ONLY : inter_pool_comm
+      USE io_files,  ONLY : tmp_dir
+      USE mp_world,  ONLY : mpime
+#endif
+
       !
       INTEGER,       INTENT(in) :: npwx, nr1, nr2, nr3, ngm, &
                                    nr1s, nr2s, nr3s, ngms, nr1b, nr2b, nr3b
@@ -1035,8 +1075,37 @@ CONTAINS
       REAL(DP),     INTENT(in) :: ecutwfc, ecutrho
       LOGICAL,       INTENT(in) :: gamma_only, lgvec
       CHARACTER(*),  INTENT(in) :: cutoff_units
+#if defined __HDF5
+      CHARACTER(LEN=256) :: filename_hdf5
+      CHARACTER          :: gammaonly
+      !integer          :: gammaonly, ierr
+      integer           :: ierr
+#endif
+
       !
       !
+#if defined __HDF5
+      filename_hdf5=trim(tmp_dir) //"g.hdf5"
+      CALL prepare_for_writing_final(g_hdf5_write,inter_pool_comm,filename_hdf5)
+      CALL add_attributes_hdf5(g_hdf5_write,ecutwfc,"WFC_CUTOFF")
+      CALL add_attributes_hdf5(g_hdf5_write,ecutrho,"RHO_CUTOFF")
+      CALL add_attributes_hdf5(g_hdf5_write,npwx,"MAX_NUMBER_OF_GK-VECTORS")
+      write(gammaonly,'(I1)') gamma_only
+      CALL add_attributes_hdf5(g_hdf5_write,gammaonly,"GAMMA_ONLY")
+      CALL add_attributes_hdf5(g_hdf5_write,trim(cutoff_units),"UNITS_FOR_CUTOFF")
+      CALL add_attributes_hdf5(g_hdf5_write,nr1,"nr1")
+      CALL add_attributes_hdf5(g_hdf5_write,nr2,"nr2")
+      CALL add_attributes_hdf5(g_hdf5_write,nr3,"nr3")
+      CALL add_attributes_hdf5(g_hdf5_write,ngm,"GVECT_NUMBER")
+      CALL add_attributes_hdf5(g_hdf5_write,nr1s,"nr1s")
+      CALL add_attributes_hdf5(g_hdf5_write,nr2s,"nr2s")
+      CALL add_attributes_hdf5(g_hdf5_write,nr3s,"nr3s")
+      CALL add_attributes_hdf5(g_hdf5_write,ngms,"SMOOTH_GVECT_NUMBER")
+      CALL add_attributes_hdf5(g_hdf5_write,nr1s,"nr1b")
+      CALL add_attributes_hdf5(g_hdf5_write,nr2s,"nr2b")
+      CALL add_attributes_hdf5(g_hdf5_write,nr3s,"nr3b")
+#endif
+
       CALL iotk_write_begin( ounit, "PLANE_WAVES" )
       !
       CALL iotk_write_attr ( attr, "UNITS", trim(cutoff_units), FIRST = .true. )
@@ -1068,6 +1137,9 @@ CONTAINS
          !
          ! ... write the G-vectors
          !
+#if defined __HDF5
+         CALL write_g(g_hdf5_write,igv(1:3,1:ngm))
+#else
          CALL iotk_link( ounit, "G-VECTORS", "./gvectors.dat", &
                          CREATE = .true., BINARY = .true. )
          !
@@ -1081,9 +1153,10 @@ CONTAINS
          CALL iotk_write_attr( attr, "units", "crystal" )
          CALL iotk_write_empty( ounit, "INFO", ATTR = attr )
          !
+
          CALL iotk_write_dat  ( ounit, "g", igv(1:3,1:ngm), COLUMNS = 3 )
          CALL iotk_write_end  ( ounit, "G-VECTORS" )
-         !
+#endif
       ENDIF
       !
       CALL iotk_write_attr( attr, "nr1b", nr1b , FIRST = .true. )
@@ -1092,6 +1165,9 @@ CONTAINS
       CALL iotk_write_empty( ounit, "SMALLBOX_FFT_GRID", ATTR = attr )
       !
       CALL iotk_write_end( ounit, "PLANE_WAVES" )
+#if defined __HDF5
+      CALL h5fclose_f(g_hdf5_write%file_id,ierr)
+#endif
       !
     END SUBROUTINE qexml_write_planewaves
     !
@@ -1355,6 +1431,10 @@ CONTAINS
             CALL iotk_write_end( ounit, "TKATCHENKO-SCHEFFLER" )
          END IF
       END IF
+      !
+      IF ( PRESENT (acfdt_in_pw) ) THEN
+         CALL iotk_write_dat( ounit, "ACFDT_IN_PW", acfdt_in_pw )
+      ENDIF
       !
       IF ( PRESENT (acfdt_in_pw) ) THEN
          CALL iotk_write_dat( ounit, "ACFDT_IN_PW", acfdt_in_pw )
@@ -2856,20 +2936,22 @@ CONTAINS
     !
     !
     !------------------------------------------------------------------------
-    SUBROUTINE qexml_read_efield( tefield, dipfield, edir, emaxpos, eopreg, eamp, found, ierr )
+    SUBROUTINE qexml_read_efield( tefield, dipfield, edir, emaxpos, eopreg, eamp, &
+                                  monopole, zmon, relaxz, block, block_1, block_2,&
+                                  block_height, found, ierr )
       !----------------------------------------------------------------------
       !
       IMPLICIT NONE
       !
-      LOGICAL,   OPTIONAL, INTENT(out) :: tefield, dipfield
+      LOGICAL,   OPTIONAL, INTENT(out) :: tefield, dipfield, monopole, relaxz, block
       INTEGER,   OPTIONAL, INTENT(out) :: edir
-      REAL(DP),  OPTIONAL, INTENT(out) :: emaxpos, eopreg, eamp
+      REAL(DP),  OPTIONAL, INTENT(out) :: emaxpos, eopreg, eamp, zmon, block_1, block_2, block_height
       LOGICAL,             INTENT(out) :: found
       INTEGER,             INTENT(out) :: ierr
       !
-      LOGICAL   :: tefield_, dipfield_
+      LOGICAL   :: tefield_, dipfield_, monopole_, block_, relaxz_
       INTEGER   :: edir_
-      REAL(DP)  :: emaxpos_, eopreg_, eamp_
+      REAL(DP)  :: emaxpos_, eopreg_, eamp_, zmon_, block_1_, block_2_, block_height_
       !
       ierr = 0
       !
@@ -2895,6 +2977,27 @@ CONTAINS
       CALL iotk_scan_dat( iunit, "FIELD_AMPLITUDE", eamp_, IERR=ierr )
       IF ( ierr /= 0 ) RETURN
       !
+      CALL iotk_scan_dat( iunit, "MONOPOLE_PLANE", monopole_ )
+      IF ( ierr /= 0 ) RETURN
+      !
+      CALL iotk_scan_dat( iunit, "MONOPOLE_POS", zmon_ )
+      IF ( ierr /= 0 ) RETURN
+      !
+      CALL iotk_scan_dat( iunit, "RELAX_Z", relaxz_ )
+      IF ( ierr /= 0 ) RETURN
+      !
+      CALL iotk_scan_dat( iunit, "BLOCK", block_ )
+      IF ( ierr /= 0 ) RETURN
+      !
+      CALL iotk_scan_dat( iunit, "BLOCK_1", block_1_ )
+      IF ( ierr /= 0 ) RETURN
+      !
+      CALL iotk_scan_dat( iunit, "BLOCK_2", block_2_ )
+      IF ( ierr /= 0 ) RETURN
+      !
+      CALL iotk_scan_dat( iunit, "BLOCK_HEIGHT", block_height_ )
+      IF ( ierr /= 0 ) RETURN
+      !
       CALL iotk_scan_end( iunit, "ELECTRIC_FIELD", IERR=ierr )
       IF ( ierr /= 0 ) RETURN
       !
@@ -2905,6 +3008,13 @@ CONTAINS
       IF ( present(emaxpos) )        emaxpos      = emaxpos_
       IF ( present(eopreg) )         eopreg       = eopreg_
       IF ( present(eamp) )           eamp         = eamp_
+      IF ( present(monopole) )       monopole     = monopole_
+      IF ( present(zmon) )           zmon         = zmon_
+      IF ( present(relaxz) )         relaxz       = relaxz_
+      IF ( present(block) )          block        = block_
+      IF ( present(block_1) )        block_1      = block_1_
+      IF ( present(block_2) )        block_2      = block_2_
+      IF ( present(block_height) )   block_height = block_height_
       !
     END SUBROUTINE qexml_read_efield
     !
@@ -3420,6 +3530,11 @@ CONTAINS
          vdw_table_name_ = ' '
          !
       ENDIF
+      !
+      CALL iotk_scan_dat( iunit, "ACFDT_IN_PW", acfdt_in_pw_, FOUND=found, IERR=ierr )
+      IF ( ierr/=0 ) RETURN
+      IF ( .NOT. found ) acfdt_in_pw_ = .FALSE.
+!      IF (acfdt_in_pw) dft_name = 'NOX NOC NOGX NOGC'
       !
       CALL iotk_scan_dat( iunit, "ACFDT_IN_PW", acfdt_in_pw_, FOUND=found, IERR=ierr )
       IF ( ierr/=0 ) RETURN
@@ -4167,13 +4282,17 @@ CONTAINS
       REAL(DP)              :: wk_
       LOGICAL :: found
       !
+#if !defined __HDF5
       CALL iotk_scan_begin( iunit, "EIGENVALUES", IERR=ierr )
+#endif
       IF (ierr /= 0) RETURN
       !
       !
       k_points_loop1: DO ik = 1, num_k_points
          !
+#if !defined __HDF5
          CALL iotk_scan_begin( iunit, "K-POINT" // TRIM( iotk_index(ik) ) )
+#endif
          !
          CALL iotk_scan_dat( iunit, "WEIGHT", wk_ )
          !
@@ -4231,12 +4350,16 @@ CONTAINS
             !
          END DO
          !
+#if !defined __HDF5
          CALL iotk_scan_end( iunit, "K-POINT" // TRIM( iotk_index(ik) ), IERR = ierr )
+#endif
          IF (ierr /= 0) RETURN
          !
       END DO k_points_loop1
       !
+#if !defined __HDF5
       CALL iotk_scan_end  ( iunit, "EIGENVALUES", IERR = ierr )
+#endif
       IF (ierr /= 0) RETURN
       !
       !

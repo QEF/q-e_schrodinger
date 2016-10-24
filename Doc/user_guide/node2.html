@@ -1,0 +1,228 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>1 Introduction</TITLE>
+<META NAME="description" CONTENT="1 Introduction">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node7.html">
+<LINK REL="previous" HREF="node1.html">
+<LINK REL="up" HREF="user_guide.html">
+<LINK REL="next" HREF="node3.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html107"
+  HREF="node3.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html103"
+  HREF="user_guide.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html97"
+  HREF="node1.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html105"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html108"
+  HREF="node3.html">1.1 People</A>
+<B> Up:</B> <A NAME="tex2html104"
+  HREF="user_guide.html">User's Guide for Quantum-ESPRESSO</A>
+<B> Previous:</B> <A NAME="tex2html98"
+  HREF="node1.html">Contents</A>
+ &nbsp; <B>  <A NAME="tex2html106"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION00020000000000000000">
+1 Introduction</A>
+</H1>
+
+<P>
+This guide gives a general overview of the contents and of the installation
+of Q<SMALL>UANTUM </SMALL>ESPRESSO (opEn-Source Package for Research in Electronic Structure, Simulation,
+and Optimization), version 6.0.
+
+<P>
+The Q<SMALL>UANTUM </SMALL>ESPRESSO distribution contains the core packages <TT>PWscf</TT> (Plane-Wave
+Self-Consistent Field) and <TT>CP</TT> (Car-Parrinello) for the calculation
+of electronic-structure properties within
+Density-Functional Theory (DFT), using a Plane-Wave (PW) basis set
+and pseudopotentials. It also includes other packages for
+more specialized calculations:
+
+<UL>
+<LI><TT>PWneb</TT>:
+        energy barriers and reaction pathways through the Nudged Elastic Band
+        (NEB) method.
+</LI>
+<LI><TT>PHonon</TT>:
+        vibrational properties  with Density-Functional Perturbation Theory.
+</LI>
+<LI><TT>PostProc</TT>:
+        codes and utilities for data postprocessing.
+</LI>
+<LI><TT>PWcond</TT>:
+        ballistic conductance.
+</LI>
+<LI><TT>XSPECTRA</TT>:
+        K-, L<SUB>1</SUB>-, L<SUB>2, 3</SUB>-edge X-ray absorption spectra.
+</LI>
+<LI><TT>TD-DFPT</TT>:
+        spectra from Time-Dependent
+        Density-Functional Perturbation Theory.
+</LI>
+</UL>
+The following auxiliary packages are included as well:
+
+<UL>
+<LI><TT>PWgui</TT>:
+      a Graphical User Interface, producing input data files for
+      <TT>PWscf</TT> and some <TT>PostProc</TT> codes.
+</LI>
+<LI><TT>atomic</TT>:
+      atomic calculations and pseudopotential generation.
+</LI>
+<LI><TT>QHA</TT>:
+      utilities for the calculation of projected density of states (PDOS)
+      and of the free energy in the Quasi-Harmonic Approximation (to be
+      used in conjunction with <TT>PHonon</TT>).
+</LI>
+<LI><TT>PlotPhon</TT>:
+      phonon dispersion plotting utility (to be
+      used in conjunction with <TT>PHonon</TT>).
+</LI>
+</UL>
+A copy of required external libraries is also included.
+Finally, several additional packages that exploit data produced by Q<SMALL>UANTUM </SMALL>ESPRESSO or patch some Q<SMALL>UANTUM </SMALL>ESPRESSO routines can be installed as <EM>plug-ins</EM>:
+
+<UL>
+<LI><TT>Wannier90</TT>:
+      maximally localized Wannier functions.
+</LI>
+<LI><TT>WanT</TT>:
+      quantum transport properties with Wannier functions.
+</LI>
+<LI><TT>YAMBO</TT>:
+      electronic excitations within Many-Body Perturbation Theory:
+      GW and Bethe-Salpeter equation.
+</LI>
+<LI><TT>PLUMED</TT>:
+      calculation of free-energy surface through metadynamics.
+</LI>
+<LI><TT>GIPAW</TT> (Gauge-Independent Projector Augmented Waves):
+      NMR chemical shifts and EPR g-tensor.
+</LI>
+<LI><TT>GWL</TT>: electronic excitations within GW Approximation.
+</LI>
+<LI><TT>WEST</TT>: Many-body perturbation corrections for standard DFT.
+</LI>
+</UL>
+Documentation on single packages can be found in the <TT>Doc/</TT> or
+<TT>doc/</TT> directory of each package. A detailed description of input
+data is available for most packages in files <TT>INPUT_*.txt</TT> and
+<TT>INPUT_*.html</TT>.
+
+<P>
+The Q<SMALL>UANTUM </SMALL>ESPRESSO codes work on many different types of Unix machines,
+including parallel machines using both OpenMP and MPI
+(Message Passing Interface) and GPU-accelerated machines.
+Q<SMALL>UANTUM </SMALL>ESPRESSO also runs on Mac OS X and MS-Windows machines:
+see section <A HREF="node9.html#Sec:Installation">2.2</A>.
+
+<P>
+Further documentation, beyond what is provided in this guide, can be found in:
+
+<UL>
+<LI>the <TT>Doc/</TT> directory of the Q<SMALL>UANTUM </SMALL>ESPRESSO distribution;
+</LI>
+<LI>the Q<SMALL>UANTUM </SMALL>ESPRESSO web site <TT>www.quantum-espresso.org</TT>;
+</LI>
+<LI>the archives of the  mailing list:
+   See section <A HREF="node4.html#SubSec:Contacts">1.2</A>, ``Contacts'', for more info.
+</LI>
+</UL>
+People who want to contribute to Q<SMALL>UANTUM </SMALL>ESPRESSO should read the
+Developer Manual: <TT>Doc/developer_man.pdf</TT>.
+
+<P>
+This guide does not explain the basic Unix concepts (shell, execution
+path, directories etc.) and utilities needed to run Q<SMALL>UANTUM </SMALL>ESPRESSO; it does not
+explain either solid state physics and its computational methods.
+If you want to learn the latter, you should first read a good textbook,
+such as e.g. the book by Richard Martin:
+<EM>Electronic Structure: Basic Theory and Practical Methods</EM>,
+Cambridge University Press (2004); or:
+<EM>Density functional theory: a practical introduction</EM>,
+D. S. Sholl, J. A. Steckel (Wiley, 2009); or
+<EM>Electronic Structure Calculations for Solids and Molecules:
+Theory and Computational Methods</EM>,
+J. Kohanoff (Cambridge University Press, 2006). Then you should consult
+the documentation of the package you want to use for more specific references.
+
+<P>
+All trademarks mentioned in this guide belong to their respective owners.
+
+<P>
+<BR><HR>
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A NAME="tex2html109"
+  HREF="node3.html">1.1 People</A>
+<LI><A NAME="tex2html110"
+  HREF="node4.html">1.2 Contacts</A>
+<LI><A NAME="tex2html111"
+  HREF="node5.html">1.3 Guidelines for posting to the mailing list</A>
+<LI><A NAME="tex2html112"
+  HREF="node6.html">1.4 Terms of use</A>
+</UL>
+<!--End of Table of Child-Links-->
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html107"
+  HREF="node3.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html103"
+  HREF="user_guide.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html97"
+  HREF="node1.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html105"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html108"
+  HREF="node3.html">1.1 People</A>
+<B> Up:</B> <A NAME="tex2html104"
+  HREF="user_guide.html">User's Guide for Quantum-ESPRESSO</A>
+<B> Previous:</B> <A NAME="tex2html98"
+  HREF="node1.html">Contents</A>
+ &nbsp; <B>  <A NAME="tex2html106"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+Filippo Spiga
+2016-10-04
+</ADDRESS>
+</BODY>
+</HTML>

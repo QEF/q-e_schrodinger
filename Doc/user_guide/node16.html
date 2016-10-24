@@ -1,0 +1,144 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>3.1 Understanding Parallelism</TITLE>
+<META NAME="description" CONTENT="3.1 Understanding Parallelism">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node17.html">
+<LINK REL="previous" HREF="node15.html">
+<LINK REL="up" HREF="node15.html">
+<LINK REL="next" HREF="node17.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html343"
+  HREF="node17.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html339"
+  HREF="node15.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html333"
+  HREF="node15.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html341"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html344"
+  HREF="node17.html">3.2 Running on parallel</A>
+<B> Up:</B> <A NAME="tex2html340"
+  HREF="node15.html">3 Parallelism</A>
+<B> Previous:</B> <A NAME="tex2html334"
+  HREF="node15.html">3 Parallelism</A>
+ &nbsp; <B>  <A NAME="tex2html342"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00041000000000000000">
+3.1 Understanding Parallelism</A>
+</H2>
+
+<P>
+Two different parallelization paradigms are currently implemented
+in Q<SMALL>UANTUM </SMALL>ESPRESSO:
+
+<OL>
+<LI><EM>Message-Passing (MPI)</EM>. A copy of the executable runs
+on each CPU; each copy lives in a different world, with its own
+private set of data, and communicates with other executables only
+via calls to MPI libraries. MPI parallelization requires compilation
+for parallel execution, linking with MPI libraries, execution using
+a launcher program (depending upon the specific machine). The number of CPUs used
+is specified at run-time either as an option to the launcher or
+by the batch queue system.
+</LI>
+<LI><EM>OpenMP</EM>.  A single executable spawn subprocesses
+(threads) that perform in parallel specific tasks.
+OpenMP can be implemented via compiler directives (<EM>explicit</EM>
+OpenMP) or via <EM>multithreading</EM> libraries  (<EM>library</EM> OpenMP).
+Explicit OpenMP require compilation for OpenMP execution;
+library OpenMP requires only linking to a multithreading
+version of mathematical libraries, e.g.:
+ESSLSMP, ACML_MP, MKL (the latter is natively multithreading).
+The number of threads is specified at run-time in the environment
+variable OMP_NUM_THREADS.
+</LI>
+</OL>
+
+<P>
+MPI is the well-established, general-purpose parallelization.
+In Q<SMALL>UANTUM </SMALL>ESPRESSO several parallelization levels, specified at run-time
+via command-line options to the executable, are implemented
+with MPI. This is your first choice for execution on a parallel
+machine.
+
+<P>
+Library OpenMP is a low-effort parallelization suitable for
+multicore CPUs. Its effectiveness relies upon the quality of
+the multithreading libraries and the availability of
+multithreading FFTs. If you are using MKL,<A NAME="tex2html1"
+  HREF="footnode.html#foot641"><SUP>1</SUP></A>you may want to select FFTW3 (set <TT>CPPFLAGS=-D__FFTW3...</TT>
+in <TT>make.inc</TT>) and to link with the MKL interface to FFTW3.
+You will get a decent speedup (<IMG
+ WIDTH="19" HEIGHT="19" ALIGN="BOTTOM" BORDER="0"
+ SRC="img2.png"
+ ALT="$ \sim$"> 25%) on two cores.
+
+<P>
+Explicit OpenMP is a recent addition, still under
+development, devised to increase scalability on
+large multicore parallel machines. Explicit OpenMP can be used
+together with MPI and also together with library OpenMP. Beware
+conflicts between the various kinds of parallelization!
+If you don't know how to run MPI processes
+and OpenMP threads in a controlled manner, forget about mixed
+OpenMP-MPI parallelization.
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html343"
+  HREF="node17.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html339"
+  HREF="node15.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html333"
+  HREF="node15.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html341"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html344"
+  HREF="node17.html">3.2 Running on parallel</A>
+<B> Up:</B> <A NAME="tex2html340"
+  HREF="node15.html">3 Parallelism</A>
+<B> Previous:</B> <A NAME="tex2html334"
+  HREF="node15.html">3 Parallelism</A>
+ &nbsp; <B>  <A NAME="tex2html342"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+Filippo Spiga
+2016-10-04
+</ADDRESS>
+</BODY>
+</HTML>

@@ -34,6 +34,10 @@ SUBROUTINE print_clock_pw()
    !
    WRITE( stdout, '(/5x,"Called by init_run:")' )
    CALL print_clock( 'wfcinit' )
+   IF ( iverbosity > 0 ) THEN
+      CALL print_clock( 'wfcinit:atomic' )
+      CALL print_clock( 'wfcinit:wfcrot' )
+   END IF
    CALL print_clock( 'potinit' )
    CALL print_clock( 'realus' )
    IF ( iverbosity > 0 ) THEN
@@ -89,6 +93,10 @@ SUBROUTINE print_clock_pw()
       WRITE( stdout, '(/5x,"Called by *cgdiagg:")' )
    END IF
    !
+   CALL print_clock( 'h_psi' )
+   CALL print_clock( 's_psi' )
+   CALL print_clock( 'g_psi' )
+
    IF (real_space ) THEN
     WRITE( stdout, '(/5x,"Called by real space routines:")' )
     CALL print_clock ( 'realus' )
@@ -100,10 +108,6 @@ SUBROUTINE print_clock_pw()
     CALL print_clock ( 'invfft_orbital' )
     CALL print_clock ( 'fwfft_orbital' )
     CALL print_clock ( 'v_loc_psir' )
-   ELSE
-    CALL print_clock( 'h_psi' )
-    CALL print_clock( 's_psi' )
-    CALL print_clock( 'g_psi' )
    ENDIF
    IF ( gamma_only ) THEN
       CALL print_clock( 'rdiaghg' )
@@ -128,12 +132,13 @@ SUBROUTINE print_clock_pw()
    END IF
    !
    WRITE( stdout, '(/5x,"Called by h_psi:")' )
-   IF ( iverbosity > 0 )  THEN
+!   IF ( iverbosity > 0 )  THEN
       CALL print_clock( 'h_psi:init' )
-      CALL print_clock( 'h_psi:vloc' )
-      CALL print_clock( 'h_psi:vnl' )
-   END IF
-   CALL print_clock( 'add_vuspsi' )
+      CALL print_clock( 'h_psi:pot' )
+      CALL print_clock( 'h_psi:calbec' )
+!  END IF
+   CALL print_clock( 'vloc_psi' )   ; CALL print_clock ( 'vloc_psi:tg_gather' ) ;  CALL print_clock ( 'v_loc_psir' )
+   CALL print_clock( 'add_vuspsi' ) ; CALL print_clock ( 'add_vuspsir' )
    CALL print_clock( 'vhpsi' )
    CALL print_clock( 'h_psi_meta' )
    CALL print_clock( 'h_1psi' )
@@ -172,6 +177,11 @@ SUBROUTINE print_clock_pw()
       CALL print_clock( 'exx_grid' )
       CALL print_clock( 'exxinit' )
       CALL print_clock( 'vexx' )
+!civn 
+      CALL print_clock( 'matcalc' )
+      CALL print_clock( 'aceupdate' )
+      CALL print_clock( 'vexxace' )
+      CALL print_clock( 'aceinit' )
       CALL print_clock( 'exxenergy' )
       IF( okvan) THEN
         WRITE( stdout, '(/,5X,"EXX+US  routines")' )

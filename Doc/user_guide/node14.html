@@ -1,0 +1,722 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>2.7 Installation tricks and problems</TITLE>
+<META NAME="description" CONTENT="2.7 Installation tricks and problems">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="previous" HREF="node13.html">
+<LINK REL="up" HREF="node7.html">
+<LINK REL="next" HREF="node15.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html289"
+  HREF="node15.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html285"
+  HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html281"
+  HREF="node13.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html287"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html290"
+  HREF="node15.html">3 Parallelism</A>
+<B> Up:</B> <A NAME="tex2html286"
+  HREF="node7.html">2 Installation</A>
+<B> Previous:</B> <A NAME="tex2html282"
+  HREF="node13.html">2.6 Running tests and</A>
+ &nbsp; <B>  <A NAME="tex2html288"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A NAME="tex2html291"
+  HREF="node14.html#SECTION00037100000000000000">2.7.1 All architectures</A>
+<LI><A NAME="tex2html292"
+  HREF="node14.html#SECTION00037200000000000000">2.7.2 Intel Xeon Phi</A>
+<LI><A NAME="tex2html293"
+  HREF="node14.html#SECTION00037300000000000000">2.7.3 Cray machines</A>
+<LI><A NAME="tex2html294"
+  HREF="node14.html#SECTION00037400000000000000">2.7.4 IBM AIX</A>
+<LI><A NAME="tex2html295"
+  HREF="node14.html#SECTION00037500000000000000">2.7.5 IBM BlueGene</A>
+<LI><A NAME="tex2html296"
+  HREF="node14.html#SECTION00037600000000000000">2.7.6 Linux PC</A>
+<UL>
+<LI><A NAME="tex2html297"
+  HREF="node14.html#SECTION00037610000000000000">2.7.6.1 Linux PCs with gfortran</A>
+<LI><A NAME="tex2html298"
+  HREF="node14.html#SECTION00037620000000000000">2.7.6.2 Linux PCs with g95</A>
+<LI><A NAME="tex2html299"
+  HREF="node14.html#SECTION00037630000000000000">2.7.6.3 Linux PCs with Pathscale compiler</A>
+<LI><A NAME="tex2html300"
+  HREF="node14.html#SECTION00037640000000000000">2.7.6.4 Linux PCs with Sun Studio compiler</A>
+<LI><A NAME="tex2html301"
+  HREF="node14.html#SECTION00037650000000000000">2.7.6.5 Linux PCs with AMD Open64 suite</A>
+<LI><A NAME="tex2html302"
+  HREF="node14.html#SECTION00037660000000000000">2.7.6.6 Linux PCs with Intel compiler (ifort)</A>
+<LI><A NAME="tex2html303"
+  HREF="node14.html#SECTION00037670000000000000">2.7.6.7 Linux PCs with MKL libraries</A>
+<LI><A NAME="tex2html304"
+  HREF="node14.html#SECTION00037680000000000000">2.7.6.8 Linux PCs with ACML libraries</A>
+</UL>
+<BR>
+<LI><A NAME="tex2html305"
+  HREF="node14.html#SECTION00037700000000000000">2.7.7 Linux PC clusters with MPI</A>
+<LI><A NAME="tex2html306"
+  HREF="node14.html#SECTION00037800000000000000">2.7.8 Mac OS</A>
+<UL>
+<LI><A NAME="tex2html307"
+  HREF="node14.html#SECTION00037810000000000000">2.7.8.1 Detailed installation instructions for Mac OS X 10.6</A>
+<LI><A NAME="tex2html308"
+  HREF="node14.html#SECTION00037820000000000000">2.7.8.2 Compilation with GNU compilers</A>
+<LI><A NAME="tex2html309"
+  HREF="node14.html#SECTION00037830000000000000">2.7.8.3 Compilation with Intel compilers</A>
+</UL></UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H2><A NAME="SECTION00037000000000000000">
+2.7 Installation tricks and problems</A>
+</H2>
+
+<P>
+
+<H3><A NAME="SECTION00037100000000000000">
+2.7.1 All architectures</A>
+</H3>
+
+<UL>
+<LI>Working Fortran and C compilers are needed in order
+to compile Q<SMALL>UANTUM </SMALL>ESPRESSO. Most recent Fortran compiles will do
+the job, but earlier Fortran-90 compilers that do not
+support allocatable arrays in derived types (e.g. old
+gfortran versions) are no longer supported since v.5.1.2.
+Also, compilers that do not support intrinsic calls
+<TT>flush</TT>, <TT>get_environment_variable</TT>,
+<TT>get_command_argument</TT>, <TT>command_argument_count</TT>
+are no longer supported since v.5.2.1.
+
+<P>
+C and Fortran compilers must be in your PATH.
+If <TT>configure</TT> says that you have no working compiler, well,
+you have no working compiler, at least not in your PATH, and
+not among those recognized by <TT>configure</TT>.
+</LI>
+<LI>If you get <EM>Compiler Internal Error</EM> or similar messages: your
+compiler version is buggy. Try to lower the optimization level, or to
+remove optimization just for the routine that has problems. If it
+doesn't work, or if you experience weird problems at run time, try to
+install patches for your version of the compiler (most vendors release
+at least a few patches for free), or to upgrade to a more recent
+compiler version.
+</LI>
+<LI>If you get error messages at the loading phase that look like
+<EM>file XYZ.o: unknown / not recognized/ invalid / wrong
+file type / file format / module version</EM>,
+one of the following things have happened:
+
+<OL>
+<LI>you have leftover object files from a compilation with another
+  compiler: run <TT>make clean</TT> and recompile.
+</LI>
+<LI><TT>make</TT> did not stop at the first compilation error (it may
+happen in some software configurations). Remove the file *.o
+that triggers the error message, recompile, look for a
+compilation error.
+</LI>
+</OL>
+If many symbols are missing in the loading phase: you did not specify the
+location of all needed libraries (LAPACK, BLAS, FFTW, machine-specific
+optimized libraries), in the needed order.
+If only symbols from <TT>clib/</TT> are missing, verify that
+you have the correct C-to-Fortran bindings, defined in
+<TT>include/c_defs.h</TT>.
+Note that Q<SMALL>UANTUM </SMALL>ESPRESSO is self-contained (with the exception of MPI libraries for
+parallel compilation): if system libraries are missing, the problem is in
+your compiler/library combination or in their usage, not in Q<SMALL>UANTUM </SMALL>ESPRESSO.
+</LI>
+<LI>If you get an error like <EM>Can't open module file global_version.mod</EM>:
+your machine doesn't like the script that produces file <TT>version.f90</TT>
+with the correct version and revision. Quick solution: copy
+<TT>Modules/version.f90.in</TT> to <TT>Modules/version.f90</TT>.
+</LI>
+<LI>If you get mysterious errors ("Segmentation faults" and the like)
+in the provided tests and examples:
+your compiler, or your mathematical libraries, or MPI libraries,
+or a combination thereof, is very likely buggy, or there is some
+form of incompatibility (see below). Although the
+presence of subtle bugs in Q<SMALL>UANTUM </SMALL>ESPRESSO that are not revealed during
+the testing phase can never be ruled out, it is very unlikely
+that this happens on the provided tests and examples.
+</LI>
+</UL>
+
+<P>
+
+<H3><A NAME="SECTION00037200000000000000">
+2.7.2 Intel Xeon Phi</A>
+</H3>
+For Intel Xeon CPUs with Phi coprocessor, there are three ways of compiling:
+
+<UL>
+<LI><EM>offload</EM> mode, executed on main CPU and offloaded onto coprocessor
+"automagically";
+</LI>
+<LI><EM>native</EM> mode, executed completely on coprocessor;
+</LI>
+<LI><EM>symmetric</EM> mode, requiring creation of both binaries.
+</LI>
+</UL>
+"You can take advantage of the offload mode using the <TT>libxphi</TT>
+library. This library offloads the BLAS/MKL functions on the Xeon Phi
+platform hiding the latency times due to the communication. You just
+need to compile this library and then to link it dynamically. The
+library works with any version of QE. Libxphi is available from
+<TT>https://github.com/cdahnken/libxphi</TT>. Some documentation is
+available therein.
+
+<P>
+Instead, if you want to compile a native version of QE, you just need
+to add the <TT>-mmic</TT> flag and cross compile. If you want to use
+the symmetric mode, you need to compile twice: with and without the
+<TT>-mmic</TT> flag". "[...] everything, i.e. code+libraries, must be
+cross-compiled with the <TT>-mmic</TT> flag. In my opinion, it's pretty
+unlikely that native mode can outperform the execution on the standard
+Xeon cpu. I strongly suggest to use the Xeon Phi in offload mode, for now"
+(info by Fabio Affinito, March 2015).
+
+<P>
+
+<H3><A NAME="SECTION00037300000000000000">
+2.7.3 Cray machines</A>
+</H3>
+
+<P>
+For Cray XE machines:
+<PRE>
+$ module swap PrgEnv-cray PrgEnv-pgi
+$ ./configure --enable-openmp --enable-parallel --with-scalapack
+$ vim make.inc
+</PRE>
+then manually add <TT>-D__IOTK_WORKAROUND1</TT> at the end of <TT>DFLAGS</TT> line.
+
+<P>
+''Now, despite what people can imagine, every CRAY machine deployed can
+have different environment. For example on the machine I usually use
+for tests [...] I do have to unload some modules to make QE running
+properly. On another CRAY [...] there is also Intel compiler as option
+and the system is slightly different compared to the other.
+So my recipe should work, 99% of the cases.
+I strongly suggest you to use PGI, also for a performance point of view.''
+(Info by Filippo Spiga, Sept. 2012)
+
+<P>
+For Cray XT machines, use <TT>./configure ARCH=crayxt4</TT> or else
+<TT>configure</TT> will not recognize the Cray-specific software environment.
+
+<P>
+Older Cray machines: T3D, T3E, X1, are no longer supported.
+
+<P>
+
+<H3><A NAME="SECTION00037400000000000000">
+2.7.4 IBM AIX</A>
+</H3>
+
+<P>
+As of v.6.0 IBM machines with AIX are no longer supported.
+
+<P>
+
+<H3><A NAME="SECTION00037500000000000000">
+2.7.5 IBM BlueGene</A>
+</H3>
+
+<P>
+The current <TT>configure</TT> is tested and works on the machines at CINECA
+and at J&#252;lich. For other sites, you may need something like
+<PRE>
+  ./configure ARCH=ppc64-bg BLAS_LIBS=...  LAPACK_LIBS=... \
+              SCALAPACK_DIR=... BLACS_DIR=..."
+</PRE>
+where the various *_LIBS and *_DIR "suggest" where the various libraries
+are located.
+
+<P>
+
+<H3><A NAME="SECTION00037600000000000000">
+2.7.6 Linux PC</A>
+</H3>
+
+<P>
+Both AMD and Intel CPUs, 32-bit and 64-bit, are supported and work,
+either in 32-bit emulation and in 64-bit mode. 64-bit executables
+can address a much larger memory space than 32-bit executable, but
+there is no gain in speed.
+Beware: the default integer type for 64-bit machine is typically
+32-bit long. You should be able to use 64-bit integers as well,
+but it is not guaranteed to work and will not give
+any advantage anyway.
+
+<P>
+Currently, <TT>configure</TT> supports Intel (ifort), NAG (nagfor), and gfortran
+compilers. Support for other compilers: g95, Portland (pgf90), Pathscale
+(pathf95), Sun Studio (sunf95), AMD Open64 (openf95), added in the past,
+is still there, but it might have become obsolete.
+Both Intel MKL and AMD acml mathematical libraries are supported, the
+former much better than the latter.
+
+<P>
+It is usually convenient to create semi-statically linked executables (with only
+libc, libm, libpthread dynamically linked). If you want to produce a binary
+that runs on different machines, compile it on the oldest machine you have
+(i.e. the one with the oldest version of the operating system).
+
+<P>
+
+<H4><A NAME="SECTION00037610000000000000">
+2.7.6.1 Linux PCs with gfortran</A>
+</H4>
+
+<P>
+Only recent versions (at least v.4.4) of gfortran properly compile Q<SMALL>UANTUM </SMALL>ESPRESSO.
+Older versions often produce nonfunctional phonon executables
+(segmentation faults and the like); other versions miscompile iotk
+(the executables work but crash with a mysterious iotk
+error when reading from data files).
+
+<P>
+"There is a known incompatibility problem between the calling
+convention for Fortran functions that return complex values: there is the
+convention used by
+g77/f2c, where in practice the compiler converts such functions to subroutines
+with a further parameter for the return value; gfortran instead produces a
+normal function returning a complex value.
+If your system libraries were compiled using g77 (which may happen for
+system-provided libraries in not-too-recent Linux distributions),
+and you instead use gfortran to compile Q<SMALL>UANTUM </SMALL>ESPRESSO, your code
+may crash or produce random results. This typically happens
+during calls to <TT>zdotc</TT>, which is one the most commonly used
+complex-returning functions of BLAS+LAPACK.
+
+<P>
+For further details see for instance this link:
+<BR><TT>http://www.macresearch.org/lapackblas-fortran-106#comment-17071</TT>
+<BR>
+or read the man page of gfortran under the flag <TT>-ff2c</TT>.
+
+<P>
+If your code crashes during a call to <TT>zdotc</TT>,
+try to recompile Q<SMALL>UANTUM </SMALL>ESPRESSO using the internal BLAS and LAPACK
+routines (using the <TT>-with-internal-blas</TT> and
+<TT>-with-internal-lapack</TT> parameters of the configure script)
+to see if the problem disappears; or, add the <TT>-ff2c</TT> flag"
+(info by Giovanni Pizzi, Jan. 2013).
+
+<P>
+Note that a similar problem with complex functions exists with MKL libraries
+as well: if you compile with gfortran, link <TT>-lmkl_gf_lp64</TT>,
+not <TT>-lmkl_intel_lp64</TT>, and the like for other architectures.
+Since v.5.1, you may use the following workaround:
+add preprocessing option <TT>-Dzdotc=zdotc_wrapper</TT> to <TT>DFLAGS</TT>.
+
+<P>
+
+<H4><A NAME="SECTION00037620000000000000">
+2.7.6.2 Linux PCs with g95</A>
+</H4>
+
+<P>
+g95 v.0.91 and later versions (<TT>http://www.g95.org</TT>) should
+work, but the executables it produces are noticeably slower than
+those of other compilers. Also notice that the development of g95
+seems to have stopped.
+
+<P>
+
+<H4><A NAME="SECTION00037630000000000000">
+2.7.6.3 Linux PCs with Pathscale compiler</A>
+</H4>
+
+<P>
+Version 3.1 and version 4 (open source!) of the Pathscale EKO compiler
+work (info by Cezary Sliwa, April 2011, and Carlo Nervi, June 2011).
+In case of mysterious errors while compiling <TT>iotk</TT>,
+remove all lines like:
+<PRE>
+# 1 "iotk_base.spp"
+</PRE>
+from all <TT>iotk</TT> source files.
+
+<P>
+
+<H4><A NAME="SECTION00037640000000000000">
+2.7.6.4 Linux PCs with Sun Studio compiler</A>
+</H4>
+
+<P>
+``The Sun Studio compiler, sunf95, is free (web site:
+<TT>http://developers.sun.com/sunstudio/</TT> and comes
+with a set of algebra libraries that can be used in place of the slow
+built-in libraries. It also supports OpenMP, which g95 does not. On the
+other hand, it is a pain to compile MPI with it. Furthermore the most
+recent version has a terrible bug that totally miscompiles the iotk
+input/output library (you'll have to compile it with reduced optimization).''
+(info by Lorenzo Paulatto, March 2010).
+
+<P>
+
+<H4><A NAME="SECTION00037650000000000000">
+2.7.6.5 Linux PCs with AMD Open64 suite</A>
+</H4>
+
+<P>
+The AMD Open64 compiler suite, openf95 (web site:
+<TT>http://developer.amd.com/cpu/open64/pages/default.aspx</TT>)
+can be freely downloaded from the AMD site.
+It is recognized by <TT>configure</TT> but little tested. It sort of works
+but it fails to pass several tests (info by Paolo Giannozzi, March 2010).
+"I have configured for Pathscale, then switched to the Open64 compiler by
+editing make.inc. "make pw" succeeded and pw.x did process my file, but with
+"make all" I get an internal compiler error [in CPV/wf.f90]" (info by Cezary
+Sliwa, April 2011).
+
+<P>
+
+<H4><A NAME="SECTION00037660000000000000">
+2.7.6.6 Linux PCs with Intel compiler (ifort)</A>
+</H4>
+
+<P>
+The Intel compiler, ifort, is available for free for personal
+usage (<TT>http://software.intel.com/</TT>). It produces fast executables,
+at least on Intel CPUs, but not all versions work as expected (see below).
+In case of trouble, update your version with the most recent patches,
+available via Intel Premier support (registration free of charge for Linux):
+<TT>http://software.intel.com/en-us/articles/intel-software-developer-support</TT>.
+Since each major release of ifort
+differs a lot from the previous one, compiled objects from different
+releases may be incompatible and should not be mixed.
+
+<P>
+If <TT>configure</TT> doesn't find the compiler, or if you get
+<EM>Error loading shared libraries</EM> at run time, you may have
+forgotten to execute the script that
+sets up the correct PATH and library path. Unless your system manager has
+done this for you, you should execute the appropriate script - located in
+the directory containing the compiler executable - in your
+initialization files. Consult the documentation provided by Intel.
+
+<P>
+The warning: <EM>feupdateenv is not implemented and will always fail</EM>,
+can be safely ignored. Warnings on "bad preprocessing option" when compiling
+iotk and complains about ``recommanded formats'' may also be ignored.
+
+<P>
+The following compiler releases are known to give segmentation faults
+in at least some cases of compilation of Q<SMALL>UANTUM </SMALL>ESPRESSO v.6.0:
+<BLOCKQUOTE>
+12.0.0.084 Build 20101006
+<BR>
+12.0.1.107 Build 20101116
+<BR>
+12.0.2.137 Build 20110112
+<BR>
+12.0.4.191 Build 20110427
+<BR>
+12.0.5.220 Build 20110719
+<BR>
+16.0.1.150 Build 20151021
+
+</BLOCKQUOTE>
+(Filippo Spiga, Aug. 2016)
+
+<P>
+<B>ifort v.12</B>: release 12.0.0 miscompiles iotk, leading to
+mysterious errors when reading data files. Workaround: increase
+the parameter BLOCKSIZE to e.g. 131072*1024 when opening files in
+<TT>iotk/src/iotk_files.f90</TT> (info by Lorenzo Paulatto,
+Nov. 2010). 
+
+<P>
+<B>ifort v.11</B>: Segmentation faults were reported for the combination
+ifort 11.0.081, MKL 10.1.1.019, OpenMP 1.3.3. The problem disappeared
+with ifort 11.1.056 and MKL 10.2.2.025 (Carlo Nervi, Oct. 2009).
+
+<P>
+
+<H4><A NAME="SECTION00037670000000000000">
+2.7.6.7 Linux PCs with MKL libraries</A>
+</H4>
+On Intel CPUs it is very convenient to use Intel MKL libraries.
+Recent versions also contain optimized FFT routines and a FFTW
+interface. MKL libraries can be used also with non-Intel compilers.
+They work also for AMD CPU, selecting the appropriate machine-optimized
+libraries, but with reduced performances.
+
+<P>
+<TT>configure</TT> should recognize properly installed MKL libraries.
+By default the non-threaded version of MKL is linked, unless option
+<TT>configure -with-openmp</TT> is specified. In case of trouble,
+refer to the following web page to find the correct way to link MKL:
+<BR><TT>http://software.intel.com/en-us/articles/intel-mkl-link-line-advisor/</TT>.
+
+<P>
+For parallel (MPI) execution on multiprocessor (SMP) machines, set the
+environment variable OMP_NUM_THREADS to 1 unless you know what you
+are doing. See Sec.<A HREF="node15.html#Sec:para">3</A> for more info on this
+and on the difference between MPI and OpenMP parallelization.
+
+<P>
+If you get a mysterious "too many communicators" error and a 
+subsequent crash: there is a bug in Intel MPI and MKL 2016 update 3.
+See this thread and the links quoted therein:
+<code>http://www.mail-archive.com/pw_forum@pwscf.org/msg29684.html</code>.
+
+<P>
+
+<H4><A NAME="SECTION00037680000000000000">
+2.7.6.8 Linux PCs with ACML libraries</A>
+</H4>
+For AMD CPUs, especially recent ones, you may find convenient to
+link AMD acml libraries (can be freely downloaded from AMD web site).
+<TT>configure</TT> should recognize properly installed acml libraries,
+together with the compilers most frequently used on AMD systems:
+pgf90, pathscale, openf95, sunf95.
+
+<P>
+
+<H3><A NAME="SECTION00037700000000000000"></A>
+<A NAME="SubSec:LinuxPCMPI"></A>
+<BR>
+2.7.7 Linux PC clusters with MPI
+</H3>
+PC clusters running some version of MPI are a very popular
+computational platform nowadays. Q<SMALL>UANTUM </SMALL>ESPRESSO is known to work
+with at least two of the major MPI implementations (MPICH, LAM-MPI),
+plus with the newer MPICH2 and OpenMPI implementation.
+<TT>configure</TT> should automatically recognize a properly installed
+parallel environment and prepare for parallel compilation.
+Unfortunately this not always happens. In fact:
+
+<UL>
+<LI><TT>configure</TT> tries to locate a parallel compiler in a logical
+  place with a logical name,  but if it has a strange names or it is
+  located  in a strange location, you will have to instruct <TT>configure</TT>   to find it. Note that in many PC clusters (Beowulf), there is no
+  parallel Fortran compiler in default installations:  you have to
+  configure an appropriate script, such as mpif90.
+</LI>
+<LI><TT>configure</TT> tries to locate libraries (both mathematical and
+  parallel libraries) in the usual places with usual names, but if
+  they have strange names or strange locations, you will have to
+  rename/move them, or to instruct <TT>configure</TT> to find them. If MPI
+  libraries are not found,
+  parallel compilation is disabled.
+</LI>
+<LI><TT>configure</TT> tests that the compiler and the libraries are
+  compatible (i.e. the compiler may link the libraries without
+  conflicts and without missing symbols). If they aren't and the
+  compilation fails, <TT>configure</TT> will revert to serial compilation.
+</LI>
+</UL>
+
+<P>
+Apart from such problems, Q<SMALL>UANTUM </SMALL>ESPRESSO compiles and works on all non-buggy, properly
+configured hardware and software combinations. In some cases you may have to
+recompile MPI libraries: not all MPI installations contain support for
+the Fortran compiler of your choice (or for any Fortran compiler
+at all!).
+
+<P>
+If Q<SMALL>UANTUM </SMALL>ESPRESSO does not work for some reason on a PC cluster,
+try first if it works in serial execution. A frequent problem with parallel
+execution is that Q<SMALL>UANTUM </SMALL>ESPRESSO does not read from standard input,
+due to the configuration of MPI libraries: see Sec.<A HREF="node19.html#SubSec:badpara">3.4</A>.
+If you are dissatisfied with the performances in parallel execution,
+see Sec.<A HREF="node15.html#Sec:para">3</A> and in particular Sec.<A HREF="node19.html#SubSec:badpara">3.4</A>.
+
+<P>
+
+<H3><A NAME="SECTION00037800000000000000">
+2.7.8 Mac OS</A>
+</H3>
+
+<P>
+Mac OS-X machines (10.4 and later) with Intel CPUs are supported
+by <TT>configure</TT>, both with gfortran and with the Intel compiler ifort
+and MKL libraries.
+Parallel compilation with OpenMPI also works.
+
+<P>
+Gfortran information and binaries for Mac OS-X here:
+<TT>http://hpc.sourceforge.net/</TT> and
+<TT>https://wiki.helsinki.fi/display/HUGG/Installing+the+GNU+compilers+on+Mac+OS+X</TT>.
+
+<P>
+Mysterious crashes, occurring when <TT>zdotc</TT> is called, are due
+to the same incompatibility of complex functions with some optimized
+BLAS as reported in the "Linux PCs with gfortran" paragraph. Workaround:
+add preprocessing option <TT>-Dzdotc=zdotc_wrapper</TT> to <TT>DFLAGS</TT>.
+
+<P>
+
+<H4><A NAME="SECTION00037810000000000000">
+2.7.8.1 Detailed installation instructions for Mac OS X 10.6</A>
+</H4>
+
+<P>
+(Instructions for 10.6.3 by Osman Baris Malcioglu, tested as of May 2010)
+Summary for the hasty:
+
+<UL>
+<LI>GNU fortran:
+Install macports compilers,
+Install MPI environment,
+Configure Q<SMALL>UANTUM </SMALL>ESPRESSO  using
+<PRE>
+  ./configure CC=gcc-mp-4.3 CPP=cpp-mp-4.3 CXX=g++-mp-4.3 F77=g95 FC=g95
+</PRE>
+</LI>
+<LI>Intel compiler:
+Use Version &gt; 11.1.088,
+Use 32 bit compilers,
+Install MPI environment,
+install macports provided cpp (optional),
+Configure Q<SMALL>UANTUM </SMALL>ESPRESSO using
+<PRE>
+ ./configure CC=icc CXX=icpc F77=ifort F90=ifort FC=ifort CPP=cpp-mp-4.3
+</PRE>
+</LI>
+</UL>
+
+<P>
+
+<H4><A NAME="SECTION00037820000000000000">
+2.7.8.2 Compilation with GNU compilers</A>
+</H4>.
+The following instructions use macports version of gnu compilers due to some
+issues in mixing gnu supplied fortran compilers with apple modified gnu compiler
+collection. For more information regarding macports please refer to:
+<TT>http://www.macports.org/</TT>
+
+<P>
+First install necessary compilers from macports
+<PRE>
+   port install gcc43
+   port install g95
+</PRE>
+The apple supplied MPI environment has to be overridden since there is
+a new set of compilers now (and Apple provided mpif90 is just an empty
+placeholder since Apple does not provide fortran compilers). I have used
+OpenMPI for this case. Recommended minimum configuration line is:
+<PRE>
+  ./configure CC=gcc-mp-4.3 CPP=cpp-mp-4.3 CXX=g++-mp-4.3 F77=g95 FC=g95
+</PRE>
+of course, installation directory should be set accordingly if a multiple
+compiler environment is desired. The default installation directory of
+OpenMPI overwrites apple supplied MPI permanently!
+<BR>
+Next step is Q<SMALL>UANTUM </SMALL>ESPRESSO itself. Sadly, the Apple supplied optimized BLAS/LAPACK
+libraries tend to misbehave under different tests, and it is much safer to
+use internal libraries. The minimum recommended configuration
+line is (presuming the environment is set correctly):
+<PRE>
+  ./configure CC=gcc-mp-4.3 CXX=g++-mp-4.3 F77=g95 F90=g95 FC=g95 \
+              CPP=cpp-mp-4.3 --with-internal-blas --with-internal-lapack
+</PRE>
+<H4><A NAME="SECTION00037830000000000000">
+2.7.8.3 Compilation with Intel compilers</A>
+</H4>.
+Newer versions of Intel compiler (&gt;11.1.067) support Mac OS X 10.6, and furthermore they are
+bundled with intel MKL. 32 bit binaries obtained using 11.1.088 are tested and no problems
+have been encountered so far. Sadly, as of 11.1.088 the 64 bit binary misbehave
+under some tests. Any attempt to compile 64 bit binary using v.&lt; 11.1.088 will result in
+very strange compilation errors.
+
+<P>
+Like the previous section, I would recommend installing macports compiler suite.
+First, make sure that you are using the 32 bit version of the compilers,
+i.e.
+<PRE>
+. /opt/intel/Compiler/11.1/088/bin/ifortvars.sh ia32
+</PRE>
+<PRE>
+. /opt/intel/Compiler/11.1/088/bin/iccvars.sh ia32
+</PRE>
+will set the environment for 32 bit compilation in my case.
+
+<P>
+Then, the MPI environment has to be set up for Intel compilers similar to previous
+section.
+
+<P>
+The recommended configuration line for Q<SMALL>UANTUM </SMALL>ESPRESSO is:
+<PRE>
+ ./configure CC=icc CXX=icpc F77=ifort F90=ifort FC=ifort CPP=cpp-mp-4.3
+</PRE>
+MKL libraries will be detected automatically if they are in their default locations.
+Otherwise, mklvars32 has to be sourced before the configuration script.
+
+<P>
+Security issues:
+MacOs 10.6 comes with a disabled firewall. Preparing a ipfw based firewall is recommended.
+Open source and free GUIs such as "WaterRoof" and "NoobProof" are available that may help
+you in the process.
+
+<P>
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html289"
+  HREF="node15.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html285"
+  HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html281"
+  HREF="node13.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html287"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html290"
+  HREF="node15.html">3 Parallelism</A>
+<B> Up:</B> <A NAME="tex2html286"
+  HREF="node7.html">2 Installation</A>
+<B> Previous:</B> <A NAME="tex2html282"
+  HREF="node13.html">2.6 Running tests and</A>
+ &nbsp; <B>  <A NAME="tex2html288"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+Filippo Spiga
+2016-10-04
+</ADDRESS>
+</BODY>
+</HTML>

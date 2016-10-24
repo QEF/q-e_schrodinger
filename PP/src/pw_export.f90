@@ -44,7 +44,7 @@
       USE mp_wave
       USE mp, ONLY: mp_sum, mp_get, mp_max
       USE mp_pools, ONLY: me_pool, my_pool_id, &
-        nproc_pool, intra_pool_comm, root_pool
+        nproc_pool, intra_pool_comm, root_pool, npool
       USE mp_world,  ONLY: mpime, nproc, root, world_comm
       USE io_global, ONLY: ionode, ionode_id
       USE iotk_module
@@ -64,8 +64,9 @@
       LOGICAL, INTENT(in) :: t0, tm
 
       INTEGER :: i, j, ierr, idum = 0
-      INTEGER :: nkl, nkr, nkbl, iks, ike, nkt, ikt, igwx
-      INTEGER :: npool, ipmask( nproc ), ipsour
+      INTEGER :: iks, ike, nkt, ikt, igwx
+      INTEGER :: ipmask( nproc ), ipsour
+      INTEGER, EXTERNAL :: global_kpoint_index
       COMPLEX(DP), ALLOCATABLE :: wtmp(:)
       INTEGER, ALLOCATABLE :: igltot(:)
 
@@ -84,27 +85,8 @@
         ikt = ik
         nkt = nk
 
-        !  find out the number of pools
-        npool = nproc / nproc_pool
-
-        !  find out number of k points blocks
-        nkbl = nkt / kunit
-
-        !  k points per pool
-        nkl = kunit * ( nkbl / npool )
-
-        !  find out the reminder
-        nkr = ( nkt - nkl * npool ) / kunit
-
-        !  Assign the reminder to the first nkr pools
-        IF( my_pool_id < nkr ) nkl = nkl + kunit
-
-        !  find out the index of the first k point in this pool
-        iks = nkl * my_pool_id + 1
-        IF( my_pool_id >= nkr ) iks = iks + nkr * kunit
-
-        !  find out the index of the last k point in this pool
-        ike = iks + nkl - 1
+        iks = global_kpoint_index (nkt, 1)
+        ike = iks + nk - 1
 
         ipmask = 0
         ipsour = ionode_id
@@ -264,14 +246,11 @@ PROGRAM pw_export
   !   pseudo_dir   pseudopotential directory
   !   psfile(:)    name of the pp file for each species
   !
-
-
   USE wrappers,  ONLY : f_mkdir_safe
   USE pwcom
   USE fft_base,  ONLY : dfftp
   USE io_global, ONLY : stdout, ionode, ionode_id
-  USE io_files,  ONLY : psfile, pseudo_dir
-  USE io_files,  ONLY : prefix, tmp_dir, outdir
+  USE io_files,  ONLY : psfile, pseudo_dir, prefix, tmp_dir
   USE ions_base, ONLY : ntype => nsp
   USE iotk_module
   USE mp_global, ONLY : mp_startup
@@ -283,6 +262,7 @@ PROGRAM pw_export
   IMPLICIT NONE
   !
   CHARACTER(LEN=256), EXTERNAL :: trimcheck
+  CHARACTER(LEN=256) :: outdir
   !
   INTEGER :: ik, i, kunittmp, ios
 
@@ -295,7 +275,7 @@ PROGRAM pw_export
   !
   ! initialise environment
   !
-#ifdef __MPI
+#if defined(__MPI)
   CALL mp_startup ( )
 #endif
   CALL environment_start ( 'PW_EXPORT' )
@@ -334,7 +314,6 @@ PROGRAM pw_export
   ! ... Broadcasting variables
   !
   tmp_dir = trimcheck( outdir )
-  CALL mp_bcast( outdir, ionode_id, world_comm )
   CALL mp_bcast( tmp_dir, ionode_id, world_comm )
   CALL mp_bcast( prefix, ionode_id, world_comm )
   CALL mp_bcast( pp_file, ionode_id, world_comm )
@@ -387,7 +366,7 @@ SUBROUTINE write_export (pp_file,kunit,uspp_spsi, ascii, single_file, raw)
   USE symm_base,      ONLY : nsym, s, invsym, sname, irt, ftau
   USE  uspp,          ONLY : nkb, vkb
   USE wavefunctions_module,  ONLY : evc
-  USE io_files,       ONLY : nd_nmbr, outdir, prefix, iunwfc, nwordwfc
+  USE io_files,       ONLY : nd_nmbr, tmp_dir, prefix, iunwfc, nwordwfc
   USE io_files,       ONLY : pseudo_dir, psfile
   USE io_base_export, ONLY : write_restart_wfc
   USE io_global,      ONLY : ionode, stdout
@@ -407,10 +386,9 @@ SUBROUTINE write_export (pp_file,kunit,uspp_spsi, ascii, single_file, raw)
   LOGICAL, INTENT(in) :: uspp_spsi, ascii, single_file, raw
 
   INTEGER :: i, j, k, ig, ik, ibnd, na, ngg,ig_, ierr
-  INTEGER, ALLOCATABLE :: kisort(:)
   real(DP) :: xyz(3), tmp(3)
-  INTEGER :: npool, nkbl, nkl, nkr, npwx_g
-  INTEGER :: ike, iks, npw_g, ispin, local_pw
+  INTEGER :: ike, iks, npw_g, npwx_g, ispin, local_pw
+  INTEGER, EXTERNAL :: global_kpoint_index
   INTEGER, ALLOCATABLE :: ngk_g( : )
   INTEGER, ALLOCATABLE :: itmp_g( :, : )
   real(DP),ALLOCATABLE :: rtmp_g( :, : )
@@ -436,27 +414,8 @@ SUBROUTINE write_export (pp_file,kunit,uspp_spsi, ascii, single_file, raw)
      IF( ( nproc_pool > nproc ) .or. ( mod( nproc, nproc_pool ) /= 0 ) ) &
        CALL errore( ' write_export ',' nproc_pool ', 1 )
 
-     !  find out the number of pools
-     npool = nproc / nproc_pool
-
-     !  find out number of k points blocks
-     nkbl = nkstot / kunit
-
-     !  k points per pool
-     nkl = kunit * ( nkbl / npool )
-
-     !  find out the reminder
-     nkr = ( nkstot - nkl * npool ) / kunit
-
-     !  Assign the reminder to the first nkr pools
-     IF( my_pool_id < nkr ) nkl = nkl + kunit
-
-     !  find out the index of the first k point in this pool
-     iks = nkl * my_pool_id + 1
-     IF( my_pool_id >= nkr ) iks = iks + nkr * kunit
-
-     !  find out the index of the last k point in this pool
-     ike = iks + nkl - 1
+     iks = global_kpoint_index (nkstot, 1)
+     ike = iks + nks - 1
 
   ENDIF
 
@@ -469,7 +428,7 @@ SUBROUTINE write_export (pp_file,kunit,uspp_spsi, ascii, single_file, raw)
 
   IF( ionode ) THEN
     WRITE(0,*) "Opening file "//trim(pp_file)
-    CALL iotk_open_write(50,file=trim(outdir)//'/'//trim(pp_file))
+    CALL iotk_open_write(50,file=trim(tmp_dir)//'/'//trim(pp_file))
     WRITE(0,*) "Reconstructing the main grid"
   ENDIF
 
@@ -502,25 +461,20 @@ SUBROUTINE write_export (pp_file,kunit,uspp_spsi, ascii, single_file, raw)
 
   ! build the G+k array indexes
   ALLOCATE ( igk_l2g ( npwx, nks ) )
-  ALLOCATE ( kisort( npwx ) )
   DO ik = 1, nks
-     kisort = 0
-     npw = npwx
-     CALL gk_sort (xk (1, ik+iks-1), ngm, g, gcutw, npw, kisort(1), g2kin)
      !
      ! mapping between local and global G vector index, for this kpoint
      !
+     npw = ngk(ik)
      DO ig = 1, npw
         !
-        igk_l2g(ig,ik) = ig_l2g( kisort(ig) )
+        igk_l2g(ig,ik) = ig_l2g( igk_k(ig,ik) )
         !
      ENDDO
      !
      igk_l2g( npw+1 : npwx, ik ) = 0
      !
-     ngk (ik) = npw
   ENDDO
-  DEALLOCATE (kisort)
 
   ! compute the global number of G+k vectors for each k point
   ALLOCATE( ngk_g( nkstot ) )
@@ -742,7 +696,7 @@ SUBROUTINE write_export (pp_file,kunit,uspp_spsi, ascii, single_file, raw)
   DEALLOCATE( itmp_g )
 
 
-#ifdef __MPI
+#if defined(__MPI)
   CALL poolrecover (et, nbnd, nkstot, nks)
 #endif
 !
@@ -858,15 +812,15 @@ SUBROUTINE write_export (pp_file,kunit,uspp_spsi, ascii, single_file, raw)
 
            local_pw = 0
            IF( (ik >= iks) .and. (ik <= ike) ) THEN
-
-               CALL gk_sort (xk (1, ik+iks-1), ngm, g, gcutw, npw, igk, g2kin)
+ 
                CALL davcio (evc, 2*nwordwfc, iunwfc, (ik-iks+1), - 1)
 
-               CALL init_us_2(npw, igk, xk(1, ik), vkb)
-               local_pw = ngk(ik-iks+1)
+               npw = ngk(ik-iks+1)
+               local_pw = npw
+	       CALL init_us_2(npw, igk_k(1,ik-iks-1), xk(1, ik), vkb)
 
                IF ( gamma_only ) THEN
-                  CALL calbec ( ngk_g(ik), vkb, evc, becp )
+                  CALL calbec ( npw, vkb, evc, becp )
                   WRITE(0,*) 'Gamma only PW_EXPORT not yet tested'
                ELSE
                   CALL calbec ( npw, vkb, evc, becp )

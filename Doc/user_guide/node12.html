@@ -1,0 +1,177 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>2.5 Compilation</TITLE>
+<META NAME="description" CONTENT="2.5 Compilation">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node13.html">
+<LINK REL="previous" HREF="node11.html">
+<LINK REL="up" HREF="node7.html">
+<LINK REL="next" HREF="node13.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html267"
+  HREF="node13.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html263"
+  HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html257"
+  HREF="node11.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html265"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html268"
+  HREF="node13.html">2.6 Running tests and</A>
+<B> Up:</B> <A NAME="tex2html264"
+  HREF="node7.html">2 Installation</A>
+<B> Previous:</B> <A NAME="tex2html258"
+  HREF="node11.html">2.4 Libraries</A>
+ &nbsp; <B>  <A NAME="tex2html266"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00035000000000000000"></A>
+<A NAME="SubSec:Compilation"></A>
+<BR>
+2.5 Compilation
+</H2>
+
+<P>
+There are a few adjustable parameters in <TT>Modules/parameters.f90</TT>.
+The
+present values will work for most cases. All other variables are dynamically
+allocated: you do not need to recompile your code for a different system.
+
+<P>
+At your choice, you may compile the complete Q<SMALL>UANTUM </SMALL>ESPRESSO suite of programs
+(with <TT>make all</TT>), or only some specific programs. <TT>make</TT> with no arguments yields a list of valid compilation targets:
+
+<UL>
+<LI><TT>make pw</TT>  compiles the self-consistent-field package <TT>PWscf</TT>
+</LI>
+<LI><TT>make cp</TT>  compiles the Car-Parrinello package <TT>CP</TT>
+</LI>
+<LI><TT>make neb</TT> downloads <TT>PWneb</TT> package from <TT>qe-forge</TT>
+			unpacks it and compiles it. All executables are linked
+			in main <TT>bin</TT> directory
+</LI>
+<LI><TT>make ph</TT>  downloads <TT>PHonon</TT> package from <TT>qe-forge</TT>
+			unpacks it and compiles it. All executables are linked
+			in main <TT>bin</TT> directory
+</LI>
+<LI><TT>make pp</TT>  compiles the postprocessing package <TT>PostProc</TT>
+</LI>
+<LI><TT>make pwcond</TT> downloads the balistic conductance package <TT>PWcond</TT>
+			from <TT>QE-FORGE</TT>
+			unpacks it and compiles it. All executables are linked
+			in main <TT>bin</TT> directory
+</LI>
+<LI><TT>make pwall</TT> produces all of the above.
+</LI>
+<LI><TT>make ld1</TT>  downloads the pseudopotential generator package <TT>atomic</TT>
+			from <TT>QE-FORGE</TT>
+			unpacks it and compiles it. All executables are linked
+			in main <TT>bin</TT> directory
+</LI>
+<LI><TT>make xspectra</TT> downloads the package <TT>XSpectra</TT>
+			from <TT>QE-FORGE</TT>
+			unpacks it and compiles it. All executables are linked
+			in main <TT>bin</TT> directory
+</LI>
+<LI><TT>make upf</TT> produces utilities for pseudopotential conversion in
+                        directory <TT>upftools/</TT>
+</LI>
+<LI><TT>make all</TT> produces all of the above
+</LI>
+<LI><TT>make plumed</TT> unpacks <TT>PLUMED</TT>, patches several routines
+                           in <TT>PW/</TT>, <TT>CPV/</TT> and <TT>clib/</TT>,
+                           recompiles <TT>PWscf</TT> and <TT>CP</TT> with <TT>PLUMED</TT>
+                           support
+</LI>
+<LI><TT>make w90</TT> downloads <TT>wannier90</TT>, unpacks it, copies an appropriate
+                       <TT>make.inc</TT> file,  produces all executables
+                       in <TT>W90/wannier90.x</TT> and in <TT>bin/</TT>
+</LI>
+<LI><TT>make want</TT> downloads <TT>WanT</TT> from <TT>QE-FORGE</TT>,
+			 unpacks it, runs its <TT>configure</TT>,
+                         produces all executables for <TT>WanT</TT> in
+                         <TT>WANT/bin</TT>.
+</LI>
+<LI><TT>make yambo</TT> downloads <TT>yambo</TT> from <TT>QE-FORGE</TT>,
+			  unpacks it, runs its <TT>configure</TT>,
+                          produces all <TT>yambo</TT> executables in
+                          <TT>YAMBO/bin</TT>
+</LI>
+<LI><TT>make gipaw</TT> downloads <TT>GIPAW</TT> from <TT>QE-FORGE</TT>,
+                          unpacks it, runs its <TT>configure</TT>,
+                          produces all <TT>GIPAW</TT> executables in
+                          <TT>GIPAW/bin</TT> and in main <TT>bin</TT> directory.
+</LI>
+<LI><TT>make west</TT> downloads <TT>WEST</TT> from <TT>www.west-code.org</TT>,
+                          unpacks it, produces all the executables
+                          in <TT>West/Wfreq</TT> and <TT>West/Wstat</TT>.
+</LI>
+</UL>
+For the setup of the GUI, refer to the <TT>PWgui-X.Y.Z /INSTALL</TT> file, where
+X.Y.Z stands for the version number of the GUI (should be the same as the
+general version number). If you are using the SVN sources, see
+the <TT>GUI/README</TT> file instead.
+
+<P>
+If <TT>make</TT> refuses for some reason to download additional
+packages, manually download them into subdirectory
+<TT>archive/</TT>, <EM>not unpacking or or uncompressing them</EM>,
+and try <TT>make</TT> again. Also see Sec.(<A HREF="node8.html#SubSec:Download">2.1</A>).
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html267"
+  HREF="node13.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html263"
+  HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html257"
+  HREF="node11.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html265"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html268"
+  HREF="node13.html">2.6 Running tests and</A>
+<B> Up:</B> <A NAME="tex2html264"
+  HREF="node7.html">2 Installation</A>
+<B> Previous:</B> <A NAME="tex2html258"
+  HREF="node11.html">2.4 Libraries</A>
+ &nbsp; <B>  <A NAME="tex2html266"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+Filippo Spiga
+2016-10-04
+</ADDRESS>
+</BODY>
+</HTML>

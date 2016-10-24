@@ -1,6 +1,6 @@
 # Makefile for postprocessing (PP)
 
-include ../../make.sys
+include ../../make.inc
 
 # location of needed modules and included files (if any)
 MODFLAGS= $(MOD_FLAG)../../iotk/src $(MOD_FLAG)../../Modules \
@@ -14,7 +14,6 @@ add_shift_lc.o \
 add_shift_us.o \
 atomic_wfc_nc_proj.o \
 cft.o \
-cgracsc.o \
 chdens.o \
 chdens_bspline.o \
 compute_ppsi.o \
@@ -35,6 +34,7 @@ openfil_pp.o\
 partialdos.o \
 paw_postproc.o \
 plot_whole_cell.o \
+projections_mod.o \
 projwfc_box.o \
 punch_plot.o \
 smallgk.o \
@@ -44,7 +44,6 @@ sym_band.o \
 work_function.o \
 write_p_avg.o \
 write_proj.o \
-xk_et_collect.o \
 write_io_header.o \
 write_hamiltonians.o 
 
@@ -54,8 +53,6 @@ QEOBJS = ../../Modules/libqemod.a ../../FFTXlib/libqefft.a ../../LAXlib/libqela.
 MODULES = $(PWOBJS) $(QEOBJS)
 
 TLDEPS= bindir mods libs pw
-
-LIBOBJS = ../../clib/clib.a ../../iotk/src/libiotk.a
 
 all : tldeps average.x bands.x dos.x epsilon.x initial_state.x fs.x \
       plan_avg.x plotband.x plotproj.x plotrho.x pmw.x pp.x projwfc.x \
@@ -209,6 +206,6 @@ tldeps :
 	( cd ../.. ; $(MAKE) $(TLDEPS) || exit 1 ) ; fi
 
 clean :
-	- /bin/rm -f *.x *.o *~ *.F90 *.d *.mod *.i *.L libpp.a
+	- /bin/rm -f *.x *.o *~ *_tmp.f90 *.d *.mod *.i *.L libpp.a
 
 include make.depend

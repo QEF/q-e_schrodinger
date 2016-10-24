@@ -1,5 +1,5 @@
 !
-! Copyright (C) 2001-2013 Quantum ESPRESSO group
+! Copyright (C) 2001-2016 Quantum ESPRESSO group
 ! This file is distributed under the terms of the
 ! GNU General Public License. See the file `License'
 ! in the root directory of the present distribution,
@@ -13,15 +13,22 @@ SUBROUTINE punch( what )
   ! ... the information needed for further processing (phonon etc.)
   !
   USE io_global,            ONLY : stdout, ionode
-  USE io_files,             ONLY : prefix, iunpun, iunwfc, nwordwfc, diropn
-  USE control_flags,        ONLY : io_level, twfcollect, io_level
+  USE io_files,             ONLY : iunpun, iunwfc, nwordwfc, diropn, &
+       tmp_dir, prefix
+  USE control_flags,        ONLY : io_level, twfcollect, io_level, lscf
   USE klist,                ONLY : nks
-  USE pw_restart,           ONLY : pw_writefile
-#ifdef __XSD
-  USE pw_restart,           ONLY : pw_write_schema
-  USE io_files,             ONLY : outdir, xmlpun_schema
+  USE pw_restart_new,       ONLY : pw_write_schema, pw_write_binaries
+  USE io_files,             ONLY : xmlpun_schema, psfile, pseudo_dir
   USE wrappers,             ONLY : f_copy
-#endif
+  USE xml_io_base,          ONLY : create_directory
+  USE io_rho_xml,           ONLY : write_rho
+  USE spin_orb,             ONLY : lforcet
+  USE scf,                  ONLY : rho
+  USE lsda_mod,             ONLY : nspin
+  USE ions_base,            ONLY : nsp
+!
+  USE pw_restart,           ONLY : pw_writefile
+!
   USE a2F,                  ONLY : la2F, a2Fsave
   USE wavefunctions_module, ONLY : evc
   !
@@ -29,8 +36,8 @@ SUBROUTINE punch( what )
   !
   CHARACTER(LEN=*) :: what
   LOGICAL :: exst
-  CHARACTER(LEN=256) :: cp_source, cp_dest
-  INTEGER            :: cp_status
+  CHARACTER(LEN=320) :: cp_source, cp_dest
+  INTEGER            :: cp_status, nt
   !
   !
   IF (io_level < 0 ) RETURN
@@ -48,15 +55,53 @@ SUBROUTINE punch( what )
   END IF
   iunpun = 4
   !
+#if defined(__XSD)
+  !
+  ! ...New-style I/O with xml schema and (optionally) hdf5 binaries
+  !
+  ! ... create the main restart directory (if needed)
+  !
+  CALL create_directory( TRIM( tmp_dir ) // TRIM( prefix ) // '.save' )
+  !
+  CALL pw_write_schema( )
+  !
+  ! ... charge density - also writes rho%ns if lda+U and rho%bec if PAW
+  ! ... do not overwrite the scf charge density with a non-scf one
+  ! ... (except in the 'force theorem' calculation of MAE where the
+  ! ...  charge density differs from the one read from disk)
+  !
+  IF ( lscf .OR. lforcet ) CALL write_rho( rho, nspin )
+  !
+  IF (TRIM(what) == 'all') THEN 
+     !
+     ! ... make a copy of xml file one level up (FIXME: why?)
+     !
+     IF (ionode) THEN
+        cp_source = TRIM(tmp_dir)//'/'//TRIM(prefix)//'.save/'//xmlpun_schema
+        cp_dest   = TRIM(tmp_dir)//'/'//TRIM(prefix)//'.xml'
+        cp_status = f_copy(cp_source, cp_dest)
+     END IF
+     !
+     ! ... wavefunctions in "collected" format - also G- and k+G-vectors
+     !
+     IF ( twfcollect ) CALL pw_write_binaries( )
+     !
+     ! ... copy pseudopotential files into the .save directory
+     !
+     DO nt = 1, nsp
+        cp_source = TRIM(pseudo_dir)//psfile(nt)
+        cp_dest   = TRIM(tmp_dir)//'/'//TRIM(prefix)//'.save/'//psfile(nt)
+        IF ( TRIM(cp_source) /= TRIM(cp_dest) ) &
+             cp_status = f_copy(cp_source, cp_dest)
+     END DO
+     !
+  END IF
+#else
+  !
+  ! ...Old-style I/O
+  !
   CALL pw_writefile( TRIM( what ) )
   !
-#ifdef __XSD
-  CALL pw_write_schema( TRIM( what ) )
-  IF (ionode .and. TRIM(what) == 'all') THEN 
-     cp_source = TRIM(outdir)//'/'//TRIM(prefix)//'.save/'//xmlpun_schema
-     cp_dest   = TRIM(outdir)//'/'//TRIM(prefix)//'.xml'
-     cp_status = f_copy(cp_source, cp_dest)
-  END IF
 #endif
   !
   IF ( la2F ) CALL a2Fsave()

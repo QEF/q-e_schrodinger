@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="input_xx.xsl"?>
+<!-- FILE AUTOMATICALLY CREATED: DO NOT EDIT, CHANGES WILL BE LOST -->
+    
+<input_description distribution="Quantum Espresso" package="PWscf" program="importexport_binary.x" >
+   <toc>
+   </toc>
+   <intro>
+<b>Purpose of importexport_binary.x:</b>
+    convert the binary file for the charge density (and
+    for the spin polarization) from the native binary
+    format, that is not machine-independent, to a text-only
+    XML format (&quot;export&quot; phase), and import it back to
+    binary for restarting.
+
+
+<b>Structure of the input data:</b>
+============================
+
+   <b>&amp;INPUTPP</b>
+     prefix = &apos;...&apos;
+     ...
+   <b>/</b>
+   </intro>
+   <namelist name="INPUTPP" >
+      <var name="prefix" type="CHARACTER" >
+         <default> &apos;pwscf&apos;
+         </default>
+         <info>
+prefix of input file produced by pw.x
+(wavefunctions are not needed)
+         </info>
+      </var>
+      <var name="outdir" type="CHARACTER" >
+         <info>
+directory containing the input data, i.e. the same as in pw.x
+         </info>
+         <default>
+value of the <tt>ESPRESSO_TMPDIR</tt> environment variable if set;
+current directory (&apos;./&apos;) otherwise
+         </default>
+      </var>
+      <var name="direction" type="CHARACTER" >
+         <options>
+            <info>
+Selects the direction:
+            </info>
+            <opt val="'export'" >
+for converting the charge density from the
+native binary format to text XML format
+            </opt>
+            <opt val="'import'" >
+for converting a previously exported folder
+from text XML format to binary format
+            </opt>
+         </options>
+         <default> &apos;export&apos;
+         </default>
+      </var>
+      <var name="newoutdir" type="CHARACTER" >
+         <info>
+directory into which the export data is going to be
+generated; after the &apos;import&apos; phase, it can be then used as
+the outdir to restart for instance a pw.x NSCF calculation
+         </info>
+         <default>
+<tt>&apos;./import&apos;</tt> if the direction is <tt>&apos;import&apos;,</tt>
+<br/> <tt>&apos;./export&apos;</tt> if the direction is <tt>&apos;export&apos;</tt>
+         </default>
+      </var>
+   </namelist>
+   <section title="Notes" >
+      <subsection title="Important !" >
+         <text>
+The utility will also expect to find, and copy, the
+outdir/data-file.xml and the *.UPF pseudopotential files in the
+<ref>prefix</ref>.save subdirectory, and will copy them from the outdir
+to the newoutdir. It will then convert the charge density and
+spin polarization files in the correct format. Other files,
+in particular wavefunctions and the band structure (files
+eigenvals.xml in the K????? subfolder) are ignored and not
+copied.
+
+If you need also these files, please copy them by hand (they
+are anyway already in text XML format).
+
+Note that while a NSCF calculation does not need the
+band structure files, many other codes (in particular the
+post-processing ones) may need them.
+         </text>
+      </subsection>
+   </section>
+</input_description>

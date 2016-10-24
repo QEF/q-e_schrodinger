@@ -1,0 +1,149 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>2.4 Checking for transferability</TITLE>
+<META NAME="description" CONTENT="2.4 Checking for transferability">
+<META NAME="keywords" CONTENT="pseudo-gen">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="pseudo-gen.css">
+
+<LINK REL="previous" HREF="node9.html">
+<LINK REL="up" HREF="node6.html">
+<LINK REL="next" HREF="node11.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html203"
+  HREF="node11.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html199"
+  HREF="node6.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html195"
+  HREF="node9.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html201"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html204"
+  HREF="node11.html">3 A worked example:</A>
+<B> Up:</B> <A NAME="tex2html200"
+  HREF="node6.html">2 Step-by-step Pseudopotential generation</A>
+<B> Previous:</B> <A NAME="tex2html196"
+  HREF="node9.html">2.3 Generating the pseudopotential</A>
+ &nbsp; <B>  <A NAME="tex2html202"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00034000000000000000"></A>
+<A NAME="trans"></A>
+<BR>
+2.4 Checking for transferability
+</H2><EM>
+A simple way to check for correctness and to get a feeling for 
+the transferability of a PP, with little effort, is to test the 
+results of PP and AE atomic calculations on atomic configurations 
+differing from the starting one. The error on total energy 
+differences between PP and AE results gives a feeling on how 
+good the PP is. Just to give an idea: an error <!-- MATH
+ $\sim 0.001$
+ -->
+<IMG
+ WIDTH="19" HEIGHT="19" ALIGN="BOTTOM" BORDER="0"
+ SRC="img9.png"
+ ALT="$ \sim$"> 0.001 Ry 
+is very good, <IMG
+ WIDTH="19" HEIGHT="19" ALIGN="BOTTOM" BORDER="0"
+ SRC="img9.png"
+ ALT="$ \sim$"> 0.01 Ry may still be acceptable.
+The code <TT>ld1.x</TT> has a ``testing'' mode in which it does
+exactly the above operation. You provide the input PP file and
+a number of test configurations.
+</EM>
+<P>
+<EM>You are advised to perform also the test with a basis set of spherical
+Bessel functions <I>j</I><SUB>l</SUB>(<I>qr</I>). In addition to revealing the presence of
+``ghosts'', this test also gives an idea of the smoothness of the 
+potential: the dependence of energy levels upon the cutoff in the kinetic 
+energy is basically the same for the pseudo-atom in the basis of <I>j</I><SUB>l</SUB>(<I>qr</I>)'s
+and for the same pseudo-atom in a solid-state calculation using PW's.
+</EM>
+<P>
+<EM>Another way to check for transferability is to compare AE and pseudo (PS) 
+logarithmic derivatives, also calculated by <TT>ld1.x</TT>. Typically 
+this comparison is done on the reference configuration,
+but not necessarily so. You should supply on input:
+</EM><DL COMPACT>
+<DT>-</DT>
+<DD>the radius <I>r</I><SUB>d</SUB> at which logarithmic derivatives are 
+          calculated (<I>r</I><SUB>d</SUB> should be of the order of the
+          ionic or covalent radius, and larger than any of the <I>r</I><SUB>c</SUB>'s)
+</DD>
+<DT>-</DT>
+<DD>the energy range <!-- MATH
+ $E_{min}, E_{max}$
+ -->
+<I>E</I><SUB>min</SUB>, <I>E</I><SUB>max</SUB> and the number 
+          of points for the plot. The energy range
+          should cover the typical valence one-electron energy 
+          range expected in the targeted application of the PP. 
+</DD>
+</DL><EM>
+The files containing logarithmic derivatives can be easily read and 
+plotted using for instance the plotting program <TT>gnuplot</TT> 
+or <TT>xmgrace</TT>. 
+Sizable discrepancies between AE and PS logarithmic derivatives 
+are a sign of trouble (unless your energy range is too large or 
+not centered around the range of pseudization energies, of course).
+</EM>
+<P>
+<EM>Note that the above checks, based on atomic calculations only,
+do not replace the usual checks (convergence tests, bond lengths,
+etc) one has to perform in at least some simple solid-state or 
+molecular systems before starting a serious calculation.
+</EM>
+<P><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html203"
+  HREF="node11.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html199"
+  HREF="node6.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html195"
+  HREF="node9.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html201"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html204"
+  HREF="node11.html">3 A worked example:</A>
+<B> Up:</B> <A NAME="tex2html200"
+  HREF="node6.html">2 Step-by-step Pseudopotential generation</A>
+<B> Previous:</B> <A NAME="tex2html196"
+  HREF="node9.html">2.3 Generating the pseudopotential</A>
+ &nbsp; <B>  <A NAME="tex2html202"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+Filippo Spiga
+2016-10-04
+</ADDRESS>
+</BODY>
+</HTML>

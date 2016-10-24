@@ -1,0 +1,121 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>3.2 Data files</TITLE>
+<META NAME="description" CONTENT="3.2 Data files">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node10.html">
+<LINK REL="previous" HREF="node8.html">
+<LINK REL="up" HREF="node7.html">
+<LINK REL="next" HREF="node10.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html238"
+  HREF="node10.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html234"
+  HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html228"
+  HREF="node8.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html236"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html239"
+  HREF="node10.html">3.3 Electronic structure calculations</A>
+<B> Up:</B> <A NAME="tex2html235"
+  HREF="node7.html">3 Using PWscf</A>
+<B> Previous:</B> <A NAME="tex2html229"
+  HREF="node8.html">3.1 Input data</A>
+ &nbsp; <B>  <A NAME="tex2html237"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00042000000000000000">
+3.2 Data files</A>
+</H2>
+
+<P>
+The output data files are written in the directory <TT>outdir/prefix.save</TT>, as specified by variables
+<TT>outdir</TT> and <TT>prefix</TT> 
+(a string that is prepended
+to all file names, whose default value is: <TT>prefix='pwscf'</TT>). <TT>outdir</TT> can be specified
+as well in environment variable ESPRESSO_TMPDIR. The <TT>iotk</TT>
+toolkit is used to write the file in a XML format, whose definition can
+be found in the Developer Manual. In order to use the data directory
+on a different machine, you should convert the binary files to formatted,
+transfer them, convert them back to unformatted as in the following 
+example:
+<PRE>
+  $bindir/iotk convert -t outdir/prefix.save/charge-density.dat myfile.txt
+  [ transfer file to the other machine ]
+  $bindir/iotk convert -b myfile.txt outdir/prefix.save/charge-density.dat
+</PRE>
+If you need wavefunctions as well, you must to set the <TT>pw.x</TT> option 
+<TT>wf_collect</TT> to <TT>.true.</TT>. In such case, wavefunction files 
+are found in directories <TT>outdir/prefix.save/K*</TT>, one per k-point.
+You should do the conversion for all of them.
+<BR>
+IMPORTANT NOTICE: starting with v.6, a new I/O system will replace the 
+current one. 
+
+<P>
+The execution stops if you create a file <TT>prefix.EXIT</TT> either
+in the working directory (i.e. where the program is executed), or in
+the  <TT>outdir</TT> directory. Note that with some versions of MPI,
+the working directory  is the directory where the executable is! 
+The advantage of this procedure is that all files are properly closed, 
+whereas  just killing the process may leave data and output files in 
+an unusable state.
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html238"
+  HREF="node10.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html234"
+  HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html228"
+  HREF="node8.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html236"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html239"
+  HREF="node10.html">3.3 Electronic structure calculations</A>
+<B> Up:</B> <A NAME="tex2html235"
+  HREF="node7.html">3 Using PWscf</A>
+<B> Previous:</B> <A NAME="tex2html229"
+  HREF="node8.html">3.1 Input data</A>
+ &nbsp; <B>  <A NAME="tex2html237"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+Filippo Spiga
+2016-10-04
+</ADDRESS>
+</BODY>
+</HTML>

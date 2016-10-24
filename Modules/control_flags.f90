@@ -38,18 +38,14 @@ MODULE control_flags
             timing, memchk, trane, dt_old, ampre, tranp, amprp,              &
             tnosee, tnosep, tnoseh, tcp, tcap,                               &
             tconvthrs, tolp, convergence_criteria, tionstep, nstepe,         &
-            tscreen, gamma_only, force_pairing, lecrpa, tddfpt,  smallmem
+            tscreen, gamma_only, force_pairing, lecrpa, tddfpt, smallmem
   !
   PUBLIC :: fix_dependencies, check_flags
   PUBLIC :: tksw, trhor, thdyn, trhow
   PUBLIC :: twfcollect
   PUBLIC :: lkpoint_dir
-  PUBLIC :: program_name
   !
   ! ...   declare execution control variables
-  !
-  CHARACTER(LEN=4) :: program_name = ' '  !  used to control execution flow 
-                                          !  inside module: 'PW' or 'CP'
   !
   LOGICAL :: trhor     = .FALSE. ! read rho from unit 47 (only cp, seldom used)
   LOGICAL :: trhow     = .FALSE. ! CP code, write rho to restart dir
@@ -76,7 +72,7 @@ MODULE control_flags
   LOGICAL :: lkpoint_dir   = .TRUE.  ! save each k point in a different directory
   LOGICAL :: force_pairing = .FALSE. ! Force pairing
   LOGICAL :: lecrpa        = .FALSE. ! RPA correlation energy request
-  LOGICAL :: tddfpt        = .FALSE. ! use tddfpt specific tweaks to ph.x routines
+  LOGICAL :: tddfpt        = .FALSE. ! use TDDFPT specific tweaks when using the Environ plugin
   LOGICAL :: smallmem      = .FALSE. ! the memory per task is small
   !
   TYPE (convergence_criteria) :: tconvthrs
@@ -256,6 +252,11 @@ MODULE control_flags
   LOGICAL,          PUBLIC :: tqr=.FALSE. ! if true the Q are in real space
 
   !LOGICAL,          PUBLIC :: real_space=.false. ! beta functions in real space
+  !
+  ! ... Augmetation charge and beta smoothing
+  !
+  LOGICAL,          PUBLIC :: tq_smoothing=.FALSE. ! if true the Q are smoothed 
+  LOGICAL,          PUBLIC :: tbeta_smoothing=.FALSE. ! if true the betas are smoothed 
   !
   ! ... External Forces on Ions
   !

@@ -2,16 +2,30 @@
 # TXT
 #
 
-proc ::helpdoc::attr2array_ {arrayVar attributes} {
-    upvar $arrayVar attr
+proc ::helpdoc::attr2array_ {arrayName attributes} {
+    upvar $arrayName arrayVar
+
+    catch {array unset arrayVar}; # EXPERIMENTAL: this should be the
+			          # desired behavior, because one wants to
+			          # tranform attribute-list to associative
+			          # array, hence the previous key-value
+			          # pairs should be cleared
     
     foreach {name value} [::textutil::splitx $attributes "=\"|\"\[ \n\r\\t\]|\"$"] {
 	if { $name != "" } {
-	    set attr($name) [string trim $value =]
+	    set arrayVar($name) [string trim $value =]
 	}
     }
 }
 
+proc ::helpdoc::arr {elem} {
+    variable arr
+
+    if { [info exists arr($elem)] } {
+	return $arr($elem)
+    } 
+    return ""
+}
 
 proc ::helpdoc::printf {content {extraSpace 0}} {
     variable txtDepth
@@ -29,11 +43,9 @@ proc ::helpdoc::printf {content {extraSpace 0}} {
 
 proc helpdoc::printfNormalize {content} {
     variable txtDepth
-    variable indentNum
     variable fid
     
-    set indent [indent $txtDepth]
-    puts $fid(txt) [formatString $content]
+    puts $fid(txt) [formatString $content $txtDepth]
 }
 
 
@@ -52,16 +64,12 @@ proc helpdoc::labelMsg {label msg} {
     return $message
 }
 
-proc ::helpdoc::arr {elem} {
-    variable arr
-
-    if { [info exists arr($elem)] } {
-	return $arr($elem)
-    } 
-    return ""
+proc ::helpdoc::txt_ref_link {content} {
+    set re_ref  {(@ref)\s+(\w+([%]\w)*)}
+    set re_link {(@link)\s+([.,;:]*[\w\+-]+([.,;:][\w\+-]+)*)}
+    set re "($re_ref|$re_link)"
+    return [regsub -all $re $content {"\3"}]
 }
-
-
 proc ::helpdoc::txt_tag_enter {tree node tag attr content depth} {
     variable txtDepth
     variable indentNum
@@ -75,12 +83,16 @@ proc ::helpdoc::txt_tag_enter {tree node tag attr content depth} {
     variable mode
     variable rows
     variable cols
-
+    variable info
+    variable options
+    variable options_first
+    
     if { [info exists arr] } {
 	unset arr
     }
 
-    set content [formatString [trimEmpty $content]]    
+    set content [formatString [trimEmpty [txt_atTags [txt_ref_link $content]]]]
+    #set content [formatString [trimEmpty  $content]]
     attr2array_ arr $attr
 
     global sourcedir
@@ -99,7 +111,11 @@ proc ::helpdoc::txt_tag_leave {tree node tag attr content depth} {
     variable card
     variable rows
     variable cols
+    variable arr
+    variable options
+    variable options_first
 
+    attr2array_ arr $attr
     global sourcedir
     source [file join $sourcedir txt_leave.tcl]
 }
@@ -137,11 +153,12 @@ proc ::helpdoc::printableVarDescription {tree node} {
     # Purpose: the description of variable in the card is printed only
     # when at least one of info, status or see records is present.
 
-    set Info   [getDescendantText $tree $node info]
-    set Status [getDescendantText $tree $node status]
-    set See    [getDescendantText $tree $node see]
+    set Info   [getTextFromDescendant $tree $node info]
+    set Status [getTextFromDescendant $tree $node status]
+    set See    [getTextFromDescendant $tree $node see]
+    set Opt    [getTextFromDescendant $tree $node opt]
 
-    if { ! [::tclu::lpresent $mode card] || ($Info != "" || $Status != "" || $See != "") } {
+    if { ! [::tclu::lpresent $mode card] || ($Info != "" || $Status != "" || $See != "" || $Opt != "") } {
 	return 1
     } 
 

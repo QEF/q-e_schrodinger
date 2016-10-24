@@ -1,0 +1,14 @@
+\BOOKMARK [1][-]{section.1}{Introduction}{}% 1
+\BOOKMARK [2][-]{subsection.1.1}{Overview}{section.1}% 2
+\BOOKMARK [2][-]{subsection.1.2}{Collective variables}{section.1}% 3
+\BOOKMARK [1][-]{section.2}{Step-by-step metadynamics calculations}{}% 4
+\BOOKMARK [2][-]{subsection.2.1}{Compile Quantum ESPRESSO with PLUMED plugin}{section.2}% 5
+\BOOKMARK [2][-]{subsection.2.2}{Running metadynamics in Quantum ESPRESSO}{section.2}% 6
+\BOOKMARK [2][-]{subsection.2.3}{Units in the input and output files}{section.2}% 7
+\BOOKMARK [2][-]{subsection.2.4}{Postprocessing}{section.2}% 8
+\BOOKMARK [1][-]{section.3}{First worked example: SN2 reaction}{}% 9
+\BOOKMARK [2][-]{subsection.3.1}{SN2 reaction in vacuum}{section.3}% 10
+\BOOKMARK [2][-]{subsection.3.2}{Choice of CVs and simulation details}{section.3}% 11
+\BOOKMARK [2][-]{subsection.3.3}{Metadynamics with Born-Oppenheimer molecular dynamics}{section.3}% 12
+\BOOKMARK [3][-]{subsubsection.3.3.1}{Free energy reconstruction}{subsection.3.3}% 13
+\BOOKMARK [1][-]{section.4}{Second worked example: H-H}{}% 14

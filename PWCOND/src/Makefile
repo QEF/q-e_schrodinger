@@ -1,6 +1,6 @@
 # Makefile for ballistic conductance (PWCOND)
 
-include ../../make.sys
+include ../../make.inc
 
 # location of needed modules and included files (if any)
 MODFLAGS= $(MOD_FLAG)../../iotk/src $(MOD_FLAG)../../Modules \
@@ -49,8 +49,6 @@ transmit.o
 PWOBJS = ../../PW/src/libpw.a
 QEMODS = ../../Modules/libqemod.a ../../FFTXlib/libqefft.a ../../LAXlib/libqela.a
 
-LIBOBJS        = ../../clib/clib.a ../../iotk/src/libiotk.a
-
 TLDEPS= bindir mods libs pw pp
 
 all : tldeps pwcond.x
@@ -65,7 +63,7 @@ tldeps :
 	( cd ../.. ; $(MAKE) $(TLDEPS) || exit 1 ) ; fi
 
 clean :
-	- /bin/rm -f *.x *.o *~ *.F90 *.d *.mod *.i *.a *.L
+	- /bin/rm -f *.x *.o *~ *_tmp.f90 *.d *.mod *.i *.a *.L
 	- /bin/rm -f ../../bin/pwcond.x
 
 include make.depend

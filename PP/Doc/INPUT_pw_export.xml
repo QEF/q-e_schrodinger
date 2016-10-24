@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="input_xx.xsl"?>
+<!-- FILE AUTOMATICALLY CREATED: DO NOT EDIT, CHANGES WILL BE LOST -->
+    
+<input_description distribution="Quantum Espresso" package="PWscf" program="pw_export.x" >
+   <toc>
+   </toc>
+   <intro>
+<b>Purpose of pw_export.x:</b>
+   Writes PWSCF data for postprocessing purposes in XML format using IOTK lib.
+   Wave-functions are collected and written using IO_BASE module.
+
+<b>Structure of the input data:</b>
+============================
+
+   <b>&amp;INPUTPP</b>
+     ...
+   <b>/</b>
+   </intro>
+   <namelist name="INPUTPP" >
+      <var name="prefix" type="STRING" >
+         <status> MANDATORY
+         </status>
+         <info>
+the first part of the name of all the file written by the code
+should be equal to the value given in the main calculations.
+         </info>
+      </var>
+      <var name="outdir" type="STRING" >
+         <default> &quot;./&quot;
+         </default>
+         <info>
+the scratch directory where the massive data-files are written
+         </info>
+      </var>
+      <var name="pseudo_dir" type="STRING" >
+         <default> &quot;./&quot;
+         </default>
+         <info>
+directory containing pseudopotential (PP) files
+         </info>
+      </var>
+      <dimension name="psfile" start="1" end="ntyp" type="STRING" >
+         <default> (empty string)
+         </default>
+         <info>
+files containing i-th pseudopotential, where i=1, ntyp.
+PP numbering must follow the ordering defined in the input of pw.x
+         </info>
+      </dimension>
+      <var name="single_file" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+if .TRUE. one-file output is produced
+         </info>
+      </var>
+      <var name="ascii" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+if .TRUE. output files are textual, otherwise they are partly binary.
+         </info>
+      </var>
+      <var name="pp_file" type="STRING" >
+         <default> &quot;<ref>prefix</ref>.export/&quot;
+         </default>
+         <info>
+Output file.
+
+If it is omitted, a directory &quot;<ref>prefix</ref>.export/&quot; is created
+in outdir and some output files are put there. Anyway all the data
+are accessible through the &quot;<ref>prefix</ref>.export/index.xml&quot; file which
+contains implicit pointers to all the other files in the
+export directory. If reading is done by the IOTK library
+all data appear to be in index.xml even if physically it is not.
+         </info>
+      </var>
+      <var name="uspp_spsi" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+when using USPP,  if set .TRUE. the code writes S | psi &gt;
+and | psi &gt; vectors separately in the output file.
+         </info>
+      </var>
+   </namelist>
+</input_description>

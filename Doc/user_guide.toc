@@ -1,0 +1,50 @@
+\contentsline {section}{\numberline {1}Introduction}{2}{section.1}
+\contentsline {subsection}{\numberline {1.1}People}{3}{subsection.1.1}
+\contentsline {subsection}{\numberline {1.2}Contacts}{4}{subsection.1.2}
+\contentsline {subsection}{\numberline {1.3}Guidelines for posting to the mailing list}{5}{subsection.1.3}
+\contentsline {subsection}{\numberline {1.4}Terms of use}{5}{subsection.1.4}
+\contentsline {section}{\numberline {2}Installation}{6}{section.2}
+\contentsline {subsection}{\numberline {2.1}Download}{6}{subsection.2.1}
+\contentsline {subsection}{\numberline {2.2}Prerequisites}{7}{subsection.2.2}
+\contentsline {subsection}{\numberline {2.3}\texttt {configure}}{8}{subsection.2.3}
+\contentsline {subsubsection}{\numberline {2.3.1}Manual configuration}{10}{subsubsection.2.3.1}
+\contentsline {subsection}{\numberline {2.4}Libraries}{10}{subsection.2.4}
+\contentsline {paragraph}{BLAS and LAPACK}{10}{section*.2}
+\contentsline {paragraph}{FFT}{11}{section*.3}
+\contentsline {paragraph}{MPI libraries}{11}{section*.4}
+\contentsline {paragraph}{Other libraries}{11}{section*.5}
+\contentsline {paragraph}{If optimized libraries are not found}{11}{section*.6}
+\contentsline {subsection}{\numberline {2.5}Compilation}{12}{subsection.2.5}
+\contentsline {subsection}{\numberline {2.6}Running tests and examples}{13}{subsection.2.6}
+\contentsline {subsection}{\numberline {2.7}Installation tricks and problems}{14}{subsection.2.7}
+\contentsline {subsubsection}{\numberline {2.7.1}All architectures}{14}{subsubsection.2.7.1}
+\contentsline {subsubsection}{\numberline {2.7.2}Intel Xeon Phi}{15}{subsubsection.2.7.2}
+\contentsline {subsubsection}{\numberline {2.7.3}Cray machines}{16}{subsubsection.2.7.3}
+\contentsline {subsubsection}{\numberline {2.7.4}IBM AIX}{16}{subsubsection.2.7.4}
+\contentsline {subsubsection}{\numberline {2.7.5}IBM BlueGene}{16}{subsubsection.2.7.5}
+\contentsline {subsubsection}{\numberline {2.7.6}Linux PC}{16}{subsubsection.2.7.6}
+\contentsline {paragraph}{Linux PCs with gfortran}{17}{section*.7}
+\contentsline {paragraph}{Linux PCs with g95}{17}{section*.8}
+\contentsline {paragraph}{Linux PCs with Pathscale compiler}{17}{section*.9}
+\contentsline {paragraph}{Linux PCs with Sun Studio compiler}{18}{section*.10}
+\contentsline {paragraph}{Linux PCs with AMD Open64 suite}{18}{section*.11}
+\contentsline {paragraph}{Linux PCs with Intel compiler (ifort)}{18}{section*.12}
+\contentsline {paragraph}{Linux PCs with MKL libraries}{19}{section*.13}
+\contentsline {paragraph}{Linux PCs with ACML libraries}{19}{section*.14}
+\contentsline {subsubsection}{\numberline {2.7.7}Linux PC clusters with MPI}{19}{subsubsection.2.7.7}
+\contentsline {subsubsection}{\numberline {2.7.8}Mac OS}{20}{subsubsection.2.7.8}
+\contentsline {paragraph}{Detailed installation instructions for Mac OS X 10.6}{20}{section*.15}
+\contentsline {paragraph}{Compilation with GNU compilers}{20}{section*.16}
+\contentsline {paragraph}{Compilation with Intel compilers}{21}{section*.17}
+\contentsline {section}{\numberline {3}Parallelism}{22}{section.3}
+\contentsline {subsection}{\numberline {3.1}Understanding Parallelism}{22}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Running on parallel machines}{22}{subsection.3.2}
+\contentsline {subsection}{\numberline {3.3}Parallelization levels}{23}{subsection.3.3}
+\contentsline {paragraph}{About communications}{24}{section*.18}
+\contentsline {paragraph}{Choosing parameters}{24}{section*.19}
+\contentsline {paragraph}{Massively parallel calculations}{24}{section*.20}
+\contentsline {subsubsection}{\numberline {3.3.1}Understanding parallel I/O}{25}{subsubsection.3.3.1}
+\contentsline {subsection}{\numberline {3.4}Tricks and problems}{25}{subsection.3.4}
+\contentsline {paragraph}{Trouble with input files}{26}{section*.21}
+\contentsline {paragraph}{Trouble with MKL and MPI parallelization}{26}{section*.22}
+\contentsline {paragraph}{Trouble with compilers and MPI libraries}{27}{section*.23}

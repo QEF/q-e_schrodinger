@@ -1,0 +1,200 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>3.4 Optimization and dynamics</TITLE>
+<META NAME="description" CONTENT="3.4 Optimization and dynamics">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node12.html">
+<LINK REL="previous" HREF="node10.html">
+<LINK REL="up" HREF="node7.html">
+<LINK REL="next" HREF="node12.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html272"
+  HREF="node12.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html268"
+  HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html262"
+  HREF="node10.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html270"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html273"
+  HREF="node12.html">3.5 Direct interface with</A>
+<B> Up:</B> <A NAME="tex2html269"
+  HREF="node7.html">3 Using PWscf</A>
+<B> Previous:</B> <A NAME="tex2html263"
+  HREF="node10.html">3.3 Electronic structure calculations</A>
+ &nbsp; <B>  <A NAME="tex2html271"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><UL>
+<LI><A NAME="tex2html274"
+  HREF="node11.html#SECTION00044010000000000000">3.4.0.1 Structural optimization</A>
+<LI><A NAME="tex2html275"
+  HREF="node11.html#SECTION00044020000000000000">3.4.0.2 Molecular Dynamics</A>
+<LI><A NAME="tex2html276"
+  HREF="node11.html#SECTION00044030000000000000">3.4.0.3 Free-energy surface calculations</A>
+<LI><A NAME="tex2html277"
+  HREF="node11.html#SECTION00044040000000000000">3.4.0.4 Variable-cell optimization</A>
+<LI><A NAME="tex2html278"
+  HREF="node11.html#SECTION00044050000000000000">3.4.0.5 Variable-cell molecular dynamics</A>
+</UL></UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H2><A NAME="SECTION00044000000000000000">
+3.4 Optimization and dynamics</A>
+</H2>
+
+<P>
+
+<H4><A NAME="SECTION00044010000000000000">
+3.4.0.1 Structural optimization</A>
+</H4>
+For fixed-cell optimization, specify <TT>calculation='relax'</TT> and 
+add namelist &amp;IONS. All options for a single SCF calculation apply, 
+plus a few others. You
+may follow a structural optimization with a non-SCF band-structure
+calculation (since v.4.1, you do not need any longer to update the 
+atomic positions in the input file for non scf calculation).
+<BR>
+See Example 02.
+
+<P>
+
+<H4><A NAME="SECTION00044020000000000000">
+3.4.0.2 Molecular Dynamics</A>
+</H4> 
+Specify <TT>calculation='md'</TT>, the time step <TT>dt</TT>, and possibly the number of MD stops <TT>nstep</TT>.
+Use variable <TT>ion_dynamics</TT> in namelist &amp;IONS for a fine-grained control
+of the kind of dynamics. Other options for setting the initial
+temperature and for thermalization using velocity rescaling are
+available. Remember: this is MD on the electronic ground state, not
+Car-Parrinello MD.
+See Example 03.
+
+<P>
+
+<H4><A NAME="SECTION00044030000000000000">
+3.4.0.3 Free-energy surface calculations</A>
+</H4>
+
+<P>
+Once <TT>PWscf</TT> is patched with the <TT>PLUMED</TT> plug-in, it is possible to 
+use most PLUMED functionalities by running <TT>PWscf</TT> as: 
+<TT>./pw.x -plumed</TT> plus the other usual <TT>PWscf</TT> arguments.
+The input file for <TT>PLUMED</TT> must be found in the specified 
+<TT>outdir</TT> with fixed name <TT>plumed.dat</TT>.
+
+<P>
+
+<H4><A NAME="SECTION00044040000000000000">
+3.4.0.4 Variable-cell optimization</A>
+</H4>
+
+<P>
+Since v.4.2 the newer BFGS algorithm covers the case of variable-cell
+optimization as well. Note however that variable-cell calculations
+(both optimization and dynamics) are performed with plane waves and 
+G-vectors <EM>calculated for the starting cell</EM>. This means that if 
+you re-run a self-consistent calculation for the final cell and atomic 
+positions using the same cutoff <TT>ecutwfc</TT> (and/or <TT>ecutrho</TT> 
+if applicable), you may not find exactly the same results, unless your
+final and initial cells are very similar, or unless your cutoff(s) are very
+high. In order to provide a further check, a last step is performed in
+which a scf calculation is performed for the converged structure, with
+plane waves and G-vectors <EM>calculated for the final cell</EM>. Small 
+differences between the two last steps are thus to be expected and give
+an estimate of the reliability of the variable-cell optimization.
+If you get a large difference, you are likely quite far from convergence
+in the plane-wave basis set and you need to increase the cutoff(s).
+
+<P>
+
+<H4><A NAME="SECTION00044050000000000000">
+3.4.0.5 Variable-cell molecular dynamics</A>
+</H4>
+
+<P>
+"A common mistake many new users make is to set the time step <TT>dt</TT>
+improperly to the same order of magnitude as for CP algorithm, or
+not setting <TT>dt</TT> at all. This will produce a ``not evolving dynamics''.
+Good values for the original RMW (RM Wentzcovitch) dynamics are 
+<TT>dt</TT> <!-- MATH
+ $= 50 \div 70$
+ -->
+= 50 &#247; 70. The choice of the cell mass is a delicate matter. An
+off-optimal mass will make convergence slower. Too small masses, as
+well as too long time steps, can make the algorithm unstable. A good
+cell mass will make the oscillation times for internal degrees of
+freedom comparable to cell degrees of freedom in non-damped
+Variable-Cell MD. Test calculations are advisable before extensive
+calculation. I have tested the damping algorithm that I have developed
+and it has worked well so far. It allows for a much longer time step
+(dt=<!-- MATH
+ $100 \div 150$
+ -->
+100 &#247; 150) than the RMW one and is much more stable with very
+small cell masses, which is useful when the cell shape, not the
+internal degrees of freedom, is far out of equilibrium. It also
+converges in a smaller number of steps than RMW." (Info from Cesar Da
+Silva: the new damping algorithm is the default since v. 3.1).
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html272"
+  HREF="node12.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html268"
+  HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html262"
+  HREF="node10.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html270"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html273"
+  HREF="node12.html">3.5 Direct interface with</A>
+<B> Up:</B> <A NAME="tex2html269"
+  HREF="node7.html">3 Using PWscf</A>
+<B> Previous:</B> <A NAME="tex2html263"
+  HREF="node10.html">3.3 Electronic structure calculations</A>
+ &nbsp; <B>  <A NAME="tex2html271"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+Filippo Spiga
+2016-10-04
+</ADDRESS>
+</BODY>
+</HTML>

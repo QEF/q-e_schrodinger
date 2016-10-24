@@ -16,13 +16,14 @@ subroutine incdrhoscf (drhoscf, weight, ik, dbecsum, dpsi)
   USE kinds,                ONLY : DP
   USE cell_base,            ONLY : omega
   USE ions_base,            ONLY : nat
-  USE fft_base,             ONLY: dffts
-  USE fft_interfaces,       ONLY: invfft
+  USE fft_base,             ONLY : dffts, dtgs
+  USE fft_interfaces,       ONLY : invfft
   USE gvecs,                ONLY : nls
-  USE wvfct,                ONLY : npw, igk, npwx, nbnd
-  USE uspp_param,           ONLY: nhm
-  USE wavefunctions_module, ONLY: evc
-  USE qpoint,               ONLY : npwq, igkq, ikks
+  USE wvfct,                ONLY : npwx, nbnd
+  USE uspp_param,           ONLY : nhm
+  USE wavefunctions_module, ONLY : evc
+  USE klist,                ONLY : ngk,igk_k
+  USE qpoint,               ONLY : ikks, ikqs
   USE control_lr,           ONLY : nbnd_occ
   USE mp_bands,             ONLY : me_bgrp, inter_bgrp_comm, ntask_groups
   USE mp,                   ONLY : mp_sum
@@ -49,29 +50,31 @@ subroutine incdrhoscf (drhoscf, weight, ik, dbecsum, dpsi)
   ! the change of wavefunctions in real space
   COMPLEX(DP), ALLOCATABLE :: tg_psi(:), tg_dpsi(:), tg_drho(:)
 
-  INTEGER :: ibnd, ikk, ir, ig, incr, v_siz, idx, ioff
+  INTEGER :: npw, npwq, ikk, ikq
+  INTEGER :: ibnd, ir, ig, incr, v_siz, idx, ioff
   ! counters
 
   CALL start_clock ('incdrhoscf')
-  !
-  IF (ntask_groups > 1) dffts%have_task_groups=.TRUE.
   !
   ALLOCATE(dpsic(dffts%nnr))
   ALLOCATE(psi(dffts%nnr))
   !
   wgt = 2.d0 * weight / omega
   ikk = ikks(ik)
+  ikq = ikqs(ik)
+  npw = ngk(ikk)
+  npwq= ngk(ikq)
   incr = 1
   !
-  IF (dffts%have_task_groups) THEN
+  IF ( dtgs%have_task_groups ) THEN
      !
-     v_siz = dffts%tg_nnr * dffts%nogrp
+     v_siz = dtgs%tg_nnr * dtgs%nogrp
      !
      ALLOCATE( tg_psi( v_siz ) )
      ALLOCATE( tg_dpsi( v_siz ) )
      ALLOCATE( tg_drho( v_siz ) )
      !
-     incr = dffts%nogrp
+     incr = dtgs%nogrp
      !
   ENDIF
   !
@@ -80,7 +83,7 @@ subroutine incdrhoscf (drhoscf, weight, ik, dbecsum, dpsi)
   !
   do ibnd = 1, nbnd_occ(ikk), incr
      !
-     IF (dffts%have_task_groups) THEN
+     IF ( dtgs%have_task_groups ) THEN
         !
         tg_drho=(0.0_DP, 0.0_DP)
         tg_psi=(0.0_DP, 0.0_DP)
@@ -88,29 +91,29 @@ subroutine incdrhoscf (drhoscf, weight, ik, dbecsum, dpsi)
         !
         ioff   = 0
         !
-        DO idx = 1, dffts%nogrp
+        DO idx = 1, dtgs%nogrp
            !
-           ! ... dffts%nogrp ffts at the same time. We prepare both
+           ! ... dtgs%nogrp ffts at the same time. We prepare both
            ! evc (at k) and dpsi (at k+q)
            !
            IF( idx + ibnd - 1 <= nbnd_occ(ikk) ) THEN
               !
               DO ig = 1, npw
-                 tg_psi( nls( igk( ig ) ) + ioff ) = evc( ig, idx+ibnd-1 )
+                 tg_psi( nls( igk_k( ig,ikk ) ) + ioff ) = evc( ig, idx+ibnd-1 )
               END DO
               DO ig = 1, npwq
-                 tg_dpsi( nls( igkq( ig ) ) + ioff ) = dpsi( ig, idx+ibnd-1 )
+                 tg_dpsi( nls( igk_k( ig,ikq ) ) + ioff ) = dpsi( ig, idx+ibnd-1 )
               END DO
               !
            END IF
            !
-           ioff = ioff + dffts%tg_nnr
+           ioff = ioff + dtgs%tg_nnr
            !
         END DO
-        CALL invfft ('Wave', tg_psi, dffts)
-        CALL invfft ('Wave', tg_dpsi, dffts)
+        CALL invfft ('Wave', tg_psi, dffts, dtgs)
+        CALL invfft ('Wave', tg_dpsi, dffts, dtgs)
 
-        do ir = 1, dffts%tg_npp( me_bgrp + 1 ) * dffts%nr1x * dffts%nr2x
+        do ir = 1, dtgs%tg_npp( me_bgrp + 1 ) * dffts%nr1x * dffts%nr2x
            tg_drho (ir) = tg_drho (ir) + wgt * CONJG(tg_psi (ir) ) *  &
                                                      tg_dpsi (ir)
         enddo
@@ -118,13 +121,13 @@ subroutine incdrhoscf (drhoscf, weight, ik, dbecsum, dpsi)
         ! reduce the group charge (equivalent to sum over bands of 
         ! orbital group)
         !
-        CALL mp_sum( tg_drho, gid = dffts%ogrp_comm )
+        CALL mp_sum( tg_drho, gid = dtgs%ogrp_comm )
         !
         ioff = 0
-        DO idx = 1, dffts%nogrp
-           IF( me_bgrp == dffts%nolist( idx ) ) EXIT
+        DO idx = 1, dtgs%nogrp
+           IF( me_bgrp == dtgs%nolist( idx ) ) EXIT
            ioff = ioff + dffts%nr1x * dffts%nr2x * &
-                                      dffts%npp( dffts%nolist( idx ) + 1 )
+                                      dffts%npp( dtgs%nolist( idx ) + 1 )
         END DO
         !
         ! copy the charge back to the proper processor location
@@ -141,7 +144,7 @@ subroutine incdrhoscf (drhoscf, weight, ik, dbecsum, dpsi)
         !
         psi (:) = (0.d0, 0.d0)
         do ig = 1, npw
-           psi (nls (igk (ig) ) ) = evc (ig, ibnd)
+           psi (nls (igk_k(ig,ikk) ) ) = evc (ig, ibnd)
         enddo
         CALL invfft ('Wave', psi, dffts)
         !
@@ -149,7 +152,7 @@ subroutine incdrhoscf (drhoscf, weight, ik, dbecsum, dpsi)
         !
         dpsic(:) = (0.d0, 0.d0)
         do ig = 1, npwq
-           dpsic (nls (igkq (ig) ) ) = dpsi (ig, ibnd)
+           dpsic (nls (igk_k(ig,ikq) ) ) = dpsi (ig, ibnd)
         enddo
         CALL invfft ('Wave', dpsic, dffts)
         !
@@ -171,12 +174,11 @@ subroutine incdrhoscf (drhoscf, weight, ik, dbecsum, dpsi)
   DEALLOCATE(psi)
   DEALLOCATE(dpsic)
   !
-  IF (dffts%have_task_groups) THEN
+  IF ( dtgs%have_task_groups ) THEN
      DEALLOCATE(tg_psi)
      DEALLOCATE(tg_dpsi)
      DEALLOCATE(tg_drho)
   ENDIF
-  dffts%have_task_groups=.FALSE.
   !
   CALL stop_clock ('incdrhoscf')
   !

@@ -7,49 +7,102 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 ! by F. Affinito and C. Cavazzoni, Cineca
+!  & S. de Gironcoli, SISSA
 
-program test
-  USE fft_types, ONLY: fft_dlay_descriptor, fft_dlay_deallocate
-  USE stick_set, ONLY: pstickset
+program test 
+  !! This mini-app provides a tool for testing and benchmarking the FFT drivers
+  !! contained in the FFTXlib.
+  !!
+  !! The mini-app mimics a charge-density transformation from complex-to-real
+  !! space and back.
+  !!
+  !! To compile the test program, once you have properly edit the make.sys file 
+  !! included in the FFTXlib and type:
+  !!
+  !!      make TEST
+  !!
+  !! Then you can run your FFT tests using command like:
+  !!
+  !!      mpirun -np 4 ./fft_test.x -ecutwfc 80 -alat 20  -nbnd 128 -ntg 4
+  !!
+  !! or, in case of serial build
+  !!
+  !!      ./fft_test.x -ecutwfc 80 -alat 20  -nbnd 128 -ntg 4
+  !!
+  !! Command line arguments:
+  !! 
+  !!-ecutwfc  Plane wave energy cut off
+  !!
+  !!-alat     Lattice parameter
+  !!
+  !!-nbnd     Number of bands (fft cycles)
+  !!
+  !!-ntg      Number of task groups
+  !!
+  !! Timings of different stages of execution are provided at the end of the
+  !! run.
+  !! In the present version, a preliminar implementation with non-blocking MPI
+  !! calls as been implemented. This version requires the precompilation flags
+  !! -D__NON_BLOCKING_SCATTER and -D__DOUBLE_BUFFER
+  !!  
+  USE fft_types
+  USE stick_base
+  USE task_groups
   USE fft_parallel
   USE fft_support
   IMPLICIT NONE
-#ifdef __MPI
+#if defined(__MPI)
   include 'mpif.h'
   include 'fft_param.f90'
   INTEGER, ALLOCATABLE :: req_p(:),req_u(:)
 #endif
-  TYPE(fft_dlay_descriptor) :: dfftp, dffts, dfft3d
+  TYPE(fft_type_descriptor) :: dfftp, dffts, dfft3d
+  TYPE(task_groups_descriptor) :: dtgs
+  TYPE(sticks_map) :: smap
   INTEGER :: nx = 128
+   !! grid points along x (modified after)
   INTEGER :: ny = 128
+   !! grid points along y (modified after)
   INTEGER :: nz = 256
+   !! grid points along z (modified after)
   !
-  INTEGER :: mype, npes, comm, ntgs, root, nbnd
+  INTEGER :: mype, npes, comm, root 
+   !! MPI handles
+  INTEGER :: ntgs
+   !! number of taskgroups
+  INTEGER :: nbnd
+   !! number of bands
   LOGICAL :: iope
+   !! I/O process
   INTEGER :: ierr, i, ncount, ib, ireq, nreq, ipsi, iloop
-  INTEGER :: stdout
   INTEGER :: ngw_ , ngm_ , ngs_
   REAL*8  :: gcutm, gkcut, gcutms
   REAL*8  :: ecutm, ecutw, ecutms
   REAL*8  :: ecutrho
+  !! cut-off for density 
   REAL*8  :: ecutwfc
+  !! cut-off for the wave-function
   REAL*8  :: tpiba, alat, alat_in
-  REAL*8  :: tempo(100)
-  REAL*8  :: tempo_mio(100)
-  REAL*8  :: tempo_min(100)
-  REAL*8  :: tempo_max(100)
-  REAL*8  :: tempo_avg(100)
+  !! lattice parameters
+  REAL*8  :: time(100)
+  REAL*8  :: my_time(100)
+  REAL*8  :: time_min(100)
+  REAL*8  :: time_max(100)
+  REAL*8  :: time_avg(100)
   REAL*8  :: wall
   REAL*8  :: wall_avg
   !
   REAL*8  :: tmp1(10000),tmp2(10000)
   !
   LOGICAL :: gamma_only
+   !! if calculations require only gamma point
   REAL*8  :: at(3,3), bg(3,3)
   REAL(DP), PARAMETER :: pi     = 3.14159265358979323846_DP
   !
   COMPLEX(DP), ALLOCATABLE :: psis(:,:)
+   !! fake wave-function to be (anti-)transformed 
   COMPLEX(DP), ALLOCATABLE :: aux(:)
+   !! fake argument returned by the FFT 
   !
   integer :: nargs
   CHARACTER(LEN=80) :: arg
@@ -63,7 +116,7 @@ program test
   !   default parameter (32 water molecules)
   !
   ecutwfc = 80.0d0
-  ecutrho = 4.0d0 * ecutwfc
+  ecutrho = 0.d0
   alat_in = 18.65
   ntgs    = 1
   nbnd    = 1
@@ -92,8 +145,9 @@ program test
         READ( arg, * ) nbnd
      END IF 
   end do
+  if (ecutrho == 0.d0) ecutrho = 4.0d0 * ecutwfc
   
-#ifdef __MPI
+#if defined(__MPI)
 
 #if defined(__OPENMP)
   CALL MPI_Init_thread(MPI_THREAD_FUNNELED, PROVIDED, ierr)
@@ -134,9 +188,9 @@ program test
   ecutm  = ecutrho
   ecutms = ecutrho
   !
-  at(1,:) = (/ 1.d0 , 0.0d0, 0.0d0 /)
-  at(2,:) = (/ 0.0d0 , 1.d0, 0.0d0 /)
-  at(3,:) = (/ 0.0d0 , 0.0d0, 1.d0 /)
+  at(1,:) = (/ 0.5d0 , 1.0d0, 0.0d0 /)
+  at(2,:) = (/ 0.5d0 , 0.0d0, 0.5d0 /)
+  at(3,:) = (/ 0.0d0 , 0.5d0, 1.5d0 /)
   !
   at = at * alat_in
   !
@@ -176,92 +230,64 @@ program test
   ny = 2 * int ( sqrt (gcutm) * sqrt (at(1, 2)**2 + at(2, 2)**2 + at(3, 2)**2) ) + 1
   nz = 2 * int ( sqrt (gcutm) * sqrt (at(1, 3)**2 + at(2, 3)**2 + at(3, 3)**2) ) + 1
   !
-
   if( mype == 0 ) then
-    write(*,*) 'nx = ', nx
-    write(*,*) 'ny = ', ny
-    write(*,*) 'nz = ', nz
+    write(*,*) 'nx = ', nx,' ny = ', ny, ' nz = ', nz
   end if
   !
-  dffts%nr1 = nx 
-  dffts%nr2 = ny
-  dffts%nr3 = nz
-  !
-  dffts%nr1x = nx 
-  dffts%nr2x = ny
-  dffts%nr3x = nz
-  !
-  dffts%nr1   = good_fft_order( dffts%nr1 )
-  dffts%nr2   = good_fft_order( dffts%nr2 )
-  dffts%nr3   = good_fft_order( dffts%nr3 )
-  dffts%nr1x  = good_fft_dimension( dffts%nr1 )
-  dffts%nr2x  = dffts%nr2
-  dffts%nr3x  = good_fft_dimension( dffts%nr3 )
-  !
-  dfftp%nr1 = nx 
-  dfftp%nr2 = ny
-  dfftp%nr3 = nz
-  !
-  dfftp%nr1x = nx 
-  dfftp%nr2x = ny
-  dfftp%nr3x = nz
-  !
-  dfftp%nr1   = good_fft_order( dfftp%nr1 )
-  dfftp%nr2   = good_fft_order( dfftp%nr2 )
-  dfftp%nr3   = good_fft_order( dfftp%nr3 )
-  dfftp%nr1x  = good_fft_dimension( dfftp%nr1 )
-  dfftp%nr2x  = dfftp%nr2
-  dfftp%nr3x  = good_fft_dimension( dfftp%nr3 )
-  !
-  dfft3d%nr1 = nx 
-  dfft3d%nr2 = ny
-  dfft3d%nr3 = nz
-  !
-  dfft3d%nr1x = nx 
-  dfft3d%nr2x = ny
-  dfft3d%nr3x = nz
-  !
-  dfft3d%nr1   = good_fft_order( dfft3d%nr1 )
-  dfft3d%nr2   = good_fft_order( dfft3d%nr2 )
-  dfft3d%nr3   = good_fft_order( dfft3d%nr3 )
-  dfft3d%nr1x  = good_fft_dimension( dfft3d%nr1 )
-  dfft3d%nr2x  = dfft3d%nr2
-  dfft3d%nr3x  = good_fft_dimension( dfft3d%nr3 )
-
   gamma_only = .true.
-  stdout     = 6
-  
+  CALL fft_type_init( dffts, smap, "wave", gamma_only, .true., comm, at, bg, gkcut )
+  CALL fft_type_init( dfftp, smap, "rho", gamma_only, .true., comm, at, bg,  gcutm )
+  CALL fft_type_init( dfft3d, smap, "wave", gamma_only, .false., comm, at, bg, gkcut)
+  !
+  if( mype == 0 ) then
+    write(*,*) 'dffts:  nr1 = ', dffts%nr1 ,' nr2 = ', dffts%nr2 , ' nr3 = ', dffts%nr3
+    write(*,*) '        nr1x= ', dffts%nr1x,' nr2x= ', dffts%nr2x, ' nr3x= ', dffts%nr3x
+  end if
 
-  CALL pstickset( gamma_only, bg, gcutm, gkcut, gcutms, &
-        dfftp, dffts, ngw_ , ngm_ , ngs_ , mype, root, &
-        npes, comm, ntgs, iope, stdout, dfft3d )
+  CALL task_groups_init( dffts, dtgs, ntgs )
+  ngw_ = dffts%nwl( dffts%mype + 1 )
+  ngs_ = dffts%ngl( dffts%mype + 1 )
+  ngm_ = dfftp%ngl( dfftp%mype + 1 )
+  IF( gamma_only ) THEN
+     ngw_ = (ngw_ + 1)/2
+     ngs_ = (ngs_ + 1)/2
+     ngm_ = (ngm_ + 1)/2
+  END IF
 
-  ALLOCATE( psis( dffts%tg_nnr * dffts%nogrp, 2 ) )
+  ALLOCATE( psis( dtgs%tg_nnr * dtgs%nogrp, 2 ) )
   ALLOCATE( req_p(nbnd) )
   ALLOCATE( req_u(nbnd) )
-  ALLOCATE( aux( dffts%tg_nnr * dffts%nogrp ) )
+  ALLOCATE( aux( dtgs%tg_nnr * dtgs%nogrp ) )
 
-  tempo = 0.0d0
-  tempo_mio = 0.0d0
-  tempo_min = 0.0d0
-  tempo_max = 0.0d0
-  tempo_avg = 0.0d0
+  time = 0.0d0
+  my_time = 0.0d0
+  time_min = 0.0d0
+  time_max = 0.0d0
+  time_avg = 0.0d0
 
   !
   ! Test FFT for wave functions - First calls may be biased by MPI and FFT initialization
   !
   aux = 0.0d0
   aux(1) = 1.0d0
+  aux(2) = 0.7d0
+  aux(3) = 0.1d0
 
+  !!write (*,*) (aux(i),i=1,5)
   CALL MPI_BARRIER( MPI_COMM_WORLD, ierr)
-  CALL pack_group_sticks( aux, psis(:,1), dffts )
-  CALL fw_tg_cft3_z( psis(:,1), dffts, aux )
-  CALL fw_tg_cft3_scatter( psis(:,1), dffts, aux )
-  CALL fw_tg_cft3_xy( psis(:,1), dffts )
-  CALL bw_tg_cft3_xy( psis(:,1), dffts )
-  CALL bw_tg_cft3_scatter( psis(:,1), dffts, aux )
-  CALL bw_tg_cft3_z( psis(:,1), dffts, aux )
-  CALL unpack_group_sticks( psis(:,1), aux, dffts )
+  CALL pack_group_sticks( aux, psis(:,1), dtgs )
+  CALL fw_tg_cft3_z( psis(:,1), dffts, aux, dtgs )
+  CALL fw_tg_cft3_scatter( psis(:,1), dffts, aux, dtgs )
+  CALL fw_tg_cft3_xy( psis(:,1), dffts, dtgs )
+
+  !!write (*,*) (psis(i,1),i=1,5)
+
+  CALL bw_tg_cft3_xy( psis(:,1), dffts, dtgs )
+  CALL bw_tg_cft3_scatter( psis(:,1), dffts, aux, dtgs )
+  CALL bw_tg_cft3_z( psis(:,1), dffts, aux, dtgs )
+  CALL unpack_group_sticks( psis(:,1), aux, dtgs )
+
+  !!write (*,*) (aux(i),i=1,5)
 
   !
   ! Execute FFT calls once more and Take time
@@ -270,43 +296,43 @@ program test
   !
   wall = MPI_WTIME() 
   !
-#ifdef __DOUBLE_BUFFER
+#if defined(__DOUBLE_BUFFER)
   ireq = 1
   ipsi = MOD( ireq + 1, 2 ) + 1 
   !
-  CALL pack_group_sticks_i( aux, psis(:, ipsi ), dffts, req_p( ireq ) )
+  CALL pack_group_sticks_i( aux, psis(:, ipsi ), dtgs, req_p( ireq ) )
   !
   nreq = 0
-  DO ib = 1, nbnd, 2*dffts%nogrp 
+  DO ib = 1, nbnd, 2*dtgs%nogrp 
     nreq = nreq + 1
   END DO
   ! 
-  DO ib = 1, nbnd, 2*dffts%nogrp 
+  DO ib = 1, nbnd, 2*dtgs%nogrp 
  
      ireq = ireq + 1
 
      aux = 0.0d0
      aux(1) = 1.0d0
 
-     tempo(1) = MPI_WTIME()
+     time(1) = MPI_WTIME()
 
      IF( ireq <= nreq ) THEN
         ipsi = MOD( ireq + 1, 2 ) + 1 
-        CALL pack_group_sticks_i( aux, psis(:,ipsi), dffts, req_p(ireq) )
+        CALL pack_group_sticks_i( aux, psis(:,ipsi), dtgs, req_p(ireq) )
      END IF
 
      ipsi = MOD(ipsi-1,2)+1 
 
      CALL MPI_WAIT( req_p( ireq - 1 ),MPI_STATUS_IGNORE)
 
-     tempo(2) = MPI_WTIME()
+     time(2) = MPI_WTIME()
 
-     CALL fw_tg_cft3_z( psis( :, ipsi ), dffts, aux )
-     tempo(3) = MPI_WTIME()
-     CALL fw_tg_cft3_scatter( psis( :, ipsi ), dffts, aux )
-     tempo(4) = MPI_WTIME()
-     CALL fw_tg_cft3_xy( psis( :, ipsi ), dffts )
-     tempo(5) = MPI_WTIME()
+     CALL fw_tg_cft3_z( psis( :, ipsi ), dffts, aux, dtgs )
+     time(3) = MPI_WTIME()
+     CALL fw_tg_cft3_scatter( psis( :, ipsi ), dffts, aux, dtgs )
+     time(4) = MPI_WTIME()
+     CALL fw_tg_cft3_xy( psis( :, ipsi ), dffts, dtgs )
+     time(5) = MPI_WTIME()
      !
      tmp1=1.d0
      tmp2=0.d0
@@ -315,20 +341,20 @@ program test
        CALL DAXPY(10000, pi*iloop, tmp1, 1, tmp2, 1)
      end do 
      !
-     tempo(6) = MPI_WTIME()
-     CALL bw_tg_cft3_xy( psis( :, ipsi ), dffts )
-     tempo(7) = MPI_WTIME()
-     CALL bw_tg_cft3_scatter( psis( :, ipsi ), dffts, aux )
-     tempo(8) = MPI_WTIME()
-     CALL bw_tg_cft3_z( psis( :, ipsi ), dffts, aux )
-     tempo(9) = MPI_WTIME()
+     time(6) = MPI_WTIME()
+     CALL bw_tg_cft3_xy( psis( :, ipsi ), dffts, dtgs )
+     time(7) = MPI_WTIME()
+     CALL bw_tg_cft3_scatter( psis( :, ipsi ), dffts, aux, dtgs )
+     time(8) = MPI_WTIME()
+     CALL bw_tg_cft3_z( psis( :, ipsi ), dffts, aux, dtgs )
+     time(9) = MPI_WTIME()
      !
-     CALL unpack_group_sticks( psis( :, ipsi ), aux, dffts )
+     CALL unpack_group_sticks( psis( :, ipsi ), aux, dtgs )
      !
-     tempo(10) = MPI_WTIME()
+     time(10) = MPI_WTIME()
      !
      do i = 2, 10
-        tempo_mio(i) = tempo_mio(i) + (tempo(i) - tempo(i-1))
+        my_time(i) = my_time(i) + (time(i) - time(i-1))
      end do
      !
      ncount = ncount + 1
@@ -337,23 +363,23 @@ program test
 #else
   ipsi = 1 
   ! 
-  DO ib = 1, nbnd, 2*dffts%nogrp 
+  DO ib = 1, nbnd, 2*dtgs%nogrp 
  
      aux = 0.0d0
      aux(1) = 1.0d0
 
-     tempo(1) = MPI_WTIME()
+     time(1) = MPI_WTIME()
 
-     CALL pack_group_sticks( aux, psis(:,ipsi), dffts )
+     CALL pack_group_sticks( aux, psis(:,ipsi), dtgs )
 
-     tempo(2) = MPI_WTIME()
+     time(2) = MPI_WTIME()
 
-     CALL fw_tg_cft3_z( psis( :, ipsi ), dffts, aux )
-     tempo(3) = MPI_WTIME()
-     CALL fw_tg_cft3_scatter( psis( :, ipsi ), dffts, aux )
-     tempo(4) = MPI_WTIME()
-     CALL fw_tg_cft3_xy( psis( :, ipsi ), dffts )
-     tempo(5) = MPI_WTIME()
+     CALL fw_tg_cft3_z( psis( :, ipsi ), dffts, aux, dtgs )
+     time(3) = MPI_WTIME()
+     CALL fw_tg_cft3_scatter( psis( :, ipsi ), dffts, aux, dtgs )
+     time(4) = MPI_WTIME()
+     CALL fw_tg_cft3_xy( psis( :, ipsi ), dffts, dtgs )
+     time(5) = MPI_WTIME()
      !
      tmp1=1.d0
      tmp2=0.d0
@@ -361,20 +387,20 @@ program test
        CALL DAXPY(10000, pi*iloop, tmp1, 1, tmp2, 1)
      end do 
      !
-     tempo(6) = MPI_WTIME()
-     CALL bw_tg_cft3_xy( psis( :, ipsi ), dffts )
-     tempo(7) = MPI_WTIME()
-     CALL bw_tg_cft3_scatter( psis( :, ipsi ), dffts, aux )
-     tempo(8) = MPI_WTIME()
-     CALL bw_tg_cft3_z( psis( :, ipsi ), dffts, aux )
-     tempo(9) = MPI_WTIME()
+     time(6) = MPI_WTIME()
+     CALL bw_tg_cft3_xy( psis( :, ipsi ), dffts, dtgs )
+     time(7) = MPI_WTIME()
+     CALL bw_tg_cft3_scatter( psis( :, ipsi ), dffts, aux, dtgs )
+     time(8) = MPI_WTIME()
+     CALL bw_tg_cft3_z( psis( :, ipsi ), dffts, aux, dtgs )
+     time(9) = MPI_WTIME()
 
-     CALL unpack_group_sticks( psis( :, ipsi ), aux, dffts )
+     CALL unpack_group_sticks( psis( :, ipsi ), aux, dtgs )
 
-     tempo(10) = MPI_WTIME()
+     time(10) = MPI_WTIME()
 
      do i = 2, 10
-        tempo_mio(i) = tempo_mio(i) + (tempo(i) - tempo(i-1))
+        my_time(i) = my_time(i) + (time(i) - time(i-1))
      end do
 
      ncount = ncount + 1
@@ -386,29 +412,30 @@ program test
 
   DEALLOCATE( psis, aux )
 
-  CALL fft_dlay_deallocate( dffts )
-  CALL fft_dlay_deallocate( dfftp )
-  CALL fft_dlay_deallocate( dfft3d )
+  CALL fft_type_deallocate( dffts )
+  CALL fft_type_deallocate( dfftp )
+  CALL fft_type_deallocate( dfft3d )
+  CALL task_groups_deallocate( dtgs )
 
   if( ncount > 0 ) then
-     tempo_mio = tempo_mio / DBLE(ncount)
+     my_time = my_time / DBLE(ncount)
   endif
 
-!write(*,*)tempo_mio(2), tempo_mio(3), tempo_mio(4)
+!write(*,*)my_time(2), my_time(3), my_time(4)
 
-#ifdef __MPI
-  CALL MPI_ALLREDUCE( tempo_mio, tempo_min, 10, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr )
-  CALL MPI_ALLREDUCE( tempo_mio, tempo_max, 10, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr )
-  CALL MPI_ALLREDUCE( tempo_mio, tempo_avg, 10, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr )
-  CALL MPI_ALLREDUCE( wall, wall_avg, 10, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr )
+#if defined(__MPI)
+  CALL MPI_ALLREDUCE( my_time, time_min, 10, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr )
+  CALL MPI_ALLREDUCE( my_time, time_max, 10, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr )
+  CALL MPI_ALLREDUCE( my_time, time_avg, 10, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr )
+  CALL MPI_ALLREDUCE( wall, wall_avg,       1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr )
 #else
-  tempo_min = tempo
-  tempo_max = tempo
+  time_min = time
+  time_max = time
 #endif
 
-!write(*,*)tempo_min(2), tempo_min(3), tempo_min(4)
+!write(*,*)time_min(2), time_min(3), time_min(4)
 
-  tempo_avg = tempo_avg / npes
+  time_avg = time_avg / npes
   wall_avg = wall_avg / npes
 
   if( mype == 0 ) then
@@ -423,15 +450,15 @@ program test
     write(*,100) 
     write(*,1) 
     write(*,100) 
-    write(*,2) tempo_min(2), tempo_max(2), tempo_avg(2)
-    write(*,3) tempo_min(3), tempo_max(3), tempo_avg(3)
-    write(*,4) tempo_min(4), tempo_max(4), tempo_avg(4)
-    write(*,5) tempo_min(5), tempo_max(5), tempo_avg(5)
-    write(*,6) tempo_min(6), tempo_max(6), tempo_avg(6)
-    write(*,7) tempo_min(7), tempo_max(7), tempo_avg(7)
-    write(*,8) tempo_min(8), tempo_max(8), tempo_avg(8)
-    write(*,9) tempo_min(9), tempo_max(9), tempo_avg(9)
-    write(*,10) tempo_min(10), tempo_max(10), tempo_avg(10)
+    write(*,2) time_min(2), time_max(2), time_avg(2)
+    write(*,3) time_min(3), time_max(3), time_avg(3)
+    write(*,4) time_min(4), time_max(4), time_avg(4)
+    write(*,5) time_min(5), time_max(5), time_avg(5)
+    write(*,6) time_min(6), time_max(6), time_avg(6)
+    write(*,7) time_min(7), time_max(7), time_avg(7)
+    write(*,8) time_min(8), time_max(8), time_avg(8)
+    write(*,9) time_min(9), time_max(9), time_avg(9)
+    write(*,10) time_min(10), time_max(10), time_avg(10)
     write(*,11) wall 
     write(*,100) 
 
@@ -452,7 +479,7 @@ program test
   end if
 
   
-#ifdef __MPI
+#if defined(__MPI)
   CALL mpi_finalize(ierr)
 #endif
 

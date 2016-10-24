@@ -1,0 +1,46 @@
+\BOOKMARK [1][-]{section.1}{Introduction}{}% 1
+\BOOKMARK [2][-]{subsection.1.1}{Who should read \(and who should write\) this guide}{section.1}% 2
+\BOOKMARK [2][-]{subsection.1.2}{Who may read this guide but will not necessarily profit from it}{section.1}% 3
+\BOOKMARK [2][-]{subsection.1.3}{How to contribute to Quantum ESPRESSO as a user}{section.1}% 4
+\BOOKMARK [1][-]{section.2}{Quantum ESPRESSO as a distribution}{}% 5
+\BOOKMARK [1][-]{section.3}{How to become a developer}{}% 6
+\BOOKMARK [2][-]{subsection.3.1}{About qe-forge.org}{section.3}% 7
+\BOOKMARK [2][-]{subsection.3.2}{Quantum ESPRESSO on qe-forge.org}{section.3}% 8
+\BOOKMARK [2][-]{subsection.3.3}{Contributing new developments}{section.3}% 9
+\BOOKMARK [2][-]{subsection.3.4}{Hints, Caveats, Do's and Dont's for developers}{section.3}% 10
+\BOOKMARK [2][-]{subsection.3.5}{Guidelines for reporting bugs}{section.3}% 11
+\BOOKMARK [1][-]{section.4}{Stable releases and development cycle}{}% 12
+\BOOKMARK [1][-]{section.5}{Structure of the distribution}{}% 13
+\BOOKMARK [2][-]{subsection.5.1}{Installation Mechanism}{section.5}% 14
+\BOOKMARK [3][-]{subsubsection.5.1.1}{Preprocessing}{subsection.5.1}% 15
+\BOOKMARK [3][-]{subsubsection.5.1.2}{How to edit the configure script}{subsection.5.1}% 16
+\BOOKMARK [3][-]{subsubsection.5.1.3}{How to add support for a new architecture}{subsection.5.1}% 17
+\BOOKMARK [2][-]{subsection.5.2}{Libraries}{section.5}% 18
+\BOOKMARK [1][-]{section.6}{Algorithms}{}% 19
+\BOOKMARK [2][-]{subsection.6.1}{G vectors and plane waves}{section.6}% 20
+\BOOKMARK [2][-]{subsection.6.2}{Gamma tricks}{section.6}% 21
+\BOOKMARK [2][-]{subsection.6.3}{Restart}{section.6}% 22
+\BOOKMARK [1][-]{section.7}{Format of arrays containing charge density, potential, etc.}{}% 23
+\BOOKMARK [1][-]{section.8}{Parallelization \(MPI\)}{}% 24
+\BOOKMARK [2][-]{subsection.8.1}{General rules}{section.8}% 25
+\BOOKMARK [3][-]{subsubsection.8.1.1}{Preprocessing for parallel usage}{subsection.8.1}% 26
+\BOOKMARK [2][-]{subsection.8.2}{Parallelization levels and communicators}{section.8}% 27
+\BOOKMARK [2][-]{subsection.8.3}{Tricks and pitfalls}{section.8}% 28
+\BOOKMARK [2][-]{subsection.8.4}{Data distribution}{section.8}% 29
+\BOOKMARK [1][-]{section.9}{File Formats}{}% 30
+\BOOKMARK [2][-]{subsection.9.1}{Data file\(s\)}{section.9}% 31
+\BOOKMARK [3][-]{subsubsection.9.1.1}{Rationale}{subsection.9.1}% 32
+\BOOKMARK [3][-]{subsubsection.9.1.2}{General structure}{subsection.9.1}% 33
+\BOOKMARK [3][-]{subsubsection.9.1.3}{Structure of file "data-file.xml"}{subsection.9.1}% 34
+\BOOKMARK [3][-]{subsubsection.9.1.4}{Sample}{subsection.9.1}% 35
+\BOOKMARK [2][-]{subsection.9.2}{Restart files}{section.9}% 36
+\BOOKMARK [1][-]{section.10}{Modifying/adding/extending Quantum ESPRESSO}{}% 37
+\BOOKMARK [2][-]{subsection.10.1}{Programming style \(or lack of it\)}{section.10}% 38
+\BOOKMARK [2][-]{subsection.10.2}{Adding or modifying input variables}{section.10}% 39
+\BOOKMARK [1][-]{section.11}{Using SVN}{}% 40
+\BOOKMARK [2][-]{subsection.11.1}{SVN operations}{section.11}% 41
+\BOOKMARK [2][-]{subsection.11.2}{Removing conflicts}{section.11}% 42
+\BOOKMARK [2][-]{subsection.11.3}{Merging branch and trunk}{section.11}% 43
+\BOOKMARK [2][-]{subsection.11.4}{Including a repository into the trunk}{section.11}% 44
+\BOOKMARK [1][-]{section.12}{Using git}{}% 45
+\BOOKMARK [1][-]{section.13}{Bibliography}{}% 46

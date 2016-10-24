@@ -1,0 +1,128 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>3 Compilation</TITLE>
+<META NAME="description" CONTENT="3 Compilation">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node6.html">
+<LINK REL="previous" HREF="node3.html">
+<LINK REL="up" HREF="user_guide.html">
+<LINK REL="next" HREF="node5.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html72"
+  HREF="node5.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html68"
+  HREF="user_guide.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html62"
+  HREF="node3.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html70"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html73"
+  HREF="node5.html">3.1 Running examples</A>
+<B> Up:</B> <A NAME="tex2html69"
+  HREF="user_guide.html">User's Guide for The</A>
+<B> Previous:</B> <A NAME="tex2html63"
+  HREF="node3.html">2 People and terms</A>
+ &nbsp; <B>  <A NAME="tex2html71"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION00040000000000000000">
+3 Compilation</A>
+</H1>
+
+<P>
+<TT>PWneb</TT> is a package tightly bound to Q<SMALL>UANTUM </SMALL>ESPRESSO.
+For instruction on how to download and compile Q<SMALL>UANTUM </SMALL>ESPRESSO, please refer 
+to the general Users' Guide, available in file <TT>Doc/user_guide.pdf</TT>
+under the main Q<SMALL>UANTUM </SMALL>ESPRESSO directory, or in web site 
+<TT>http://www.quantum-espresso.org</TT>.
+
+<P>
+Once Q<SMALL>UANTUM </SMALL>ESPRESSO is correctly configured, <TT>PWneb</TT> can be automatically 
+downloaded, unpacked and compiled by
+just typing <TT>make neb</TT>, from the main Q<SMALL>UANTUM </SMALL>ESPRESSO directory.
+<TT>make neb</TT> will produce 
+the following codes in <TT>NEB/src</TT>:
+
+<UL>
+<LI><TT>neb.x</TT>: calculates reaction barriers and pathways using NEB.
+</LI>
+<LI><TT>path_int.x</TT>: generates a reaction path (a set of points
+in the configuration space of the atomic system, called ``images''), by
+ interpolating the supplied path. The new path can have a 
+ different number of images than the old one and the initial and final 
+ images of the new path can differ from the original ones.
+ The utility <TT>path_interpolation.sh</TT> in the <TT>tools/</TT>
+ directory shows how to use the code.
+</LI>
+</UL>
+
+<P>
+Symlinks to executable programs will be placed in the
+<TT>bin/</TT> subdirectory of the main Q<SMALL>UANTUM </SMALL>ESPRESSO  directory.
+
+<P>
+<BR><HR>
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A NAME="tex2html74"
+  HREF="node5.html">3.1 Running examples</A>
+</UL>
+<!--End of Table of Child-Links-->
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html72"
+  HREF="node5.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html68"
+  HREF="user_guide.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html62"
+  HREF="node3.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html70"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html73"
+  HREF="node5.html">3.1 Running examples</A>
+<B> Up:</B> <A NAME="tex2html69"
+  HREF="user_guide.html">User's Guide for The</A>
+<B> Previous:</B> <A NAME="tex2html63"
+  HREF="node3.html">2 People and terms</A>
+ &nbsp; <B>  <A NAME="tex2html71"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+Filippo Spiga
+2016-10-04
+</ADDRESS>
+</BODY>
+</HTML>

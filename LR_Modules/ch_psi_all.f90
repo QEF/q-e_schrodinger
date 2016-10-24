@@ -1,41 +1,34 @@
 !
-! Copyright (C) 2001-2007 Quantum ESPRESSO group
+! Copyright (C) 2001-2016 Quantum ESPRESSO group
 ! This file is distributed under the terms of the
 ! GNU General Public License. See the file `License'
 ! in the root directory of the present distribution,
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
-
+!
 !-----------------------------------------------------------------------
 SUBROUTINE ch_psi_all (n, h, ah, e, ik, m)
   !-----------------------------------------------------------------------
   !
   ! This routine applies the operator ( H - \epsilon S + alpha_pv P_v)
-  ! to a vector h. The result is given in Ah.
+  ! to a vector h. The result is given in ah.
   !
-  ! Merged with lr_ch_psi_all June 2011. This function is now used both
-  ! in ph.x and turbo_lanczos.x
-  !
-
   USE kinds,                ONLY : DP
-  USE wvfct,                ONLY : npwx, nbnd
+  USE cell_base,            ONLY : tpiba
+  USE wvfct,                ONLY : npwx, nbnd, current_k
   USE becmod,               ONLY : bec_type, becp, calbec
   USE uspp,                 ONLY : nkb, vkb
-  USE fft_base,             ONLY : dffts
-  USE wvfct,                ONLY : npwx, igk
-  USE qpoint,               ONLY : igkq
+  USE fft_base,             ONLY : dffts, dtgs
+  USE gvect,                ONLY : g
+  USE klist,                ONLY : xk, igk_k
   USE noncollin_module,     ONLY : noncolin, npol
-
   USE eqv,                  ONLY : evq
   USE qpoint,               ONLY : ikqs
-
   USE mp_bands,             ONLY : intra_bgrp_comm, ntask_groups
   USE mp,                   ONLY : mp_sum
-
   USE control_lr,           ONLY : alpha_pv, nbnd_occ, lgamma
-
   !Needed only for TDDFPT
-  USE control_flags,        ONLY : gamma_only, tddfpt
+  USE control_flags,        ONLY : gamma_only
   USE wavefunctions_module, ONLY : evc
 
   IMPLICIT NONE
@@ -55,9 +48,8 @@ SUBROUTINE ch_psi_all (n, h, ah, e, ik, m)
   !
   !   local variables
   !
-  INTEGER :: ibnd, ikq, ig
+  INTEGER :: ibnd, ig
   ! counter on bands
-  ! the point k+q
   ! counter on G vetors
 
   COMPLEX(DP), allocatable :: ps (:,:), hpsi (:,:), spsi (:,:)
@@ -70,86 +62,62 @@ SUBROUTINE ch_psi_all (n, h, ah, e, ik, m)
   !
   !  This routine is task groups aware
   !
-  IF (ntask_groups > 1) dffts%have_task_groups=.TRUE.
-
   ALLOCATE (ps  ( nbnd , m))
   ALLOCATE (hpsi( npwx*npol , m))
   ALLOCATE (spsi( npwx*npol , m))
   hpsi (:,:) = (0.d0, 0.d0)
   spsi (:,:) = (0.d0, 0.d0)
   !
-  !   compute the product of the hamiltonian with the h vector
+  !   compute an action of the Hamiltonian and the S operator
+  !   on the h vector (i.e. H*h and S*h, respectively).
   !
-  IF (dffts%have_task_groups) THEN
+  current_k = ikqs(ik)
+  CALL h_psi (npwx, n, m, h, hpsi)
+  CALL s_psi (npwx, n, m, h, spsi)
   !
-  !   With task groups we use the Hpsi routine of PW parallelized
-  !   on task groups
-  !
-     IF (.NOT.lgamma) THEN
-        ALLOCATE(ibuf(npwx))
-        ibuf=igk
-        igk=igkq 
-     ENDIF   
-     CALL h_psi (npwx, n, m, h, hpsi)
-     CALL s_psi (npwx, n, m, h, spsi)
-     IF (.NOT.lgamma) THEN
-        igk=ibuf
-        DEALLOCATE(ibuf)
-     ENDIF
-  ELSE
-    CALL h_psiq (npwx, n, m, h, hpsi, spsi)
-  ENDIF
-
   CALL start_clock ('last')
   !
-  !   then we compute the operator H-epsilon S
+  !   then we compute ( H - \epsilon S ) * h
+  !   and put the result in ah
   !
   ah=(0.d0,0.d0)
   DO ibnd = 1, m
      DO ig = 1, n
-        ah (ig, ibnd) = hpsi (ig, ibnd) - e (ibnd) * spsi (ig, ibnd)
+        ah(ig, ibnd) = hpsi(ig, ibnd) - e(ibnd) * spsi(ig, ibnd)
      ENDDO
   ENDDO
   IF (noncolin) THEN
      DO ibnd = 1, m
         DO ig = 1, n
-           ah (ig+npwx,ibnd)=hpsi(ig+npwx,ibnd)-e(ibnd)*spsi(ig+npwx,ibnd)
+           ah(ig+npwx, ibnd) = hpsi(ig+npwx, ibnd) - e(ibnd) * spsi(ig+npwx, ibnd)
         ENDDO
      ENDDO
   ENDIF
-
-  IF(gamma_only) THEN
-
-       CALL ch_psi_all_gamma()
-    ELSE
-
-       IF(tddfpt) THEN
-          ikq = ik
-          evq => evc
-       ELSE
-          ikq = ikqs(ik)
-       ENDIF
-          
-       CALL ch_psi_all_k()
+  !
+  !   lastly we compute alpha_pv * P_v * h (if alpha_pv.NE.0.0d0)
+  !   and add it to ah 
+  !
+  IF (alpha_pv.NE.0.0d0) THEN
+     IF (gamma_only) THEN
+        CALL ch_psi_all_gamma()
+     ELSE
+        CALL ch_psi_all_k()
+     ENDIF
   ENDIF
   
   DEALLOCATE (spsi)
   DEALLOCATE (hpsi)
   DEALLOCATE (ps)
 
-  IF (tddfpt) NULLIFY(evq)
-  dffts%have_task_groups=.FALSE.
-
   CALL stop_clock ('last')
   CALL stop_clock ('ch_psi')
   RETURN
 CONTAINS
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!K-point part
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   SUBROUTINE ch_psi_all_k()
-
+    !
+    ! K-point part
+    !
     USE becmod, ONLY : becp, calbec
     
     IMPLICIT NONE
@@ -157,12 +125,15 @@ CONTAINS
     !   Here we compute the projector in the valence band
     !
     ps (:,:) = (0.d0, 0.d0)
-    
+    !
+    ! ikqs(ik) is the index of the point k+q if q\=0
+    !          is the index of the point k   if q=0
+    ! 
     IF (noncolin) THEN
-       CALL zgemm ('C', 'N', nbnd_occ (ikq) , m, npwx*npol, (1.d0, 0.d0) , evq, &
+       CALL zgemm ('C', 'N', nbnd_occ (ikqs(ik)) , m, npwx*npol, (1.d0, 0.d0) , evq, &
             npwx*npol, spsi, npwx*npol, (0.d0, 0.d0) , ps, nbnd)
     ELSE
-       CALL zgemm ('C', 'N', nbnd_occ (ikq) , m, n, (1.d0, 0.d0) , evq, &
+       CALL zgemm ('C', 'N', nbnd_occ (ikqs(ik)) , m, n, (1.d0, 0.d0) , evq, &
             npwx, spsi, npwx, (0.d0, 0.d0) , ps, nbnd)
     ENDIF
     ps (:,:) = ps(:,:) * alpha_pv
@@ -170,10 +141,10 @@ CONTAINS
     
     hpsi (:,:) = (0.d0, 0.d0)
     IF (noncolin) THEN
-       CALL zgemm ('N', 'N', npwx*npol, m, nbnd_occ (ikq) , (1.d0, 0.d0) , evq, &
+       CALL zgemm ('N', 'N', npwx*npol, m, nbnd_occ (ikqs(ik)) , (1.d0, 0.d0) , evq, &
             npwx*npol, ps, nbnd, (1.d0, 0.d0) , hpsi, npwx*npol)
     ELSE
-       CALL zgemm ('N', 'N', n, m, nbnd_occ (ikq) , (1.d0, 0.d0) , evq, &
+       CALL zgemm ('N', 'N', n, m, nbnd_occ (ikqs(ik)) , (1.d0, 0.d0) , evq, &
             npwx, ps, nbnd, (1.d0, 0.d0) , hpsi, npwx)
     END IF
     spsi(:,:) = hpsi(:,:)
@@ -197,15 +168,14 @@ CONTAINS
     return
   END SUBROUTINE ch_psi_all_k
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!gamma part
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   SUBROUTINE ch_psi_all_gamma()
-    
+    !
+    ! gamma_only case
+    !  
     USE becmod, ONLY : becp,  calbec
     USE realus, ONLY : real_space, real_space_debug, invfft_orbital_gamma, &
-         fwfft_orbital_gamma, calbec_rs_gamma,  s_psir_gamma
-    use gvect,                only : gstart
+                       fwfft_orbital_gamma, calbec_rs_gamma,  s_psir_gamma
+    use gvect,  only : gstart
 
     IMPLICIT NONE
 

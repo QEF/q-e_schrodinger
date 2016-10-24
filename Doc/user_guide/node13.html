@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>2.6 Running tests and examples</TITLE>
+<META NAME="description" CONTENT="2.6 Running tests and examples">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node14.html">
+<LINK REL="previous" HREF="node12.html">
+<LINK REL="up" HREF="node7.html">
+<LINK REL="next" HREF="node14.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html279"
+  HREF="node14.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html275"
+  HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html269"
+  HREF="node12.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html277"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html280"
+  HREF="node14.html">2.7 Installation tricks and</A>
+<B> Up:</B> <A NAME="tex2html276"
+  HREF="node7.html">2 Installation</A>
+<B> Previous:</B> <A NAME="tex2html270"
+  HREF="node12.html">2.5 Compilation</A>
+ &nbsp; <B>  <A NAME="tex2html278"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00036000000000000000"></A>
+<A NAME="SubSec:Examples"></A>
+<BR>
+2.6 Running tests and examples
+</H2>
+
+<P>
+As a final check that compilation was successful, you may want to run some or
+all of the examples. There are two different types of examples:
+
+<UL>
+<LI>automated tests. Quick and exhaustive, but not
+meant to be realistic, implemented only for <TT>PWscf</TT> and <TT>CP</TT>.
+</LI>
+<LI>examples.
+Cover many more programs and features of the Q<SMALL>UANTUM </SMALL>ESPRESSO distribution,
+but they require manual inspection of the results.
+</LI>
+</UL>
+Instructions for the impatient:
+<PRE>
+   cd PW/tests/
+   ./check_pw.x.j
+</PRE>
+for <TT>PWscf</TT>;
+<TT>PW/tests/README</TT> contains a list of what is tested.
+For <TT>CP</TT>:
+<PRE>
+   cd CPV/tests/
+   ./check_cp.x.j
+</PRE>
+Instructions for all others: edit file <TT>environment_variables</TT>,
+setting the following variables as needed.
+<BLOCKQUOTE>
+BIN_DIR: directory where executables reside
+<BR>
+PSEUDO_DIR: directory where pseudopotential files reside
+<BR>
+TMP_DIR: directory to be used as temporary storage area
+
+</BLOCKQUOTE>
+The default values of BIN_DIR and PSEUDO_DIR should be fine,
+unless you have installed things in nonstandard places. TMP_DIR
+must be a directory where you have read and write access to, with
+enough available space to host the temporary files produced by the
+example runs, and possibly offering high I/O performance (i.e., don't
+use an NFS-mounted directory). NOTA BENE: do not use a
+directory containing other data: the examples will clean it!
+
+<P>
+If you have compiled the parallel version of Q<SMALL>UANTUM </SMALL>ESPRESSO (this
+is the default if parallel libraries are detected), you will usually
+have to specify a launcher program (such as <TT>mpirun</TT> or
+<TT>mpiexec</TT>) and the number of processors: see Sec.<A HREF="node15.html#Sec:para">3</A> for
+details. In order to do that, edit again the <TT>environment_variables</TT>
+file
+and set the PARA_PREFIX and PARA_POSTFIX variables as needed.
+Parallel executables will be run by a command like this:
+<PRE>
+      $PARA_PREFIX pw.x $PARA_POSTFIX -i file.in &gt; file.out
+</PRE>
+For example, if the command line is like this (as for an IBM SP):
+<PRE>
+      poe pw.x -procs 4 -i file.in &gt; file.out
+</PRE>
+you should set PARA_PREFIX="poe", PARA_POSTFIX="-procs
+4". Furthermore, if your machine does not support interactive use, you
+must run the commands specified above through the batch queuing
+system installed on that machine. Ask your system administrator for
+instructions. For execution using OpenMP on N threads,
+you should set PARA_PREFIX to <TT>"env OMP_NUM_THREADS=N ... "</TT>.
+
+<P>
+Notice that most tests and examples are devised to be run serially
+or on a small number of processors; do not use tests and examples
+to benchmark parallelism, do not try to run on too many processors.
+
+<P>
+To run an example, go to the corresponding directory (e.g.
+ <TT>PW/examples/example01</TT>) and execute:
+<PRE>
+      ./run_example
+</PRE>
+This will create a subdirectory <TT>results/</TT>, containing the input and
+output files generated by the calculation. Some examples take only a
+few seconds to run, while others may require several minutes depending
+on your system.
+
+<P>
+In each example's directory, the <TT>reference/</TT> subdirectory contains
+verified output files, that you can check your results against. They
+were generated on a Linux PC using the Intel compiler. On different
+architectures the precise numbers could be slightly different, in
+particular if different FFT dimensions are automatically selected. For
+this reason, a plain diff of your results against the reference data
+doesn't work, or at least, it requires human inspection of the results.
+
+<P>
+The example scripts stop if an error is detected. You should look <EM>inside</EM>
+the last written output file to understand why.
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html279"
+  HREF="node14.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html275"
+  HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html269"
+  HREF="node12.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html277"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html280"
+  HREF="node14.html">2.7 Installation tricks and</A>
+<B> Up:</B> <A NAME="tex2html276"
+  HREF="node7.html">2 Installation</A>
+<B> Previous:</B> <A NAME="tex2html270"
+  HREF="node12.html">2.5 Compilation</A>
+ &nbsp; <B>  <A NAME="tex2html278"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+Filippo Spiga
+2016-10-04
+</ADDRESS>
+</BODY>
+</HTML>

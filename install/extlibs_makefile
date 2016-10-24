@@ -1,9 +1,26 @@
-
-#===============================
-# espresso
-#===============================
+# Copyright (C) 2001-2016 Quantum ESPRESSO group
 #
-include ../make.sys
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License. See the file `License' in the root directory
+# of the present distribution.
+#
+# Makefile for fundamental math libraries
+
+include ../make.inc
+include install_utils
+
+#.NOTPARALLEL: liblapack_internal
+
+# NETLIB targets
+#BLAS_NETLIB=blas-3.6.0.tgz
+#BLAS_NETLIB_NAME=BLAS-3.6.0
+#BLAS_NETLIB_URL=http://www.netlib.org/blas/${BLAS_NETLIB}
+
+LAPACK_NETLIB=lapack-3.6.1.tgz
+LAPACK_NETLIB_NAME=lapack-3.6.1
+LAPACK_NETLIB_URL=http://www.netlib.org/lapack/${LAPACK_NETLIB}
 
 #
 # MAIN target
@@ -14,7 +31,6 @@ all:
 	$(MAKE) libelpa_internal 
 	$(MAKE) libiotk 
 
-# BLAS
 libblas : libblas_$(BLAS_LIBS_SWITCH)
 
 libblas_external : fake_blas_external
@@ -23,16 +39,14 @@ fake_blas_external :
 	touch fake_libblas.a
 	-rm fake_libblas.a
 
-libblas_internal:
-	if test ! -d ../BLAS; then \
-	( gzip -dc ../archive/blas-1.tar.gz |(cd ../; tar -xvf -)); fi
-	if test -e make_blas.inc; then \
-	(cp make_blas.inc ../BLAS/make.inc; \
-	cd ../BLAS; $(MAKE) $(BLASLIB)); else \
-        (echo "no configuration file found for blas"; \
-	echo "run configure from main QE dir"); fi
+#libblas_internal:
+#	$(call download_and_unpack,$(BLAS_NETLIB_NAME),$(BLAS_NETLIB_URL),BLAS,BLAS)
+#	if test -e make_blas.inc; then \
+#	(cp make_blas.inc ../BLAS/make.inc; \
+#	cd ../BLAS; $(MAKE) ); else \
+#        (echo "no configuration file found for blas"; \
+#	echo "run configure from main QE dir"; exit); fi
 
-# LAPACK
 liblapack : liblapack_$(LAPACK_LIBS_SWITCH) 
 
 liblapack_external : fake_lapack_external
@@ -42,15 +56,13 @@ fake_lapack_external :
 	-rm fake_liblapack.a
 
 liblapack_internal:
-	if test ! -d ../lapack-3.2; then \
-	( gzip -dc ../archive/lapack-3.2.tar.gz | (cd ../; tar -xvf -)); fi
-	if test -e make_lapack.inc; then \
-	(cp make_lapack.inc ../lapack-3.2/make.inc; \
-	cp Makefile_lapack ../lapack-3.2/SRC/Makefile; \
-        cp Makefile_lapack_testing_lin ../lapack-3.2/TESTING/LIN/Makefile; \
-	cd ../lapack-3.2; $(MAKE) lapacklib); else \
+	$(call download_and_unpack,$(LAPACK_NETLIB_NAME),$(LAPACK_NETLIB_URL),LAPACK,LAPACK)
+	if test ! -e ../LAPACK/liblapack.a && test -e make_lapack.inc; then \
+	  (cp make_lapack.inc ../LAPACK/make.inc; \
+	  cd ../LAPACK; $(MAKE) blaslib lapacklib); else \
         (echo "no configuration file found for lapack"; \
-        echo "run configure from main QE dir"); fi
+         echo "run configure from main QE dir"; exit); fi 
+
 libiotk:
 	if test ! -d ../S3DE; then \
 	(gzip -dc ../archive/iotk-1.2.beta.tar.gz | (cd ../; tar -xvf -)) ; \
@@ -83,14 +95,14 @@ libelpa_enabled:
 # cleaning
 ###################################
 # each lib independently
-blas_clean:
-	if test -d ../BLAS; then (cd ../BLAS; $(MAKE) clean); fi
-blas_veryclean:
-	if test -d ../BLAS; then (rm -R -f ../BLAS); fi
+#blas_clean:
+#	if test -d ../BLAS; then (cd ../BLAS; $(MAKE) clean); fi
+#blas_veryclean:
+#	if test -d ../BLAS; then (rm -R -f ../BLAS ../${BLAS_NETLIB_NAME}); fi
 lapack_clean:
-	if test -d ../lapack-3.2; then (cd ../lapack-3.2; $(MAKE) clean); fi
+	if test -d ../LAPACK; then (cd ../LAPACK; $(MAKE) clean); fi
 lapack_veryclean:
-	if test -d ../lapack-3.2; then (rm -R -f ../lapack-3.2); fi
+	if test -d ../LAPACK; then (rm -R -f ../LAPACK ../${LAPACK_NETLIB_NAME}); fi
 elpa_clean:
 	if test -d ../ELPA; then (cd ../ELPA; $(MAKE) clean); fi
 elpa_veryclean:
@@ -113,5 +125,7 @@ iotk_veryclean:
 	rm -f ../iotk
 
 # general cleaning
-clean: blas_clean lapack_clean elpa_clean iotk_clean
-veryclean: blas_veryclean lapack_veryclean elpa_veryclean iotk_veryclean
+#clean: blas_clean lapack_clean elpa_clean iotk_clean
+#veryclean: blas_veryclean lapack_veryclean elpa_veryclean iotk_veryclean
+clean: lapack_clean elpa_clean iotk_clean
+veryclean: lapack_veryclean elpa_veryclean iotk_veryclean

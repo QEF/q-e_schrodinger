@@ -45,7 +45,8 @@ SUBROUTINE setup()
   USE gvecw,              ONLY : gcutw, ecutwfc
   USE fft_base,           ONLY : dfftp
   USE fft_base,           ONLY : dffts
-  USE grid_subroutines,   ONLY : realspace_grid_init
+  USE fft_types,          ONLY : fft_type_init, fft_type_allocate
+  USE fft_base,           ONLY : smap
   USE gvecs,              ONLY : doublegrid, gcutms, dual
   USE klist,              ONLY : xk, wk, nks, nelec, degauss, lgauss, &
                                  lxkcry, nkstot, &
@@ -63,7 +64,7 @@ SUBROUTINE setup()
                                  find_sym, inverse_s, no_t_rev, allfrac
   USE wvfct,              ONLY : nbnd, nbndx
   USE control_flags,      ONLY : tr2, ethr, lscf, lmd, david, lecrpa,  &
-                                 isolve, niter, noinv, ts_vdw, tqr, &
+                                 isolve, niter, noinv, ts_vdw, &
                                  lbands, use_para_diag, gamma_only, &
                                  restart
   USE cellmd,             ONLY : calc
@@ -71,15 +72,23 @@ SUBROUTINE setup()
   USE uspp,               ONLY : okvan
   USE ldaU,               ONLY : lda_plus_u, init_lda_plus_u
   USE bp,                 ONLY : gdir, lberry, nppstr, lelfield, lorbm, nx_el,&
-                                 nppstr_3d,l3dstring, efield, lcalc_z2
+                                 nppstr_3d,l3dstring, efield
   USE fixed_occ,          ONLY : f_inp, tfixed_occ, one_atom_occupations
   USE funct,              ONLY : set_dft_from_name
   USE mp_pools,           ONLY : kunit
+  USE mp_bands,           ONLY : intra_bgrp_comm
   USE spin_orb,           ONLY : lspinorb, domag
   USE noncollin_module,   ONLY : noncolin, npol, m_loc, i_cons, &
                                  angle1, angle2, bfield, ux, nspin_lsda, &
                                  nspin_gga, nspin_mag
+!
+! 
+  USE pw_restart_new,     ONLY : pw_readschema_file, init_vars_from_schema 
+  USE qes_libs_module,    ONLY : qes_reset_output, qes_reset_input, qes_reset_parallel_info, qes_reset_general_info
+  USE qes_types_module,   ONLY : output_type, input_type, parallel_info_type, general_info_type 
+!
   USE pw_restart,         ONLY : pw_readfile
+!
   USE exx,                ONLY : ecutfock, exx_grid_init, exx_div_check
   USE funct,              ONLY : dft_is_meta, dft_is_hybrid, dft_is_gradient
   USE paw_variables,      ONLY : okpaw
@@ -92,6 +101,20 @@ SUBROUTINE setup()
   REAL(DP) :: iocc, ionic_charge, one
   !
   LOGICAL, EXTERNAL  :: check_para_diag
+!
+#if defined(__XSD)
+  TYPE(output_type),ALLOCATABLE             :: output_obj 
+  TYPE(input_type),ALLOCATABLE              :: input_obj
+  TYPE(parallel_info_type),ALLOCATABLE      :: parinfo_obj
+  TYPE(general_info_type),ALLOCATABLE       :: geninfo_obj
+#endif
+!  
+#if defined(__MPI)
+  LOGICAL :: lpara = .true.
+#else
+  LOGICAL :: lpara = .false.
+#endif
+
   !
   ! ... okvan/okpaw = .TRUE. : at least one pseudopotential is US/PAW
   !
@@ -145,15 +168,33 @@ SUBROUTINE setup()
   !
   nelec = ionic_charge - tot_charge
   !
+#if defined (__XSD)
+  IF ( lbands .OR. ( (lfcpopt .OR. lfcpdyn ) .AND. restart )) THEN 
+     ALLOCATE ( output_obj, input_obj, parinfo_obj, geninfo_obj )
+     CALL pw_readschema_file( ierr , output_obj, input_obj, parinfo_obj, geninfo_obj )
+  END IF
+  !
+  ! 
+  IF (lfcpopt .AND. restart ) THEN  
+     CALL init_vars_from_schema( 'fcpopt', ierr,  output_obj, input_obj, parinfo_obj, geninfo_obj)
+     tot_charge = ionic_charge - nelec
+  END IF 
+  IF (lfcpdyn .AND. restart ) THEN    
+     CALL init_vars_from_schema( 'fcpdyn', ierr,  output_obj, input_obj, parinfo_obj, geninfo_obj ) 
+     tot_charge = ionic_charge - nelec 
+  END IF
+#else 
   IF ( lfcpopt .AND. restart ) THEN
      CALL pw_readfile( 'fcpopt', ierr )
      tot_charge = ionic_charge - nelec
   END IF
   !
   IF ( lfcpdyn .AND. restart ) THEN
+
      CALL pw_readfile( 'fcpdyn', ierr )
      tot_charge = ionic_charge - nelec
   END IF
+#endif
   !
   ! ... magnetism-related quantities
   !
@@ -373,7 +414,7 @@ SUBROUTINE setup()
   nbndx = nbnd
   IF ( isolve == 0 ) nbndx = david * nbnd
   !
-#ifdef __MPI
+#if defined(__MPI)
   use_para_diag = check_para_diag( nbnd )
 #else
   use_para_diag = .FALSE.
@@ -408,14 +449,18 @@ SUBROUTINE setup()
   !
   ! ... calculate dimensions of the FFT grid
   !
-  CALL realspace_grid_init ( dfftp, at, bg, gcutm )
-  IF ( gcutms == gcutm ) THEN
-     ! ... No double grid, the two grids are the same
-     dffts%nr1 = dfftp%nr1 ; dffts%nr2 = dfftp%nr2 ; dffts%nr3 = dfftp%nr3
-     dffts%nr1x= dfftp%nr1x; dffts%nr2x= dfftp%nr2x; dffts%nr3x= dfftp%nr3x
-  ELSE
-     CALL realspace_grid_init ( dffts, at, bg, gcutms)
+  ! ... if the smooth and dense grid must coincide, ensure that they do
+  ! ... also if dense grid is set from input and smooth grid is not
+  !
+  IF ( ( dfftp%nr1 /= 0 .AND. dfftp%nr2 /= 0 .AND. dfftp%nr3 /= 0 ) .AND. &
+       ( dffts%nr1 == 0 .AND. dffts%nr2 == 0 .AND. dffts%nr3 == 0 ) .AND. &
+       .NOT. doublegrid ) THEN
+     dffts%nr1 = dfftp%nr1
+     dffts%nr2 = dfftp%nr2
+     dffts%nr3 = dfftp%nr3
   END IF
+  CALL fft_type_allocate ( dfftp, at, bg, gcutm, intra_bgrp_comm )
+  CALL fft_type_allocate ( dffts, at, bg, gcutms, intra_bgrp_comm)
   !
   !  ... generate transformation matrices for the crystal point group
   !  ... First we generate all the symmetry matrices of the Bravais lattice
@@ -448,7 +493,7 @@ SUBROUTINE setup()
         nrot  = 1
         nsym  = 1
         !
-     ELSE IF (lberry .OR. lcalc_z2) THEN
+     ELSE IF (lberry ) THEN
         !
         CALL kp_strings( nppstr, gdir, nrot, s, bg, npk, &
                          k1, k2, k3, nk1, nk2, nk3, nkstot, xk, wk )
@@ -537,8 +582,12 @@ SUBROUTINE setup()
      !
      ! ... if calculating bands, we read the Fermi energy
      !
+#if defined (__XSD)
+     CALL init_vars_from_schema( 'ef',   ierr , output_obj, input_obj,parinfo_obj, geninfo_obj)
+#else
      CALL pw_readfile( 'reset', ierr )
      CALL pw_readfile( 'ef',   ierr )
+#endif 
      CALL errore( 'setup ', 'problem reading ef from file ' // &
              & TRIM( tmp_dir ) // TRIM( prefix ) // '.save', ierr )
 
@@ -555,6 +604,15 @@ SUBROUTINE setup()
           nk1, nk2, nk3, nkstot, xk, wk, ntetra, tetra )
      !
   END IF
+#if defined(__XSD) 
+  IF ( lbands .OR. ( (lfcpopt .OR. lfcpdyn ) .AND. restart ) ) THEN 
+     CALL qes_reset_output ( output_obj ) 
+     CALL qes_reset_input ( input_obj ) 
+     CALL qes_reset_parallel_info ( parinfo_obj ) 
+     CALL qes_reset_general_info ( geninfo_obj ) 
+     DEALLOCATE ( output_obj, input_obj, parinfo_obj, geninfo_obj ) 
+  END IF 
+#endif
   !
   !
   IF ( lsda ) THEN
@@ -589,20 +647,11 @@ SUBROUTINE setup()
   !
   IF ( nkstot > npk ) CALL errore( 'setup', 'too many k points', nkstot )
   !
-#ifdef __MPI
-  !
-  !
   ! ... distribute k-points (and their weights and spin indices)
   !
   kunit = 1
-  CALL divide_et_impera( xk, wk, isk, lsda, nkstot, nks )
+  CALL divide_et_impera ( nkstot, xk, wk, isk, nks )
   !
-#else
-  !
-  nks = nkstot
-  !
-#endif
-
   IF ( dft_is_hybrid() ) THEN
      CALL exx_grid_init()
      CALL exx_div_check()
@@ -668,7 +717,7 @@ LOGICAL FUNCTION check_para_diag( nbnd )
         ELSE
            CALL errore( 'setup','Unexpected sub-group communicator ', 1 )
         END IF
-#if defined(__ELPA)
+#if defined(__ELPA) || defined(__ELPA_2015) || defined(__ELPA_2016)
         WRITE( stdout, '(5X,"ELPA distributed-memory algorithm ", &
               & "(size of sub-group: ", I2, "*", I3, " procs)",/)') &
                np_ortho(1), np_ortho(2)

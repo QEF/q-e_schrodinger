@@ -1,6 +1,6 @@
 # Makefile for converters to UPF format
 
-include ../make.sys
+include ../make.inc
 
 # location of needed modules
 MODFLAGS= $(MOD_FLAG)../iotk/src $(MOD_FLAG)../Modules $(MOD_FLAG)../FFTXlib $(MOD_FLAG)../LAXlib $(MOD_FLAG).
@@ -68,6 +68,6 @@ tldeps:
 	( cd ../ ; $(MAKE) $(TLDEPS) || exit 1 ) ; fi
 
 clean :
-	- /bin/rm -f  *.x *.o *~ *.F90 *.mod *.d *.i *.L
+	- /bin/rm -f  *.x *.o *~ *_tmp.f90 *.mod *.d *.i *.L
 
 include make.depend

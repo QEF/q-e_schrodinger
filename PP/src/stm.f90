@@ -26,12 +26,11 @@ SUBROUTINE stm (sample_bias, stmdos, istates)
   USE scatter_mod,  ONLY: gather_grid
   USE fft_interfaces, ONLY : fwfft, invfft
   USE gvect, ONLY: ngm, g, nl, nlm
-  USE klist, ONLY: xk, lgauss, degauss, ngauss, wk, nks, nelec
+  USE klist, ONLY: xk, lgauss, degauss, ngauss, wk, nks, nelec, ngk, igk_k
   USE ener, ONLY: ef
   USE symme, ONLY : sym_rho, sym_rho_init
   USE scf, ONLY: rho
-  USE wvfct, ONLY: npwx, npw, nbnd, wg, et, g2kin, igk
-  USE gvecw, ONLY: gcutw
+  USE wvfct, ONLY: npwx, nbnd, wg, et
   USE control_flags, ONLY : gamma_only
   USE wavefunctions_module,  ONLY : evc, psic
   USE io_files, ONLY: iunwfc, nwordwfc
@@ -49,7 +48,7 @@ SUBROUTINE stm (sample_bias, stmdos, istates)
   !
   !    And here the local variables
   !
-  INTEGER :: ir, ig, ibnd, ik, nbnd_ocp, first_band, last_band
+  INTEGER :: ir, ig, ibnd, ik, nbnd_ocp, first_band, last_band, npw
   ! counters on 3D r points
   ! counter on g vectors
   ! counter on bands
@@ -89,7 +88,7 @@ SUBROUTINE stm (sample_bias, stmdos, istates)
      DO ik = 2, nks
         emin = min (emin, et (nbnd_ocp + 1, ik) )
      ENDDO
-#ifdef __MPI
+#if defined(__MPI)
      ! find the minimum across pools
      CALL mp_min( emin, inter_pool_comm )
 #endif
@@ -97,7 +96,7 @@ SUBROUTINE stm (sample_bias, stmdos, istates)
      DO ik = 2, nks
         emax = max (emax, et (nbnd_ocp, ik) )
      ENDDO
-#ifdef __MPI
+#if defined(__MPI)
      ! find the maximum across pools
      CALL mp_max( emax, inter_pool_comm )
 #endif
@@ -149,7 +148,7 @@ SUBROUTINE stm (sample_bias, stmdos, istates)
      ENDDO
      istates = istates +  (last_band - first_band + 1)
 
-     CALL gk_sort (xk (1, ik), ngm, g, gcutw, npw, igk, g2kin)
+     npw = ngk(ik)
      CALL davcio (evc, 2*nwordwfc, iunwfc, ik, - 1)
      !
      IF (gamma_only) THEN
@@ -173,15 +172,15 @@ SUBROUTINE stm (sample_bias, stmdos, istates)
            psic(:) = (0.d0, 0.d0)
            IF ( ibnd < last_band ) THEN
               DO ig = 1, npw
-                 psic(nl(igk(ig)))  = &
+                 psic(nl(igk_k(ig,ik)))  = &
                              evc(ig,ibnd) + (0.D0,1.D0) * evc(ig,ibnd+1)
-                 psic(nlm(igk(ig))) = &
+                 psic(nlm(igk_k(ig,ik))) = &
                       conjg( evc(ig,ibnd) - (0.D0,1.D0) * evc(ig,ibnd+1) )
               ENDDO
            ELSE
               DO ig = 1, npw
-                 psic(nl (igk(ig))) =        evc(ig,ibnd)
-                 psic(nlm(igk(ig))) = conjg( evc(ig,ibnd) )
+                 psic(nl (igk_k(ig,ik))) =        evc(ig,ibnd)
+                 psic(nlm(igk_k(ig,ik))) = conjg( evc(ig,ibnd) )
               ENDDO
            ENDIF
 
@@ -204,7 +203,7 @@ SUBROUTINE stm (sample_bias, stmdos, istates)
            !
            psic(:) = (0.d0, 0.d0)
            DO ig = 1, npw
-              psic(nl(igk(ig)))  = evc(ig,ibnd)
+              psic(nl(igk_k(ig,ik)))  = evc(ig,ibnd)
            ENDDO
 
            CALL invfft ('Dense', psic, dfftp)
@@ -215,7 +214,7 @@ SUBROUTINE stm (sample_bias, stmdos, istates)
         ENDDO
      ENDIF
   ENDDO
-#ifdef __MPI
+#if defined(__MPI)
   CALL mp_sum( rho%of_r, inter_pool_comm )
 #endif
   !
@@ -234,7 +233,7 @@ SUBROUTINE stm (sample_bias, stmdos, istates)
      CALL invfft ('Dense', psic, dfftp)
      rho%of_r(:,1) = dble(psic(:))
   ENDIF
-#ifdef __MPI
+#if defined(__MPI)
   CALL gather_grid (dfftp, rho%of_r(:,1), stmdos)
 #else
   stmdos(:) = rho%of_r(:,1)
@@ -243,7 +242,7 @@ SUBROUTINE stm (sample_bias, stmdos, istates)
   DEALLOCATE(gs)
   WRITE( stdout, '(/5x,"STM:",f10.2,"s cpu time")') scnds ()-t0
   !
-#ifdef __MPI
+#if defined(__MPI)
   CALL mp_sum( istates, inter_pool_comm )
 #endif
 

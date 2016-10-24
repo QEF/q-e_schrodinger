@@ -4,6 +4,12 @@
 !                                                                !
 !   written by Simone Ziraldo (08/2010)                          !
 !----------------------------------------------------------------!
+!
+!---------------------------------------------
+! TB
+! included monopole related stuff, search 'TB'
+!---------------------------------------------
+!
 MODULE read_xml_fields_module
   !
   !
@@ -434,15 +440,6 @@ CONTAINS
     CASE ( 'lberry' )
        CALL iotk_scan_dat_inside( xmlinputunit, lberry, ierr = ierr )
        !
-    CASE ( 'lcalc_z2' )
-       CALL iotk_scan_dat_inside( xmlinputunit, lcalc_z2, ierr = ierr )
-       !
-    CASE ( 'z2_m_threshold' )
-       CALL iotk_scan_dat_inside( xmlinputunit, z2_m_threshold, ierr = ierr )
-       !
-    CASE ( 'z2_z_threshold' )
-       CALL iotk_scan_dat_inside( xmlinputunit, z2_z_threshold, ierr = ierr )
-       !
     CASE ( 'lda_plus_u' ) 
        CALL iotk_scan_dat_inside( xmlinputunit, lda_plus_u, ierr = ierr )
        !
@@ -494,6 +491,29 @@ CONTAINS
        !
     CASE ( 'mixing_ndim' ) 
        CALL iotk_scan_dat_inside( xmlinputunit, mixing_ndim, ierr = ierr )
+       !
+       ! TB - start
+    CASE ( 'monopole' )
+       CALL iotk_scan_dat_inside( xmlinputunit, monopole, ierr = ierr )
+       !
+    CASE ( 'zmon' )
+       CALL iotk_scan_dat_inside( xmlinputunit, zmon, ierr = ierr )
+       !
+    CASE ( 'relaxz' )
+       CALL iotk_scan_dat_inside( xmlinputunit, relaxz, ierr = ierr )
+       !
+    CASE ( 'block' )
+       CALL iotk_scan_dat_inside( xmlinputunit, block, ierr = ierr )
+       !
+    CASE ( 'block_1' )
+       CALL iotk_scan_dat_inside( xmlinputunit, block_1, ierr = ierr )
+       !
+    CASE ( 'block_2' )
+       CALL iotk_scan_dat_inside( xmlinputunit, block_2, ierr = ierr )
+       !
+    CASE ( 'block_height' )
+       CALL iotk_scan_dat_inside( xmlinputunit, block_height, ierr = ierr )
+       ! TB - end
        !
     CASE ( 'n_inner' ) 
        CALL iotk_scan_dat_inside( xmlinputunit, n_inner, ierr = ierr )
@@ -710,6 +730,12 @@ CONTAINS
        !
     CASE ( 'tqr' ) 
        CALL iotk_scan_dat_inside( xmlinputunit, tqr, ierr = ierr )
+       !
+    CASE ( 'tq_smoothing' ) 
+       CALL iotk_scan_dat_inside( xmlinputunit, tq_smoothing, ierr = ierr )
+       !
+    CASE ( 'tbeta_smoothing' ) 
+       CALL iotk_scan_dat_inside( xmlinputunit, tbeta_smoothing, ierr = ierr )
        !
     CASE ( 'trust_radius_ini' ) 
        CALL iotk_scan_dat_inside( xmlinputunit, trust_radius_ini, ierr = ierr )

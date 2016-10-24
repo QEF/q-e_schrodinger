@@ -5,6 +5,11 @@
 ! in the root directory of the present distribution,
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
+!---------------------------------------------
+! TB
+! included monopole related stuff, search 'TB'
+!---------------------------------------------
+!
 !----------------------------------------------------------------------------
 MODULE read_namelists_module
   !----------------------------------------------------------------------------
@@ -107,10 +112,8 @@ MODULE read_namelists_module
        forc_conv_thr = 1.E-3_DP
        disk_io  = 'default'
        dipfield = .FALSE.
+       monopole = .FALSE. !TB
        lberry   = .FALSE.
-       lcalc_z2 = .FALSE.
-       z2_m_threshold = 0.8d0
-       z2_z_threshold = 0.05d0
        gdir     = 0
        nppstr   = 0
        wf_collect = .FALSE.
@@ -129,8 +132,6 @@ MODULE read_namelists_module
        lfcpdyn = .FALSE.
        !
        CALL get_environment_variable( 'QEXML', input_xml_schema_file )
-       IF ( TRIM(input_xml_schema_file) == ' ') &
-          input_xml_schema_file='./qes.xml'
        !
        RETURN
        !
@@ -218,6 +219,14 @@ MODULE read_namelists_module
        emaxpos = 0.5_DP
        eopreg = 0.1_DP
        eamp = 0.0_DP
+       ! TB monopole related variables
+       zmon = 0.5
+       relaxz = .false.
+       block = .false.
+       block_1 = 0.45
+       block_2 = 0.55
+       block_height = 0.0
+
        !
        !  ... postprocessing of DOS & phonons & el-ph
        la2F = .FALSE.
@@ -493,6 +502,12 @@ MODULE read_namelists_module
        w_1              = 0.01_DP
        w_2              = 0.50_DP
        !
+       l_mplathe=.false.
+       n_muller=0
+       np_muller=1
+       l_exit_muller=.false.
+       
+
        RETURN
        !
      END SUBROUTINE
@@ -653,22 +668,6 @@ MODULE read_namelists_module
      !
      !=----------------------------------------------------------------------=!
      !
-#ifdef __XSD
-     !-----------------------------------------------------------------------
-     SUBROUTINE xsd_bcast()
-     !-----------------------------------------------------------------------
-       !
-       USE io_global, ONLY : ionode_id
-       USE mp,        ONLY : mp_bcast
-       USE mp_images, ONLY : intra_image_comm
-       !
-       IMPLICIT NONE
-       !
-       CALL mp_bcast( input_xml_schema_file, ionode_id, intra_image_comm )
-       !
-     END SUBROUTINE
-#endif
-     !
      !-----------------------------------------------------------------------
      SUBROUTINE control_bcast()
        !-----------------------------------------------------------------------
@@ -706,9 +705,6 @@ MODULE read_namelists_module
        CALL mp_bcast( tefield2,      ionode_id, intra_image_comm )
        CALL mp_bcast( dipfield,      ionode_id, intra_image_comm )
        CALL mp_bcast( lberry,        ionode_id, intra_image_comm )
-       CALL mp_bcast( lcalc_z2,      ionode_id, intra_image_comm )
-       CALL mp_bcast( z2_m_threshold,ionode_id, intra_image_comm )
-       CALL mp_bcast( z2_z_threshold,ionode_id, intra_image_comm )
        CALL mp_bcast( gdir,          ionode_id, intra_image_comm )
        CALL mp_bcast( nppstr,        ionode_id, intra_image_comm )
        CALL mp_bcast( point_label_type,   ionode_id, intra_image_comm )
@@ -725,6 +721,7 @@ MODULE read_namelists_module
        CALL mp_bcast( lfcpopt,       ionode_id, intra_image_comm )
        CALL mp_bcast( lfcpdyn,       ionode_id, intra_image_comm )
        CALL mp_bcast( input_xml_schema_file, ionode_id, intra_image_comm )
+       CALL mp_bcast( monopole,      ionode_id, intra_image_comm ) !TB
        !
        RETURN
        !
@@ -815,6 +812,7 @@ MODULE read_namelists_module
        CALL mp_bcast( eopreg,                 ionode_id, intra_image_comm )
        CALL mp_bcast( eamp,                   ionode_id, intra_image_comm )
        CALL mp_bcast( la2F,                   ionode_id, intra_image_comm )
+
        !
        ! ... non collinear broadcast
        !
@@ -875,6 +873,15 @@ MODULE read_namelists_module
        CALL mp_bcast( uniqueb,            ionode_id, intra_image_comm )
        CALL mp_bcast( origin_choice,      ionode_id, intra_image_comm )
        CALL mp_bcast( rhombohedral,       ionode_id, intra_image_comm )
+       !
+       ! TB - monopole broadcast
+       !
+       CALL mp_bcast( zmon,               ionode_id, intra_image_comm )
+       CALL mp_bcast( relaxz,             ionode_id, intra_image_comm )
+       CALL mp_bcast( block,              ionode_id, intra_image_comm )
+       CALL mp_bcast( block_1,            ionode_id, intra_image_comm )
+       CALL mp_bcast( block_2,            ionode_id, intra_image_comm )
+       CALL mp_bcast( block_height,       ionode_id, intra_image_comm )
 
        RETURN
        !
@@ -936,6 +943,8 @@ MODULE read_namelists_module
        CALL mp_bcast( mixing_beta,          ionode_id, intra_image_comm )
        CALL mp_bcast( mixing_ndim,          ionode_id, intra_image_comm )
        CALL mp_bcast( tqr,                  ionode_id, intra_image_comm )
+       CALL mp_bcast( tq_smoothing,         ionode_id, intra_image_comm )
+       CALL mp_bcast( tbeta_smoothing,      ionode_id, intra_image_comm )
        CALL mp_bcast( diagonalization,      ionode_id, intra_image_comm )
        CALL mp_bcast( diago_thr_init,       ionode_id, intra_image_comm )
        CALL mp_bcast( diago_cg_maxiter,     ionode_id, intra_image_comm )
@@ -1051,6 +1060,12 @@ MODULE read_namelists_module
        CALL mp_bcast( w_1,              ionode_id, intra_image_comm )
        CALL mp_bcast( w_2,              ionode_id, intra_image_comm )
        !
+       CALL mp_bcast(l_mplathe,         ionode_id, intra_image_comm )
+       CALL mp_bcast(n_muller,          ionode_id, intra_image_comm ) 
+       CALL mp_bcast(np_muller,         ionode_id, intra_image_comm )
+       CALL mp_bcast(l_exit_muller,     ionode_id, intra_image_comm )
+
+
        RETURN
        !
      END SUBROUTINE
@@ -1280,8 +1295,6 @@ MODULE read_namelists_module
              CALL infomsg( sub_name,' dipfield not yet implemented ')
           IF( lberry ) &
              CALL infomsg( sub_name,' lberry not implemented yet ')
-          IF( lcalc_z2 ) &
-             CALL infomsg( sub_name,' lcalc_z2 incompatible with CP ')
           IF( gdir /= 0 ) &
              CALL infomsg( sub_name,' gdir not used ')
           IF( nppstr /= 0 ) &
@@ -1306,6 +1319,11 @@ MODULE read_namelists_module
        IF( .NOT. allowed ) &
           CALL errore( sub_name, ' memory '''// &
                        & TRIM(memory)//''' not allowed ',1)
+       ! TB
+       IF ( monopole .and. tefield .and. (.not. dipfield) ) &
+          CALL errore(sub_name, ' monopole cannot be used with tefield if dipole correction is not active', 1)
+       IF ( monopole .and. dipfield .and. (.not. tefield) ) &
+          CALL errore(sub_name, ' dipole correction is not active if tefield = .false.', 1)
 
        RETURN
        !
@@ -1424,6 +1442,10 @@ MODULE read_namelists_module
                                           TRIM(exxdiv_treatment) == "vcut_spherical" ) ) &
           CALL errore(sub_name, ' x_gamma_extrapolation cannot be used with vcut', 1 )
        !
+       ! TB - monopole check
+       !
+       IF ( monopole .and. tot_charge == 0 ) &
+          CALL errore(sub_name, ' charged plane (monopole) to compensate tot_charge of 0', 1)
        RETURN
        !
      END SUBROUTINE

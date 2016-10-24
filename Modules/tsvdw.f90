@@ -18,7 +18,6 @@ USE cell_base,          ONLY: h                  !h matrix for converting betwee
 USE cell_base,          ONLY: ainv               !h^-1 matrix for converting between r and s coordinates via s = h^-1 r)
 USE cell_base,          ONLY: omega              !cell volume (in au^3)
 USE constants,          ONLY: pi                 !pi in double-precision
-USE fft_base,           ONLY: dffts              !FFT derived data type
 USE fft_base,           ONLY: dfftp              !FFT derived data type 
 USE funct,              ONLY: get_iexch          !retrieves type of exchange utilized in functional
 USE funct,              ONLY: get_icorr          !retrieves type of correlation utilized in functional
@@ -176,8 +175,7 @@ PRIVATE :: GetVdWParam
   !
   ALLOCATE(VefftsvdW(nat)); VefftsvdW=0.0_DP
   !
-  Ndim=MAX(nr1*nr2,dffts%npp(me_bgrp+1)*nr1*nr2)
-  ALLOCATE(UtsvdW(Ndim)); UtsvdW=0.0_DP
+  ALLOCATE(UtsvdW(dfftp%nnr)); UtsvdW=0.0_DP
   !
   ! Set ddamp damping function parameter (set to 20 and functional independent)...
   !
@@ -990,7 +988,7 @@ PRIVATE :: GetVdWParam
   ALLOCATE(rhotot(nr1*nr2*nr3)); rhotot=0.0_DP
   nspin = SIZE(rhor,2)
   IF ( nspin < 1 .OR.  nspin > 2 ) CALL errore ('tsvdw','invalid nspin',1)
-#ifdef __MPI
+#if defined(__MPI)
   !
   ! Initialization of rhor_tmp temporary buffers...
   !
@@ -1006,7 +1004,7 @@ PRIVATE :: GetVdWParam
   !
   DO iproc=1,nproc_bgrp
     !
-    recvcount(iproc)=dffts%npp(iproc)*nr1*nr2
+    recvcount(iproc)=dfftp%npp(iproc)*nr1*nr2
     !
   END DO
   !
@@ -1018,13 +1016,13 @@ PRIVATE :: GetVdWParam
     !
   END DO
   !
-  CALL MPI_ALLGATHERV(rhor(1,1),dffts%npp(me_bgrp+1)*nr1*nr2,&
+  CALL MPI_ALLGATHERV(rhor(1,1),dfftp%npp(me_bgrp+1)*nr1*nr2,&
       MPI_DOUBLE_PRECISION,rhor_tmp1(1),recvcount,rdispls,&
       MPI_DOUBLE_PRECISION,intra_bgrp_comm,ierr)
   !
   IF (nspin.EQ.2) THEN
     !
-    CALL MPI_ALLGATHERV(rhor(1,2),dffts%npp(me_bgrp+1)*nr1*nr2,&
+    CALL MPI_ALLGATHERV(rhor(1,2),dfftp%npp(me_bgrp+1)*nr1*nr2,&
         MPI_DOUBLE_PRECISION,rhor_tmp2(1),recvcount,rdispls,&
         MPI_DOUBLE_PRECISION,intra_bgrp_comm,ierr)
     !
@@ -2096,7 +2094,7 @@ PRIVATE :: GetVdWParam
           DO i=1,3
             !
             FtsvdW_period(i,ia)=FtsvdW_period(i,ia)+(D1A*FDRi(i)+D2A*FRRi(i))
-            FtsvdW_period(i,ib)=FtsvdW_period(i,ib)-(D1A*FDRi(i)+D2A*FRRi(i))
+            FtsvdW_period(i,ib)=FtsvdW_period(i,ib)+(-D1A*FDRi(i)-D2A*FRRi(i))
             !
             DO j=1,3
               !
@@ -2218,10 +2216,10 @@ PRIVATE :: GetVdWParam
   !
   ! Partition out dispersion potential consistent with slabs of the charge density...
   !
-  IF (dffts%npp(me_bgrp+1).NE.0) THEN
+  IF (dfftp%npp(me_bgrp+1).NE.0) THEN
     !
 !$omp parallel do 
-    DO ip=1,dffts%npp(me_bgrp+1)*nr1*nr2
+    DO ip=1,dfftp%npp(me_bgrp+1)*nr1*nr2
       !
       UtsvdW(ip)=UtsvdWA(ip+rdispls(me_bgrp+1)) 
       !

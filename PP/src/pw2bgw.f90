@@ -99,7 +99,7 @@ PROGRAM pw2bgw
   USE constants, ONLY : eps12
   USE control_flags, ONLY : gamma_only
   USE environment, ONLY : environment_start, environment_end
-  USE io_files, ONLY : prefix, tmp_dir, outdir
+  USE io_files, ONLY : prefix, tmp_dir
   USE io_global, ONLY : ionode, ionode_id
   USE kinds, ONLY : DP
   USE lsda_mod, ONLY : nspin
@@ -148,6 +148,7 @@ PROGRAM pw2bgw
   character ( len = 256 ) :: vscg_file
   logical :: vkbg_flag
   character ( len = 256 ) :: vkbg_file
+  character ( len = 256 ) :: outdir
 
   NAMELIST / input_pw2bgw / prefix, outdir, &
     real_or_complex, symm_type, wfng_flag, wfng_file, wfng_kgrid, &
@@ -164,7 +165,7 @@ PROGRAM pw2bgw
   character (len=256), external :: trimcheck
   character (len=1), external :: lowercase
 
-#ifdef __MPI
+#if defined(__MPI)
   CALL mp_startup ( )
 #endif
 
@@ -229,7 +230,6 @@ PROGRAM pw2bgw
   ENDIF
 
   tmp_dir = trimcheck ( outdir )
-  CALL mp_bcast ( outdir, ionode_id, world_comm )
   CALL mp_bcast ( tmp_dir, ionode_id, world_comm )
   CALL mp_bcast ( prefix, ionode_id, world_comm )
   CALL mp_bcast ( real_or_complex, ionode_id, world_comm )
@@ -286,15 +286,12 @@ PROGRAM pw2bgw
     'with real wavefunctions are not implemented, compute them in ' // &
     'Sigma using VXC.', 7)
 
-  ! this is needed to compute k+G indices and store them into igk_k
-  CALL hinit0 ( )
-
   CALL openfil_pp ( )
 
   if ( ionode ) WRITE ( 6, '("")' )
 
   IF ( wfng_flag ) THEN
-    output_file_name = TRIM ( outdir ) // '/' // TRIM ( wfng_file )
+    output_file_name = TRIM ( tmp_dir ) // '/' // TRIM ( wfng_file )
     IF ( ionode ) WRITE ( 6, '(5x,"call write_wfng")' )
     CALL start_clock ( 'write_wfng' )
     CALL write_wfng ( output_file_name, real_or_complex, symm_type, &
@@ -305,7 +302,7 @@ PROGRAM pw2bgw
   ENDIF
 
   IF ( vxcg_flag ) THEN
-    output_file_name = TRIM ( outdir ) // '/' // TRIM ( vxcg_file )
+    output_file_name = TRIM ( tmp_dir ) // '/' // TRIM ( vxcg_file )
     IF ( ionode ) WRITE ( 6, '(5x,"call write_vxcg")' )
     CALL start_clock ( 'write_vxcg' )
     CALL write_vxcg ( output_file_name, real_or_complex, symm_type, &
@@ -315,7 +312,7 @@ PROGRAM pw2bgw
   ENDIF
 
   IF ( vxc0_flag ) THEN
-    output_file_name = TRIM ( outdir ) // '/' // TRIM ( vxc0_file )
+    output_file_name = TRIM ( tmp_dir ) // '/' // TRIM ( vxc0_file )
     IF ( ionode ) WRITE ( 6, '(5x,"call write_vxc0")' )
     CALL start_clock ( 'write_vxc0' )
     CALL write_vxc0 ( output_file_name, vxc_zero_rho_core )
@@ -324,7 +321,7 @@ PROGRAM pw2bgw
   ENDIF
 
   IF ( vxc_flag ) THEN
-    output_file_name = TRIM ( outdir ) // '/' // TRIM ( vxc_file )
+    output_file_name = TRIM ( tmp_dir ) // '/' // TRIM ( vxc_file )
     IF ( vxc_integral .EQ. 'r' ) THEN
       IF ( ionode ) WRITE ( 6, '(5x,"call write_vxc_r")' )
       CALL start_clock ( 'write_vxc_r' )
@@ -348,7 +345,7 @@ PROGRAM pw2bgw
   ENDIF
 
   IF ( vscg_flag ) THEN
-    output_file_name = TRIM ( outdir ) // '/' // TRIM ( vscg_file )
+    output_file_name = TRIM ( tmp_dir ) // '/' // TRIM ( vscg_file )
     IF ( ionode ) WRITE ( 6, '(5x,"call write_vscg")' )
     CALL start_clock ( 'write_vscg' )
     CALL write_vscg ( output_file_name, real_or_complex, symm_type )
@@ -357,7 +354,7 @@ PROGRAM pw2bgw
   ENDIF
 
   IF ( vkbg_flag ) THEN
-    output_file_name = TRIM ( outdir ) // '/' // TRIM ( vkbg_file )
+    output_file_name = TRIM ( tmp_dir ) // '/' // TRIM ( vkbg_file )
     IF ( ionode ) WRITE ( 6, '(5x,"call write_vkbg")' )
     CALL start_clock ( 'write_vkbg' )
     CALL write_vkbg ( output_file_name, symm_type, wfng_kgrid, wfng_nk1, &
@@ -370,7 +367,7 @@ PROGRAM pw2bgw
   ! it must be called after v_xc (called from write_vxcg, write_vxc0,
   ! write_vxc_r, write_vxc_g)
   IF ( rhog_flag ) THEN
-    output_file_name = TRIM ( outdir ) // '/' // TRIM ( rhog_file )
+    output_file_name = TRIM ( tmp_dir ) // '/' // TRIM ( rhog_file )
     IF ( ionode ) WRITE ( 6, '(5x,"call write_rhog")' )
     CALL start_clock ( 'write_rhog' )
     CALL write_rhog ( output_file_name, real_or_complex, symm_type, &
@@ -423,17 +420,16 @@ SUBROUTINE write_wfng ( output_file_name, real_or_complex, symm_type, &
   USE klist, ONLY : xk, wk, ngk, nks, nkstot, igk_k
   USE lsda_mod, ONLY : nspin, isk
   USE mp, ONLY : mp_sum, mp_max, mp_get, mp_bcast, mp_barrier
-  USE mp_pools, ONLY : kunit, me_pool, &
-    root_pool, my_pool_id, npool, nproc_pool, intra_pool_comm
+  USE mp_pools, ONLY : me_pool, root_pool, npool, nproc_pool, intra_pool_comm
   USE mp_wave, ONLY : mergewf
   USE mp_world, ONLY : mpime, nproc, world_comm
   USE start_k, ONLY : nk1, nk2, nk3, k1, k2, k3
   USE symm_base, ONLY : s, ftau, nsym
   USE wavefunctions_module, ONLY : evc
-  USE wvfct, ONLY : npwx, nbnd, npw, et, wg, igk
+  USE wvfct, ONLY : npwx, nbnd, npw, et, wg
   USE gvecw, ONLY : ecutwfc
   USE matrix_inversion
-#ifdef __MPI
+#if defined(__MPI)
   USE parallel_include, ONLY : MPI_DOUBLE_COMPLEX
 #endif
 
@@ -458,7 +454,7 @@ SUBROUTINE write_wfng ( output_file_name, real_or_complex, symm_type, &
   integer :: unit, i, j, k, cell_symmetry, nrecord
   integer :: id, ib, ik, iks, ike, is, ig, ierr
   integer :: nd, ntran, nb, nk_l, nk_g, ns, ng_l, ng_g
-  integer :: nkbl, nkl, nkr, ngg, npw_g, npwx_g
+  integer :: ngg, npw_g, npwx_g
   integer :: local_pw, ipsour, igwx, ngkdist_g, ngkdist_l
   real (DP) :: alat2, recvol, t1 ( 3 ), t2 ( 3 )
   real (DP) :: r1 ( 3, 3 ), r2 ( 3, 3 ), adot ( 3, 3 )
@@ -481,7 +477,7 @@ SUBROUTINE write_wfng ( output_file_name, real_or_complex, symm_type, &
   complex (DP), allocatable :: wfng_buf ( :, : )
   complex (DP), allocatable :: wfng_dist ( :, :, : )
 
-  INTEGER, EXTERNAL :: atomic_number
+  INTEGER, EXTERNAL :: atomic_number, global_kpoint_index
 
   IF ( real_or_complex .EQ. 1 .OR. nspin .GT. 1 ) THEN
     proc_wf = .TRUE.
@@ -521,13 +517,8 @@ SUBROUTINE write_wfng ( output_file_name, real_or_complex, symm_type, &
   ng_l = ngm
   ng_g = ngm_g
 
-  nkbl = nkstot / kunit
-  nkl = kunit * ( nkbl / npool )
-  nkr = ( nkstot - nkl * npool ) / kunit
-  IF ( my_pool_id .LT. nkr ) nkl = nkl + kunit
-  iks = nkl * my_pool_id + 1
-  IF ( my_pool_id .GE. nkr ) iks = iks + nkr * kunit
-  ike = iks + nkl - 1
+  iks = global_kpoint_index (nkstot, 1)
+  ike = iks + nks - 1 
 
   ALLOCATE ( kmap ( nk_g ) )
   ALLOCATE ( smap ( nk_g ) )
@@ -636,7 +627,7 @@ SUBROUTINE write_wfng ( output_file_name, real_or_complex, symm_type, &
       et_g ( ib, ik ) = et ( ib, ik )
     ENDDO
   ENDDO
-#ifdef __MPI
+#if defined(__MPI)
   CALL poolrecover ( et_g, nb, nk_g, nk_l )
   CALL mp_bcast ( et_g, ionode_id, world_comm )
 #endif
@@ -674,7 +665,7 @@ SUBROUTINE write_wfng ( output_file_name, real_or_complex, symm_type, &
         ENDIF
       ENDDO
     ENDDO
-#ifdef __MPI
+#if defined(__MPI)
     CALL poolrecover ( wg_g, nb, nk_g, nk_l )
 #endif
     DO ik = 1, nk_g
@@ -712,9 +703,8 @@ SUBROUTINE write_wfng ( output_file_name, real_or_complex, symm_type, &
 
   DO ik = 1, nk_l
     npw = ngk ( ik )
-    igk(1:npw) = igk_k(1:npw,ik)
     DO ig = 1, npw
-      igk_l2g ( ig, ik ) = ig_l2g ( igk ( ig ) )
+      igk_l2g ( ig, ik ) = ig_l2g ( igk_k (ig, ik) )
     ENDDO
     DO ig = npw + 1, npwx
       igk_l2g ( ig, ik ) = 0
@@ -912,7 +902,7 @@ SUBROUTINE write_wfng ( output_file_name, real_or_complex, symm_type, &
         DO ig = igwx + 1, ngkdist_g
           wfng_buf ( ig, is ) = ( 0.0D0, 0.0D0 )
         ENDDO
-#ifdef __MPI
+#if defined(__MPI)
         CALL mp_barrier ( world_comm )
         CALL MPI_Scatter ( wfng_buf ( :, is ), ngkdist_l, MPI_DOUBLE_COMPLEX, &
         wfng_dist ( :, ib, is ), ngkdist_l, MPI_DOUBLE_COMPLEX, &
@@ -945,7 +935,7 @@ SUBROUTINE write_wfng ( output_file_name, real_or_complex, symm_type, &
       ENDIF
       DO ib = 1, nb
         DO is = 1, ns
-#ifdef __MPI
+#if defined(__MPI)
           CALL mp_barrier ( world_comm )
           CALL MPI_Gather ( wfng_dist ( :, ib, is ), ngkdist_l, &
           MPI_DOUBLE_COMPLEX, wfng_buf ( :, is ), ngkdist_l, &
@@ -1438,27 +1428,22 @@ SUBROUTINE calc_rhog (rhog_nvmin, rhog_nvmax)
   USE lsda_mod, ONLY : nspin, isk
   USE mp, ONLY : mp_sum
   USE mp_world, ONLY : world_comm
-  USE mp_pools, ONLY : kunit, my_pool_id, inter_pool_comm, npool
+  USE mp_pools, ONLY : inter_pool_comm
   USE noncollin_module, ONLY : nspin_mag
   USE scf, ONLY : rho
   USE symme, ONLY : sym_rho, sym_rho_init
   USE wavefunctions_module, ONLY : evc, psic
-  USE wvfct, ONLY : npw, igk, wg
+  USE wvfct, ONLY : npw, wg
 
   IMPLICIT NONE
 
   integer, intent (in) :: rhog_nvmin
   integer, intent (in) :: rhog_nvmax
+  integer, external :: global_kpoint_index
+  integer :: ik, is, ib, ig, ir, iks, ike
 
-  integer :: ik, is, ib, ig, ir, nkbl, nkl, nkr, iks, ike
-
-  nkbl = nkstot / kunit
-  nkl = kunit * (nkbl / npool)
-  nkr = (nkstot - nkl * npool) / kunit
-  IF (my_pool_id .LT. nkr) nkl = nkl + kunit
-  iks = nkl * my_pool_id + 1
-  IF (my_pool_id .GE. nkr) iks = iks + nkr * kunit
-  ike = iks + nkl - 1
+  iks = global_kpoint_index (nkstot, 1)
+  ike = iks + nks - 1 
 
   CALL weights ()
 
@@ -1468,12 +1453,11 @@ SUBROUTINE calc_rhog (rhog_nvmin, rhog_nvmax)
   DO ik = iks, ike
     is = isk (ik)
     npw = ngk ( ik - iks + 1 )
-    igk(1:npw) = igk_k(1:npw, ik - iks + 1 ) 
     CALL davcio (evc, 2*nwordwfc, iunwfc, ik - iks + 1, -1)
     DO ib = rhog_nvmin, rhog_nvmax
       psic (:) = (0.0D0, 0.0D0)
       DO ig = 1, npw
-        psic (nl (igk (ig))) = evc (ig, ib)
+        psic (nl (igk_k (ig, ik-iks+1))) = evc (ig, ib)
       ENDDO
       CALL invfft ('Dense', psic, dfftp)
       DO ir = 1, dfftp%nnr
@@ -1821,11 +1805,10 @@ SUBROUTINE write_vxc_r (output_file_name, diag_nmin, diag_nmax, &
   USE klist, ONLY : xk, nkstot, nks, ngk, igk_k
   USE lsda_mod, ONLY : nspin, isk
   USE mp, ONLY : mp_sum
-  USE mp_pools, ONLY : kunit, my_pool_id, intra_pool_comm, &
-    inter_pool_comm, npool
+  USE mp_pools, ONLY : intra_pool_comm, inter_pool_comm
   USE scf, ONLY : rho, rho_core, rhog_core
   USE wavefunctions_module, ONLY : evc, psic
-  USE wvfct, ONLY : npw, nbnd, igk
+  USE wvfct, ONLY : npw, nbnd
 
   IMPLICIT NONE
 
@@ -1836,8 +1819,8 @@ SUBROUTINE write_vxc_r (output_file_name, diag_nmin, diag_nmax, &
   integer, intent (inout) :: offdiag_nmax
   logical, intent (in) :: vxc_zero_rho_core
 
-  integer :: ik, is, ib, ig, ir, unit, nkbl, nkl, nkr, iks, ike, &
-    ndiag, noffdiag, ib2
+  integer :: ik, is, ib, ig, ir, unit, iks, ike, ndiag, noffdiag, ib2
+  integer, external :: global_kpoint_index
   real (DP) :: dummyr
   complex (DP) :: dummyc
   real (DP), allocatable :: mtxeld (:, :)
@@ -1869,13 +1852,8 @@ SUBROUTINE write_vxc_r (output_file_name, diag_nmin, diag_nmax, &
 
   unit = 4
 
-  nkbl = nkstot / kunit
-  nkl = kunit * (nkbl / npool)
-  nkr = (nkstot - nkl * npool) / kunit
-  IF (my_pool_id .LT. nkr) nkl = nkl + kunit
-  iks = nkl * my_pool_id + 1
-  IF (my_pool_id .GE. nkr) iks = iks + nkr * kunit
-  ike = iks + nkl - 1
+  iks = global_kpoint_index (nkstot, 1)
+  ike = iks + nks - 1 
 
   IF (ndiag .GT. 0) THEN
     ALLOCATE (mtxeld (ndiag, nkstot))
@@ -1898,13 +1876,12 @@ SUBROUTINE write_vxc_r (output_file_name, diag_nmin, diag_nmax, &
 
   DO ik = iks, ike
     npw = ngk ( ik - iks + 1 )
-    igk(1:npw) = igk_k(1:npw, ik - iks + 1 ) 
     CALL davcio (evc, 2*nwordwfc, iunwfc, ik - iks + 1, -1)
     IF (ndiag .GT. 0) THEN
       DO ib = diag_nmin, diag_nmax
         psic (:) = (0.0D0, 0.0D0)
         DO ig = 1, npw
-          psic (nl (igk (ig))) = evc (ig, ib)
+          psic (nl (igk_k (ig,ik-iks+1))) = evc (ig, ib)
         ENDDO
         CALL invfft ('Dense', psic, dfftp)
         dummyr = 0.0D0
@@ -1921,13 +1898,13 @@ SUBROUTINE write_vxc_r (output_file_name, diag_nmin, diag_nmax, &
       DO ib = offdiag_nmin, offdiag_nmax
         psic (:) = (0.0D0, 0.0D0)
         DO ig = 1, npw
-          psic (nl (igk (ig))) = evc (ig, ib)
+          psic (nl (igk_k (ig,ik-iks+1))) = evc (ig, ib)
         ENDDO
         CALL invfft ('Dense', psic, dfftp)
         DO ib2 = offdiag_nmin, offdiag_nmax
           psic2 (:) = (0.0D0, 0.0D0)
           DO ig = 1, npw
-            psic2 (nl (igk (ig))) = evc (ig, ib2)
+            psic2 (nl (igk_k (ig,ik-iks+1))) = evc (ig, ib2)
           ENDDO
           CALL invfft ('Dense', psic2, dfftp)
           dummyc = (0.0D0, 0.0D0)
@@ -2013,11 +1990,10 @@ SUBROUTINE write_vxc_g (output_file_name, diag_nmin, diag_nmax, &
   USE klist, ONLY : xk, nkstot, nks, ngk, igk_k
   USE lsda_mod, ONLY : nspin, isk
   USE mp, ONLY : mp_sum
-  USE mp_pools, ONLY : kunit, my_pool_id, intra_pool_comm, &
-    inter_pool_comm, npool
+  USE mp_pools, ONLY : intra_pool_comm, inter_pool_comm
   USE scf, ONLY : rho, rho_core, rhog_core
   USE wavefunctions_module, ONLY : evc, psic
-  USE wvfct, ONLY : npwx, npw, nbnd, igk
+  USE wvfct, ONLY : npwx, npw, nbnd
 
   IMPLICIT NONE
 
@@ -2028,8 +2004,8 @@ SUBROUTINE write_vxc_g (output_file_name, diag_nmin, diag_nmax, &
   integer, intent (inout) :: offdiag_nmax
   logical, intent (in) :: vxc_zero_rho_core
 
-  integer :: ik, is, ib, ig, ir, unit, nkbl, nkl, nkr, iks, ike, &
-    ndiag, noffdiag, ib2
+  integer :: ik, is, ib, ig, ir, unit, iks, ike, ndiag, noffdiag, ib2, ikk
+  integer, external :: global_kpoint_index
   complex (DP) :: dummy
   complex (DP), allocatable :: mtxeld (:, :)
   complex (DP), allocatable :: mtxelo (:, :, :)
@@ -2061,13 +2037,8 @@ SUBROUTINE write_vxc_g (output_file_name, diag_nmin, diag_nmax, &
 
   unit = 4
 
-  nkbl = nkstot / kunit
-  nkl = kunit * (nkbl / npool)
-  nkr = (nkstot - nkl * npool) / kunit
-  IF (my_pool_id .LT. nkr) nkl = nkl + kunit
-  iks = nkl * my_pool_id + 1
-  IF (my_pool_id .GE. nkr) iks = iks + nkr * kunit
-  ike = iks + nkl - 1
+  iks = global_kpoint_index (nkstot, 1)
+  ike = iks + nks - 1 
 
   IF (ndiag .GT. 0) THEN
     ALLOCATE (mtxeld (ndiag, nkstot))
@@ -2090,14 +2061,14 @@ SUBROUTINE write_vxc_g (output_file_name, diag_nmin, diag_nmax, &
   CALL v_xc (rho, rho_core, rhog_core, etxc, vtxc, vxcr)
 
   DO ik = iks, ike
+    ikk = ik - iks + 1
     npw = ngk ( ik - iks + 1 )
-    igk(1:npw) = igk_k(1:npw, ik - iks + 1 ) 
     CALL davcio (evc, 2*nwordwfc, iunwfc, ik - iks + 1, -1)
     IF (ndiag .GT. 0) THEN
       DO ib = diag_nmin, diag_nmax
         psic (:) = (0.0D0, 0.0D0)
         DO ig = 1, npw
-          psic (nl (igk (ig))) = evc (ig, ib)
+          psic (nl (igk_k(ig,ikk))) = evc (ig, ib)
         ENDDO
         CALL invfft ('Dense', psic, dfftp)
         DO ir = 1, dfftp%nnr
@@ -2106,14 +2077,14 @@ SUBROUTINE write_vxc_g (output_file_name, diag_nmin, diag_nmax, &
         CALL fwfft ('Dense', psic, dfftp)
         hpsi (:) = (0.0D0, 0.0D0)
         DO ig = 1, npw
-          hpsi (ig) = psic (nl (igk (ig)))
+          hpsi (ig) = psic (nl (igk_k(ig,ikk)))
         ENDDO
         psic (:) = (0.0D0, 0.0D0)
         DO ig = 1, npw
           psic (ig) = evc (ig, ib)
         ENDDO
-        IF (exx_is_active ()) CALL vexx (npwx, npw, 1, &
-          psic, hpsi)
+        IF (exx_is_active ()) &
+           CALL vexx (npwx, npw, 1, psic, hpsi)
         dummy = (0.0D0, 0.0D0)
         DO ig = 1, npw
           dummy = dummy + conjg (psic (ig)) * hpsi (ig)
@@ -2127,7 +2098,7 @@ SUBROUTINE write_vxc_g (output_file_name, diag_nmin, diag_nmax, &
       DO ib = offdiag_nmin, offdiag_nmax
         psic (:) = (0.0D0, 0.0D0)
         DO ig = 1, npw
-          psic (nl (igk (ig))) = evc (ig, ib)
+          psic (nl (igk_k(ig,ikk))) = evc (ig, ib)
         ENDDO
         CALL invfft ('Dense', psic, dfftp)
         DO ir = 1, dfftp%nnr
@@ -2136,14 +2107,14 @@ SUBROUTINE write_vxc_g (output_file_name, diag_nmin, diag_nmax, &
         CALL fwfft ('Dense', psic, dfftp)
         hpsi (:) = (0.0D0, 0.0D0)
         DO ig = 1, npw
-          hpsi (ig) = psic (nl (igk (ig)))
+          hpsi (ig) = psic (nl (igk_k (ig,ikk)))
         ENDDO
         psic (:) = (0.0D0, 0.0D0)
         DO ig = 1, npw
           psic (ig) = evc (ig, ib)
         ENDDO
-        IF (exx_is_active ()) CALL vexx (npwx, npw, 1, &
-          psic, hpsi)
+        IF (exx_is_active ()) &
+           CALL vexx (npwx, npw, 1, psic, hpsi)
         DO ib2 = offdiag_nmin, offdiag_nmax
           psic2 (:) = (0.0D0, 0.0D0)
           DO ig = 1, npw
@@ -2436,14 +2407,13 @@ SUBROUTINE write_vkbg (output_file_name, symm_type, wfng_kgrid, &
   USE lsda_mod, ONLY : nspin, isk
   USE mp, ONLY : mp_sum, mp_max, mp_get, mp_barrier
   USE mp_world, ONLY : mpime, nproc, world_comm
-  USE mp_pools, ONLY : kunit, me_pool, root_pool, my_pool_id, npool, &
-                       nproc_pool, intra_pool_comm
+  USE mp_pools, ONLY : me_pool, root_pool, npool, nproc_pool, intra_pool_comm
   USE mp_wave, ONLY : mergewf
   USE start_k, ONLY : nk1, nk2, nk3, k1, k2, k3
   USE symm_base, ONLY : s, ftau, nsym
   USE uspp, ONLY : nkb, vkb, deeq
   USE uspp_param, ONLY : nhm, nh
-  USE wvfct, ONLY : npwx, npw, igk
+  USE wvfct, ONLY : npwx, npw
   USE gvecw, ONLY : ecutwfc
   USE matrix_inversion
 
@@ -2461,7 +2431,7 @@ SUBROUTINE write_vkbg (output_file_name, symm_type, wfng_kgrid, &
 
   character :: cdate*9, ctime*9, sdate*32, stime*32, stitle*32
   integer :: i, j, k, ierr, ik, is, ig, ikb, iat, isp, ih, jh, &
-    unit, nkbl, nkl, nkr, iks, ike, npw_g, npwx_g, ngg, ipsour, &
+    unit, iks, ike, npw_g, npwx_g, ngg, ipsour, &
     igwx, local_pw, id, nd, ntran, cell_symmetry, nrecord
   real (DP) :: alat2, recvol, t1 ( 3 ), t2 ( 3 )
   real (DP) :: r1 ( 3, 3 ), r2 ( 3, 3 ), adot ( 3, 3 )
@@ -2477,7 +2447,7 @@ SUBROUTINE write_vkbg (output_file_name, symm_type, wfng_kgrid, &
   integer, allocatable :: ipmask ( : )
   complex (DP), allocatable :: vkb_g ( : )
 
-  INTEGER, EXTERNAL :: atomic_number
+  INTEGER, EXTERNAL :: atomic_number, global_kpoint_index
 
   IF ( nkb == 0 ) RETURN
 
@@ -2492,13 +2462,8 @@ SUBROUTINE write_vkbg (output_file_name, symm_type, wfng_kgrid, &
   nrecord = 1
   nd = 3
 
-  nkbl = nkstot / kunit
-  nkl = kunit * ( nkbl / npool )
-  nkr = ( nkstot - nkl * npool ) / kunit
-  IF ( my_pool_id .LT. nkr ) nkl = nkl + kunit
-  iks = nkl * my_pool_id + 1
-  IF ( my_pool_id .GE. nkr ) iks = iks + nkr * kunit
-  ike = iks + nkl - 1
+  iks = global_kpoint_index (nkstot, 1)
+  ike = iks + nks - 1 
 
   ierr = 0
   IF ( ibrav .EQ. 0 ) THEN
@@ -2613,9 +2578,8 @@ SUBROUTINE write_vkbg (output_file_name, symm_type, wfng_kgrid, &
   igk_l2g = 0
   DO ik = 1, nks
     npw = ngk ( ik )
-    igk(1:npw) = igk_k(1:npw,ik) 
     DO ig = 1, npw
-      igk_l2g ( ig, ik ) = ig_l2g ( igk ( ig ) )
+      igk_l2g ( ig, ik ) = ig_l2g ( igk_k ( ig, ik ) )
     ENDDO
   ENDDO
   DO ik = 1, nks
@@ -2700,8 +2664,7 @@ SUBROUTINE write_vkbg (output_file_name, symm_type, wfng_kgrid, &
     local_pw = 0
     IF ( ik .GE. iks .AND. ik .LE. ike ) THEN
       npw = ngk ( ik - iks + 1 )
-      igk(1:npw) = igk_k(1:npw, ik - iks + 1 ) 
-      CALL init_us_2 ( npw, igk, xk ( 1, ik ), vkb )
+      CALL init_us_2 ( npw, igk_k(1, ik-iks+1), xk ( 1, ik ), vkb )
       local_pw = npw
     ENDIF
 

@@ -1,0 +1,201 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>3.4 Tricks and problems</TITLE>
+<META NAME="description" CONTENT="3.4 Tricks and problems">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="previous" HREF="node18.html">
+<LINK REL="up" HREF="node15.html">
+<LINK REL="next" HREF="node20.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html381"
+  HREF="node20.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html377"
+  HREF="node15.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html373"
+  HREF="node18.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html379"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html382"
+  HREF="node20.html">About this document ...</A>
+<B> Up:</B> <A NAME="tex2html378"
+  HREF="node15.html">3 Parallelism</A>
+<B> Previous:</B> <A NAME="tex2html374"
+  HREF="node18.html">3.3 Parallelization levels</A>
+ &nbsp; <B>  <A NAME="tex2html380"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><UL>
+<LI><A NAME="tex2html383"
+  HREF="node19.html#SECTION00044010000000000000">3.4.0.1 Trouble with input files</A>
+<LI><A NAME="tex2html384"
+  HREF="node19.html#SECTION00044020000000000000">3.4.0.2 Trouble with MKL and MPI parallelization</A>
+<LI><A NAME="tex2html385"
+  HREF="node19.html#SECTION00044030000000000000">3.4.0.3 Trouble with compilers and MPI libraries</A>
+</UL></UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H2><A NAME="SECTION00044000000000000000"></A>
+<A NAME="SubSec:badpara"></A>
+<BR>
+3.4 Tricks and problems
+</H2>
+
+<P>
+Many problems in parallel execution derive from the mixup of different
+MPI libraries and runtime environments. There are two major MPI
+implementations, OpenMPI and MPICH, coming in various versions,
+not necessarily compatible; plus vendor-specific implementations
+(e.g. Intel MPI). A parallel machine may have multiple parallel
+compilers (typically, <TT>mpif90</TT> scripts calling different
+serial compilers), multiple MPI libraries, multiple launchers
+for parallel codes (different versions of <TT>mpirun</TT> and/or
+<TT>mpiexec</TT>). You have to figure out the proper combination
+of all of the above, which may require using command <TT>module</TT>
+or manually setting environment variables and execution paths.
+What exactly has to be done depends upon the configuration of your
+machine. You should inquire with your system administrator or user
+support (if available; if not, YOU are the system administrator
+and user support and YOU have to solve your problems).
+
+<P>
+Always verify if your executable is actually compiled for
+parallel execution or not: it is declared in the first lines
+of output. Running several instances of a serial code with
+<TT>mpirun</TT> or <TT>mpiexec</TT> produces strange crashes.
+
+<P>
+
+<H4><A NAME="SECTION00044010000000000000">
+3.4.0.1 Trouble with input files</A>
+</H4>
+Some implementations of the MPI library have problems with input
+redirection in parallel. This typically shows up under the form of
+mysterious errors when reading data. If this happens, use the option
+<TT>-i</TT> (or <TT>-in</TT>, <TT>-inp</TT>, <TT>-input</TT>),
+followed by the input file name.
+Example:
+<PRE>
+   pw.x -i inputfile -nk 4 &gt; outputfile
+</PRE>
+Of course the
+input file must be accessible by the processor that must read it
+(only one processor reads the input file and subsequently broadcasts
+its contents to all other processors).
+
+<P>
+Apparently the LSF implementation of MPI libraries manages to ignore or to
+confuse even the <TT>-i/in/inp/input</TT> mechanism that is present in all
+Q<SMALL>UANTUM </SMALL>ESPRESSO codes. In this case, use the <TT>-i</TT> option of <TT>mpirun.lsf</TT>
+to provide an input file.
+
+<P>
+
+<H4><A NAME="SECTION00044020000000000000">
+3.4.0.2 Trouble with MKL and MPI parallelization</A>
+</H4>
+If you notice very bad parallel performances with MPI and MKL libraries,
+it is very likely that the OpenMP parallelization performed by the latter
+is colliding with MPI. Recent versions of MKL enable autoparallelization
+by default on multicore machines.  You must set the environment variable
+OMP_NUM_THREADS to 1 to disable it.
+Note that if for some reason the correct setting  of variable
+OMP_NUM_THREADS
+does not propagate to all processors, you may equally run into trouble.
+Lorenzo Paulatto (Nov. 2008) suggests to use the <TT>-x</TT> option to <TT>mpirun</TT> to
+propagate OMP_NUM_THREADS to all processors.
+Axel Kohlmeyer suggests the following (April 2008):
+"(I've) found that Intel is now turning on multithreading without any
+warning and that is for example why their FFT seems faster than
+FFTW. For serial and OpenMP based runs this makes no difference (in
+fact the multi-threaded FFT helps), but if you run MPI locally, you
+actually lose performance. Also if you use the 'numactl' tool on linux
+to bind a job to a specific cpu core, MKL will still try to use all
+available cores (and slow down badly). The cleanest way of avoiding
+this mess is to either link with
+<BLOCKQUOTE>
+<TT>-lmkl_intel_lp64 -lmkl_sequential -lmkl_core</TT> (on 64-bit:
+x86_64, ia64)
+<BR><TT>-lmkl_intel -lmkl_sequential -lmkl_core</TT> (on 32-bit, i.e. ia32 )
+
+</BLOCKQUOTE>
+or edit the <TT>libmkl_'platform'.a</TT> file. I'm using now a file
+<TT>libmkl10.a</TT> with:
+<PRE>
+  GROUP (libmkl_intel_lp64.a libmkl_sequential.a libmkl_core.a)
+</PRE>
+It works like a charm". UPDATE: Since v.4.2, <TT>configure</TT> links by
+default MKL without multithreaded support.
+
+<P>
+
+<H4><A NAME="SECTION00044030000000000000">
+3.4.0.3 Trouble with compilers and MPI libraries</A>
+</H4>
+Many users of Q<SMALL>UANTUM </SMALL>ESPRESSO, in particular those working on PC clusters,
+have to rely on themselves (or on less-than-adequate system managers) for
+the correct configuration of software for parallel execution. Mysterious and
+irreproducible crashes in parallel execution are sometimes due to bugs
+in Q<SMALL>UANTUM </SMALL>ESPRESSO, but more often than not are a consequence of buggy
+compilers or of buggy or miscompiled MPI libraries.
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html381"
+  HREF="node20.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html377"
+  HREF="node15.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html373"
+  HREF="node18.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html379"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html382"
+  HREF="node20.html">About this document ...</A>
+<B> Up:</B> <A NAME="tex2html378"
+  HREF="node15.html">3 Parallelism</A>
+<B> Previous:</B> <A NAME="tex2html374"
+  HREF="node18.html">3.3 Parallelization levels</A>
+ &nbsp; <B>  <A NAME="tex2html380"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+Filippo Spiga
+2016-10-04
+</ADDRESS>
+</BODY>
+</HTML>

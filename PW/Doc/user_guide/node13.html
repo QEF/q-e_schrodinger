@@ -1,0 +1,157 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>3.6 Socket interface with i-PI</TITLE>
+<META NAME="description" CONTENT="3.6 Socket interface with i-PI">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="previous" HREF="node12.html">
+<LINK REL="up" HREF="node7.html">
+<LINK REL="next" HREF="node14.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html301"
+  HREF="node14.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html297"
+  HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html293"
+  HREF="node12.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html299"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html302"
+  HREF="node14.html">4 Performances</A>
+<B> Up:</B> <A NAME="tex2html298"
+  HREF="node7.html">3 Using PWscf</A>
+<B> Previous:</B> <A NAME="tex2html294"
+  HREF="node12.html">3.5 Direct interface with</A>
+ &nbsp; <B>  <A NAME="tex2html300"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><UL>
+<LI><A NAME="tex2html303"
+  HREF="node13.html#SECTION00046010000000000000">3.6.0.1 Practicalities</A>
+<LI><A NAME="tex2html304"
+  HREF="node13.html#SECTION00046020000000000000">3.6.0.2 How to use the i-PI inteface</A>
+</UL></UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H2><A NAME="SECTION00046000000000000000">
+3.6 Socket interface with i-PI</A>
+</H2>
+
+<P>
+The i-PI universal force engine performs advanced Molecular Dynamics
+(MD) (such as Path Integral Molecular Dynamics, Thermodynamic
+Integration, Suzuki-Chin path integral, Multiple Time Step molecular
+dynamics) and other force related computations (see <TT><A NAME="tex2html1"
+  HREF="ipi-code.org">ipi-code.org</A></TT>for more information about i-PI).  
+
+<P>
+<TT>PWscf</TT> users wishing to learn how to use i-PI should refer to the i-PI website.
+
+<P>
+
+<H4><A NAME="SECTION00046010000000000000">
+3.6.0.1 Practicalities</A>
+</H4>
+The communication between <TT>PWscf</TT> and i-PI relies on a socket
+interface. This allows running i-PI and <TT>PWscf</TT> on different computers
+provided that the two computers have an Internet
+connection. Basically, i-PI works as a server waiting for a connection
+of a suitable software (for example <TT>PWscf</TT>). When this happens, i-PI
+injects atomic positions and cell parameters into the software, that
+will return forces and stress tensor to i-PI.  
+
+<P>
+The file containing the interface is <code>run_driver.f90</code>. The files
+<code>socket.c</code> and <code>fsocket.f90</code> provide the necessary
+infrastructure to the socket interface.  
+
+<P>
+
+<H4><A NAME="SECTION00046020000000000000">
+3.6.0.2 How to use the i-PI inteface</A>
+</H4>
+Since the communication goes through the Internet, the
+<TT>PWscf</TT> instance needs to know the address of the i-PI server that can
+be specified with the command line option <code>--ipi</code> (or
+<code>-ipi</code>) followed by the address of the computer running i-PI and
+the port number where i-PI is listening, e.g. 
+<PRE>
+pw.x --ipi localhost:3142 -in pw.input &gt; pw.out
+</PRE>
+If i-PI and <TT>PWscf</TT> are running on the same machine, a UNIX socket is
+preferable since allows faster communications, e.g.  
+<PRE>
+pw.x --ipi socketname:UNIX -in pw.input &gt; pw.out
+</PRE>
+In the last case, <code>UNIX</code> is a keyword that tells to <TT>PWscf</TT> to
+look for an UNIX socket connection instead of an INET one. More
+extensive examples and tutorials can be found at <TT><A NAME="tex2html2"
+  HREF="ipi-code.org">ipi-code.org</A></TT>. 
+
+<P>
+The <TT>PWscf</TT> input file must contain all the information to
+perform a single point calculation (<code>calculation = "scf"</code>) which
+are also used to initialize the <TT>PWscf</TT> run. Thus, it is important
+that the <TT>PWscf</TT> input contains atomic positions and cell parameters
+which are as close as possible to those specified in the i-PI input. 
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html301"
+  HREF="node14.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html297"
+  HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html293"
+  HREF="node12.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html299"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html302"
+  HREF="node14.html">4 Performances</A>
+<B> Up:</B> <A NAME="tex2html298"
+  HREF="node7.html">3 Using PWscf</A>
+<B> Previous:</B> <A NAME="tex2html294"
+  HREF="node12.html">3.5 Direct interface with</A>
+ &nbsp; <B>  <A NAME="tex2html300"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+Filippo Spiga
+2016-10-04
+</ADDRESS>
+</BODY>
+</HTML>

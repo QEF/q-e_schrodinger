@@ -1,0 +1,201 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>2.1 Download</TITLE>
+<META NAME="description" CONTENT="2.1 Download">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node9.html">
+<LINK REL="previous" HREF="node7.html">
+<LINK REL="up" HREF="node7.html">
+<LINK REL="next" HREF="node9.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html213"
+  HREF="node9.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html209"
+  HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html203"
+  HREF="node7.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html211"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html214"
+  HREF="node9.html">2.2 Prerequisites</A>
+<B> Up:</B> <A NAME="tex2html210"
+  HREF="node7.html">2 Installation</A>
+<B> Previous:</B> <A NAME="tex2html204"
+  HREF="node7.html">2 Installation</A>
+ &nbsp; <B>  <A NAME="tex2html212"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00031000000000000000"></A>
+<A NAME="SubSec:Download"></A>
+<BR>
+2.1 Download
+</H2>
+
+<P>
+Presently, Q<SMALL>UANTUM </SMALL>ESPRESSO is distributed in source form; some precompiled
+executables (binary files) are provided for <TT>PWgui</TT>.
+Packages for the Debian Linux distribution are however
+made available by <TT>debichem</TT> developers.
+Stable releases of the Q<SMALL>UANTUM </SMALL>ESPRESSO source package (current version
+is 6.0) can be downloaded from the Download section
+of <TT>www.quantum-espresso.org</TT>.
+
+<P>
+Uncompress and unpack the base distribution using the command:
+<PRE>
+     tar zxvf espresso-X.Y.Z.tar.gz
+</PRE>
+(a hyphen before "zxvf" is optional) where <TT>X.Y.Z</TT> stands for the
+version number. If your version of <TT>tar</TT>
+doesn't recognize the "z" flag:
+<PRE>
+     gunzip -c espresso-X.Y.Z.tar.gz | tar xvf -
+</PRE>
+A directory <TT>espresso-X.Y.Z/</TT> will be created.
+
+<P>
+Additional packages that are not included in the base distribution
+will be downloaded on demand at compile time, using <TT>make</TT>
+(see Sec.<A HREF="node12.html#SubSec:Compilation">2.5</A>).
+Note however that this will work only if the computer you are
+installing on is directly connected to the internet and has
+either <TT>wget</TT> or <TT>curl</TT> installed and working.
+If you run into trouble, manually download each required package
+into subdirectory <TT>archive/</TT>, <EM>not unpacking or
+uncompressing it</EM>:
+command <TT>make</TT> will take care of this during installation.
+
+<P>
+Package <TT>GWL</TT> needs a manual download and installation:
+please follow the instructions given at <TT>gww.qe-forge.org</TT>.
+
+<P>
+The Q<SMALL>UANTUM </SMALL>ESPRESSO distribution contains several directories. Some of them are
+common to all packages:
+
+<P>
+<TABLE CELLPADDING=3>
+<TR><TD ALIGN="LEFT"><TT>Modules/</TT></TD>
+<TD ALIGN="LEFT">fortran modules and utilities used by all programs</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>include/</TT></TD>
+<TD ALIGN="LEFT">files *.h included by fortran and C source files</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>clib/</TT></TD>
+<TD ALIGN="LEFT">external libraries written in C</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>FFTXlib/</TT></TD>
+<TD ALIGN="LEFT">FFT libraries</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>LAXlib/</TT></TD>
+<TD ALIGN="LEFT">Linear Algenra (parallel) libraries</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>install/</TT></TD>
+<TD ALIGN="LEFT">installation scripts and utilities</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>pseudo</TT>/</TD>
+<TD ALIGN="LEFT">pseudopotential files used by examples</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>upftools/</TT></TD>
+<TD ALIGN="LEFT">converters to unified pseudopotential format (UPF)</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>Doc/</TT></TD>
+<TD ALIGN="LEFT">general documentation</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>archive/</TT></TD>
+<TD ALIGN="LEFT">contains plug-ins in .tar.gz form</TD>
+</TR>
+</TABLE>
+
+<BR>
+while others are specific to a single package:
+
+<P>
+<TABLE CELLPADDING=3>
+<TR><TD ALIGN="LEFT"><TT>PW/</TT></TD>
+<TD ALIGN="LEFT"><TT>PWscf</TT> package</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>NEB/</TT></TD>
+<TD ALIGN="LEFT"><TT>PWneb</TT> package</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>PP/</TT></TD>
+<TD ALIGN="LEFT"><TT>PostProc</TT> package</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>PHonon/</TT></TD>
+<TD ALIGN="LEFT"><TT>PHonon</TT> package</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>PWCOND/</TT></TD>
+<TD ALIGN="LEFT"><TT>PWcond</TT> package</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>CPV/</TT></TD>
+<TD ALIGN="LEFT"><TT>CP</TT> package</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>atomic/</TT></TD>
+<TD ALIGN="LEFT"><TT>atomic</TT> package</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>GUI/</TT></TD>
+<TD ALIGN="LEFT"><TT>PWGui</TT> package</TD>
+</TR>
+</TABLE>
+
+<P>
+Finally, directory <TT>COUPLE/</TT> contains code and documentation
+that is useful to call Q<SMALL>UANTUM </SMALL>ESPRESSO programs from external codes; directory
+<TT>LR_Modules/</TT> contains source files for modules that are common
+to all linear-response codes.
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html213"
+  HREF="node9.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html209"
+  HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html203"
+  HREF="node7.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html211"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html214"
+  HREF="node9.html">2.2 Prerequisites</A>
+<B> Up:</B> <A NAME="tex2html210"
+  HREF="node7.html">2 Installation</A>
+<B> Previous:</B> <A NAME="tex2html204"
+  HREF="node7.html">2 Installation</A>
+ &nbsp; <B>  <A NAME="tex2html212"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+Filippo Spiga
+2016-10-04
+</ADDRESS>
+</BODY>
+</HTML>

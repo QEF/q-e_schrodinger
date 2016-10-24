@@ -1,0 +1,29 @@
+\contentsline {section}{\numberline {1}Introduction}{2}
+\contentsline {subsection}{\numberline {1.1}Who needs to generate a pseudopotential?}{2}
+\contentsline {subsection}{\numberline {1.2}About similar work}{3}
+\contentsline {subsection}{\numberline {1.3}Pseudopotential generation, in general}{3}
+\contentsline {section}{\numberline {2}Step-by-step Pseudopotential generation}{4}
+\contentsline {subsection}{\numberline {2.1}Choosing the generation parameters}{4}
+\contentsline {subsubsection}{\numberline {2.1.1}Exchange-correlation functional}{4}
+\contentsline {subsubsection}{\numberline {2.1.2}Valence-core partition}{5}
+\contentsline {subsubsection}{\numberline {2.1.3}Electronic reference configuration}{5}
+\contentsline {subsubsection}{\numberline {2.1.4}Nonlinear core correction}{7}
+\contentsline {subsection}{\numberline {2.2}Type of pseudization}{7}
+\contentsline {subsubsection}{\numberline {2.2.1}Pseudization energies}{8}
+\contentsline {subsubsection}{\numberline {2.2.2}Pseudization radii}{8}
+\contentsline {subsubsection}{\numberline {2.2.3}Choosing the local potential}{9}
+\contentsline {subsection}{\numberline {2.3}Generating the pseudopotential}{10}
+\contentsline {subsection}{\numberline {2.4}Checking for transferability}{10}
+\contentsline {section}{\numberline {3}A worked example: Ti}{11}
+\contentsline {subsection}{\numberline {3.1}Single-projector, norm-conserving, no semicore}{12}
+\contentsline {subsubsection}{\numberline {3.1.1}Generation}{12}
+\contentsline {subsubsection}{\numberline {3.1.2}Testing}{16}
+\contentsline {subsection}{\numberline {3.2}Single-projector, norm-conserving, with semicore states}{20}
+\contentsline {subsection}{\numberline {3.3}Testing in molecules and solids}{23}
+\contentsline {section}{\numberline {A}Atomic Calculations}{23}
+\contentsline {subsection}{\numberline {A.1}Nonrelativistic case}{23}
+\contentsline {subsubsection}{\numberline {A.1.1}Useful formulae}{24}
+\contentsline {subsection}{\numberline {A.2}Fully relativistic case}{24}
+\contentsline {subsection}{\numberline {A.3}Scalar-relativistic case}{24}
+\contentsline {subsection}{\numberline {A.4}Numerical solution}{25}
+\contentsline {section}{\numberline {B}Equations for the Troullier-Martins method}{26}

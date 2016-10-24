@@ -1,0 +1,197 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>User's Guide for Quantum-ESPRESSO</TITLE>
+<META NAME="description" CONTENT="User's Guide for Quantum-ESPRESSO">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node1.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html4"
+  HREF="node1.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up_g.png"> 
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev_g.png"> 
+<A NAME="tex2html2"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html5"
+  HREF="node1.html">Contents</A>
+ &nbsp; <B>  <A NAME="tex2html3"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<P>
+
+<P>
+<H1 ALIGN="CENTER">
+   
+<BR>  <FONT SIZE="+4">User's Guide for 
+<BR>
+Q<SMALL>UANTUM </SMALL>ESPRESSO (v.6.0)
+</FONT></H1>
+<DIV>
+
+</DIV>
+
+<P>
+<BR><HR>
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"></A>
+
+<UL>
+<LI><A NAME="tex2html6"
+  HREF="node1.html">Contents</A>
+<LI><A NAME="tex2html7"
+  HREF="node2.html">1 Introduction</A>
+<UL>
+<LI><A NAME="tex2html8"
+  HREF="node3.html">1.1 People</A>
+<LI><A NAME="tex2html9"
+  HREF="node4.html">1.2 Contacts</A>
+<LI><A NAME="tex2html10"
+  HREF="node5.html">1.3 Guidelines for posting to the mailing list</A>
+<LI><A NAME="tex2html11"
+  HREF="node6.html">1.4 Terms of use</A>
+</UL>
+<BR>
+<LI><A NAME="tex2html12"
+  HREF="node7.html">2 Installation</A>
+<UL>
+<LI><A NAME="tex2html13"
+  HREF="node8.html">2.1 Download</A>
+<LI><A NAME="tex2html14"
+  HREF="node9.html">2.2 Prerequisites</A>
+<LI><A NAME="tex2html15"
+  HREF="node10.html">2.3 <TT>configure</TT></A>
+<UL>
+<LI><A NAME="tex2html16"
+  HREF="node10.html#SECTION00033100000000000000">2.3.1 Manual configuration</A>
+</UL>
+<LI><A NAME="tex2html17"
+  HREF="node11.html">2.4 Libraries</A>
+<UL>
+<LI><A NAME="tex2html18"
+  HREF="node11.html#SECTION00034010000000000000">2.4.0.1 BLAS and LAPACK</A>
+<LI><A NAME="tex2html19"
+  HREF="node11.html#SECTION00034020000000000000">2.4.0.2 FFT</A>
+<LI><A NAME="tex2html20"
+  HREF="node11.html#SECTION00034030000000000000">2.4.0.3 MPI libraries</A>
+<LI><A NAME="tex2html21"
+  HREF="node11.html#SECTION00034040000000000000">2.4.0.4 Other libraries</A>
+<LI><A NAME="tex2html22"
+  HREF="node11.html#SECTION00034050000000000000">2.4.0.5 If optimized libraries are not found</A>
+</UL>
+<LI><A NAME="tex2html23"
+  HREF="node12.html">2.5 Compilation</A>
+<LI><A NAME="tex2html24"
+  HREF="node13.html">2.6 Running tests and examples</A>
+<LI><A NAME="tex2html25"
+  HREF="node14.html">2.7 Installation tricks and problems</A>
+<UL>
+<LI><A NAME="tex2html26"
+  HREF="node14.html#SECTION00037100000000000000">2.7.1 All architectures</A>
+<LI><A NAME="tex2html27"
+  HREF="node14.html#SECTION00037200000000000000">2.7.2 Intel Xeon Phi</A>
+<LI><A NAME="tex2html28"
+  HREF="node14.html#SECTION00037300000000000000">2.7.3 Cray machines</A>
+<LI><A NAME="tex2html29"
+  HREF="node14.html#SECTION00037400000000000000">2.7.4 IBM AIX</A>
+<LI><A NAME="tex2html30"
+  HREF="node14.html#SECTION00037500000000000000">2.7.5 IBM BlueGene</A>
+<LI><A NAME="tex2html31"
+  HREF="node14.html#SECTION00037600000000000000">2.7.6 Linux PC</A>
+<UL>
+<LI><A NAME="tex2html32"
+  HREF="node14.html#SECTION00037610000000000000">2.7.6.1 Linux PCs with gfortran</A>
+<LI><A NAME="tex2html33"
+  HREF="node14.html#SECTION00037620000000000000">2.7.6.2 Linux PCs with g95</A>
+<LI><A NAME="tex2html34"
+  HREF="node14.html#SECTION00037630000000000000">2.7.6.3 Linux PCs with Pathscale compiler</A>
+<LI><A NAME="tex2html35"
+  HREF="node14.html#SECTION00037640000000000000">2.7.6.4 Linux PCs with Sun Studio compiler</A>
+<LI><A NAME="tex2html36"
+  HREF="node14.html#SECTION00037650000000000000">2.7.6.5 Linux PCs with AMD Open64 suite</A>
+<LI><A NAME="tex2html37"
+  HREF="node14.html#SECTION00037660000000000000">2.7.6.6 Linux PCs with Intel compiler (ifort)</A>
+<LI><A NAME="tex2html38"
+  HREF="node14.html#SECTION00037670000000000000">2.7.6.7 Linux PCs with MKL libraries</A>
+<LI><A NAME="tex2html39"
+  HREF="node14.html#SECTION00037680000000000000">2.7.6.8 Linux PCs with ACML libraries</A>
+</UL>
+<LI><A NAME="tex2html40"
+  HREF="node14.html#SECTION00037700000000000000">2.7.7 Linux PC clusters with MPI</A>
+<LI><A NAME="tex2html41"
+  HREF="node14.html#SECTION00037800000000000000">2.7.8 Mac OS</A>
+<UL>
+<LI><A NAME="tex2html42"
+  HREF="node14.html#SECTION00037810000000000000">2.7.8.1 Detailed installation instructions for Mac OS X 10.6</A>
+<LI><A NAME="tex2html43"
+  HREF="node14.html#SECTION00037820000000000000">2.7.8.2 Compilation with GNU compilers</A>
+<LI><A NAME="tex2html44"
+  HREF="node14.html#SECTION00037830000000000000">2.7.8.3 Compilation with Intel compilers</A>
+</UL>
+</UL>
+</UL>
+<BR>
+<LI><A NAME="tex2html45"
+  HREF="node15.html">3 Parallelism</A>
+<UL>
+<LI><A NAME="tex2html46"
+  HREF="node16.html">3.1 Understanding Parallelism</A>
+<LI><A NAME="tex2html47"
+  HREF="node17.html">3.2 Running on parallel machines</A>
+<LI><A NAME="tex2html48"
+  HREF="node18.html">3.3 Parallelization levels</A>
+<UL>
+<LI><A NAME="tex2html49"
+  HREF="node18.html#SECTION00043010000000000000">3.3.0.1 About communications</A>
+<LI><A NAME="tex2html50"
+  HREF="node18.html#SECTION00043020000000000000">3.3.0.2 Choosing parameters</A>
+<LI><A NAME="tex2html51"
+  HREF="node18.html#SECTION00043030000000000000">3.3.0.3 Massively parallel calculations</A>
+<LI><A NAME="tex2html52"
+  HREF="node18.html#SECTION00043100000000000000">3.3.1 Understanding parallel I/O</A>
+</UL>
+<LI><A NAME="tex2html53"
+  HREF="node19.html">3.4 Tricks and problems</A>
+<UL>
+<LI><A NAME="tex2html54"
+  HREF="node19.html#SECTION00044010000000000000">3.4.0.1 Trouble with input files</A>
+<LI><A NAME="tex2html55"
+  HREF="node19.html#SECTION00044020000000000000">3.4.0.2 Trouble with MKL and MPI parallelization</A>
+<LI><A NAME="tex2html56"
+  HREF="node19.html#SECTION00044030000000000000">3.4.0.3 Trouble with compilers and MPI libraries</A>
+</UL>
+</UL>
+<BR>
+<LI><A NAME="tex2html57"
+  HREF="node20.html">About this document ...</A>
+</UL>
+<!--End of Table of Child-Links-->
+<BR><HR>
+<ADDRESS>
+Filippo Spiga
+2016-10-04
+</ADDRESS>
+</BODY>
+</HTML>

@@ -1,0 +1,3373 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Developer's Manual for Quantum-ESPRESSO</TITLE>
+<META NAME="description" CONTENT="Developer's Manual for Quantum-ESPRESSO">
+<META NAME="keywords" CONTENT="developer_man">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="developer_man.css">
+
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<IMG WIDTH="81" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next_inactive" SRC="nx_grp_g.png"> 
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up_g.png"> 
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev_g.png">   
+<BR>
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H1 ALIGN="CENTER">
+   
+<BR>  <FONT SIZE="+4">Developer's Manual for 
+<BR>
+Q<SMALL>UANTUM </SMALL>ESPRESSO (v.6.0)
+</FONT></H1>
+<DIV>
+
+</DIV>
+
+<P>
+<BR>
+
+<H2><A NAME="SECTION00010000000000000000">
+Contents</A>
+</H2>
+<!--Table of Contents-->
+
+<UL>
+<LI><A NAME="tex2html55"
+  HREF="developer_man.html#SECTION00020000000000000000">1 Introduction</A>
+<LI><A NAME="tex2html56"
+  HREF="developer_man.html#SECTION00030000000000000000">2 QUANTUM ESPRESSO as a distribution</A>
+<LI><A NAME="tex2html57"
+  HREF="developer_man.html#SECTION00040000000000000000">3 How to become a developer</A>
+<LI><A NAME="tex2html58"
+  HREF="developer_man.html#SECTION00050000000000000000">4 Stable releases and development cycle</A>
+<LI><A NAME="tex2html59"
+  HREF="developer_man.html#SECTION00060000000000000000">5 Structure of the distribution</A>
+<LI><A NAME="tex2html60"
+  HREF="developer_man.html#SECTION00070000000000000000">6 Algorithms</A>
+<LI><A NAME="tex2html61"
+  HREF="developer_man.html#SECTION00080000000000000000">7 Format of arrays containing charge density, potential, etc.</A>
+<LI><A NAME="tex2html62"
+  HREF="developer_man.html#SECTION00090000000000000000">8 Parallelization (MPI)</A>
+<LI><A NAME="tex2html63"
+  HREF="developer_man.html#SECTION000100000000000000000">9 File Formats</A>
+<LI><A NAME="tex2html64"
+  HREF="developer_man.html#SECTION000110000000000000000">10 Modifying/adding/extending QUANTUM ESPRESSO</A>
+<LI><A NAME="tex2html65"
+  HREF="developer_man.html#SECTION000120000000000000000">11 Using SVN</A>
+<LI><A NAME="tex2html66"
+  HREF="developer_man.html#SECTION000130000000000000000">12 Using git</A>
+<LI><A NAME="tex2html67"
+  HREF="developer_man.html#SECTION000140000000000000000">13 Bibliography</A>
+<LI><A NAME="tex2html68"
+  HREF="developer_man.html#SECTION000150000000000000000">About this document ...</A>
+</UL>
+<!--End of Table of Contents-->
+<P>
+
+<P>
+
+<H1><A NAME="SECTION00020000000000000000">
+1 Introduction</A>
+</H1>
+
+<P>
+
+<H2><A NAME="SECTION00021000000000000000">
+1.1 Who should read (and who should <EM>write</EM>) this guide</A>
+</H2>
+
+<P>
+The intended audience of this guide is everybody who wants to:
+
+<UL>
+<LI>know how Q<SMALL>UANTUM </SMALL>ESPRESSO works internally;
+</LI>
+<LI>modify/customize/add/extend/improve/clean up Q<SMALL>UANTUM </SMALL>ESPRESSO;
+</LI>
+<LI>know how to read and use data produced by Q<SMALL>UANTUM </SMALL>ESPRESSO.
+</LI>
+</UL>
+The same category of people should also <EM>write</EM> this guide, of course.
+
+<P>
+
+<H2><A NAME="SECTION00022000000000000000">
+1.2 Who may read this guide but will not necessarily profit from it</A>
+</H2>
+
+<P>
+People who want to know about the capabilities of Q<SMALL>UANTUM </SMALL>ESPRESSO,
+or who want just to use it, should read the User Guide
+instead of (or in addition to) this guide. In addition
+to the general User Guide, there are also package-specific
+guides.
+
+<P>
+People who want to know about the methods or the physics
+behind Q<SMALL>UANTUM </SMALL>ESPRESSO should read first the relevant
+literature (some pointers in the User Guide).
+
+<P>
+
+<H2><A NAME="SECTION00023000000000000000">
+1.3 How to contribute to Q<SMALL>UANTUM </SMALL>ESPRESSO as a user</A>
+</H2>
+
+<P>
+You can contribute to a better Q<SMALL>UANTUM </SMALL>ESPRESSO, even as an ordinary user, by:
+
+<UL>
+<LI>Answering other people's questions on the mailing list (correct
+  answers are strongly preferred to wrong ones).
+</LI>
+<LI>Porting to new/unsupported architectures or configurations: see
+  Sect. <A HREF="#SubSec:Inst">5.1</A>, "Installation mechanism". You should
+  not need to add new preprocessing flags, but if you do,
+  see Sect. <A HREF="#SubSec:CPP">5.1.1</A>, "Preprocessing".
+</LI>
+<LI>Pointing out bugs in the software and in the documentation
+  (reports of real bugs are strongly preferred to reports of
+  nonexistent bugs). See Sect. <A HREF="#SubSec:Bugs">3.5</A>, "Guidelines
+  for reporting bugs".
+</LI>
+<LI>Improving the documentation (generic complaints or suggestions
+  that "there should be this and that" do not qualify as improvements).
+</LI>
+<LI>Suggesting changes: contact developers at
+  <TT>q-e-developers[.at.]qe-forge[.dot.]org</TT> mailing list,
+  Unless there are technical reasons not to follow your suggestion,
+  we will try to make you happy. Note however that suggestions requiring
+  a significant amount of work are welcome only if accompanied by
+  implementation or by a promise of future implementation (fulfilled
+  promises are strongly preferred to forgotten ones).
+</LI>
+<LI>Adding new features to the code: see Sect.<A HREF="#SubSec:BeDev">3</A>,
+  "How to become a developer", in particular Sect.<A HREF="#SubSec:Contrib">3.3</A>,
+  "Contributing new developments".
+</LI>
+</UL>
+
+<P>
+
+<P>
+
+<H1><A NAME="SECTION00030000000000000000">
+2 Q<SMALL>UANTUM </SMALL>ESPRESSO as a distribution</A>
+</H1>
+
+<P>
+Q<SMALL>UANTUM </SMALL>ESPRESSO is not organized as a monolithic code, but rather as a
+<EM>distribution</EM> (integrated suite) of ``packages'', with
+varying degrees of integration, that can be installed on demand,
+or sometimes independently. There is a ``shell'' structure,
+with at the center the <EM>core</EM> distribution, including
+
+<UL>
+<LI>scripts, installation tools, libraries, common source files;
+</LI>
+<LI>basic packages
+
+<UL>
+<LI><TT>PWscf</TT>: self-consistent calculations, structural optimization,
+molecular dynamics on the ground state;
+</LI>
+<LI><TT>CP</TT>: Car-Parrinello molecular dynamics;
+</LI>
+<LI><TT>PostProc</TT>: data analysis and plotting (requires <TT>PWscf</TT>).
+</LI>
+</UL>
+</LI>
+</UL>
+Note that some libraries are downloaded on demand from the web
+during the installation of the core distribution. Then comes a
+shell of <EM>additional</EM> packages, that can be downloaded and
+installed from the core distribution using <TT>make</TT>:
+
+<UL>
+<LI><TT>atomic</TT>: pseudopotential generation
+</LI>
+<LI><TT>PHonon</TT>: Density-Functional Perturbation Theory
+</LI>
+<LI><TT>NEB</TT>: reaction pathways and energy barriers
+</LI>
+<LI><TT>PWCOND</TT>: ballistic conductance
+</LI>
+<LI><TT>XSPECTRA</TT>: calculation of X-Ray spectra
+</LI>
+<LI><TT>TDDFPT</TT>: Time-dependent DFPT
+</LI>
+<LI><TT>EPW</TT>: electron-phonon
+</LI>
+<LI><TT>GIPAW</TT>: NMR coefficients and chemical shifts
+</LI>
+<LI><TT>GWL</TT>: GW and BSE using Lanczos chains
+</LI>
+<LI><TT>West</TT>: Many-body perturbation corrections to DFT.
+</LI>
+</UL>
+All these packages use routines from the core distribution. Note that
+
+<UL>
+<LI><TT>EPW</TT> and <TT>GWL</TT> require <TT>PHonon</TT>;
+</LI>
+<LI><TT>GWL</TT> is not automatically downloaded in the released version;
+</LI>
+<LI><TT>GIPAW</TT> and <TT>West</TT> are stored in separate SVN repositories.
+</LI>
+</UL>
+
+<P>
+There is then a shell of <EM>external</EM> packages, which typically
+read data produced by Q<SMALL>UANTUM </SMALL>ESPRESSO but do not need it to work. Some of them
+(notably Yambo, Wannier90, WanT) can be automatically downloaded and
+installed from the core distribution using <TT>make</TT>.
+
+<P>
+Finally there are <EM>plugins</EM>: these modify Q<SMALL>UANTUM </SMALL>ESPRESSO packages, adding
+new functionalities. Currently the following plugins are available:
+
+<UL>
+<LI><TT>Plumed</TT>,  v.1.3 only, for metadynamics;
+</LI>
+<LI><TT>Environ</TT>, for calculations with a solvent.
+</LI>
+</UL>
+
+<P>
+
+<H1><A NAME="SECTION00040000000000000000"></A>
+<A NAME="SubSec:BeDev"></A>
+<BR>
+3 How to become a developer
+</H1>
+
+<P>
+If you want to get involved as a developer and contribute serious
+or nontrivial stuff (or even simple and trivial stuff), you should
+first of all register on <TT>qe-forge.org</TT>, following the instructions.
+
+<P>
+
+<H2><A NAME="SECTION00041000000000000000"></A>
+<A NAME="SubSec:qeforge"></A>
+<BR>
+3.1 About <TT>qe-forge.org</TT>
+</H2>
+
+<P>
+<EM>Important notice: <TT>qe-forge.org</TT> will be upgraded in the next months
+with new hardware and software. Some of the following pieces of
+information may become obsolete.</EM>
+
+<P>
+<TT>qe-forge.org</TT> is the portal for Q<SMALL>UANTUM </SMALL>ESPRESSO developers, contributors,
+and for anybody else wanting to develop a project in the
+field of atomistic simulations. <TT>qe-forge.org</TT> provides for
+each project a repository, mailing lists, a wiki, upload
+space, a bug tracking facility, various other tools that
+are useful for developers.
+
+<P>
+Once you have obtained an account (<EM>please</EM> follow the
+instructions and introduce yourself when you register: the
+site administrator has to be sure that you are a real person!)
+you may open your own project, retaining all rights on it
+(including the right not to release anything): at the end of
+the "projects" page, click on the link "add new project", fill
+the form (note that the Unix name given to the project cannot
+be modified). You have the choice between a repository using
+CVS, SVN, <TT>git</TT>, others. Please don't even think using CVS
+(obsolete), prefer <TT>git</TT> (it is easier to move the
+repository).
+
+<P>
+You may as well register as a developer
+in an existing project: go to the project page, click on
+button ''Request to become a developer'' under the ''Activity''
+graph on the top of the column at the right, to obtain the permission
+from the administrator of the project (please contact the
+project administratior by mail!).
+
+<P>
+You need to register your SSH keys in order to have read-write
+access the repository (if you have such permissions). Generate
+keys on your work machine if you haven't already, using command
+<TT>ssh-keygen -t rsa</TT>. The keys are typically found
+ in file <TT>.ssh/id-rsa.public</TT>. Then
+
+<OL>
+<LI>login to your <TT>qe-forge.org</TT> account
+</LI>
+<LI>click on My stuff (menu on top line)
+</LI>
+<LI>click on My account (menu on the left)
+</LI>
+<LI>click on Edit SSH Keys, add your keys (be careful not to add blanks,
+breaks, etc.).
+</LI>
+</OL>
+
+<P>
+
+<H2><A NAME="SECTION00042000000000000000">
+3.2 Q<SMALL>UANTUM </SMALL>ESPRESSO on <TT>qe-forge.org</TT></A>
+</H2>
+
+<P>
+Currently Q<SMALL>UANTUM </SMALL>ESPRESSO uses the following development tools:
+
+<UL>
+<LI>SVN server (with web interface to browse the repository)
+</LI>
+<LI>Bug Tracking facility
+</LI>
+<LI>Upload space (with download counter)
+</LI>
+<LI>Mailing lists, currently
+
+<UL>
+<LI><TT>pw_forum</TT> (high traffic): for ordinary users,
+requests for help, problems, discussions, etc.. Only
+registered users can post.
+</LI>
+<LI><TT>q-e-developers</TT> (low traffic):
+for communications among developers and people interested
+in the development of Q<SMALL>UANTUM </SMALL>ESPRESSO. Only registered users can post
+but messages from unregistered users are monitored and
+approved if relevant.
+</LI>
+<LI><TT>q-e-commits</TT> (medium traffic): for automatic
+commit messages. Note that replies to commit messages go
+to the mailing list: in case of doubts or questions or
+remarks over a specific commit, feel free to reply.
+</LI>
+</UL>
+</LI>
+</UL>
+Everybody is encouraged to explore other capabilities of <TT>qe-forge.org</TT>.
+
+<P>
+All Q<SMALL>UANTUM </SMALL>ESPRESSO developer are <EM>strongly</EM> invited to subscribe to the
+two mailing lists <TT>q-e-developers</TT> and <TT>q-e-commits</TT>.
+Those who don't, lose i) the opportunity to follow what is going on,
+ii) the right to complain if something has gone into a direction
+they don't like. Note that subscription to mailing lists is not
+automatic when you register: you should subscribe using the links
+in <TT>http://www.qe-forge.org/gf/project/q-e/mailman/</TT>.
+Please also consider subscribing to the bug tracker: select the
+"Tracker" item on the left, then select "Bugs", then click on
+"Start monitoring". You will receive an e-mail every time a
+bug is filed.
+
+<P>
+
+<H2><A NAME="SECTION00043000000000000000"></A>
+<A NAME="SubSec:Contrib"></A>
+<BR>
+3.3 Contributing new developments
+</H2>
+
+<P>
+Various procedures can be followed to contribute new developments.
+It is possible to contribute:
+
+<UL>
+<LI>a small, or large, piece of code to an existing package; or
+</LI>
+<LI>a new package that uses Q<SMALL>UANTUM </SMALL>ESPRESSO as a library; or
+</LI>
+<LI>a ``plugin'' that modifies Q<SMALL>UANTUM </SMALL>ESPRESSO, adding a new functionality; or
+</LI>
+<LI>a new ``external'' package that just reads data file produced by QE.
+</LI>
+</UL>
+The ideal procedure depends upon the kind of project you have in mind.
+
+<P>
+As a rule: if you plan to release your work in the public release, you
+should always keep your work aligned to the current development version
+of Q<SMALL>UANTUM </SMALL>ESPRESSO. This is especially important if your project
+
+<UL>
+<LI>involves major or extensive or even small but critical or numerous
+  changes to existing Q<SMALL>UANTUM </SMALL>ESPRESSO routines,
+</LI>
+<LI>makes usage of existing (modified or unmodified) Q<SMALL>UANTUM </SMALL>ESPRESSO routines.
+</LI>
+</UL>
+Modifying the latest stable version is not a good idea. Modifying
+an <EM>old</EM> stable version is an <EM>even worse idea</EM>. New code
+based on old versions will invariably be obsolete after a few months,
+<EM>very</EM> obsolete after a few years. Experience shows that new projects
+may take a long time before reaching a public release, and that the
+major stumbling block is the alignment to the newer Q<SMALL>UANTUM </SMALL>ESPRESSO distribution.
+
+<P>
+The sole exception is when your changes are either relatively small, or
+localized to a small part of Q<SMALL>UANTUM </SMALL>ESPRESSO, or they are quite independent anyway
+from the rest of Q<SMALL>UANTUM </SMALL>ESPRESSO. In that case, you can just send a patch or the
+modified routine(s) to an expert developer who will review it and
+take the appropriate steps.
+
+<P>
+<EM>Notice:</EM> the development model of Q<SMALL>UANTUM </SMALL>ESPRESSO has undergone
+significant changes between releases 5.3 and 5.4. Since v.5.4, only
+package maintainers and a few expert developers are allowed to commit
+into the main ("trunk") SVN repository. Only ``safe'' changes can be
+committed: the repository should always be at or close to production
+status. SVN branches are discouraged: experience shows that too many
+branches are never merged.
+
+<P>
+Due to various <TT>qe-forge.org</TT>limitations and a change in access policy, 
+anonymous SVN access is also disabled. People who need to regularly access 
+to a development version may use the link to the "Daily Snapshot" 
+on the www.quantum-espresso.org web site.
+
+<P>
+People who need to stay aligned to the development of Q<SMALL>UANTUM </SMALL>ESPRESSObut they do not 
+contribute directly into the code can use a mirrored version of the repository 
+done using <TT>git</TT>, available on <TT>qe-forge.org</TT>. Please apply for an account on 
+the portal if you haven't one (see Sect.<A HREF="#SubSec:qeforge">3.1</A> for details) then 
+contact support[.at.]qe-forge.org for authorization (remember to explain  what 
+you need and why). Once the access is set, tadd a public SSH key on QE-FORGE and 
+then check out the repository using this command:
+<PRE>
+   git clone ssh://username@qeforge.qe-forge.org/gitroot/q-e-private
+</PRE>
+
+<P>
+This repository is only for pull operation and it is "one-way" repository,
+meaning it is kept automatically aligned by a script with the SVN repository.
+Committing into this GIT mirror does not produce a commit in the SVN. See 
+Sect.<A HREF="#Sec:git">12</A>, ``Using git'', for more instructions on how to 
+use <TT>git</TT>.
+<BR>
+<P>
+If your project involves a major new addition (e.g. a new package), 
+consider registering it as a new <TT>qe-forge.org</TT>project, with a separate 
+SVN or (better) <TT>git</TT> repository. It is possible to keep the 
+project private, or to restrict access to selected Q<SMALL>UANTUM </SMALL>ESPRESSOdevelopers.
+<BR>
+<P>
+<EM>Important:</EM> if you closely develop to Q<SMALL>UANTUM </SMALL>ESPRESSOthen keep your copy of the 
+distribution aligned to the SVN. Don't work for years, or even for months, 
+without keeping an eye to what is going on in the SVN or in the mirrored GIT 
+repository. This is especially true for projects that are ``tightly bound'' 
+to Q<SMALL>UANTUM </SMALL>ESPRESSO, that is, use Q<SMALL>UANTUM </SMALL>ESPRESSO code and routines. Frequently update your copy 
+(using command <TT>svn update</TT> or <TT>git pull</TT>), verify if changes 
+made meanwhile by other developers conflict with your changes.
+Conflicts are in most cases easy to solve: see Sect. <A HREF="#SubSec:Conflicts">11.2</A> 
+for hints on how to remove conflicts and on how to figure out what went wrong.
+
+<P>
+If instead your project is ``loosely coupled'', that is, it just uses the
+Q<SMALL>UANTUM </SMALL>ESPRESSO installation procedure and/or data files, it is less likely to run
+into problems, since major incompatible changes are quite rare.
+You may still need to verify from time to time that everything keeps
+working. though.
+
+<P>
+
+<H2><A NAME="SECTION00044000000000000000">
+3.4 Hints, Caveats, Do's and Dont's for developers</A>
+</H2>
+
+<P>
+
+<UL>
+<LI>Before doing anything, inquire whether it is already there,
+or under development. In particular, check (and update) the "Road Map"
+page <TT>www.quantum-espresso.org/road-map</TT>, send a message to
+<TT>q-e-developers</TT>.
+</LI>
+<LI>Before starting writing code, inquire whether you can reuse
+code that is already available in the distribution. Avoid redundancy:
+<EM>the only bug-free software line is the one that doesn't exist</EM>
+(citation adapted from Henry Ford).
+</LI>
+<LI>When you make some changes:
+
+<UL>
+<LI>Check that are not spoiling other people's work. In particular,
+search the distribution for codes using the routine or module you are
+modifying and change its usage or its calling arguments everywhere.
+Use the commit message to notify all developers if you introduce any
+``dangerous'' change (i.e. susceptible to break some features or
+packages, including external packages using Q<SMALL>UANTUM </SMALL>ESPRESSO).
+</LI>
+<LI>Do not forget that your changes must work on many different
+combinations of hardware and software, in both serial and parallel execution.
+</LI>
+<LI>Do not forget that your changes must work for a wide variety of
+different case: if you implement something that works only in some
+selected cases, that's ok, as long as the code stops (or at least,
+issues a warning) in all other cases. There is something worse than
+no results: wrong results.
+</LI>
+<LI>Do not forget that your changes must work on systems of wildly
+different computational size: a piece of code that works fine for
+crystal silicon may gobble a disproportionate amount of time and/or
+memory in a 1000-atom cell.
+</LI>
+</UL>
+</LI>
+<LI>Document your contributions:
+
+<UL>
+<LI>If you modify what a code can do, or introduce
+incompatibilities with previous versions (e.g. old data file
+no longer readable, old input no longer valid), <EM>please</EM>
+report it in file <TT>Doc/release-notes</TT>.
+</LI>
+<LI>If you add/modify/remove input variables, document
+it in the appropriate
+<TT>INPUT_*.def</TT> file; if
+you remove an input variable, update tests and examples
+accordingly.
+</LI>
+<LI>All newly introduced features or variables must be
+accompanied by an example or a test or both (either a
+new one or a modified existing test or example).
+</LI>
+</UL>
+</LI>
+<LI>Please do not include files (any kind, including
+pseudopotential files) with DOS ^M characters or
+tabulators ^I.
+</LI>
+<LI>When you modify the program sources, run the
+<TT>install/makedeps.sh</TT>  script  or type <TT>make depend</TT>
+to update files <TT>make.depend</TT> in the various
+subdirectories. These files are under SVN as well;
+if modified they should be committed.
+</LI>
+</UL>
+
+<P>
+
+<H2><A NAME="SECTION00045000000000000000">
+3.5 Guidelines for reporting bugs</A>
+</H2>
+
+<P>
+<A NAME="SubSec:Bugs"></A>
+<UL>
+<LI>Before deciding that a problem is due to a bug in the codes,
+verify if it is reproducible on different machines/architectures/phases
+of the moon: erratic or irreproducible problems, especially in parallel
+execution, are often an indication of buggy compilers or libraries
+</LI>
+<LI>Bug reports should preferably be filed using the bug tracking
+facility at <TT>qe-forge.org</TT>:
+<BR><TT>http://qe-forge.org/gf/project/q-e/tracker</TT>
+</LI>
+<LI>Bug reports should include enough information to be reproduced:
+the error message alone is seldom a sufficient piece of information.
+Typically, one should report
+
+<UL>
+<LI>version number, hardware/software combination(s) for which
+     the problem arises
+</LI>
+<LI>whether it happens in serial or parallel execution or both
+(if in parallel only, how executed),
+</LI>
+<LI>an output for a test case showing the presumed bug
+</LI>
+<LI>all the needed info and data to re-run the test case showing
+the bug
+</LI>
+</UL>
+The provided input should be simple and quick to execute.
+</LI>
+<LI>If a bug is found in a stable (released) version of Q<SMALL>UANTUM </SMALL>ESPRESSO,
+  he/she who fixes it must report it in the <TT>Doc/release-notes</TT>
+  file.
+</LI>
+</UL>
+
+<P>
+
+<H1><A NAME="SECTION00050000000000000000">
+4 Stable releases and development cycle</A>
+</H1>
+Stable releases (until v.5.4) are labelled as <I>N</I>.<I>M</I>.<I>p</I>, where <I>N</I>=major,
+<I>M</I>=minor, <I>p</I>=bugfix. The logic goes more or less as follows:
+
+<UL>
+<LI><EM>Major</EM>: when something really important changes, e.g.
+<DL COMPACT>
+<DT>v.1</DT>
+<DD>First public release of PWscf
+</DD>
+<DT>v.2</DT>
+<DD>Conversion from f77 to f90
+</DD>
+<DT>v.3</DT>
+<DD>Merge with the CP and FPMD codes (beginning of Q<SMALL>UANTUM </SMALL>ESPRESSO)
+</DD>
+<DT>v.4</DT>
+<DD>New XML-based data file format
+</DD>
+<DT>v.5</DT>
+<DD>Major package and directory reorganization
+</DD>
+</DL>
+(the above numbers are a slightly idealized versions of how things have
+gone until now)
+</LI>
+<LI><EM>Minor</EM>: when some important new functionality is being added
+</LI>
+<LI><EM>Bugfix</EM>: only bug fixes; occasionally, minor new functionalities
+that don't break any existing ones are allowed to sneak into a bugfix release.
+</LI>
+</UL>
+It may be convenient to make a SVN branch at release <I>N</I>.<I>M</I>.0: this allows
+to go on with the development while keeping track of bug fixes.
+
+<P>
+Since release 5.2 (June 20, 2015), stable release are packaged at
+fixed dates. The initial schedule is a release every three to four months.
+Since v.5.4 bugfix releases are no longer packaged.
+
+<P>
+Releases are stored to <TT>qe-forge.org</TT>. Given the size of the complete distribution,
+the release is split into a ``core'' distribution and ``add-ons'',
+additional packages, that can be downloaded and installed on demand
+from the core distribution. ``External'' packages can be independently
+released, as long as there is no compatibility problem.
+
+<P>
+The automatic downloading of packages is implemented in file
+<TT>install/plugins_makefile</TT> and configured in file
+<TT>install/plugins_list</TT>. For independently released packages,
+it is sufficient to update links. For add-ons packages, not contained
+in the core distribution, there is however a catch-22:
+the core distribution must know the link to all packages it downloads,
+but these are known only <EM>after</EM> such packages are uploaded to
+<TT>qe-forge.org</TT> (and the only way to discover the exact link is to go over
+the released package with the mouse).
+The workaround is that the core distribution looks for generic names,
+written in file <TT>install/plugins_list</TT>. These names are translated
+by <TT>qe-forge.org</TT> into specific names. After all packages have been uploaded,
+file <TT>/var/lib/gforge/archives/index.php</TT>, residing on <TT>qe-forge.org</TT>,
+must be edited and links updated. This requires system privileges on
+the machine hosting <TT>qe-forge.org</TT>.
+
+<P>
+
+<H4><A NAME="SECTION00050010000000000000">
+4.0.0.1 Preparing a release</A>
+</H4>
+When the release date approaches, development of new stuff is temporarily
+stopped: nothing new or potentially ''dangerous'' is added, and all
+attention is dedicated to fix bugs and to stabilize the distribution.
+This manual and the user manual have to be updated.
+
+<P>
+Edit the script <TT>dev-tools/release.sh</TT> to make tarballs.
+
+<P>
+
+<H4><A NAME="SECTION00050020000000000000">
+4.0.0.2 Updating web site</A>
+</H4> After the release is uploaded to
+<TT>qe-forge.org</TT>, the online documentation must be copied to directory
+<TT>/var/www/quantum_wp_db/wordpress-3.1.4/wp-content/uploads/Doc</TT>
+on the web site (this requires system privileges on the machine hosting
+the web server).
+
+<P>
+
+<H1><A NAME="SECTION00060000000000000000">
+5 Structure of the distribution</A>
+</H1>
+
+<P>
+Since v.5, the directory structure of Q<SMALL>UANTUM </SMALL>ESPRESSO reflects its organization
+into packages. Each package is stored into a specific subdirectory.
+In addition, there is a set of directories, common to all packages,
+containing common code,
+libraries, installation utilities, general documentation.
+
+<P>
+Common files and directories in the <TT>espresso/</TT> directory are:
+<PRE>
+   install/                 configure
+   include/                 make.inc
+   archive/                 Makefile
+   dev-tools/               License
+   pseudo/                  README
+   Doc/                     environment_variables
+   clib/                    bin/
+   Modules/                 LR_Modules/
+   COUPLE/                  upftools/
+</PRE>
+Apart from  <TT>License</TT> and <TT>README</TT> whose meaning is
+obvious, the other files and directories are related to
+
+<UL>
+<LI><EM>Installation</EM> (i.e. compilation and linking):
+<BR><TT>install/</TT>, <TT>dev-tools/</TT>, <TT>archive/</TT>,
+<TT>configure</TT>, .inc
+</LI>
+<LI><EM>Testing</EM> (running tests and examples):
+<BR><TT>pseudo/</TT>, <TT>environment_variables</TT>
+</LI>
+<LI><EM>General documentation</EM> (not package-specific):
+<TT>Doc/</TT>
+</LI>
+<LI><EM>C and Fortran Libraries, modules</EM>:
+<TT>clib/</TT>, <TT>Modules/</TT>, <TT>COUPLE/</TT>
+(the latter contains code and documentation useful to call Q<SMALL>UANTUM </SMALL>ESPRESSO programs
+ from external codes)
+</LI>
+<LI><EM>Linear-response specific modules</EM>:
+<TT>LR_Modules/</TT>.
+</LI>
+</UL>
+
+<P>
+The core distribution also  contains the three package-specific directories
+<TT>PW/</TT>, <TT>PP/</TT>, <TT>CPV/</TT>, for
+ <TT>PWscf</TT>, <TT>PostProc</TT>, <TT>CP</TT>, respectively.
+Typical subdirectory structure of a directory containing a package
+(e.g. <TT>PW/</TT>):
+<PRE>
+   Makefile
+   examples/
+   tests/
+   Doc/
+   src/
+</PRE>
+Note that:
+
+<UL>
+<LI><TT>tests/</TT> contains automated post-installation tests
+(only in <TT>PW/</TT> and <TT>CPV/</TT>) while <TT>examples/</TT>
+are not suitable for automated checks;
+</LI>
+<LI>other packages may have a slightly different structure (in
+particular, <TT>PHonon</TT> has three directories for sources
+and none is called <TT>src/</TT> ).
+</LI>
+</UL>
+
+<P>
+
+<H2><A NAME="SECTION00061000000000000000">
+5.1 Installation Mechanism</A>
+</H2>
+
+<P>
+<A NAME="SubSec:Inst"></A>Let us review the files related to compilation and linking:
+<DL COMPACT>
+<DT>-</DT>
+<DD><TT>install/</TT>: documentation and utilities for compilation
+and linking
+</DD>
+<DT>-</DT>
+<DD><TT>configure</TT>: wrapper for <TT>install/configure</TT> script
+</DD>
+<DT>-</DT>
+<DD>.inc: produced by <TT>configure</TT>, contains
+machine-specific compilation and linking options
+</DD>
+<DT>-</DT>
+<DD><TT>Makefile</TT>: contains dependencies and targets used by
+command <TT>make</TT>.
+</DD>
+<DT>-</DT>
+<DD><TT>include/</TT>: files to be included into sources, to be
+pre-processed.
+</DD>
+</DL>
+<TT>./configure</TT> <EM>options</EM> cleans executbales,
+runs <TT>install/configure</TT>, produces file .inc.
+See Sec.<A HREF="#SubSec:conf">5.1.2</A> for some details on how to change the
+behavior of <TT>configure</TT>.
+
+<P>
+<TT>make</TT> <EM>target</EM> checks for dependencies, recursively goes
+into subdirectories executing <TT>make</TT> again. The behavior of
+<TT>make</TT> is thus
+determined by many <TT>Makefile</TT>'s in the various directories. The
+most important files are <TT>Makefile</TT>'s in the directories containing
+sources, e.g. <TT>Modules/Makefile</TT>, <TT>PW/src/Makefile</TT>.
+
+<P>
+Dependencies of Fortran files are contained in <TT>make.depend</TT> files
+in each source directory. These files <EM>must be updated</EM> if you change
+the sources, running script <TT>install/makedeps.sh</TT> or using command
+<TT>make depend</TT>.
+
+<P>
+
+<H4><A NAME="SECTION00061010000000000000">
+5.1.0.1 make.inc</A>
+</H4>
+This file is produced by <TT>configure</TT> using the template in
+<TT>install/make.inc.in</TT> and contains all system-specific
+information on
+
+<UL>
+<LI>C and Fortran compilers name, pre-processing and compilation options
+</LI>
+<LI>whether the Fortran compiler performs C-style preprocessing or not
+</LI>
+<LI>whether compiling for parallel or serial execution
+</LI>
+<LI>available optimized mathematical libraries, libraries to be downloaded
+</LI>
+<LI>Miscellanous stuff
+</LI>
+</UL>
+The .inc file is included into all <TT>Makefile</TT>'s,
+using the corresponding syntax. The best documentation for the
+.inc file is the file itself. Note that if you want to
+change something or to add more documentation into this file,
+you may need to modify the template file <TT>install/make.inc.in</TT>.
+
+<P>
+
+<H4><A NAME="SECTION00061020000000000000">
+5.1.0.2 Makefile</A>
+</H4>
+The top-level <TT>Makefile</TT> contains the instructions to download,
+unpack, compile and link what is required. Sample contents
+(comments in italic):
+<PRE>
+include make.inc
+</PRE>
+<EM>Contains machine- and Q<SMALL>UANTUM </SMALL>ESPRESSO-specific definitions</EM>
+<PRE>
+default :
+   @echo 'to install, type at the shell prompt:'
+   ...
+</PRE>
+<EM>If no target specified, ask for one, giving a list of possibilities</EM>
+<PRE>
+pw : bindir mods liblapack libblas libs libiotk libenviron
+    if test -d PW ; then \
+    ( cd PW ; $(MAKE) TLDEPS= all || exit 1) ; fi
+</PRE>
+<EM>Target <TT>pw</TT>: first check the list of dependencies <TT>bindir
+mods ...</TT> etc., do what is needed; then go into <TT>PW/</TT> and give command
+<TT>make all</TT>. Note the use of <TT>exit 1</TT>, which is required to forward
+the exit status of the sub-directory make to this makefile, since the section
+in parenthesis is run in a subshell and the <TT>if / fi</TT> block will otherwise
+``hide'' its the return status and make will continue in case of errors. </EM>
+<PRE>
+neb : bindir mods libs pw
+    ( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+</PRE>
+<EM>Target <TT>neb</TT>: do all of the above, then go into directory
+<TT>install/</TT> where <TT>make neb</TT> using <TT>plugins_makefile</TT>
+as Makefile will check if NEB is there, download from the network if not,
+compile and link it</EM>
+<PRE>
+libblas : touch-dummy
+     cd install ; $(MAKE) -f extlibs_makefile $@
+</PRE>
+<EM>Target <TT>libblas</TT>: this is an external library, that may or may
+not be needed, depending upon what is written in <TT>make.inc</TT>. If
+needed, go into directory <TT>install/</TT> where <TT>make libblas</TT> using
+<TT>extlibs_makefile</TT> as Makefile will check if BLAS are there, download
+from the network if not,
+compile and build the library</EM>
+
+<P>
+
+<H4><A NAME="SECTION00061030000000000000">
+5.1.0.3 PW/Makefile</A>
+</H4>
+Second-level <TT>Makefile</TT> contains only targets related to a given
+subdirectory or package. Sample contents:
+<PRE>
+sinclude ../make.inc
+default : all
+all: pw pwtools
+pw:
+    ( cd src ; $(MAKE) all || exit 1 )
+
+pwtools: pw
+    ( cd tools ; $(MAKE) all || exit 1 )
+
+...
+</PRE>
+<EM>Target <TT>pw</TT>: go into <TT>src/</TT> if it exists, and (apart
+from <TT>make</TT> wizardry) give command <TT>make pw</TT>. It is important
+to note that <TT>pwtools</TT> has to depend on <TT>pw</TT> or else this
+makefile will break when calling parallel make using <TT>make -j# </TT>
+Other targets are quite similar: go into a subdirectory, e.g.
+<TT>Doc/</TT> and '<TT>make</TT> something', e.g. <TT>make clean</TT>.</EM>
+
+<P>
+
+<H4><A NAME="SECTION00061040000000000000">
+5.1.0.4 PW/src/Makefile</A>
+</H4>
+The most important and most complex Makefile is the one in the
+source directory. It is also the one you need to modify if you
+add something.
+<PRE>
+include ../../make.inc
+</PRE>
+<EM>Contains machine- and Q<SMALL>UANTUM </SMALL>ESPRESSO-specific definitions</EM>
+<PRE>
+MODFLAGS= $(MOD_FLAG)../../iotk/src $(MOD_FLAG)../../Modules $(MOD_FLAG).\
+          $(MOD_FLAG)../../FFTXlib $(MOD_FLAG)../../LAXlib
+</PRE>
+<EM>Location of needed modules; </EM><TT>MOD_FLAG</TT><EM> is defined in
+<TT>make.inc</TT></EM>
+<PRE>
+PWOBJS = \
+pwscf.o
+</PRE>
+<EM>Object file containing main program (this is actually redundant)</EM>
+<PRE>
+PWLIBS = \
+a2fmod.o \
+...
+wannier_enrg.o
+</PRE>
+<EM>List of objects - add here new objects, or delete from this list. Do not
+forget the backslash! It ensure continuation of the line</EM>
+<PRE>
+QEMODS=../../Modules/libqemod.a ../../FFTXlib/libqefft.a ../../LAXlib/libqela.a
+</PRE>
+<EM>Objects from </EM><TT>Modules/</TT><EM> are available from the above archive.
+The directory where F95 modules are must also be specified to the compiler!</EM>
+<PRE>
+TLDEPS=bindir mods libs liblapack libblas libenviron
+</PRE>
+<EM>TLDEPS=Top-Level DEPendencieS: a machinery to ensure proper
+compilation with correct dependencies also if compiling from inside
+a package directory and not from top level</EM>
+<PRE>
+LIBOBJS = ../../clib/clib.a   ../../iotk/src/libiotk.a
+</PRE>
+<EM>All needed QE-specific libraries</EM>
+<PRE>
+all : tldeps pw.x generate_vdW_kernel_table.x
+</PRE>
+<EM>Targets that will be build - add here new executables</EM>
+<PRE>
+pw.x : $(PWOBJS) libpw.a $(LIBOBJS) $(QEMODS)
+     $(LD) $(LDFLAGS) -o $@ \
+     $(PWOBJS) libpw.a $(QEMODS) $(LIBOBJS) $(LIBS)
+   - ( cd ../../bin; ln -fs ../PW/src/$@ . )
+</PRE>
+<EM>Target <TT>pw.x</TT> - produces executable with the same name.
+It also produces a link to the executable in <TT>espresso/bin/</TT>.
+Do not forget tabulators even if you do not see them!
+All variables (introduced by $) are either defined locally
+in <TT>Makefile</TT> or imported from <TT>make.inc</TT></EM>
+<PRE>
+libpw.a : $(PWLIBS)
+        $(AR) $(ARFLAGS) $@ $?
+        $(RANLIB) $@
+</PRE>
+<EM>This builds the library libpw.a - again, do not forget tabulators</EM>
+<PRE>
+tldeps:
+       test -n "$(TLDEPS)" &amp;&amp; ( cd ../.. ;
+       $(MAKE) $(TLDEPS) || exit 1) || :
+</PRE>
+<EM>second part of the TLDEPS machinery</EM>
+<PRE>
+clean :
+    - /bin/rm -f *.x *.o *.a *~ *.F90 *.d *.mod *.i *.L
+</PRE>
+<EM>There should always be a ''clean'' target, removing all compiled (*.o)
+or preprocessed (*.F90) stuff - compiled F95 modules may have different
+filenames: the four last items cover most cases</EM>
+<PRE>
+include make.depend
+</PRE>
+<EM>Contains dependencies of objects upon other objects. Sample
+content of file <TT>make.depend</TT> (can be produced by <TT>install/makedep.sh</TT>):</EM>
+<PRE>
+a2fmod.o : ../../Modules/io_global.o
+a2fmod.o : ../../Modules/ions_base.o
+a2fmod.o : ../../Modules/kind.o
+a2fmod.o : pwcom.o
+a2fmod.o : start_k.o
+a2fmod.o : symm_base.o
+</PRE>
+<EM>tells us that the listed objects must have been compiled
+prior to compilation of a2fmod.o - <TT>make</TT> will take care of this.</EM>
+
+<P>
+<B>BEWARE:</B> the Makefile system is in a stable but delicate equilibrium,
+resulting from many years of experiments on many different machines.
+Handle with care: what works for you may break other cases.
+
+<P>
+
+<H3><A NAME="SECTION00061100000000000000">
+5.1.1 Preprocessing</A>
+</H3>
+
+<P>
+<A NAME="SubSec:CPP"></A>Fortran-95 source code contains preprocessing option with
+the same syntax used by the C preprocessor <TT>cpp</TT>.
+Most F95 compilers understand preprocessing options <TT>-D ...</TT>
+or some similar form. Some compilers however do not support
+or do not implement properly preprocessing. In this case the
+preprocessing is done using <TT>cpp</TT>.
+Normally, <TT>configure</TT> takes care of this, by selecting the
+appropriate rule <TT>@f90rule@</TT> below, in this section
+of file <TT>make.inc.in</TT>:
+<PRE>
+.f90.o:
+	@f90rule@
+</PRE>
+and producing the appropriate file .inc.
+
+<P>
+Preprocessing is useful to
+
+<UL>
+<LI>account for machine dependency in a unified source tree
+</LI>
+<LI>distinguish between parallel and serial execution when they
+follow different paths (i.e. there is a substantial difference between
+serial execution and parallel execution on a single processor)
+</LI>
+<LI>introduce experimental or special-purpose stuff
+</LI>
+</UL>
+Use with care and <EM>only when needed</EM>. See file
+<TT>include/defs.README</TT> for a list of preprocessing
+options. Please <EM>keep that list updated</EM>.
+
+<P>
+<EM>Note:</EM> <TT>include/f_defs.h</TT> is obsolete and
+must not be used any longer.
+
+<P>
+The following capabilities of the C preprocessor are used:
+
+<UL>
+<LI>assign a value to a given expression. For instance, command
+  <TT>#define THIS that</TT>, or the option in the command line:
+  <TT>-DTHIS=that</TT>, will replace all occurrences of <TT>THIS</TT>
+  with <TT>that</TT>.
+</LI>
+<LI>include file (command <TT>#include</TT>)
+</LI>
+<LI>expand macros (command <TT>#define</TT>)
+</LI>
+<LI>execute conditional expressions such as
+<PRE>
+  #if defined (__expression)
+    ...code A...
+  #else
+    ...code B...
+  #endif
+</PRE>
+If <TT>__expression</TT> is defined (with a <TT>#define</TT> command
+or from the command line with option <TT>-D__expression</TT>),
+then  <TT>...code A...</TT> is sent to output; otherwise
+<TT>...code B...</TT> is sent to output.
+
+<P>
+</LI>
+</UL>
+In order to make  preprocessing options
+easy to see, preprocessing variables should start with
+two underscores, as <TT>__expression</TT> in the above
+example. Traditionally ''preprocessed'' variables are also written in
+uppercase. Please use <code>#if defined (XXX)</code>, not
+<code>#if defined XXX</code> or <code>#ifdef XXX</code>.
+
+<P>
+
+<H3><A NAME="SECTION00061200000000000000">
+5.1.2 How to edit the <TT>configure</TT> script</A>
+</H3>
+
+<P>
+<A NAME="SubSec:conf"></A>The <TT>configure</TT> script is generated from its source file
+<TT>configure.ac</TT> by the GNU <TT>autoconf</TT> utility
+(<TT>http://www.gnu.org/software/autoconf/</TT>).  Don't edit <TT>configure</TT> directly: whenever it gets regenerated, your changes will be lost.
+Instead, go to the <TT>install/</TT> directory, edit <TT>configure.ac</TT> and/or
+files <TT>install/mt/*.m4</TT>, then run <TT>autoconf</TT> to regenerate <TT>configure</TT>.
+If you want to keep the old <TT>configure</TT>, make a copy first.
+
+<P>
+GNU <TT>autoconf</TT> is installed by default on most Unix/Linux systems.  If
+you don't have it on your system, you'll have to install it. You will
+need a recent version (e.g. v.2.65) of <TT>autoconf</TT>, because our
+<TT>configure.ac</TT> file uses recent syntax.
+
+<P>
+<TT>configure.ac</TT> is a regular Bourne shell script (i.e., "sh" - not csh!),
+except that:
+<DL COMPACT>
+<DT>-</DT>
+<DD>capitalized names starting with "AC_" are <TT>autoconf</TT>   macros.  Normally you shouldn't have to touch them.
+</DD>
+<DT>-</DT>
+<DD>square brackets are normally removed by the macro processor.
+  If you need a square bracket (that should be very rare), you'll have
+  to write two.
+</DD>
+</DL>
+
+<P>
+You may refer to the GNU <TT>autoconf</TT> Manual for more info.
+
+<P>
+<TT>make.inc.in</TT> is the source file for .inc, that
+<TT>configure</TT> generates: you might want to edit that file as well.
+The generation procedure is as follows: if <TT>configure.ac</TT> contains the macro
+"AC_SUBST(name)", then every occurrence of "@name@" in the source
+file will be substituted with the value of the shell variable "name"
+at the point where AC_SUBST was called.
+
+<P>
+Similarly, <TT>configure.msg</TT> is generated from <TT>configure.msg.in</TT>: this
+file is only used by <TT>configure</TT> to print its final report, and isn't
+needed for the compilation.  We did it this way so that our
+<TT>configure</TT> may also be used by other projects, just by replacing the
+Q<SMALL>UANTUM </SMALL>ESPRESSO-specific <TT>configure.msg.in</TT> by your own.
+
+<P>
+<TT>configure</TT> writes a detailed log of its operation to <TT>config.log</TT>.
+When any configuration step fails, you may look there for the relevant
+error messages.  Note that it is normal for some checks to fail.
+
+<P>
+
+<H3><A NAME="SECTION00061300000000000000">
+5.1.3 How to add support for a new architecture</A>
+</H3>
+
+<P>
+In order to support a previously unsupported architecture, first you
+have to figure out which compilers, compilation flags, libraries
+etc. should be used on that architecture.
+In other words, you have to write a .inc that works: you may use
+the manual configuration procedure for that (see the
+User Guide).  Then, you have to modify <TT>configure</TT> so that it can
+generate that .inc automatically.
+
+<P>
+To do that, you have to add the case for your architecture in several
+places throughout <TT>configure.ac</TT>:
+
+<OL>
+<LI>Detect architecture
+
+<P>
+Look for these lines:
+<PRE>
+  if test "$arch" = ""
+  then
+          case $host in
+                  ia64-*-linux-gnu )      arch=ia64   ;;
+                  x86_64-*-linux-gnu )    arch=x86_64 ;;
+                  *-pc-linux-gnu )        arch=ia32   ;;
+                  etc.
+</PRE>
+Here you must add an entry corresponding to your architecture and
+operating system.  Run <TT>config.guess</TT> to obtain the string identifying
+your system.
+For instance on a PC it may be "i686-pc-linux-gnu", while on IBM SP4
+"powerpc-ibm-aix5.1.0.0".  It is convenient to put some asterisks to
+account for small variations of the string for different machines of
+the same family.  For instance, it could be "aix4.3" instead of
+"aix5.1", or "athlon" instead of "i686"...
+
+<P>
+</LI>
+<LI>Select compilers
+
+<P>
+Look for these lines:
+
+<P>
+<PRE>
+  # candidate compilers and flags based on architecture
+  case $arch in
+  ia64 | x86_64 )
+        ...
+  ia32 )
+        ...
+  aix )
+        ...
+  etc.
+</PRE>
+
+<P>
+Add an entry for your value of $arch, and set there the appropriate
+values for several variables, if needed (all variables are assigned
+some reasonable default value, defined before the "case" block):
+
+<P>
+- "try_f90" should contain the list of candidate Fortran 90 compilers,
+in order of decreasing preference (i.e. configure will use the first
+it finds).  If your system has parallel compilers, you should list
+them in "try_mpif90".
+
+<P>
+- "try_ar", "try_arflags": for these, the values "ar" and "ruv" should
+be always fine, unless some special flag is required (e.g., -X64
+With sp4).
+
+<P>
+- you should define "try_dflags" if there is any preprocessing
+option specific to your machine: for instance, on IBM machines,
+"try_dflags=-D__AIX" . A list of such flags can be found in file
+<TT>include/defs.h.README</TT>.
+
+<P>
+You shouldn't need to define the following:
+- "try_iflags" should be set to the appropriate "-I" option(s)
+needed by the preprocessor or by the compiler to locate *.h files
+to be included; try_iflags="-I../include" should be good for most cases
+
+<P>
+For example, here's the entry for IBM machines running AIX:
+<PRE>
+   aix )
+        try_mpif90="mpxlf90_r mpxlf90"
+        try_f90="xlf90_r xlf90 $try_f90"
+        try_arflags="-X64 ruv"
+        try_arflags_dynamic="-X64 ruv"
+        try_dflags="-D__AIX -D__XLF"
+        ;;
+</PRE>
+The following step is to look for both serial and parallel fortran
+compilers:
+<PRE>
+  # check serial Fortran 90 compiler...
+  ...
+  AC_PROG_F77($f90)
+  ...
+        # check parallel Fortran 90 compiler
+  ...
+        AC_PROG_F77($mpif90)
+  ...
+  echo setting F90... $f90
+  echo setting MPIF90... $mpif90
+</PRE>
+A few compilers require some extra work here: for instance, if the
+Intel Fortran compiler was selected, you need to know which version
+because different versions need different flags.
+
+<P>
+At the end of the test,
+
+<P>
+- $mpif90 is the parallel compiler, if any; if no parallel compiler
+  is found or if <TT>-disable-parallel</TT> was specified, $mpif90
+  is the serial compiler
+
+<P>
+- $f90 is the serial compiler
+
+<P>
+Next step: the choice of (serial) C and Fortran 77 compilers.
+Look for these lines:
+<PRE>
+  # candidate C and f77 compilers good for all cases
+  try_cc="cc gcc"
+  try_f77="$f90"
+
+  case "$arch:$f90" in
+  *:f90 )
+        ....
+  etc.
+</PRE>
+Here you have to add an entry for your architecture, and since the
+correct choice of C and f77 compilers may depend on the fortran-90
+compiler, you may need to specify the f90 compiler as well.
+Again, specify the compilers in try_cc and try_f77 in order of
+decreasing preference.  At the end of the test,
+
+<P>
+- $cc is the C compiler
+
+<P>
+- $f77 is the Fortran 77 compiler, used to compile *.f files
+(may coincide with $f90)
+
+<P>
+</LI>
+<LI>Specify compilation flags.
+
+<P>
+Look for these lines:
+<PRE>
+  # check Fortran compiler flags
+  ...
+  case "$arch:$f90" in
+  ia64:ifort* | x86_64:ifort* )
+        ...
+  ia64:ifc* )
+        ...
+  etc.
+</PRE>
+Add an entry for your case and define:
+
+<P>
+- "try_fflags": flags for Fortran 77 compiler.
+
+<P>
+- "try_f90flags": flags for Fortran 90 compiler.
+In most cases they will be the same as in Fortran 77 plus some
+others.  In that case, define them as "$(FFLAGS) -something_else".
+
+<P>
+- "try_fflags_noopt": flags for Fortran 77 with all optimizations
+turned off: this is usually "-O0".
+These flags used to be needed to compile flib/dlamch.f; likely obsolete
+
+<P>
+- "try_ldflags": flags for the linking phase (not including the list
+of libraries: this is decided later).
+
+<P>
+- "try_ldflags_static": additional flags to select static compilation
+(i.e., don't use shared libraries).
+
+<P>
+- "try_dflags": must be defined if there is in the code any preprocessing
+option specific to your compiler (for instance, -D__INTEL for Intel
+compilers).  Define it as "$try_dflags -D..." so that pre-existing
+flags, if any, are preserved.
+
+<P>
+- if the Fortran 90 compiler is not able to invoke the C preprocessor
+automatically before compiling, set "have_cpp=0" (the opposite case
+is the default). The appropriate compilation rules will be generated
+accordingly. If the compiler requires that any flags be specified in
+order to invoke the preprocessor (for example, "-fpp " - note the
+space), specify them in "pre_fdflags".
+
+<P>
+For example, here's the entry for ifort on Linux PC:
+<PRE>
+  ia32:ifort* )
+          try_fflags="-O2 -tpp6 -assume byterecl"
+          try_f90flags="\$(FFLAGS) -nomodule"
+          try_fflags_noopt="-O0 -assume byterecl"
+          try_ldflags=""
+          try_ldflags_static="-static"
+          try_dflags="$try_dflags -D__INTEL"
+          pre_fdflags="-fpp "
+          ;;
+</PRE>
+Next step: flags for the C compiler. Look for these lines:
+<PRE>
+  case "$arch:$cc" in
+  *:icc )
+        ...
+  *:pgcc )
+        ...
+  etc.
+</PRE>
+Add an entry for your case and define:
+
+<P>
+- "try_cflags": flags for C compiler.
+
+<P>
+- "c_ldflags": flags for linking, when using the C compiler as linker.
+This is needed to check for libraries written in C, such as FFTW.
+
+<P>
+- if you need a different preprocessor from the standard one ($CC -E),
+define it in "try_cpp".
+
+<P>
+For example for XLC on AIX:
+<PRE>
+  aix:mpcc* | aix:xlc* | aix:cc )
+          try_cflags="-q64 -O2"
+          c_ldflags="-q64"
+          ;;
+</PRE>
+Finally, if you have to use a nonstandard preprocessor, look for these
+lines:
+<PRE>
+  echo $ECHO_N "setting CPPFLAGS... $ECHO_C"
+  case $cpp in
+        cpp) try_cppflags="-P -traditional" ;;
+        fpp) try_cppflags="-P"              ;;
+        ...
+</PRE>
+and set "try_cppflags" as appropriate.
+
+<P>
+</LI>
+<LI>Search for libraries
+
+<P>
+To instruct <TT>configure</TT> to search for libraries, you must tell it two
+things: the names of libraries it should search for, and where it
+should search.
+
+<P>
+The following libraries are searched for:
+
+<P>
+- BLAS or equivalent.
+Some vendor replacements for BLAS that are supported by Q<SMALL>UANTUM </SMALL>ESPRESSO are:
+<BLOCKQUOTE>
+MKL on Linux, 32- and 64-bit Intel CPUs
+<BR>
+ACML on Linux, 64-bit AMD CPUs
+<BR>
+ESSL on AIX
+<BR>
+SCSL on sgi altix
+<BR>
+SUNperf on sparc
+
+</BLOCKQUOTE>
+Moreover, ATLAS is used over BLAS if available.
+
+<P>
+- LAPACK or equivalent. Some vendor replacements for LAPACK are supported
+  by Q<SMALL>UANTUM </SMALL>ESPRESSO, e.g.: Intel MKL, IBM ESSL
+
+<P>
+- FFTW (version 3) or another supported FFT library (e.g Intel DFTI,
+  IBM ESSL)
+
+<P>
+- the IBM MASS vector math library
+
+<P>
+- an MPI library. This is often automatically linked by the compiler
+
+<P>
+If you have another replacement for the above libraries, you'll have
+to insert a new entry in the appropriate place.
+
+<P>
+This is unfortunately a little bit too complex to explain.
+Basic info: 
+<BR>"AC_SEARCH_LIBS(function, name, ...)" looks for symbol
+"function" in library "libname.a".  If that is found, "-lname" is
+appended to the LIBS environment variable (initially empty).
+The real thing is more complicated than just that because the
+"-Ldirectory" option must be added to search in a nonstandard
+directory, and because a given library may require other libraries as
+prerequisites (for example, Lapack requires BLAS).
+</LI>
+</OL>
+
+<P>
+
+<H2><A NAME="SECTION00062000000000000000">
+5.2 Libraries</A>
+</H2>
+
+<P>
+Subdirectory <TT>clib/</TT> contains libraries written in C
+(<TT>*.c</TT>). There are currently two different ways to
+ensure that fortran can call C routines. The new and recommanded
+way uses the fortran-95 intrinsic <TT>iso_c_binding</TT> module.
+See <TT>Modules/wrappers.f90</TT> for inspiration and examples.
+Reference documentation can be found for instance here:
+<BR><TT>https://gcc.gnu.org/onlinedocs/gfortran/Interoperable-Subroutines-and-Functions.html</TT>
+
+<P>
+The old way uses macros in C routines:
+
+<OL>
+<LI><TT>F77_FUNC (func,FUNC)</TT> for function <TT>func</TT>, not
+  containing underscore(s) in name
+</LI>
+<LI><TT>F77_FUNC_(f_nc,F_NC)</TT> for function <TT>f_nc</TT>,
+  containing underscore(s) in name
+</LI>
+</OL>
+These macros are defined in file <TT>include/c_defs.h</TT>,
+included by all <TT>*.c</TT> files, and are automagically
+generated by <TT>configure</TT>. The goal of these macros is to
+choose the correct case (lowercase or uppercase, the latter
+probably obsolete) and the correct number of underscores.
+See file <TT>include/defs.h.README</TT> for more info.
+
+<P>
+
+<H1><A NAME="SECTION00070000000000000000">
+6 Algorithms</A>
+</H1>
+
+<P>
+
+<H2><A NAME="SECTION00071000000000000000">
+6.1 <I>G</I> vectors and plane waves</A>
+</H2>
+
+<P>
+``<I>G</I> vectors are generated in the <TT>ggen</TT> subroutine in
+<TT>Modules/recvec_subs.f90</TT>. You may also have a look at routine
+<TT>PW/src/n_plane_waves.f90</TT> to understand how things work.
+In general, <I>G</I> vectors are determined by the condition
+
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+{ \hbar^2 G^2 \over 2m_e} \le E^\rho_c = 4 E^w_c
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<IMG
+ WIDTH="49" HEIGHT="69" ALIGN="MIDDLE" BORDER="0"
+ SRC="img2.png"
+ ALT="$\displaystyle {\hbar^2 G^2 \over 2m_e}$"><IMG
+ WIDTH="19" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img3.png"
+ ALT="$\displaystyle \le$"><I>E</I><SUP><IMG
+ WIDTH="12" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img4.png"
+ ALT="$\scriptstyle \rho$"></SUP><SUB>c</SUB> = 4<I>E</I><SUP>w</SUP><SUB>c</SUB>
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(1)</TD></TR>
+</TABLE>
+</DIV>
+(without the k point; the code always uses Rydberg atomic units unless
+otherwise specified). This is a sphere in reciprocal space centered
+around (0,0,0).
+
+<P>
+Concerning each orbital corresponding to a specific k point, you
+use the condition
+
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+{ \hbar^2 ({\bf k}+{\bf G})^2 \over 2m_e} \le E^w_c
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<IMG
+ WIDTH="100" HEIGHT="69" ALIGN="MIDDLE" BORDER="0"
+ SRC="img5.png"
+ ALT="$\displaystyle {\hbar^2 ({\bf k}+{\bf G})^2 \over 2m_e}$"><IMG
+ WIDTH="19" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img3.png"
+ ALT="$\displaystyle \le$"><I>E</I><SUP>w</SUP><SUB>c</SUB>
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(2)</TD></TR>
+</TABLE>
+</DIV>
+In this case the <I>G</I> vectors are a subset of the vectors used for the
+density and form a sphere in reciprocal space shifted from the origin.
+Depending on k you can have a different set of <I>G</I> vectors included
+in the sphere and also their number could differ.
+
+<P>
+In order to manage the <I>G</I> vectors for each <I>k</I>-point, you can use the arrays
+ngk (number of <I>G</I> vectors for each <I>k</I>-point) and igk_k (index of <I>G</I>
+corresponding to a given index of <I>k</I> + <I>G</I>; basically an index that allows
+you to identify the <I>G</I> vectors corresponding to a given <I>k</I> and order them).
+
+<P>
+For example the kinetic energy corresponding to a given <I>k</I>-point <TT>ik</TT>
+is
+<PRE>
+ g2kin(1:ngk(ik)) = ( ( xk(1,ik) + g(1,igk_k(1:ngk(ik),ik)) )**2 + &amp;
+                      ( xk(2,ik) + g(2,igk_k(1:ngk(ik),ik)) )**2 + &amp;
+                      ( xk(3,ik) + g(3,igk_k(1:ngk(ik),ik)) )**2 ) * tpiba2
+</PRE>
+where <TT>tpiba2</TT> <!-- MATH
+ $= (2\pi/a)^2$
+ -->
+= (2<IMG
+ WIDTH="16" HEIGHT="19" ALIGN="BOTTOM" BORDER="0"
+ SRC="img6.png"
+ ALT="$ \pi$">/<I>a</I>)<SUP>2</SUP>.
+
+<P>
+There is only one FFT for the wavefunctions so the grid does not depend
+upon the k-points; however, for a given wavefunction, only the components
+corresponding to a <I>G</I> vector that satisfy
+<!-- MATH
+ ${ \hbar^2 ({\bf k}+{\bf G})^2 / 2m_e} \le E^w_c$
+ -->
+<IMG
+ WIDTH="23" HEIGHT="43" ALIGN="MIDDLE" BORDER="0"
+ SRC="img7.png"
+ ALT="$ \hbar^{2}_{}$">(<IMG
+ WIDTH="16" HEIGHT="20" ALIGN="BOTTOM" BORDER="0"
+ SRC="img8.png"
+ ALT="$ \bf k$">+<IMG
+ WIDTH="22" HEIGHT="20" ALIGN="BOTTOM" BORDER="0"
+ SRC="img9.png"
+ ALT="$ \bf G$">)<SUP>2</SUP>/2<I>m</I><SUB>e</SUB><IMG
+ WIDTH="19" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img10.png"
+ ALT="$ \le$"><I>E</I><SUP>w</SUP><SUB>c</SUB>
+are different from 0'' (adapted from an answer by Dario Rocca).
+
+<P>
+
+<H2><A NAME="SECTION00072000000000000000">
+6.2 Gamma tricks</A>
+</H2>
+
+<P>
+In calculations using only the <IMG
+ WIDTH="16" HEIGHT="16" ALIGN="BOTTOM" BORDER="0"
+ SRC="img11.png"
+ ALT="$ \Gamma$"> point (k=0),
+the Kohn-Sham orbitals can be chosen to be real functions in
+real space, so that
+<!-- MATH
+ $\psi(G) = \psi^*(-G).$
+ -->
+<IMG
+ WIDTH="17" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img12.png"
+ ALT="$ \psi$">(<I>G</I>) = <IMG
+ WIDTH="25" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img13.png"
+ ALT="$ \psi^{*}_{}$">(- <I>G</I>).
+This allows us to store only half of the Fourier components.
+Moreover, two real FFTs can be performed as a single complex FFT.
+The auxiliary complex function <IMG
+ WIDTH="18" HEIGHT="16" ALIGN="BOTTOM" BORDER="0"
+ SRC="img14.png"
+ ALT="$ \Phi$"> is introduced:
+<!-- MATH
+ $\Phi(r) = \psi_j(r)+ i \psi_{j+1}(r)$
+ -->
+<IMG
+ WIDTH="18" HEIGHT="16" ALIGN="BOTTOM" BORDER="0"
+ SRC="img14.png"
+ ALT="$ \Phi$">(<I>r</I>) = <IMG
+ WIDTH="24" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img15.png"
+ ALT="$ \psi_{j}^{}$">(<I>r</I>) + <I>i</I><IMG
+ WIDTH="41" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img16.png"
+ ALT="$ \psi_{{j+1}}^{}$">(<I>r</I>)
+whose Fourier transform <IMG
+ WIDTH="18" HEIGHT="16" ALIGN="BOTTOM" BORDER="0"
+ SRC="img14.png"
+ ALT="$ \Phi$">(<I>G</I>) yields
+
+<P>
+<!-- MATH
+ $\psi_j    (G) =  {\Phi(G) + \Phi^*(-G)\over 2},
+   \psi_{j+1}(G) =  {\Phi(G) - \Phi^*(-G)\over 2i}.$
+ -->
+<IMG
+ WIDTH="24" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img15.png"
+ ALT="$ \psi_{j}^{}$">(<I>G</I>) = <IMG
+ WIDTH="98" HEIGHT="47" ALIGN="MIDDLE" BORDER="0"
+ SRC="img17.png"
+ ALT="$ {\Phi(G) + \Phi^*(-G)\over 2}$">,<IMG
+ WIDTH="41" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img16.png"
+ ALT="$ \psi_{{j+1}}^{}$">(<I>G</I>) = <IMG
+ WIDTH="98" HEIGHT="47" ALIGN="MIDDLE" BORDER="0"
+ SRC="img18.png"
+ ALT="$ {\Phi(G) - \Phi^*(-G)\over 2i}$">.
+
+<P>
+A side effect on parallelization is that <I>G</I> and - <I>G</I> must
+reside on the same processor. As a consequence, pairs of columns
+with <!-- MATH
+ $G_{n'_1,n'_2,n'_3}$
+ -->
+<I>G</I><SUB>n'<SUB>1</SUB>, n'<SUB>2</SUB>, n'<SUB>3</SUB></SUB> and <!-- MATH
+ $G_{-n'_1,-n'_2,n'_3}$
+ -->
+<I>G</I><SUB>-n'<SUB>1</SUB>,-n'<SUB>2</SUB>, n'<SUB>3</SUB></SUB>
+(with the exception of the case <!-- MATH
+ $n'_1=n'_2=0$
+ -->
+<I>n'</I><SUB>1</SUB> = <I>n'</I><SUB>2</SUB> = 0),
+must be assigned to the same processor.
+
+<P>
+
+<H2><A NAME="SECTION00073000000000000000">
+6.3 Restart</A>
+</H2>
+
+<P>
+The two main packages, <TT>PWscf</TT> and <TT>CP</TT>, support
+restarting from interrupted calculations, Restarting is trivial
+in <TT>CP</TT>: it is sufficient to save from time to time a
+restart file containing wavefunctions, orthogonality matrix,
+forces, atomic positions, at the current and previous time step.
+
+<P>
+Restarting is much more complicated in  <TT>PWscf</TT>. Since v.5.1.
+restarting from interrupted calculations is possible ONLY if the code
+has been explicitly stopped by user. It is not practical to try to
+restart from any possible case, such as e.g. crashes. This would
+imply saving lots of data all the time. With modern machines, this is
+not a good idea. Restart in  <TT>PWscf</TT> currently works as follows:
+
+<UL>
+<LI>Each loop calls <TT>check_stop_now</TT> just before the end.
+  If a user request to stop is found, create a small file
+  <TT>restart_*</TT>, containing only loop-specific local variables;
+  close and save files used by the loop if any; set variable
+  <TT>conv_elec</TT> to false; return
+</LI>
+<LI>After each routine containing a loop has been called, check if the code
+  was either stopped there or no convergence was achieved; if so, save
+  data (if needed) for the current loop as well, return.
+</LI>
+<LI>Return after return, exit all loops and go to main program, which must save
+  needed global variables to file. The only difference with normal exit is that
+  temporary files are kept, while files in portable format are not saved.
+</LI>
+<LI>if variable <TT>restart</TT> is set in input:
+  
+<UL>
+<LI>starting potential and wavefunctions are read from file
+</LI>
+<LI>each routine containing a loop checks for the existence of a
+    <TT>restart_*</TT> file before starting its loop
+  
+</LI>
+</UL>
+</LI>
+</UL>
+As of April 2013 only the electronic loop is organized ths way. Loops
+on nuclear positions will be organized in the same manner once their
+re-organization is completed. To be done:
+
+<UL>
+<LI>wg and et should be read from data file
+</LI>
+<LI>rho(+paw/U/metagga info) should be written to and read from
+  unformatted data file similar to the file used in <TT>mix_rho</TT>;
+  portable format should be written only at convergence.
+</LI>
+</UL>
+
+<P>
+
+<H1><A NAME="SECTION00080000000000000000">
+7 Format of arrays containing charge density, potential, etc.</A>
+</H1>
+The index of arrays used to store functions defined on 3D meshes is
+actually a shorthand for three indices, following the FORTRAN convention
+("leftmost index runs faster"). An example will explain this better.
+Suppose you have a 3D array <TT>psi(nr1x,nr2x,nr3x)</TT>. FORTRAN
+compilers store this array sequentially  in the computer RAM in the following way:
+<PRE>
+        psi(   1,   1,   1)
+        psi(   2,   1,   1)
+        ...
+        psi(nr1x,   1,   1)
+        psi(   1,   2,   1)
+        psi(   2,   2,   1)
+        ...
+        psi(nr1x,   2,   1)
+        ...
+        ...
+        psi(nr1x,nr2x,   1)
+        ...
+        psi(nr1x,nr2x,nr3x)
+etc
+</PRE>
+Let <TT>ind</TT> be the position of the <TT>(i,j,k)</TT> element in the above list:
+the following relation
+<PRE>
+        ind = i + (j - 1) * nr1x + (k - 1) *  nr2x * nr1x
+</PRE>
+holds. This should clarify the relation between 1D and 3D indexing. In real
+space, the <TT>(i,j,k)</TT> point of the FFT grid with dimensions
+<TT>nr1</TT> (<IMG
+ WIDTH="19" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img10.png"
+ ALT="$ \le$"><TT>nr1x</TT>),
+<TT>nr2</TT>  (<IMG
+ WIDTH="19" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img10.png"
+ ALT="$ \le$"><TT>nr2x</TT>), , <TT>nr3</TT> (<IMG
+ WIDTH="19" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img10.png"
+ ALT="$ \le$"><TT>nr3x</TT>), is
+<P><!-- MATH
+ \begin{displaymath}
+r_{ijk}=\frac{i-1}{nr1} \tau_1  +  \frac{j-1}{nr2} \tau_2 +
+\frac{k-1}{nr3} \tau_3
+\end{displaymath}
+ -->
+</P>
+<DIV ALIGN="CENTER">
+<I>r</I><SUB>ijk</SUB> = <IMG
+ WIDTH="48" HEIGHT="61" ALIGN="MIDDLE" BORDER="0"
+ SRC="img19.png"
+ ALT="$\displaystyle {\frac{{i-1}}{{nr1}}}$"><IMG
+ WIDTH="20" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img20.png"
+ ALT="$\displaystyle \tau_{1}^{}$"> + <IMG
+ WIDTH="50" HEIGHT="61" ALIGN="MIDDLE" BORDER="0"
+ SRC="img21.png"
+ ALT="$\displaystyle {\frac{{j-1}}{{nr2}}}$"><IMG
+ WIDTH="20" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img22.png"
+ ALT="$\displaystyle \tau_{2}^{}$"> + <IMG
+ WIDTH="52" HEIGHT="61" ALIGN="MIDDLE" BORDER="0"
+ SRC="img23.png"
+ ALT="$\displaystyle {\frac{{k-1}}{{nr3}}}$"><IMG
+ WIDTH="20" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img24.png"
+ ALT="$\displaystyle \tau_{3}^{}$">
+</DIV><P></P>
+where the <IMG
+ WIDTH="18" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img25.png"
+ ALT="$ \tau_{i}^{}$"> are the basis vectors of the Bravais lattice.
+The latter are stored row-wise in the <TT>at</TT> array:
+<IMG
+ WIDTH="20" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img26.png"
+ ALT="$ \tau_{1}^{}$"> = <TT>at(:, 1)</TT>,
+<IMG
+ WIDTH="20" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img27.png"
+ ALT="$ \tau_{2}^{}$"> = <TT>at(:, 2)</TT>,
+<IMG
+ WIDTH="20" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img28.png"
+ ALT="$ \tau_{3}^{}$"> = <TT>at(:, 3)</TT>.
+
+<P>
+The distinction between the dimensions of the FFT grid,
+<TT>(nr1,nr2,nr3)</TT> and the physical dimensions of the array,
+<TT>(nr1x,nr2x,nr3x)</TT> is done only because it is computationally
+convenient in some cases that the two sets are not the same.
+In particular, it is often convenient to have <TT>nrx1</TT>=<TT>nr1</TT>+1
+to reduce memory conflicts.
+
+<P>
+
+<H1><A NAME="SECTION00090000000000000000">
+8 Parallelization (MPI)</A>
+</H1>
+
+<P>
+In MPI parallelization, a number of independent processes are started
+on as many processors, communicating via calls to MPI libraries
+(the code will work even with more than one process per processor,
+but this is not a smart thing to do). Each process has its own
+set of variables and knows nothing about other processes' variables.
+Variables that take little memory are replicated on all processors,
+those that take a lot of memory (wavefunctions, G-vectors, R-space grid)
+are distributed.
+
+<P>
+
+<H2><A NAME="SECTION00091000000000000000">
+8.1 General rules</A>
+</H2>
+
+<P>
+Calls to MPI libraries should be confined to a few selected places,
+not scattered everywhere into the source code. The vast majority
+of parallel operations consist either in broadcasts from one processor
+to all others, or in global operations: parallel sums and transpose.
+All you need is the MPI communicator (plus the ID of the root processor
+for broadcasts), and the appropriate call to wrapper routines, contained
+in <TT>espresso/Modules/mp.f90</TT> and <TT>espresso/Modules/mp_base.f90</TT>.
+For instance: <TT>mp_sum</TT> is a wrapper to <TT>mpi_reduce</TT>,
+<TT>mp_bcast</TT> to <TT>mpi_bcast</TT>.
+
+<P>
+For efficiency reasons (latency is very significant), performing many
+parallel operations on a small amount of data each must be avoided.
+If you can, store a sizable amount of data and transmit it in a single
+MPI call. An example of REALLY BAD code:
+<PRE>
+   COMPLEX, ALLOCATABLE :: wfc(:,:), swfc(:,:)
+   ALLOCATE (wfc(npwx,m),swfc(npwx,m))
+   DO i=1,m
+      DO j=1,m
+         ps = zdotc(npw,wfc(1,i),1,swfc(1,j)1)
+         CALL mp_sum(ps,intra_bgrp_group)
+      END DO
+   END DO
+</PRE>
+MUCH better code, both for serial and parallel speed:
+<PRE>
+   COMPLEX, ALLOCATABLE :: ps(:,:), wfc(:,:), swfc(:,:)
+   ALLOCATE (ps(m,m), wfc(npwx,m),swfc(npwx,m))
+   CALL zgemm ('c', 'n', m, m, npw, (1.d0, 0.d0), wfc, &amp;
+               npwx, swfc, npwx, (0.d0, 0.d0), ps, m)
+   CALL mp_sum(ps,intra_bgrp_group)
+</PRE>
+
+<P>
+
+<H3><A NAME="SECTION00091100000000000000">
+8.1.1 Preprocessing for parallel usage</A>
+</H3>
+
+<P>
+Calls to MPI libraries require variables contained into a
+<TT>mpif.h</TT> file that is usually absent on serial machines.
+In order to prevent compilation problems on serial machines,
+the following rules <EM>must</EM> be followed:
+
+<UL>
+<LI>Direct calls to MPI library routines must be replaced by
+calls to wrapper routines like those in module <TT>mp.f90</TT>.
+If this is not possible or not convenient, use <code>\#if defined (__MPI)}</code>
+to prevent compilation and usage in the serial case. Note that
+some compilers do not like empty files or modules containing nothing!
+</LI>
+<LI>Wrapper routines do not need to be conditionally called:
+preprocessing is done inside them. Keep the difference between serial
+and parallel code to a minimum: <code>\#if defined (__MPI)}</code> are needed
+only when the flux of parallel and serial execution differ.
+</LI>
+<LI>Unneeded preprocessing may be removed if already present;
+preprocessing option <code>__PARA</code> is obsolete and must not be used.
+</LI>
+</UL>
+
+<P>
+
+<H2><A NAME="SECTION00092000000000000000">
+8.2 Parallelization levels and communicators</A>
+</H2>
+
+<P>
+<TT>mp_world.f90</TT> is the module containing all processors
+on which QE is running. <TT>world_comm</TT>
+is the communicator between all such processors. In QE, its usage
+should be confined to parallel environment initialization. It
+should not be used in source code, unless this is used only by
+stand-alone executables that perform simple auxiliary tasks
+and do not allow for  multiple parallelization levels.
+Unless QE is started from an external code, <TT>world_comm</TT>
+will in practice coincides with MPI_WORLD_COMM.
+
+<P>
+<TT>mp_image.f90</TT> is the module containing information about
+``image" parallelization, i.e. division into quasi-independent similar
+calculations, each taking care of a different set of atomic
+positions (NEB, PWscf) or of different irreps/phonon wavevectors
+(PHonon). <TT>intra_image_comm</TT> is the communicator between
+processors of the same image (most of the action will happen here);
+<TT>inter_image_comm</TT> is the communicator between processors
+belonging to different images (should be used only when communication
+between images is necessary).
+<TT>intra_image_comm</TT> and <TT>world_comm</TT> coincide if there
+is just one image running.
+
+<P>
+<TT>mp_pools.f90</TT> is the module containing information about k-point
+(``pool") parallelization. <TT>intra_pool_comm</TT> is the communicator
+between processors working on the same group (``pool") of k-points;
+<TT>inter_pool_comm</TT> is the communicator between different
+k-point pools. Note that:
+<BLOCKQUOTE>
+<!-- MATH
+ $\framebox{$\sum_{\bf k}\equiv$\  sum over local {\bf k}-points +
+{\tt mp\_sum} on {\tt inter \_pool\_comm}}$
+ -->
+<IMG
+ WIDTH="523" HEIGHT="28" ALIGN="BOTTOM" BORDER="0"
+ SRC="img29.png"
+ ALT="\framebox{$\sum_{\bf k}\equiv$\ sum over local {\bf k}-points +
+{\tt mp\_sum} on {\tt inter \_pool\_comm}}">
+</BLOCKQUOTE>
+<TT>intra_pool_comm</TT> and <TT>intra_image_comm</TT> coincide if there
+is just one k-point pool.
+
+<P>
+<TT>mp_bands.f90</TT> is the module containing information about band
+parallelization. <TT>intra_bgrp_comm</TT> is the communicator between
+processors of the same group of bands; <TT>inter_band_comm</TT> is the
+communicator between processors belonging to different groups of bands.
+Note that band parallelization is currently implemented only in CP and
+for hybrid functionals in PW. When a sum over all bands is needed:
+<BLOCKQUOTE>
+<!-- MATH
+ $\framebox{$\sum_i\equiv$\  sum over local bands + {\tt mp\_sum} on
+{\tt inter\_bgrp\_comm}}$
+ -->
+<IMG
+ WIDTH="489" HEIGHT="28" ALIGN="BOTTOM" BORDER="0"
+ SRC="img30.png"
+ ALT="\framebox{$\sum_i\equiv$\ sum over local bands + {\tt mp\_sum} on
+{\tt inter\_bgrp\_comm}}">
+</BLOCKQUOTE>
+<TT>intra_bgrp_comm</TT> and <TT>intra_pool_comm</TT> coincide
+if there is just one band group.
+
+<P>
+Plane waves (<!-- MATH
+ ${\bf k}+{\bf G}$
+ -->
+<IMG
+ WIDTH="16" HEIGHT="20" ALIGN="BOTTOM" BORDER="0"
+ SRC="img8.png"
+ ALT="$ \bf k$"> + <IMG
+ WIDTH="22" HEIGHT="20" ALIGN="BOTTOM" BORDER="0"
+ SRC="img9.png"
+ ALT="$ \bf G$"> or <IMG
+ WIDTH="22" HEIGHT="20" ALIGN="BOTTOM" BORDER="0"
+ SRC="img9.png"
+ ALT="$ \bf G$"> vectors up to the specified
+kinetic energy cutoff) are distributed across processors of the
+<TT>intra_bgrp_comm</TT> communicators. Sums over all plane waves
+or <B>G</B>-vectors (as e.g. in scalar products <!-- MATH
+ $\langle\phi_i|\phi_j\rangle$
+ -->
+<IMG
+ WIDTH="12" HEIGHT="39" ALIGN="MIDDLE" BORDER="0"
+ SRC="img31.png"
+ ALT="$ \langle$"><IMG
+ WIDTH="21" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img32.png"
+ ALT="$ \phi_{i}^{}$">|<IMG
+ WIDTH="23" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img33.png"
+ ALT="$ \phi_{j}^{}$"><IMG
+ WIDTH="12" HEIGHT="39" ALIGN="MIDDLE" BORDER="0"
+ SRC="img34.png"
+ ALT="$ \rangle$">)
+should be performed as follows:
+<BLOCKQUOTE>
+<!-- MATH
+ $\framebox{$\sum_{\bf G} \equiv$\  {\tt mp\_sum} on {\tt intra\_bgrp\_comm}}$
+ -->
+<IMG
+ WIDTH="298" HEIGHT="28" ALIGN="BOTTOM" BORDER="0"
+ SRC="img35.png"
+ ALT="\framebox{$\sum_{\bf G} \equiv$\ {\tt mp\_sum} on {\tt intra\_bgrp\_comm}}">
+</BLOCKQUOTE>
+The same holds for real-space FFT's grid.
+
+<P>
+
+<H2><A NAME="SECTION00093000000000000000">
+8.3 Tricks and pitfalls</A>
+</H2>
+
+<P>
+
+<UL>
+<LI>Replicated calculations may either be performed independently on
+each processor, or performed on one processor and broadcast to all
+others. The first approach requires less programming, but it is unsafe:
+in principle all processors should yield exactly the same results, if
+they work on the same data, but sometimes they don't (depending on the
+machine, compiler, and libraries). Even a tiny difference in the last
+significant digit can eventually cause serious trouble if allowed to
+ build up, especially when a replicated check is performed (in which
+case the code may ''hang'' if the check yields different results on
+different processors). Never assume that the value of a variable produced
+by replicated calculations is exactly the same on all processors: when in
+doubt, broadcast the value calculated on a specific processor (the ''root''
+processor) to all others.
+</LI>
+<LI>Routine <TT>errore</TT> should be called in parallel by all processors,
+or else it will hang
+</LI>
+<LI>I/O operations: file opening, closing, and so on, are as a rule performed
+only on processor <TT>ionode</TT>. The correct way to check for errors is
+the following:
+<PRE>
+IF ( ionode ) THEN
+   OPEN ( ..., IOSTAT=ierr )
+   ...
+END IF
+CALL mp_bcast( ierr, ... , intra_image_comm )
+CALL errore( 'routine','error', ierr )
+</PRE>
+The same applies to all operations performed on a single processor,
+or a subgroup of processors: any error code must be broadcast before
+the check.
+</LI>
+</UL>
+
+<P>
+
+<H2><A NAME="SECTION00094000000000000000">
+8.4 Data distribution</A>
+</H2>
+
+<P>
+Quantum ESPRESSO employ arrays whose memory requirements fall
+into three categories.
+
+<UL>
+<LI><EM>Fully Scalable</EM>:
+Arrays that are distributed across processors of a pool.
+Fully scalable arrays are typically large to very large and contain one
+of the following dimensions:
+
+<UL>
+<LI>number of plane waves, npw (or max number, npwx)
+</LI>
+<LI>number of Gvectors, ngm
+</LI>
+<LI>number of grid points in the R space, dfft%nnr
+</LI>
+</UL>
+Their size decreases linearly with the number of processors in a pool.
+
+<P>
+</LI>
+<LI><EM>Partially Scalable</EM>:
+Arrays that are distributed across processors of the
+ortho or diag group. Typically they are much smaller than fully scalable
+array, and small in absolute terms for moderate-size system. Their size
+however increases quadratically with the number of atoms in the system,
+so they have to be distributed for large systems (hundreds to thousands
+atoms). Partially scalable arrays contain none of the dimensions listed
+above, two of the following dimensions:
+
+<UL>
+<LI>number of states, nbnd
+</LI>
+<LI>number of atomic states, natomwfc
+</LI>
+<LI>number of projectors, nkb
+</LI>
+</UL>
+Their size decreases linearly with the number of processors in a ortho
+or diag group.
+
+<P>
+</LI>
+<LI><EM>Nonscalable</EM>: All the remaining arrays, that are not distributed across
+processors. These are typically small arrays, having dimensions like for
+instance:
+
+<UL>
+<LI>number of atoms, nat
+</LI>
+<LI>number of species of atoms, nsp
+</LI>
+</UL>
+The size of these arrays is independent on the number of processors.
+</LI>
+</UL>
+
+<P>
+
+<H1><A NAME="SECTION000100000000000000000">
+9 File Formats</A>
+</H1>
+
+<P>
+
+<H2><A NAME="SECTION000101000000000000000">
+9.1 Data file(s)</A>
+</H2>
+
+<P>
+Q<SMALL>UANTUM </SMALL>ESPRESSO restart file specifications:
+Paolo Giannozzi scripsit AD 2005-11-11,
+Last modified by Andrea Ferretti 2006-10-29
+
+<P>
+
+<H3><A NAME="SECTION000101100000000000000">
+9.1.1 Rationale</A>
+</H3>
+
+<P>
+Requirements: the data file should be
+
+<UL>
+<LI>efficient (quick to read and write)
+</LI>
+<LI>easy to read, parse and write without special libraries
+</LI>
+<LI>easy to understand (self-documented)
+</LI>
+<LI>portable across different software packages
+</LI>
+<LI>portable across different computer architectures
+</LI>
+</UL>
+Solutions:
+
+<UL>
+<LI>use binary I/O for large records
+</LI>
+<LI>exploit the file system for organizing data
+</LI>
+<LI>use XML
+</LI>
+<LI>use a small specialized library (iotk) to read, parse, write
+</LI>
+<LI>ensure the possibility to convert to a portable formatted file
+</LI>
+</UL>
+Integration with other packages:
+
+<UL>
+<LI>provide a self-standing (code-independent) library to read/write this format
+</LI>
+<LI>the use of this library is intended to be at high level, hiding low-level details
+</LI>
+</UL>
+
+<P>
+
+<H3><A NAME="SECTION000101200000000000000">
+9.1.2 General structure</A>
+</H3>
+
+<P>
+Format name: QEXML 
+<BR>
+Format version: 1.4.0 
+<BR>
+<P>
+The "restart file" is actually a "restart directory", containing
+several files and sub-directories. For CP/FPMD, the restart directory
+is created as "$prefix_$ndw/", where $prefix is the value of the
+variable "prefix". $ndw the value of variable ndw, both read in
+input; it is read from "$prefix_$ndr/", where $ndr the value of
+variable ndr, read from input. For PWscf, both input and output
+directories are called "$prefix.save/".
+
+<P>
+The content of the restart directory is as follows:
+<PRE>
+data-file.xml          which contains:
+                       - general information that doesn't require large data set:
+                         atomic structure, lattice, k-points, symmetries,
+                         parameters of the run, ...
+                       - pointers to other files or directories containing bulkier
+                         data: grids, wavefunctions, charge density, potentials, ...
+
+charge_density.dat     contains the charge density
+spin_polarization.dat  contains the spin polarization (rhoup-rhodw) (LSDA case)
+magnetization.x.dat
+magnetization.y.dat    contain the spin polarization along x,y,z
+magnetization.z.dat    (noncollinear calculations)
+lambda.dat             contains occupations (Car-Parrinello dynamics only)
+mat_z.1                contains occupations (ensemble-dynamics only)
+
+&lt;pseudopotentials&gt;     A copy of all pseudopotential files given in input
+
+&lt;k-point dirs&gt;         Subdirectories K00001/, K00002/, etc, one per k-point.
+</PRE>
+Each k-point directory contains:
+<PRE>
+    evc.dat                wavefunctions for spin-unpolarized calculations, OR
+    evc1.dat
+    evc2.dat               spin-up and spin-down wavefunctions, respectively,
+                           for spin polarized (LSDA) calculations;
+    gkvectors.dat          the details of specific k+G grid;
+    eigenval.xml           eigenvalues for the corresponding k-point
+                           for spin-unpolarized calculations, OR
+    eigenval1.xml          spin-up and spin-down eigenvalues,
+    eigenval2.xml          for spin-polarized calculations;
+</PRE>
+in a molecular dynamics run, also wavefunctions at the preceding time step:
+<PRE>
+    evcm.dat               for spin-unpolarized calculations OR
+    evcm1.dat
+    evcm2.dat              for spin polarized calculations;
+</PRE>
+
+<P>
+
+<UL>
+<LI>All files "*.xml" are XML-compliant, formatted file;
+</LI>
+<LI>Files "mat_z.1", "lambda.dat" are unformatted files, containing a single record;
+</LI>
+<LI>All other files "*.dat", are XML-compliant files, but they
+  contain an unformatted record.
+</LI>
+</UL>
+
+<P>
+
+<H3><A NAME="SECTION000101300000000000000">
+9.1.3 Structure of file "data-file.xml"</A>
+</H3>
+
+<P>
+<PRE>
+XML Header: whatever is needed to have a well-formed XML file
+
+Body: introduced by &lt;Root&gt;, terminated by &lt;/Root&gt;. Contains first-level tags
+      only. These contain only other tags, not values. XML syntax applies.
+
+First-level tags: contain either
+     second-level tags, OR
+     data tags:   tags containing data (values for a given variable), OR
+     file tags:   tags pointing to a file
+</PRE>
+data tags syntax ( [...] = optional ) :
+<PRE>
+      &lt;TAG type="vartype" size="n" [UNIT="units"] [LEN="k"]&gt;
+      values (in appropriate units) for variable corresponding to TAG:
+      n elements of type vartype (if character, of length k)
+      &lt;/TAG&gt;
+</PRE>
+where TAG describes the variable into which data must be read;
+<BR>"vartype" may be "integer", "real", "character", "logical";
+<BR>
+if type="logical", LEN=k" must be used to specify the length
+of the variable character; size="n" is the dimension.
+<BR>
+Acceptable values for "units" depend on the specific tag.
+
+<P>
+Short syntax, used only in a few cases:
+<PRE>
+      &lt;TAG attribute="something"/&gt; .
+</PRE>
+For instance:
+<PRE>
+      &lt;FFT_GRID nr1="NR1" nr2="NR2" nr3="NR3"/&gt;
+</PRE>
+defines the value of the FFT grid parameters nr1, nr2, nr3
+for the charge density
+
+<P>
+
+<H3><A NAME="SECTION000101400000000000000">
+9.1.4 Sample</A>
+</H3>
+Header:
+<PRE>
+ &lt;?xml version="1.0"?&gt;
+ &lt;?iotk version="1.0.0test"?&gt;
+ &lt;?iotk file_version="1.0"?&gt;
+ &lt;?iotk binary="F"?&gt;
+</PRE>
+These are meant to be used only by iotk (actually they aren't)
+
+<P>
+First-level tags:
+<PRE>
+  - &lt;HEADER&gt;         (global information about fmt version)
+  - &lt;CONTROL&gt;        (miscellanea of internal information)
+  - &lt;STATUS&gt;         (information about the status of the CP simulation)
+  - &lt;CELL&gt;           (lattice vector, unit cell, etc)
+  - &lt;IONS&gt;           (type and positions of atoms in the unit cell etc)
+  - &lt;SYMMETRIES&gt;     (symmetry operations)
+  - &lt;ELECTRIC_FIELD&gt; (details for an eventual applied electric field)
+  - &lt;PLANE_WAVES&gt;    (basis set, cutoffs etc)
+  - &lt;SPIN&gt;           (info on spin polarizaztion)
+  - &lt;MAGNETIZATION_INIT&gt;     (info about starting or constrained magnetization)
+  - &lt;EXCHANGE_CORRELATION&gt;
+  - &lt;OCCUPATIONS&gt;    (occupancy of the states)
+  - &lt;BRILLOUIN_ZONE&gt; (k-points etc)
+  - &lt;PARALLELISM&gt;    (specialized info for parallel runs)
+  - &lt;CHARGE-DENSITY&gt;
+  - &lt;TIMESTEPS&gt;      (positions, velocities, nose' thermostats)
+  - &lt;BAND_STRUCTURE_INFO&gt;    (dimensions and basic data about band structure)
+  - &lt;EIGENVALUES&gt;    (eigenvalues and related data)
+  - &lt;EIGENVECTORS&gt;   (eigenvectors and related data)
+
+
+* Tag description
+
+  &lt;HEADER&gt;
+     &lt;FORMAT&gt;    (name and version of the format)
+     &lt;CREATOR&gt;   (name and version of the code generating the file)
+  &lt;/HEADER&gt;
+
+  &lt;CONTROL&gt;
+     &lt;PP_CHECK_FLAG&gt;    (whether file is complete and suitable for post-processing)
+     &lt;LKPOINT_DIR&gt;      (whether kpt-data are written in sub-directories)
+     &lt;Q_REAL_SPACE&gt;     (whether augmentation terms are used in real space)
+     &lt;BETA_REAL_SPACE&gt;  (whether projectors are used in real space, not implemented)
+  &lt;/CONTROL&gt;
+
+  &lt;STATUS&gt;  (optional, written only by CP)
+     &lt;STEP&gt;   (number $n of steps performed, i.e. we are at step $n)
+     &lt;TIME&gt;   (total simulation time)
+     &lt;TITLE&gt;  (a job descriptor)
+     &lt;ekin&gt;   (kinetic energy)
+     &lt;eht&gt;    (hartree energy)
+     &lt;esr&gt;    (Ewald term, real-space contribution)
+     &lt;eself&gt;  (self-interaction of the Gaussians)
+     &lt;epseu&gt;  (pseudopotential energy, local)
+     &lt;enl&gt;    (pseudopotential energy, nonlocal)
+     &lt;exc&gt;    (exchange-correlation energy)
+     &lt;vave&gt;   (average of the potential)
+     &lt;enthal&gt; (enthalpy: E+PV)
+  &lt;/STATUS&gt;
+
+  &lt;CELL&gt;
+     &lt;NON-PERIODIC_CELL_CORRECTION&gt;
+     &lt;BRAVAIS_LATTICE&gt;
+     &lt;LATTICE_PARAMETER&gt;
+     &lt;CELL_DIMENSIONS&gt;  (cell parameters)
+     &lt;DIRECT_LATTICE_VECTORS&gt;
+        &lt;UNITS_FOR_DIRECT_LATTICE_VECTORS&gt;
+        &lt;a1&gt;
+        &lt;a2&gt;
+        &lt;a3&gt;
+     &lt;RECIPROCAL_LATTICE_VECTORS&gt;
+        &lt;UNITS_FOR_RECIPROCAL_LATTICE_VECTORS&gt;
+        &lt;b1&gt;
+        &lt;b2&gt;
+        &lt;b3&gt;
+  &lt;/CELL&gt;
+
+  &lt;MOVING_CELL&gt; (optional, PW only)
+     &lt;CELL_FACTOR&gt;
+
+  &lt;IONS&gt;
+     &lt;NUMBER_OF_ATOMS&gt;
+     &lt;NUMBER_OF_SPECIES&gt;
+     &lt;UNITS_FOR_ATOMIC_MASSES&gt;
+     For each $n-th species $X:
+        &lt;SPECIE.$n&gt;
+           &lt;ATOM_TYPE&gt;
+           &lt;MASS&gt;
+           &lt;PSEUDO&gt;
+        &lt;/SPECIE.$n&gt;
+     &lt;PSEUDO_DIR&gt;
+     &lt;UNITS_FOR_ATOMIC_POSITIONS&gt;
+     For each atom $n of species $X:
+        &lt;ATOM.$n SPECIES="$X" INDEX=nt tau=(x,y,z) if_pos=...&gt;
+  &lt;/IONS&gt;
+
+  &lt;SYMMETRIES&gt; (optional, PW only)
+     &lt;NUMBER_OF_SYMMETRIES&gt;
+     &lt;NUMBER_OF_BRAVAIS_SYMMETRIES&gt;
+     &lt;INVERSION_SYMMETRY&gt;
+     &lt;DO_NOT_USE_TIME_REVERSAL&gt;
+     &lt;TIME_REVERSAL_FLAG&gt;
+     &lt;NO_TIME_REV_OPERATIONS&gt;
+     &lt;NUMBER_OF_ATOMS&gt;
+     &lt;UNITS_FOR_SYMMETRIES&gt;
+     For each symmetry $n:
+        &lt;SYMM.$n&gt;
+           &lt;INFO&gt;
+           &lt;ROTATION&gt;
+           &lt;FRACTIONAL_TRANSLATION&gt;
+           &lt;EQUIVALENT_IONS&gt;
+        &lt;/SYMM.$n&gt;
+     For the remaining bravais symmetries:
+        &lt;SYMM.$n&gt;
+           &lt;INFO&gt;
+           &lt;ROTATION&gt;
+        &lt;/SYMM.n&gt;
+  &lt;/SYMMETRIES&gt;
+
+  &lt;ELECTRIC_FIELD&gt;  (optional, sawtooth field in PW only))
+     &lt;HAS_ELECTRIC_FIELD&gt;
+     &lt;HAS_DIPOLE_CORRECTION&gt;
+     &lt;FIELD_DIRECTION&gt;
+     &lt;MAXIMUM_POSITION&gt;
+     &lt;INVERSE_REGION&gt;
+     &lt;FIELD_AMPLITUDE&gt;
+  &lt;/ELECTRIC_FIELD&gt;
+
+  &lt;PLANE_WAVES&gt;
+     &lt;UNITS_FOR_CUTOFF&gt;
+     &lt;WFC_CUTOFF&gt;
+     &lt;RHO_CUTOFF&gt;
+     &lt;MAX_NUMBER_OF_GK-VECTORS&gt;
+     &lt;GAMMA_ONLY&gt;
+     &lt;FFT_GRID&gt;
+     &lt;GVECT_NUMBER&gt;
+     &lt;SMOOTH_FFT_GRID&gt;
+    &lt;SMOOTH_GVECT_NUMBER&gt;
+    &lt;G-VECTORS_FILE&gt;       link to file "gvectors.dat"
+    &lt;SMALLBOX_FFT_GRID&gt;
+  &lt;/PLANE_WAVES&gt;
+
+  &lt;SPIN&gt;
+     &lt;LSDA&gt;
+     &lt;NON-COLINEAR_CALCULATION&gt;
+     &lt;SPIN-ORBIT_CALCULATION&gt;
+        &lt;SPINOR_DIM&gt;
+     &lt;SPIN-ORBIT_DOMAG&gt;
+  &lt;/SPIN&gt;
+
+  &lt;MAGNETIZATION_INIT&gt;
+     &lt;CONSTRAINT_MAG&gt;
+     &lt;NUMBER_OF_SPECIES&gt;
+     For each species X:
+        &lt;SPECIE.$n&gt;
+           &lt;STARTING_MAGNETIZATION&gt;
+           &lt;ANGLE1&gt;
+           &lt;ANGLE2&gt;
+           &lt;CONSTRAINT_1,2,3&gt;
+        &lt;/SPECIE.$n&gt;
+        &lt;FIXED_MAGNETIZATION_1,2,3&gt;
+        &lt;MAGNETIC_FIELD_1,2,3&gt;
+        &lt;TWO_FERMI_ENERGIES&gt;
+           &lt;UNITS_FOR_ENERGIES&gt;
+           &lt;FIXED_MAGNETIZATION&gt;
+           &lt;ELECTRONS_UP&gt;
+           &lt;ELECTRONS_DOWN&gt;
+           &lt;FERMI_ENERGY_UP&gt;
+           &lt;FERMI_ENERGY_DOWN&gt;
+        &lt;LAMBDA&gt;
+  &lt;/MAGNETIZATION_INIT&gt;
+
+  &lt;EXCHANGE_CORRELATION&gt;
+     &lt;DFT&gt;
+     &lt;LDA_PLUS_U_CALCULATION&gt;
+     if LDA_PLUS_U_CALCULATION
+        &lt;NUMBER_OF_SPECIES&gt;
+        &lt;HUBBARD_LMAX&gt;
+        &lt;HUBBARD_L&gt;
+        &lt;HUBBARD_U&gt;
+        &lt;LDA_PLUS_U_KIND&gt;
+        &lt;U_PROJECTION_TYPE&gt;
+        &lt;HUBBARD_J&gt;
+        &lt;HUBBARD_J0&gt;
+        &lt;HUBBARD_ALPHA&gt;
+        &lt;HUBBARD_BETA&gt;
+     endif
+     if &lt;NON_LOCAL_DF&gt;
+          &lt;VDW_KERNEL_NAME&gt;
+     if &lt;DFT_D2&gt;
+          &lt;SCALING_FACTOR&gt;
+          &lt;CUTOFF_RADIUS&gt;
+     if &lt;XDM&gt;
+     if &lt;TKATCHENKO-SCHEFFLER&gt;
+          &lt;ISOLATED_SYSTEM&gt;
+  &lt;/EXCHANGE_CORRELATION&gt;
+
+  if hybrid functional
+      &lt;EXACT_EXCHANGE&gt;
+        &lt;x_gamma_extrapolation&gt;
+        &lt;nqx1&gt;
+        &lt;nqx2&gt;
+        &lt;nqx3&gt;
+        &lt;exxdiv_treatment&gt;
+        &lt;yukawa&gt;
+        &lt;ecutvcut&gt;
+        &lt;exx_fraction&gt;
+        &lt;screening_parameter&gt;
+      &lt;/EXACT_EXCHANGE&gt;
+  endif
+
+  &lt;OCCUPATIONS&gt;
+     &lt;SMEARING_METHOD&gt;
+     if gaussian smearing
+        &lt;SMEARING_TYPE&gt;
+        &lt;SMEARING_PARAMETER&gt;
+     endif
+     &lt;TETRAHEDRON_METHOD&gt;
+     if use tetrahedra
+        &lt;NUMBER_OF_TETRAHEDRA&gt;
+        for each tetrahedron $t
+           &lt;TETRAHEDRON.$t&gt;
+     endif
+     &lt;FIXED_OCCUPATIONS&gt;
+     if using fixed occupations
+        &lt;INFO&gt;
+        &lt;INPUT_OCC_UP&gt;
+        if lsda
+           &lt;INPUT_OCC_DOWN&gt;
+        endif
+     endif
+  &lt;/OCCUPATIONS&gt;
+
+  &lt;BRILLOUIN_ZONE&gt;
+     &lt;NUMBER_OF_K-POINTS&gt;
+     &lt;UNITS_FOR_K-POINTS&gt;
+     &lt;MONKHORST_PACK_GRID&gt;
+     &lt;MONKHORST_PACK_OFFSET&gt;
+     For each k-point $n:
+        &lt;K-POINT.$n&gt;
+     &lt;STARTING_F_POINTS&gt;
+     For each starting k-point $n:
+        &lt;K-POINT_START.$n&gt; kx, ky, kz, wk
+     &lt;NORM-OF-Q&gt;
+  &lt;/BRILLOUIN_ZONE&gt;
+
+  &lt;PARALLELISM&gt;
+     &lt;GRANULARITY_OF_K-POINTS_DISTRIBUTION&gt;
+     &lt;NUMBER_OF_PROCESSORS&gt;
+     &lt;NUMBER_OF_PROCESSORS_PER_POOL&gt;
+     &lt;NUMBER_OF_PROCESSORS_PER_IMAGE&gt;
+     &lt;NUMBER_OF_PROCESSORS_PER_TASKGROUP&gt;
+     &lt;NUMBER_OF_PROCESSORS_PER_POT&gt;
+     &lt;NUMBER_OF_PROCESSORS_PER_BAND_GROUP&gt;
+     &lt;NUMBER_OF_PROCESSORS_PER_DIAGONALIZATION&gt;
+  &lt;/PARALLELISM&gt;
+
+  &lt;CHARGE-DENSITY&gt;
+      link to file "charge_density.rho"
+  &lt;/CHARGE-DENSITY&gt;
+
+  &lt;TIMESTEPS&gt;  (optional)
+     For each time step $n=0,M
+       &lt;STEP$n&gt;
+          &lt;ACCUMULATORS&gt;
+          &lt;IONS_POSITIONS&gt;
+             &lt;stau&gt;
+             &lt;svel&gt;
+             &lt;taui&gt;
+             &lt;cdmi&gt;
+             &lt;force&gt;
+          &lt;IONS_NOSE&gt;
+             &lt;nhpcl&gt;
+             &lt;nhpdim&gt;
+             &lt;xnhp&gt;
+             &lt;vnhp&gt;
+          &lt;ekincm&gt;
+          &lt;ELECTRONS_NOSE&gt;
+             &lt;xnhe&gt;
+             &lt;vnhe&gt;
+          &lt;CELL_PARAMETERS&gt;
+             &lt;ht&gt;
+             &lt;htve&gt;
+             &lt;gvel&gt;
+          &lt;CELL_NOSE&gt;
+             &lt;xnhh&gt;
+             &lt;vnhh&gt;
+          &lt;/CELL_NOSE&gt;
+  &lt;/TIMESTEPS&gt;
+
+  &lt;BAND_STRUCTURE_INFO&gt;
+     &lt;NUMBER_OF_BANDS&gt;
+     &lt;NUMBER_OF_K-POINTS&gt;
+     &lt;NUMBER_OF_SPIN_COMPONENTS&gt;
+     &lt;NON-COLINEAR_CALCULATION&gt;
+     &lt;NUMBER_OF_ATOMIC_WFC&gt;
+     &lt;NUMBER_OF_ELECTRONS&gt;
+     &lt;UNITS_FOR_K-POINTS&gt;
+     &lt;UNITS_FOR_ENERGIES&gt;
+     &lt;FERMI_ENERGY&gt;
+  &lt;/BAND_STRUCTURE_INFO&gt;
+
+  &lt;EIGENVALUES&gt;
+     For all kpoint $n:
+         &lt;K-POINT.$n&gt;
+             &lt;K-POINT_COORDS&gt;
+             &lt;WEIGHT&gt;
+             &lt;DATAFILE&gt;                  link to file "./K$n/eigenval.xml"
+         &lt;/K-POINT.$n&gt;
+  &lt;/EIGENVALUES&gt;
+
+  &lt;EIGENVECTORS&gt;
+     &lt;MAX_NUMBER_OF_GK-VECTORS&gt;
+     For all kpoint $n:
+         &lt;K-POINT.$n&gt;
+             &lt;NUMBER_OF_GK-VECTORS&gt;
+             &lt;GK-VECTORS&gt;                link to file "./K$n/gkvectors.dat"
+             for all spin $s
+                &lt;WFC.$s&gt;                 link to file "./K$n/evc.dat"
+                &lt;WFCM.$s&gt;                link to file "./K$n/evcm.dat" (optional)
+                                         containing wavefunctions at preceding step
+         &lt;/K-POINT.n&gt;
+  &lt;/EIGENVECTORS&gt;
+</PRE>
+
+<P>
+
+<H2><A NAME="SECTION000102000000000000000">
+9.2 Restart files</A>
+</H2>
+
+<P>
+
+<H1><A NAME="SECTION000110000000000000000">
+10 Modifying/adding/extending Q<SMALL>UANTUM </SMALL>ESPRESSO</A>
+</H1>
+
+<P>
+
+<H2><A NAME="SECTION000111000000000000000">
+10.1 Programming style (or lack of it)</A>
+</H2>
+
+<P>
+There are currently no strict guidelines for developers. You
+should however follow at least the following loose ones:
+
+<UL>
+<LI>Preprocessing options should be capitalized and start with
+two underscores. Examples: __MPI, __LINUX, ... Use 
+preprocessing syntax <code>#if defined (XXX)</code>, not <code>#if defined XXX</code>
+or <code>#ifdef XXX</code>
+</LI>
+<LI>Fortran commands should be capitalized:
+CALL something( )
+</LI>
+<LI>Variable names should be lowercase: <TT>foo = bar/2</TT>
+</LI>
+<LI>Indent DO's and IF's with three white spaces (editors like emacs will do this automatically for you)
+</LI>
+<LI>Do not write crammed code: leave spaces, insert empty separation lines
+</LI>
+<LI>Use comments (introduced by a !) to explain what is not obvious from
+the code. Remember that what is obvious to you may not be obvious to other
+people. It is especially important to document what a routine does, what
+it needs on input, what it produces on output. A few words of comment
+may save hours of searching into the code for a piece of missing information.
+</LI>
+<LI>do not use machine-dependent extensions or sloppy syntax. An example:
+Standard f90
+requires that a &amp; is needed both at end of line AND at the beginning of
+continuation line if there is a character variable (inside ' ' or " ")
+spanning two lines. Some compilers do not complain if the latter &amp; is
+missing, others do.
+</LI>
+<LI>use "dp" (defined in module ''kinds'') to define the type of real and complex variables
+</LI>
+<LI>all constants should be defined to be of kind "dp".  Preferred syntax: 0.0_dp.
+</LI>
+<LI>use "generic" intrinsic functions: SIN, COS, etc.
+</LI>
+<LI>conversions should be explicitely indicated. For conversions to real,
+use DBLE, or else REAL(...,KIND=dp). For conversions to complex, use
+CMPLX(...,...,KIND=dp). For complex conjugate, use CONJG.  For imaginary part,
+use AIMAG.  IMPORTANT: Do not use REAL or CMPLX without KIND=dp, or else you
+will lose precision (except when you take the real part of a
+double precision complex number).
+</LI>
+<LI>Do not use automatic arrays (e.g. <TT>REAL(dp) :: A(N)</TT> with
+<TT>N</TT> defined at run time) unless you are sure that the array is
+small in all cases: large arrays may easily exceed the stack size,
+or the memory size,
+</LI>
+<LI>Do not use pointers unless you have a good reason to:
+pointers may hinder optimization. Allocatable arrays should be used instead.
+</LI>
+<LI>If you use pointers, nullify them before performing tests on their
+status.
+</LI>
+<LI>Beware fancy constructs like structures: they look great on paper,
+but they also have the potential to make a code unreadable, or inefficient,
+or unusable with some compilers. Avoid nested structures unless you have a
+valid reason to use them.
+</LI>
+<LI>Be careful with F90 array syntax and in particular with
+array sections. Passing an array section to a routine may look elegant
+but it may turn out to be inefficient: a copy will be silently done
+if the section is not contiguous in memory (or if the compiler
+decides it is the right thing to do), increasing the memory footprint.
+</LI>
+<LI>Do not pass unallocated arrays as arguments, even in those cases where
+they are not actually used inside the subroutine: some compilers don't
+like it.
+</LI>
+<LI>Do not use any construct that is susceptible to be flagged as
+out-of-bounds error, even if no actual out-of-bound error takes place.
+</LI>
+<LI>Always use IMPLICIT NONE and declare all local variables.
+All variables passed as arguments to a routine should be declared as
+INTENT (IN), (OUT), or (INOUT). All variables from modules should be
+explicitly specified via USE module, ONLY : variable. Variables used
+in an array declaration must be declared first, as in the following
+example:
+<PRE>
+    INTEGER, INTENT(IN)   :: N
+    REAL(dp), INTENT(OUT) :: A(N)
+</PRE>
+in this order (some compilers complain if you put the second line
+before the first).
+</LI>
+</UL>
+
+<P>
+
+<H2><A NAME="SECTION000112000000000000000">
+10.2 Adding or modifying input variables</A>
+</H2>
+
+<P>
+New input variables should be added to
+''Modules/input_parameters.f90'',
+then copied to the code internal variables in the ''input.f90''
+subroutine. The namelists and cards parsers are in
+''Modules/read_namelists.f90'' and ''Modules/read_cards.f90''.
+Files ''input_parameters.f90'', ''read_namelists.f90'',
+''read_cards.f90'' are shared by all codes, while each code
+has its own version of ''input.f90''  used to copy input values
+into internal variables
+
+<P>
+EXAMPLE:
+suppose you need to add a new input variable called ''pippo''
+to the namelist control, then:
+
+<P>
+
+<OL>
+<LI>add pippo to the input_parameters.f90 file containing the
+namelist control
+<PRE>
+              INTEGER :: pippo = 0
+              NAMELIST / control / ....., pippo
+</PRE>
+Remember: always set an initial value!
+
+<P>
+</LI>
+<LI>add pippo to the control_default subroutine (contained in
+module read_namelists.f90 )
+<PRE>
+               subroutine control_default( prog )
+              ...
+              IF( prog == 'PW' ) pippo = 10
+              ...
+              end subroutine
+</PRE>
+This routine sets the default value for pippo (can be different in
+different codes)
+
+<P>
+</LI>
+<LI>add pippo to the control_bcast subroutine (contained in module
+read_namelists.f90 )
+ <PRE>
+                subroutine control_bcast( )
+                ...
+                call mp_bcast( pippo, intra_image_comm )
+                ...
+                end subroutine
+</PRE>
+</LI>
+</OL>
+
+<P>
+
+<H1><A NAME="SECTION000120000000000000000"></A>
+<A NAME="Sec:SVN"></A>
+<BR>
+11 Using SVN
+</H1>
+Q<SMALL>UANTUM </SMALL>ESPRESSOis maintained in a Subversion (SVN) repository. Developers can have
+read-write access when needed, read-only otherwise. Note that the latest
+(development) version may occasionally not work properly: carefully
+verify the results before using it in production work.
+
+<P>
+Subversion, also known as SVN, is a software that allows many
+developers to work and maintain a single copy of a software in a
+central location (repository).
+It is installed by default on many Unix machines, or otherwise
+it can be very easily installed.
+For the end user, SVN is rather similar to CVS:
+if no advanced features are used, the basic commands are the same.
+More information on SVN can be found here:
+<TT>http://subversion.apache.org/</TT>.
+
+<P>
+Current organization:
+
+<UL>
+<LI><EM>trunk</EM>: development goes on here
+</LI>
+<LI><EM>branches</EM>: major new developments, disruptive changes, very
+experimental features, things that have a long time before being released
+(if ever) ...
+</LI>
+<LI><EM>external</EM>: packages that are be developed in a separate SVN trunk
+can be downloaded into the main QE trunk - access may be restricted to
+specific (usually expert) developers.
+</LI>
+</UL>
+
+<P>
+Follow the instructions in
+<TT>http://qe-forge.org/gf/project/q-e/scmsvn</TT>,
+under `Access Info'',
+to check out (i.e.  download) the SVN repository.
+The distribution will appear in directory <TT>trunk/espresso/</TT>.
+Branches (i.e. sub-versions) will appear as separate directories.
+
+<P>
+<EM>Important notice: since v.5.3 the SVN repository is no longer accessible
+read-only to everybody.</EM>
+
+<P>
+
+<H2><A NAME="SECTION000121000000000000000">
+11.1 SVN operations</A>
+</H2>
+
+<P>
+To update the code to the current version:
+<PRE>
+  svn update
+</PRE>
+in the directory containing the distribution.
+To see the difference between the current version and your modified
+copy:
+<PRE>
+  svn diff
+</PRE>
+To save your modified version into the repository:
+(read-write access only):
+<PRE>
+  svn commit
+</PRE>
+Please explain in a few words what your commit is about! Use option
+<TT>-m"comment"</TT> or the editor of your choice (set it using the
+<TT>SVN_EDITOR</TT> environment variable).
+If you want to add a new file, or a new directory, before commiting
+give command
+<PRE>
+  svn add
+</PRE>
+To remove a file/directory (if empty):
+<PRE>
+  svn delete
+</PRE>
+You can move a file (a directory, a group of files, ...) into a different
+directory using command
+<PRE>
+  svn mv dir1/file1 [dir1/file2 ...] dir2/
+</PRE>
+or, if you prefer to make a copy of the file, retaining the history:
+<PRE>
+svn cp svn+ssh://myusername@qeforge.qe-forge.org/svnroot/q-e/trunk/espresso/DIR1/file.1 svn+ssh://myusername@qeforge.qe-forge.org/svnroot/q-e/trunk/espresso/DIR2/file2
+</PRE>
+then run <TT>svn update</TT> to have it applied locally.
+After such operations are done, run the <TT>install/makedeps.sh</TT> script
+or type <TT>make depend</TT> to update files <TT>make.depend</TT> in the
+various subdirectories. It is preferrable to commit the moved files/modified
+directories and the affected Makefiles/make.depend in a single command.
+
+<P>
+
+<H2><A NAME="SECTION000122000000000000000"></A>
+<A NAME="SubSec:Conflicts"></A>
+<BR>
+11.2 Removing conflicts
+</H2>
+When you update your working copy of the repository,
+you may encounter two types of conflicts:
+
+<OL>
+<LI>Somebody else has changed the same lines that you have
+      modified.
+</LI>
+<LI>Somebody else has changed something that has broken one
+      or more functionalities of your modified version.
+</LI>
+</OL>
+Here we are concerned with kind 1. of conflicts, those that
+are noticed by SVN and produce, in addition to a message with
+a "C" in the first column before the conflicting file name:
+
+<UL>
+<LI><TT>conflicting-file</TT> containing an attempted merge
+of your version with the SVN version, with conflicting sections
+indicated by
+<PRE>
+   &lt;&lt;&lt;&lt;&lt;&lt;&lt;
+     (your version)
+   =======
+     (SVN version)
+   &gt;&gt;&gt;&gt;&gt;&gt;&gt;
+</PRE>
+</LI>
+<LI><TT>conflicting-file.mine</TT> containing your version
+</LI>
+<LI>two <TT>conflicting-file.rXXXXX</TT> containing the two most
+recent versions (<TT>XXXXX</TT> is the revision number) in SVN.
+</LI>
+</UL>
+Look into the conflicting section(s): in most cases, conflicts are trivial
+(format changes, white spaces) or easily solved (the part of the code you
+were modifying has been moved to another place, or a variable has meanwhilke
+changed name, for instance). Edit <TT>conflicting-file</TT>, remove all other
+copies of <TT>conflicting-file.*</TT>, commit.
+
+<P>
+Sometimes, the conflict is not so easy to solve. In this case, you
+can selectively update your repository at a given date, or at a given
+revision number, using command (XXXXX=revision number)
+<PRE>
+  svn update -r XXXXX
+</PRE>
+You can also select a date, using {"date"} instead of the revision number.
+In this way you can locate which change(s) is (are) the culprit(s).
+The web-SVN interface:
+<PRE>
+   http://qe-forge.org/gf/project/q-e/scmsvn
+</PRE>
+will also be very helpful in locating the problem.
+Of course, communication with other developers will also help.
+The above paragraph applies as well to case 2. os conflicts, in
+presence or in absence of explicit SVN conflicts. If the reason for
+malfunctioning is not evident, you have to figure out when the
+problem started. Once this is done, itis usually straightforward
+to figure out why.
+
+<P>
+
+<H2><A NAME="SECTION000123000000000000000"></A>
+<A NAME="SubSec:Merge"></A>
+<BR>
+11.3 Merging branch and trunk
+</H2>
+Let us assume that you have created a branch and that you are working
+in the directory of your branch. The simplest way to keep it aligned
+with the trunk is the following command:
+<PRE>
+  svn merge ^/trunk/espresso
+</PRE>
+The caret (<TT>^</TT>) syntax is a shorthand for the entire URL of the trunk.
+Then you have to remove conflicts that can arise from incompatible changes
+made in the trunk. Then you can commit your "aligned" branch (beware:
+the commit message is very large in size if you haven't merged recently;
+if so, it may never reach the <TT>q-e-commits</TT> mailing list).
+
+<P>
+In order to merge a branch back into the trunk, the simplest procedure is
+to align first the branch with the trunk and commit it, as above; then,
+in a clean, not locally modified, trunk:
+<PRE>
+  svn merge --reintegrate ^/branches/my-espresso-branch
+</PRE>
+then, commit.
+
+<P>
+Note the following very useful property: SVN can merge anything with anything!
+The following web page may be useful:
+<TT>http://www.math-linux.com/spip.php?article118</TT>
+
+<P>
+
+<H2><A NAME="SECTION000124000000000000000"></A>
+<A NAME="SubSec:propedit"></A>
+<BR>
+11.4 Including a repository into the trunk
+</H2>
+It is possible to download other repositories into the main Q<SMALL>UANTUM </SMALL>ESPRESSO repository.
+Currently, this possibility works for GIPAW and West (for authorized users).
+From the trunk/ subdirectory (the one containing espresso/), type
+``svn propedit svn:externals espresso''.
+An editor will open. Type the name of the subdirectory of ``espresso/''
+where you want the repository to be downloaded, followed by the address of
+the repository, exit (not quit!) the editor. Currently:
+<PRE>
+West  http://qeforge.qe-forge.org/svn/west/trunk
+GIPAW http://qeforge.qe-forge.org/svn/qe-gipaw/trunk
+</PRE>
+
+<P>
+
+<H1><A NAME="SECTION000130000000000000000"></A>
+<A NAME="Sec:git"></A>
+<BR>
+12 Using git
+</H1>
+
+<P>
+Git is a very populare versioning control system for collaborative development 
+nowadays. The web is full of tutorials and guide about how to use it, covering 
+simple novice concepts to master the most sophisticated functionalities. The 
+following links contain an introduction to <TT>git</TT>:
+<PRE>
+https://git-scm.com/book/en/v2/Getting-Started-Git-Basics
+https://git-scm.com/course/svn.html
+</PRE>
+Very quick guide to <TT>git</TT> commands for the impatient:
+
+<UL>
+<LI><TT>clone</TT>: Initial download, makes a local copy of a (typically
+  remote repository)
+</LI>
+<LI><TT>fetch</TT>:
+  looks at the remote repository, signals if new files or conflicts are present
+  in case the local copy is updated
+</LI>
+<LI><TT>pull</TT>:
+  downloads updates from the remote repository, applies them to the local one.
+  If there are conflicts that cannot be easily solved, conflicts are flagged
+  and one has to proceed with a manual merge
+</LI>
+<LI><TT>add</TT>: adds files or directories to the "stage area", a pool
+  of files to be commited
+</LI>
+<LI><TT>commit</TT> commits files in the "stage area". Unlike
+  <TT>svn commit</TT>, files are committed only in the local repository
+</LI>
+<LI><TT>push</TT> publishes the new commits of the local repository
+  to one or more remote repositories
+</LI>
+<LI><TT>merge</TT> merges two branches (typically the local one and
+  the remote one). A merge may be easy or complex, depending upon the type of
+  conflicts. See:
+  <TT>https://help.github.com/articles/resolving-a-merge-conflict-from-the-command-line/</TT>
+</LI>
+</UL>
+In order to align the local repository to the svn mirror (equivalent to
+<TT>svn update</TT>), it is a good idea to use <TT>fetch</TT> before
+<TT>pull</TT>. Then:
+<BLOCKQUOTE>
+<TT>git add</TT>
+  <TT>git commit</TT>
+  <TT>git merge</TT>
+
+</BLOCKQUOTE>
+In order to save incomplete work and avoid local conflicts, one can use
+<TT>stash</TT>:
+<BLOCKQUOTE>
+<TT>git stash save</TT>     (save and remove modified files)
+<BR>  <TT>git pull</TT>           (update files)
+<BR>  <TT>git stash apply</TT>    (overwrite with locally modified files)
+
+</BLOCKQUOTE>
+The stash can be cleared using <TT>git clear</TT>. A few useful commands:
+<BLOCKQUOTE>
+<TT>git status</TT>
+<BR>  <TT>git diff</TT>
+
+</BLOCKQUOTE>
+
+<P>
+
+<H1><A NAME="SECTION000140000000000000000">
+13 Bibliography</A>
+</H1>
+
+<P>
+Fortran books:
+
+<UL>
+<LI>M. Metcalf, J. Reid, Fortran 95/2003 Explained, Oxford University Press (2004)
+</LI>
+<LI>S. J. Chapman, Fortran 95/2003 for Scientists and Engineers, McGraw Hill (2007)
+</LI>
+<LI>J. C. Adams, W. S. Brainerd, R. A. Hendrickson, R. E. Maine, J. T. Martin,
+B. T. Smith, The Fortran 2003 Handbook, Springer (2009)
+</LI>
+<LI>W. S. Brainerd, Guide to Fortran 2003 Programming, Springer (2009)
+</LI>
+</UL>
+On-line tutorials:
+
+<UL>
+<LI>Fortran:
+http://www.cs.mtu.edu/~shene/COURSES/cs201/NOTES/fortran.html
+</LI>
+<LI>Make:
+http://en.wikipedia.org/wiki/Make_(software)
+</LI>
+<LI>Configure script:
+http://en.wikipedia.org/wiki/Configure_script
+</LI>
+</UL>
+(info courtesy of Goranka Bilalbegovic)
+
+<H1><A NAME="SECTION000150000000000000000">
+About this document ...</A>
+</H1>
+ <STRONG>
+   
+<BR>  <FONT SIZE="+4">Developer's Manual for 
+<BR>
+Q<SMALL>UANTUM </SMALL>ESPRESSO (v.6.0)
+</FONT></STRONG><P>
+This document was generated using the
+<A NAME="http://www.latex2html.org/"><STRONG>LaTeX</STRONG>2<tt>HTML</tt></A> translator Version 2008 (1.71)
+<P>
+Copyright &#169; 1993, 1994, 1995, 1996,
+Nikos Drakos, 
+Computer Based Learning Unit, University of Leeds.
+<BR>
+Copyright &#169; 1997, 1998, 1999,
+<A NAME="http://www.maths.mq.edu.au/~ross/">Ross Moore</A>, 
+Mathematics Department, Macquarie University, Sydney.
+<P>
+The command line arguments were: <BR>
+ <STRONG>latex2html</STRONG> <TT>-t 'Developer's Manual for Quantum-ESPRESSO' -html_version 3.2,math -toc_depth 3 -split 3 -toc_stars -show_section_numbers -local_icons -image_type png developer_man.tex</TT>
+<P>
+The translation was initiated by Filippo Spiga on 2016-10-04
+<BR><HR>
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"></A>
+
+<UL>
+<LI><A NAME="tex2html1"
+  HREF="developer_man.html#SECTION00010000000000000000">Contents</A>
+<LI><A NAME="tex2html2"
+  HREF="developer_man.html#SECTION00020000000000000000">1 Introduction</A>
+<UL>
+<LI><A NAME="tex2html3"
+  HREF="developer_man.html#SECTION00021000000000000000">1.1 Who should read (and who should <EM>write</EM>) this guide</A>
+<LI><A NAME="tex2html4"
+  HREF="developer_man.html#SECTION00022000000000000000">1.2 Who may read this guide but will not necessarily profit from it</A>
+<LI><A NAME="tex2html5"
+  HREF="developer_man.html#SECTION00023000000000000000">1.3 How to contribute to Q<SMALL>UANTUM </SMALL>ESPRESSO as a user</A>
+</UL>
+<BR>
+<LI><A NAME="tex2html6"
+  HREF="developer_man.html#SECTION00030000000000000000">2 Q<SMALL>UANTUM </SMALL>ESPRESSO as a distribution</A>
+<LI><A NAME="tex2html7"
+  HREF="developer_man.html#SECTION00040000000000000000">3 How to become a developer</A>
+<UL>
+<LI><A NAME="tex2html8"
+  HREF="developer_man.html#SECTION00041000000000000000">3.1 About <TT>qe-forge.org</TT></A>
+<LI><A NAME="tex2html9"
+  HREF="developer_man.html#SECTION00042000000000000000">3.2 Q<SMALL>UANTUM </SMALL>ESPRESSO on <TT>qe-forge.org</TT></A>
+<LI><A NAME="tex2html10"
+  HREF="developer_man.html#SECTION00043000000000000000">3.3 Contributing new developments</A>
+<LI><A NAME="tex2html11"
+  HREF="developer_man.html#SECTION00044000000000000000">3.4 Hints, Caveats, Do's and Dont's for developers</A>
+<LI><A NAME="tex2html12"
+  HREF="developer_man.html#SECTION00045000000000000000">3.5 Guidelines for reporting bugs</A>
+</UL>
+<BR>
+<LI><A NAME="tex2html13"
+  HREF="developer_man.html#SECTION00050000000000000000">4 Stable releases and development cycle</A>
+<UL>
+<LI><A NAME="tex2html14"
+  HREF="developer_man.html#SECTION00050010000000000000">4.0.0.1 Preparing a release</A>
+<LI><A NAME="tex2html15"
+  HREF="developer_man.html#SECTION00050020000000000000">4.0.0.2 Updating web site</A>
+</UL>
+<BR>
+<LI><A NAME="tex2html16"
+  HREF="developer_man.html#SECTION00060000000000000000">5 Structure of the distribution</A>
+<UL>
+<LI><A NAME="tex2html17"
+  HREF="developer_man.html#SECTION00061000000000000000">5.1 Installation Mechanism</A>
+<UL>
+<LI><A NAME="tex2html18"
+  HREF="developer_man.html#SECTION00061010000000000000">5.1.0.1 make.inc</A>
+<LI><A NAME="tex2html19"
+  HREF="developer_man.html#SECTION00061020000000000000">5.1.0.2 Makefile</A>
+<LI><A NAME="tex2html20"
+  HREF="developer_man.html#SECTION00061030000000000000">5.1.0.3 PW/Makefile</A>
+<LI><A NAME="tex2html21"
+  HREF="developer_man.html#SECTION00061040000000000000">5.1.0.4 PW/src/Makefile</A>
+<LI><A NAME="tex2html22"
+  HREF="developer_man.html#SECTION00061100000000000000">5.1.1 Preprocessing</A>
+<LI><A NAME="tex2html23"
+  HREF="developer_man.html#SECTION00061200000000000000">5.1.2 How to edit the <TT>configure</TT> script</A>
+<LI><A NAME="tex2html24"
+  HREF="developer_man.html#SECTION00061300000000000000">5.1.3 How to add support for a new architecture</A>
+</UL>
+<LI><A NAME="tex2html25"
+  HREF="developer_man.html#SECTION00062000000000000000">5.2 Libraries</A>
+</UL>
+<BR>
+<LI><A NAME="tex2html26"
+  HREF="developer_man.html#SECTION00070000000000000000">6 Algorithms</A>
+<UL>
+<LI><A NAME="tex2html27"
+  HREF="developer_man.html#SECTION00071000000000000000">6.1 <I>G</I> vectors and plane waves</A>
+<LI><A NAME="tex2html28"
+  HREF="developer_man.html#SECTION00072000000000000000">6.2 Gamma tricks</A>
+<LI><A NAME="tex2html29"
+  HREF="developer_man.html#SECTION00073000000000000000">6.3 Restart</A>
+</UL>
+<BR>
+<LI><A NAME="tex2html30"
+  HREF="developer_man.html#SECTION00080000000000000000">7 Format of arrays containing charge density, potential, etc.</A>
+<LI><A NAME="tex2html31"
+  HREF="developer_man.html#SECTION00090000000000000000">8 Parallelization (MPI)</A>
+<UL>
+<LI><A NAME="tex2html32"
+  HREF="developer_man.html#SECTION00091000000000000000">8.1 General rules</A>
+<UL>
+<LI><A NAME="tex2html33"
+  HREF="developer_man.html#SECTION00091100000000000000">8.1.1 Preprocessing for parallel usage</A>
+</UL>
+<LI><A NAME="tex2html34"
+  HREF="developer_man.html#SECTION00092000000000000000">8.2 Parallelization levels and communicators</A>
+<LI><A NAME="tex2html35"
+  HREF="developer_man.html#SECTION00093000000000000000">8.3 Tricks and pitfalls</A>
+<LI><A NAME="tex2html36"
+  HREF="developer_man.html#SECTION00094000000000000000">8.4 Data distribution</A>
+</UL>
+<BR>
+<LI><A NAME="tex2html37"
+  HREF="developer_man.html#SECTION000100000000000000000">9 File Formats</A>
+<UL>
+<LI><A NAME="tex2html38"
+  HREF="developer_man.html#SECTION000101000000000000000">9.1 Data file(s)</A>
+<UL>
+<LI><A NAME="tex2html39"
+  HREF="developer_man.html#SECTION000101100000000000000">9.1.1 Rationale</A>
+<LI><A NAME="tex2html40"
+  HREF="developer_man.html#SECTION000101200000000000000">9.1.2 General structure</A>
+<LI><A NAME="tex2html41"
+  HREF="developer_man.html#SECTION000101300000000000000">9.1.3 Structure of file "data-file.xml"</A>
+<LI><A NAME="tex2html42"
+  HREF="developer_man.html#SECTION000101400000000000000">9.1.4 Sample</A>
+</UL>
+<LI><A NAME="tex2html43"
+  HREF="developer_man.html#SECTION000102000000000000000">9.2 Restart files</A>
+</UL>
+<BR>
+<LI><A NAME="tex2html44"
+  HREF="developer_man.html#SECTION000110000000000000000">10 Modifying/adding/extending Q<SMALL>UANTUM </SMALL>ESPRESSO</A>
+<UL>
+<LI><A NAME="tex2html45"
+  HREF="developer_man.html#SECTION000111000000000000000">10.1 Programming style (or lack of it)</A>
+<LI><A NAME="tex2html46"
+  HREF="developer_man.html#SECTION000112000000000000000">10.2 Adding or modifying input variables</A>
+</UL>
+<BR>
+<LI><A NAME="tex2html47"
+  HREF="developer_man.html#SECTION000120000000000000000">11 Using SVN</A>
+<UL>
+<LI><A NAME="tex2html48"
+  HREF="developer_man.html#SECTION000121000000000000000">11.1 SVN operations</A>
+<LI><A NAME="tex2html49"
+  HREF="developer_man.html#SECTION000122000000000000000">11.2 Removing conflicts</A>
+<LI><A NAME="tex2html50"
+  HREF="developer_man.html#SECTION000123000000000000000">11.3 Merging branch and trunk</A>
+<LI><A NAME="tex2html51"
+  HREF="developer_man.html#SECTION000124000000000000000">11.4 Including a repository into the trunk</A>
+</UL>
+<BR>
+<LI><A NAME="tex2html52"
+  HREF="developer_man.html#SECTION000130000000000000000">12 Using git</A>
+<LI><A NAME="tex2html53"
+  HREF="developer_man.html#SECTION000140000000000000000">13 Bibliography</A>
+<LI><A NAME="tex2html54"
+  HREF="developer_man.html#SECTION000150000000000000000">About this document ...</A>
+</UL>
+<!--End of Table of Child-Links-->
+<HR>
+<!--Navigation Panel-->
+<IMG WIDTH="81" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next_inactive" SRC="nx_grp_g.png"> 
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up_g.png"> 
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev_g.png">   
+<BR>
+<!--End of Navigation Panel-->
+<ADDRESS>
+Filippo Spiga
+2016-10-04
+</ADDRESS>
+</BODY>
+</HTML>

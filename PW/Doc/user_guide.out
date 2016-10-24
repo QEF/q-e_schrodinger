@@ -1,0 +1,24 @@
+\BOOKMARK [1][-]{section.1}{Introduction}{}% 1
+\BOOKMARK [2][-]{subsection.1.1}{What can PWscf do}{section.1}% 2
+\BOOKMARK [2][-]{subsection.1.2}{People}{section.1}% 3
+\BOOKMARK [2][-]{subsection.1.3}{Terms of use}{section.1}% 4
+\BOOKMARK [1][-]{section.2}{Compilation}{}% 5
+\BOOKMARK [1][-]{section.3}{Using PWscf}{}% 6
+\BOOKMARK [2][-]{subsection.3.1}{Input data}{section.3}% 7
+\BOOKMARK [2][-]{subsection.3.2}{Data files}{section.3}% 8
+\BOOKMARK [2][-]{subsection.3.3}{Electronic structure calculations}{section.3}% 9
+\BOOKMARK [2][-]{subsection.3.4}{Optimization and dynamics}{section.3}% 10
+\BOOKMARK [2][-]{subsection.3.5}{Direct interface with CASINO}{section.3}% 11
+\BOOKMARK [2][-]{subsection.3.6}{Socket interface with i-PI}{section.3}% 12
+\BOOKMARK [1][-]{section.4}{Performances}{}% 13
+\BOOKMARK [2][-]{subsection.4.1}{Execution time}{section.4}% 14
+\BOOKMARK [2][-]{subsection.4.2}{Memory requirements}{section.4}% 15
+\BOOKMARK [2][-]{subsection.4.3}{File space requirements}{section.4}% 16
+\BOOKMARK [2][-]{subsection.4.4}{Parallelization issues}{section.4}% 17
+\BOOKMARK [2][-]{subsection.4.5}{Understanding the time report}{section.4}% 18
+\BOOKMARK [3][-]{subsubsection.4.5.1}{Serial execution}{subsection.4.5}% 19
+\BOOKMARK [3][-]{subsubsection.4.5.2}{Parallel execution}{subsection.4.5}% 20
+\BOOKMARK [2][-]{subsection.4.6}{Restarting}{section.4}% 21
+\BOOKMARK [3][-]{subsubsection.4.6.1}{Signal trapping \(experimental!\)}{subsection.4.6}% 22
+\BOOKMARK [1][-]{section.5}{Troubleshooting}{}% 23
+\BOOKMARK [2][-]{subsection.5.1}{Compilation problems with PLUMED}{section.5}% 24

@@ -1,0 +1,128 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>2.2 Prerequisites</TITLE>
+<META NAME="description" CONTENT="2.2 Prerequisites">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node10.html">
+<LINK REL="previous" HREF="node8.html">
+<LINK REL="up" HREF="node7.html">
+<LINK REL="next" HREF="node10.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html225"
+  HREF="node10.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html221"
+  HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html215"
+  HREF="node8.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html223"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html226"
+  HREF="node10.html">2.3 configure</A>
+<B> Up:</B> <A NAME="tex2html222"
+  HREF="node7.html">2 Installation</A>
+<B> Previous:</B> <A NAME="tex2html216"
+  HREF="node8.html">2.1 Download</A>
+ &nbsp; <B>  <A NAME="tex2html224"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00032000000000000000"></A>
+<A NAME="Sec:Installation"></A>
+<BR>
+2.2 Prerequisites
+</H2>
+
+<P>
+To install Q<SMALL>UANTUM </SMALL>ESPRESSO from source, you need first of all a minimal Unix
+environment: basically, a command shell (e.g.,
+bash or tcsh) and the utilities <TT>make</TT>, <TT>awk</TT>, <TT>sed</TT>.
+ MS-Windows users need to have Cygwin (a UNIX environment which
+ runs under Windows) installed:
+see <TT>http://www.cygwin.com/</TT>. Note that the scripts contained
+in the distribution assume that the local  language is set to the
+standard, i.e. "C"; other settings
+may break them. Use <TT>export LC_ALL=C</TT> (sh/bash) or
+<TT>setenv LC_ALL C</TT> (csh/tcsh) to prevent any problem
+when running scripts (including installation scripts).
+
+<P>
+Second, you need C and Fortran-90/95/2003 compilers. For parallel
+execution, you will also need MPI libraries and a parallel
+(i.e. MPI-aware) compiler. For massively parallel machines, or
+for simple multicore parallelization, an OpenMP-aware compiler
+and libraries are also required.
+
+<P>
+As a rule, Q<SMALL>UANTUM </SMALL>ESPRESSO tries to keep compatibility with older compilers,
+avoiding nonstandard extensions and newer features that
+are not widespread or stabilized. No warranty, however, if
+your compiler is older than say 5 years or so. The same applies to
+mathematical and MPI libraries.
+
+<P>
+Big machines with
+specialized hardware (e.g. IBM SP, CRAY, etc) typically have a
+Fortran compiler with MPI and OpenMP libraries bundled with
+the software. Workstations or ``commodity'' machines, using PC
+hardware, may or may not have the needed software. If not, you need
+either to buy a commercial product (e.g Intel, NAG, Portland) or to
+use an open-source compiler like gfortran from the gcc distribution.
+Note that several commercial compilers (e.g. Intel, Sun) are available
+free of charge under some license for academic or personal usage.
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html225"
+  HREF="node10.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html221"
+  HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html215"
+  HREF="node8.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html223"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html226"
+  HREF="node10.html">2.3 configure</A>
+<B> Up:</B> <A NAME="tex2html222"
+  HREF="node7.html">2 Installation</A>
+<B> Previous:</B> <A NAME="tex2html216"
+  HREF="node8.html">2.1 Download</A>
+ &nbsp; <B>  <A NAME="tex2html224"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+Filippo Spiga
+2016-10-04
+</ADDRESS>
+</BODY>
+</HTML>

@@ -1,5 +1,5 @@
 \documentclass[12pt,a4paper]{article}
-\def\version{5.4}
+\def\version{6.0}
 \def\qe{{\sc Quantum ESPRESSO}}
 \def\qeforge{\texttt{qe-forge.org}}
 \textwidth = 17cm
@@ -16,7 +16,7 @@
 \def\configure{\texttt{configure}}
 \def\configurac{\texttt{configure.ac}}
 \def\autoconf{\texttt{autoconf}}
-\def\make.sys{\texttt{make.sys}}
+\def\make.inc{\texttt{make.inc}}
 \def\Makefile{\texttt{Makefile}}
 
 \def\qeImage{quantum_espresso.pdf}
@@ -477,7 +477,7 @@ libraries, installation utilities, general documentation.
 Common files and directories in the \texttt{espresso/} directory are:
 \begin{verbatim}
    install/                 configure
-   include/                 make.sys
+   include/                 make.inc
    archive/                 Makefile
    dev-tools/               License
    pseudo/                  README
@@ -491,7 +491,7 @@ obvious, the other files and directories are related to
 \begin{itemize}
 \item {\em Installation} (i.e. compilation and linking):\\
 \texttt{install/}, \texttt{dev-tools/}, \texttt{archive/},
-\configure, \make.sys
+\configure, \make.inc
 \item  {\em Testing} (running tests and examples):\\
 \texttt{pseudo/}, \texttt{environment\_variables}
 \item  {\em General documentation} (not package-specific):
@@ -534,7 +534,7 @@ Let us review the files related to compilation and linking:
 \item[--] \texttt{install/}: documentation and utilities for compilation
 and linking
 \item[--] \configure: wrapper for \texttt{install/configure} script
-\item[--] \make.sys: produced by \texttt{configure}, contains
+\item[--] \make.inc: produced by \texttt{configure}, contains
 machine-specific compilation and linking options
 \item[--] \Makefile: contains dependencies and targets used by
 command \texttt{make}.
@@ -542,7 +542,7 @@ command \texttt{make}.
 pre-processed.
 \end{itemize}
 \texttt{./configure} {\em options} cleans executbales,
-runs \texttt{install/configure}, produces file \make.sys.
+runs \texttt{install/configure}, produces file \make.inc.
 See Sec.\ref{SubSec:conf} for some details on how to change the
 behavior of \configure.
 
@@ -558,9 +558,9 @@ in each source directory. These files {\em must be updated} if you change
 the sources, running script \texttt{install/makedeps.sh} or using command
 \texttt{make depend}.
 
-\paragraph{make.sys}
+\paragraph{make.inc}
 This file is produced by \configure\ using the template in
-\texttt{install/make.sys.in} and contains all system-specific
+\texttt{install/make.inc.in} and contains all system-specific
 information on
 \begin{itemize}
 \item C and Fortran compilers name, pre-processing and compilation options
@@ -569,18 +569,18 @@ information on
 \item available optimized mathematical libraries, libraries to be downloaded
 \item Miscellanous stuff
 \end{itemize}
-The \make.sys\ file is included into all \Makefile's,
+The \make.inc\ file is included into all \Makefile's,
 using the corresponding syntax. The best documentation for the
-\make.sys\ file is the file itself. Note that if you want to
+\make.inc\ file is the file itself. Note that if you want to
 change something or to add more documentation into this file,
-you may need to modify the template file \texttt{install/make.sys.in}.
+you may need to modify the template file \texttt{install/make.inc.in}.
 
 \paragraph{Makefile}
 The top-level \Makefile\ contains the instructions to download,
 unpack, compile and link what is required. Sample contents
 (comments in italic):
 \begin{verbatim}
-include make.sys
+include make.inc
 \end{verbatim}
 {\em Contains machine- and \qe-specific definitions}
 \begin{verbatim}
@@ -614,7 +614,7 @@ libblas : touch-dummy
      cd install ; $(MAKE) -f extlibs_makefile $@
 \end{verbatim}
 {\em Target {\tt libblas}: this is an external library, that may or may
-not be needed, depending upon what is written in {\tt make.sys}. If
+not be needed, depending upon what is written in {\tt make.inc}. If
 needed, go into directory {\tt install/} where {\tt make libblas} using
 {\tt extlibs\_makefile} as Makefile will check if BLAS are there, download
 from the network if not,
@@ -624,7 +624,7 @@ compile and build the library}
 Second-level \Makefile\ contains only targets related to a given
 subdirectory or package. Sample contents:
 \begin{verbatim}
-sinclude ../make.sys
+sinclude ../make.inc
 default : all
 all: pw pwtools
 pw:
@@ -647,7 +647,7 @@ The most important and most complex Makefile is the one in the
 source directory. It is also the one you need to modify if you
 add something.
 \begin{verbatim}
-include ../../make.sys
+include ../../make.inc
 \end{verbatim}
 {\em Contains machine- and \qe-specific definitions}
 \begin{verbatim}
@@ -655,7 +655,7 @@ MODFLAGS= $(MOD_FLAG)../../iotk/src $(MOD_FLAG)../../Modules $(MOD_FLAG).\
           $(MOD_FLAG)../../FFTXlib $(MOD_FLAG)../../LAXlib
 \end{verbatim}
 {\em Location of needed modules; {\rm \texttt{MOD\_FLAG}} is defined in
-\texttt{make.sys}}
+\texttt{make.inc}}
 \begin{verbatim}
 PWOBJS = \
 pwscf.o
@@ -698,7 +698,7 @@ pw.x : $(PWOBJS) libpw.a $(LIBOBJS) $(QEMODS)
 It also produces a link to the executable in {\tt espresso/bin/}.
 Do not forget tabulators even if you do not see them!
 All variables (introduced by \$) are either defined locally
-in {\tt Makefile} or imported from {\tt make.sys}}
+in {\tt Makefile} or imported from {\tt make.inc}}
 \begin{verbatim}
 libpw.a : $(PWLIBS)
         $(AR) $(ARFLAGS) $@ $?
@@ -749,12 +749,12 @@ or do not implement properly preprocessing. In this case the
 preprocessing is done using \texttt{cpp}.
 Normally, \configure\ takes care of this, by selecting the
 appropriate rule \texttt{@f90rule@} below, in this section
-of file \texttt{make.sys.in}:
+of file \texttt{make.inc.in}:
 \begin{verbatim}
 .f90.o:
 	@f90rule@
 \end{verbatim}
-and producing the appropriate file \make.sys.
+and producing the appropriate file \make.inc.
 
 Preprocessing is useful to
 \begin{itemize}
@@ -781,7 +781,7 @@ The following capabilities of the C preprocessor are used:
 \item expand macros (command \texttt{\#define})
 \item execute conditional expressions such as
 \begin{verbatim}
-  #ifdef __expression
+  #if defined (__expression)
     ...code A...
   #else
     ...code B...
@@ -797,7 +797,8 @@ In order to make  preprocessing options
 easy to see, preprocessing variables should start with
 two underscores, as \texttt{\_\_expression} in the above
 example. Traditionally ''preprocessed'' variables are also written in
-uppercase.
+uppercase. Please use \verb|#if defined (XXX)|, not
+\verb|#if defined XXX| or \verb|#ifdef XXX|.
 
 \subsubsection{How to edit the \configure\ script}
 
@@ -828,7 +829,7 @@ except that:
 
 You may refer to the GNU \autoconf\ Manual for more info.
 
-\texttt{make.sys.in} is the source file for \make.sys, that
+\texttt{make.inc.in} is the source file for \make.inc, that
 \configure\ generates: you might want to edit that file as well.
 The generation procedure is as follows: if \configurac\ contains the macro
 "AC\_SUBST(name)", then every occurrence of "@name@" in the source
@@ -850,10 +851,10 @@ error messages.  Note that it is normal for some checks to fail.
 In order to support a previously unsupported architecture, first you
 have to figure out which compilers, compilation flags, libraries
 etc. should be used on that architecture.
-In other words, you have to write a \make.sys\ that works: you may use
+In other words, you have to write a \make.inc\ that works: you may use
 the manual configuration procedure for that (see the
 User Guide).  Then, you have to modify \configure\ so that it can
-generate that \make.sys\ automatically.
+generate that \make.inc\ automatically.
 
 To do that, you have to add the case for your architecture in several
 places throughout \configurac:
@@ -908,9 +909,8 @@ them in "try\_mpif90".
 be always fine, unless some special flag is required (e.g., -X64
 With sp4).
 
-- you should define "try\_dflags" if there is
-any
-"\#ifdef" specific to your machine: for instance, on IBM machines,
+- you should define "try\_dflags" if there is any preprocessing
+option specific to your machine: for instance, on IBM machines,
 "try\_dflags=-D\_\_AIX" . A list of such flags can be found in file
 \texttt{include/defs.h.README}.
 
@@ -1001,8 +1001,7 @@ others.  In that case, define them as "\$(FFLAGS) -something\_else".
 
 - "try\_fflags\_noopt": flags for Fortran 77 with all optimizations
 turned off: this is usually "-O0".
-These flags must be used for compiling flib/dlamch.f (part of our
-version of Lapack): it won't work properly with optimization.
+These flags used to be needed to compile flib/dlamch.f; likely obsolete
 
 - "try\_ldflags": flags for the linking phase (not including the list
 of libraries: this is decided later).
@@ -1010,8 +1009,8 @@ of libraries: this is decided later).
 - "try\_ldflags\_static": additional flags to select static compilation
 (i.e., don't use shared libraries).
 
-- "try\_dflags": must be defined if there is in the code any \#ifdef
-specific to your compiler (for instance, -D\_\_INTEL for Intel
+- "try\_dflags": must be defined if there is in the code any preprocessing
+option specific to your compiler (for instance, -D\_\_INTEL for Intel
 compilers).  Define it as "\$try\_dflags -D..." so that pre-existing
 flags, if any, are preserved.
 
@@ -1142,6 +1141,50 @@ See file \texttt{include/defs.h.README} for more info.
 % \subsection{Adding new directories or routines}
 
 \section{Algorithms}
+
+\subsection{$G$ vectors and plane waves}
+
+``$G$ vectors are generated in the \texttt{ggen} subroutine in
+\texttt{Modules/recvec\_subs.f90}. You may also have a look at routine
+\texttt{PW/src/n\_plane\_waves.f90} to understand how things work.
+In general, $G$ vectors are determined by the condition
+\begin{equation}
+  { \hbar^2 G^2 \over 2m_e} \le E^\rho_c = 4 E^w_c
+\end{equation}
+(without the k point; the code always uses Rydberg atomic units unless
+otherwise specified). This is a sphere in reciprocal space centered
+around (0,0,0).
+
+Concerning each orbital corresponding to a specific k point, you
+use the condition
+\begin{equation}
+  { \hbar^2 ({\bf k}+{\bf G})^2 \over 2m_e} \le E^w_c
+\end{equation}
+In this case the $G$ vectors are a subset of the vectors used for the
+density and form a sphere in reciprocal space shifted from the origin.
+Depending on k you can have a different set of $G$ vectors included
+in the sphere and also their number could differ.
+
+In order to manage the $G$ vectors for each $k$-point, you can use the arrays
+ngk (number of $G$ vectors for each $k$-point) and igk\_k (index of $G$
+corresponding to a given index of $k+G$; basically an index that allows
+you to identify the $G$ vectors corresponding to a given $k$ and order them).
+
+For example the kinetic energy corresponding to a given $k$-point \texttt{ik}
+is
+\begin{verbatim}
+ g2kin(1:ngk(ik)) = ( ( xk(1,ik) + g(1,igk_k(1:ngk(ik),ik)) )**2 + &
+                      ( xk(2,ik) + g(2,igk_k(1:ngk(ik),ik)) )**2 + &
+                      ( xk(3,ik) + g(3,igk_k(1:ngk(ik),ik)) )**2 ) * tpiba2
+\end{verbatim}
+where \texttt{tpiba2} $= (2\pi/a)^2$.
+
+There is only one FFT for the wavefunctions so the grid does not depend
+upon the k-points; however, for a given wavefunction, only the components
+corresponding to a $G$ vector that satisfy
+$ { \hbar^2 ({\bf k}+{\bf G})^2 / 2m_e} \le E^w_c$
+are different from 0'' (adapted from an answer by Dario Rocca).
+
 % \subsection{Diagonalization}
 % \subsection{Self-consistency}
 % \subsection{Structural optimization}
@@ -1319,7 +1362,7 @@ MUCH better code, both for serial and parallel speed:
    CALL mp_sum(ps,intra_bgrp_group)
 \end{verbatim}
 
-\subsubsection{Usage of \#ifdef \_\_MPI}
+\subsubsection{Preprocessing for parallel usage}
 
 Calls to MPI libraries require variables contained into a
 \texttt{mpif.h} file that is usually absent on serial machines.
@@ -1328,15 +1371,15 @@ the following rules {\em must} be followed:
 \begin{itemize}
 \item Direct calls to MPI library routines must be replaced by
 calls to wrapper routines like those in module \texttt{mp.f90}.
-If this is not possible or not convenient, use \#ifdef \_\_MPI
+If this is not possible or not convenient, use \verb|\#if defined (__MPI)}|
 to prevent compilation and usage in the serial case. Note that
 some compilers do not like empty files or modules containing nothing!
 \item Wrapper routines do not need to be conditionally called:
-there are \#ifdef's inside them. Keep the difference between serial
-and parallel code to a minimum: more \#ifdef \_\_MPI may be needed
+preprocessing is done inside them. Keep the difference between serial
+and parallel code to a minimum: \verb|\#if defined (__MPI)}| are needed
 only when the flux of parallel and serial execution differ.
-\item Unneeded \#ifdef \_\_MPI may be removed if already present;
-\#ifdef \_\_PARA is obsolete and must not be used in new developments.
+\item Unneeded preprocessing may be removed if already present;
+preprocessing option \verb|__PARA| is obsolete and must not be used.
 \end{itemize}
 
 \subsection{Parallelization levels and communicators}
@@ -1946,7 +1989,9 @@ There are currently no strict guidelines for developers. You
 should however follow at least the following loose ones:
 \begin{itemize}
 \item Preprocessing options should be capitalized and start with
-two underscores. Examples: \_\_AIX, \_\_LINUX, ...
+two underscores. Examples: \_\_MPI, \_\_LINUX, ... Use 
+preprocessing syntax \verb|#if defined (XXX)|, not \verb|#if defined XXX|
+or \verb|#ifdef XXX|
 \item Fortran commands should be capitalized:
 CALL something( )
 \item Variable names should be lowercase: \texttt{foo = bar/2}
@@ -2238,9 +2283,54 @@ GIPAW http://qeforge.qe-forge.org/svn/qe-gipaw/trunk
 Git is a very populare versioning control system for collaborative development 
 nowadays. The web is full of tutorials and guide about how to use it, covering 
 simple novice concepts to master the most sophisticated functionalities. The 
-following links contain an introduction to \texttt{git}:\\
-https://git-scm.com/book/en/v2/Getting-Started-Git-Basics\\
+following links contain an introduction to \texttt{git}:
+\begin{verbatim}
+https://git-scm.com/book/en/v2/Getting-Started-Git-Basics
 https://git-scm.com/course/svn.html
+\end{verbatim}
+Very quick guide to \texttt{git} commands for the impatient:
+\begin{itemize}
+\item
+  \texttt{clone}: Initial download, makes a local copy of a (typically
+  remote repository)
+\item  \texttt{fetch}:
+  looks at the remote repository, signals if new files or conflicts are present
+  in case the local copy is updated
+\item  \texttt{pull}:
+  downloads updates from the remote repository, applies them to the local one.
+  If there are conflicts that cannot be easily solved, conflicts are flagged
+  and one has to proceed with a manual merge
+\item \texttt{add}: adds files or directories to the "stage area", a pool
+  of files to be commited
+\item \texttt{commit} commits files in the "stage area". Unlike
+  \texttt{svn commit}, files are committed only in the local repository
+\item \texttt{push} publishes the new commits of the local repository
+  to one or more remote repositories
+\item \texttt{merge} merges two branches (typically the local one and
+  the remote one). A merge may be easy or complex, depending upon the type of
+  conflicts. See:
+  \texttt{https://help.github.com/articles/resolving-a-merge-conflict-from-the-command-line/}
+\end{itemize}
+In order to align the local repository to the svn mirror (equivalent to
+\texttt{svn update}), it is a good idea to use \texttt{fetch} before
+\texttt{pull}. Then:
+\begin{quote}
+  \texttt{git add}
+  \texttt{git commit}
+  \texttt{git merge}
+\end{quote}
+In order to save incomplete work and avoid local conflicts, one can use
+\texttt{stash}:
+\begin{quote}
+  \texttt{git stash save}     (save and remove modified files)\\
+  \texttt{git pull}           (update files)\\
+  \texttt{git stash apply}    (overwrite with locally modified files)
+\end{quote}
+The stash can be cleared using \texttt{git clear}. A few useful commands:
+\begin{quote}
+  \texttt{git status}\\
+  \texttt{git diff}
+\end{quote}
 
 \section{Bibliography}
 

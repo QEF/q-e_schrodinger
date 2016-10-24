@@ -154,10 +154,6 @@
         IF (ierr/=0) CALL mp_stop( 8006 )
 #  endif
 
-#if defined(__CUDA) || defined(__PHIGEMM )
-        CALL InitCudaEnv()
-#endif
-
         RETURN
       END SUBROUTINE mp_start
 !------------------------------------------------------------------------------!
@@ -167,7 +163,7 @@
         IMPLICIT NONE
         INTEGER :: ierr
         INTEGER, INTENT(IN):: errorcode, gid
-#ifdef __MPI
+#if defined(__MPI)
         CALL mpi_abort(gid, errorcode, ierr)
 #endif
       END SUBROUTINE mp_abort
@@ -182,10 +178,6 @@
 
         ierr = 0
         taskid = 0
-
-#if defined(__CUDA) || defined(__PHIGEMM )
-        CALL CloseCudaEnv()
-#endif
 
 #if defined(__MPI)
         CALL mpi_comm_rank( groupid, taskid, ierr)

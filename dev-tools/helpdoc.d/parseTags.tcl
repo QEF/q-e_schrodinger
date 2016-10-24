@@ -108,12 +108,13 @@ proc ::helpdoc::elementTag_ {args} {
     variable state
     variable elemArr
 
+    set tag  [tag -2]
+    
     if { $tree == "" } {
 	# an element tag has been specified before rootelement
 	::tclu::abort "an element \"$tag\" specified before the rootelement \"$state(rootElem)\""
     }
 
-    set tag  [tag -2]
     set node [$tree insert [$stack peek] end]
     set code [lindex $args end]
 
@@ -125,50 +126,56 @@ proc ::helpdoc::elementTag_ {args} {
     #puts "array(IDENT,*):    [array names elemArr IDENT,*]\n"
     #puts "array(ATTRLIST,*): [array names elemArr ATTRLIST,*]\n"
 
-    if { [info exists elemArr(TEXT,$tag)] || [info exists elemArr(STRING,$tag)] } {
-	# we have a simple-element (leaf)
-	$tree set $node text [lindex $args 0]
-	parseTagMsg_; puts ok
+    # do tag uses ident ?
 	
+    if { [info exists elemArr(IDENT,$tag)] } {
+	# add name="string" to attribute list
+	set name [lindex $args 0]
+	parseTagMsg_ $name; 
+	
+	checkIdent_ $name
+	set attr  "name=\"$name\" "
+	set args  [lrange $args 1 end]	    
+	if { $args == "" } { set code "" }
     } else {
-	# we have a complex-element
-	
-	# do tag uses ident ?
-	
-	if { [info exists elemArr(IDENT,$tag)] } {
-	    # add name="string" to attribute list
-	    set name [lindex $args 0]
-	    parseTagMsg_ $name; puts ""
-	    
-	    checkIdent_ $name
-	    set attr  "name=\"$name\" "
-	    set args  [lrange $args 1 end]	    
-	    if { $args == "" } { set code "" }
-	} else {
-	    parseTagMsg_; puts ""
-	}
-	
-	# do tag use attributes ?
-	
-	if { [info exists elemArr(ATTRLIST,$tag)] } {
-	    if { [llength $args] > 1 } {
-		# this is quick-and-dirty, but we need to do more cheking on order, optionality, ....
-		append attr [optVal2AttrVal_ [::tclu::extractArgs \
-						  [attrsToOpts_ $elemArr(ATTRLIST,$tag)]  args]]
-		if { [llength $args] != 1 } {
-		    # wrong attributes have been specified
-		    ::tclu::abort "wrong attributes for the \"$tag\" specified, must be one of: [join $elemArr(ATTRLIST,$tag) ,]"
-		}
+	parseTagMsg_;
+    }
+    
+    # do tag use attributes ?
+    
+    if { [info exists elemArr(ATTRLIST,$tag)] } {
+	if { [llength $args] > 1 } {
+	    # this is quick-and-dirty, but we need to do more cheking on order, optionality, ....
+	    append attr [optVal2AttrVal_ [::tclu::extractArgs \
+					      [attrsToOpts_ $elemArr(ATTRLIST,$tag)]  args]]
+	    if { [llength $args] != 1 } {
+		# wrong attributes have been specified
+		::tclu::abort "wrong attributes for the \"$tag\" specified, must be one of: [join $elemArr(ATTRLIST,$tag) ,]"
 	    }
 	}
+    }
 	
-	# TODO: checks on order, optionality, ...
+    # TODO: checks on order, optionality, ...
 
-	# store attributes into the tree ...
+    # store attributes into the tree ...
+    
+    if { [info exists attr] } {
+	$tree set $node attributes $attr    
+    }
 
-	if { [info exists attr] } {
-	    $tree set $node attributes $attr    
-	}
+    # we have a leaf or a complex-element ?
+    
+    if { [info exists elemArr(WORD,$tag)] || [info exists elemArr(STRING,$tag)] ||
+	 [info exists elemArr(TEXT,$tag)] || [info exists elemArr(CLIST,$tag)] || [info exists elemArr(PLIST,$tag)] } {
+
+	# we have a simple-element (leaf)
+	$tree set $node text [lindex $args 0]
+	#parseTagMsg_; puts ok
+	puts ok	
+
+    } else {
+	# we have a complex element
+	puts ""; # (needed for nice print-out)
 	
 	# proceed further
 

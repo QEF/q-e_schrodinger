@@ -5,7 +5,6 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 !
-#ifdef  __XSD
   !--------------------------------------------------------------------------------------------------------------------
   SUBROUTINE pw_init_qexsd_input(obj,obj_tagname)
   !--------------------------------------------------------------------------------------------------------------------
@@ -47,6 +46,7 @@
                                 ip_nosym => nosym, ip_noinv => noinv, ip_nosym_evc => nosym_evc,                      & 
                                 ip_no_t_rev => no_t_rev, ip_force_symmorphic => force_symmorphic,                     &
                                 ip_use_all_frac=>use_all_frac, assume_isolated, esm_bc, esm_w, esm_nfit, esm_efield,  & 
+                                ip_lfcpopt => lfcpopt, ip_fcp_mu => fcp_mu,                                           &
                                 ecfixed, qcutz, q2sigma,                                                              &    
                                 tforces, rd_for,                                                                      &
                                 if_pos,                                                                               &
@@ -55,7 +55,7 @@
                                 lberry,nppstr,nberrycyc,                                                              &
                                 nconstr_inp, nc_fields, constr_type_inp, constr_target_inp, constr_inp, tconstr,      &
                                 constr_tol_inp, constrained_magnetization, lambda, fixed_magnetization, input_dft,    &
-                                tf_inp, ip_ibrav => ibrav
+                                tf_inp, ip_ibrav => ibrav                                                        
 !
   USE fixed_occ,         ONLY:  f_inp               
                                 
@@ -95,6 +95,7 @@
   CHARACTER(LEN=80)                        ::  vdw_corr_  
   !
   ! 
+#if defined(__XSD)
   obj%tagname=TRIM(obj_tagname)
   IF ( ABS(ip_ibrav)  .GT. 0 ) THEN  
      ibrav_lattice = .TRUE. 
@@ -280,7 +281,15 @@
   ELSE 
      obj%boundary_conditions_ispresent = .TRUE.
      IF ( TRIM ( assume_isolated) .EQ. "esm") THEN 
-        CALL qexsd_init_boundary_conditions(obj%boundary_conditions, assume_isolated, esm_bc,esm_nfit, esm_w,esm_efield)
+        SELECT CASE (TRIM(esm_bc)) 
+          CASE ('pbc', 'bc1' ) 
+             CALL qexsd_init_boundary_conditions(obj%boundary_conditions, assume_isolated, esm_bc,&
+                                                 ESM_NFIT = esm_nfit, ESM_W = esm_w,ESM_EFIELD = esm_efield)
+          CASE ('bc2', 'bc3' ) 
+            CALL qexsd_init_boundary_conditions(obj%boundary_conditions, assume_isolated, esm_bc, &
+                                                 FCP_OPT = ip_lfcpopt, FCP_MU = ip_fcp_mu, &
+                                                 ESM_NFIT = esm_nfit, ESM_W = esm_w,ESM_EFIELD = esm_efield)
+        END SELECT 
      ELSE 
         CALL qexsd_init_boundary_conditions(obj%boundary_conditions, assume_isolated) 
      END IF 
@@ -363,12 +372,7 @@
   obj%lread=.TRUE.
   obj%lwrite=.TRUE.
   ! 
-  ! 
+  !
+#endif 
   END SUBROUTINE pw_init_qexsd_input
   !
-#else
-!   
-  SUBROUTINE pw_init_qexsd_input()
-    print *,"This is just a stub"
-  END SUBROUTINE
-#endif

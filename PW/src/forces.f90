@@ -5,6 +5,10 @@
 ! in the root directory of the present distribution,
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
+!----------------------------------------------------------------------------
+! TB
+! included monopole related forces
+!----------------------------------------------------------------------------
 !
 !----------------------------------------------------------------------------
 SUBROUTINE forces()
@@ -32,11 +36,11 @@ SUBROUTINE forces()
   USE lsda_mod,      ONLY : nspin
   USE symme,         ONLY : symvector
   USE vlocal,        ONLY : strf, vloc
-  USE force_mod,     ONLY : force, lforce
+  USE force_mod,     ONLY : force, lforce, sumfor
   USE scf,           ONLY : rho
   USE ions_base,     ONLY : if_pos
   USE ldaU,          ONLY : lda_plus_u, U_projection
-  USE extfield,      ONLY : tefield, forcefield
+  USE extfield,      ONLY : tefield, forcefield, monopole, forcemono, relaxz
   USE control_flags, ONLY : gamma_only, remove_rigid_rot, textfor, &
                             iverbosity, llondon, lxdm, ts_vdw
   USE plugin_flags
@@ -69,8 +73,8 @@ SUBROUTINE forces()
 !
   COMPLEX(DP), ALLOCATABLE :: auxg(:), auxr(:)
 !
-  REAL(DP) :: sumfor, sumscf, sum_mm
-  REAL(DP),PARAMETER :: eps = 1.e-12_dp
+  REAL(DP) :: sumscf, sum_mm
+  REAL(DP), PARAMETER :: eps = 1.e-12_dp
   INTEGER  :: ipol, na
     ! counter on polarization
     ! counter on atoms
@@ -186,6 +190,7 @@ SUBROUTINE forces()
         ! factor 2 converts from Ha to Ry a.u.
         IF ( ts_vdw )  force(ipol,na) = force(ipol,na) + 2.0_dp*FtsvdW(ipol,na)
         IF ( tefield ) force(ipol,na) = force(ipol,na) + forcefield(ipol,na)
+        IF ( monopole ) force(ipol,na) = force(ipol,na) + forcemono(ipol,na) ! TB
         IF (lelfield)  force(ipol,na) = force(ipol,na) + forces_bp_efield(ipol,na)
         IF (do_comp_mt)force(ipol,na) = force(ipol,na) + force_mt(ipol,na) 
 
@@ -193,7 +198,10 @@ SUBROUTINE forces()
         !
      END DO
      !
-     IF ( do_comp_esm .and. ( esm_bc .ne. 'pbc' ) ) THEN
+     !TB
+     IF ((monopole.and.relaxz).AND.(ipol==3)) WRITE( stdout, '("Total force in z direction = 0 disabled")')
+     !
+     IF ( (do_comp_esm .and. ( esm_bc .ne. 'pbc' )).or.(monopole.and.relaxz) ) THEN
         !
         ! ... impose total force along xy = 0
         !
@@ -293,6 +301,14 @@ SUBROUTINE forces()
         END DO
      END IF
      !
+     ! TB monopole forces
+     IF ( monopole) THEN
+        WRITE( stdout, '(/,5x,"Monopole contribution to forces:")')
+        DO na = 1, nat
+           WRITE( stdout, 9035) na, ityp(na), (forcemono(ipol,na), ipol = 1, 3)
+        END DO
+     END IF
+     !
   END IF
   !
   sumfor = 0.D0
@@ -344,7 +360,7 @@ SUBROUTINE forces()
   !
   CALL stop_clock( 'forces' )
   !
-  IF ( ( sumfor < 10.D0*sumscf ) .AND. ( sumfor > eps ) ) &
+  IF ( ( sumfor < 10.D0*sumscf ) .AND. ( sumfor > nat*eps ) ) &
   WRITE( stdout,'(5x,"SCF correction compared to forces is large: ", &
                    &  "reduce conv_thr to get better values")')
   !

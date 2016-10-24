@@ -1,5 +1,5 @@
 \documentclass[12pt,a4paper]{article}
-\def\version{5.3}
+\def\version{6.0}
 \def\qe{{\sc Quantum ESPRESSO}}
 
 \usepackage{html}
@@ -79,7 +79,10 @@ Stefano de Gironcoli, Andrea Dal Corso (SISSA), Paolo Giannozzi
       with the Berkeley GW code;
 \item The late Prof. Eyvaz Isaev for the Fermi Surface code;
 \item Natalie Holzwarth (WFU) for the PAW projection in code
-     \texttt{projwfc.f90}.
+     \texttt{projwfc.f90};
+\item Takashi Koretsune and Florian Thoele (ETHZ) for noncollinear 
+      magnetisation support with USPP and PAW pseudopotentials in 
+      code \texttt{pw2wannier.f90}.
 \end{itemize}
 
 \PostProc\ is free software, released under the 
@@ -117,8 +120,8 @@ and linked to \texttt{bin/}.
 \section{Usage}
 
 All codes for which input documentation is not explicitly mentioned below
-havesome documentation in the header of the fortran sources.
-In the following, ``Example N'' standes for subdirectory 
+have some documentation in the header of the fortran sources.
+In the following, ``Example N'' stands for subdirectory 
 \texttt{examples/exampleN/}.
 
 All quantities whose dimensions are not explicitly specified are in

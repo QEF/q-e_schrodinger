@@ -68,7 +68,7 @@
 PROGRAM bgw2pw
 
   USE environment, ONLY : environment_start, environment_end
-  USE io_files, ONLY : prefix, tmp_dir, outdir
+  USE io_files, ONLY : prefix, tmp_dir
   USE io_global, ONLY : ionode, ionode_id
   USE kinds, ONLY : DP
   USE mp, ONLY : mp_bcast
@@ -85,6 +85,7 @@ PROGRAM bgw2pw
   integer :: wfng_nband
   logical :: rhog_flag
   character ( len = 256 ) :: rhog_file
+  character ( len = 256 ) :: outdir
 
   NAMELIST / input_bgw2pw / prefix, outdir, &
     real_or_complex, wfng_flag, wfng_file, wfng_nband, &
@@ -96,7 +97,7 @@ PROGRAM bgw2pw
 
   character (len=256), external :: trimcheck
 
-#ifdef __MPI
+#if defined(__MPI)
   CALL mp_startup ( )
 #endif
 
@@ -122,7 +123,6 @@ PROGRAM bgw2pw
   ENDIF
 
   tmp_dir = trimcheck ( outdir )
-  CALL mp_bcast ( outdir, ionode_id, world_comm )
   CALL mp_bcast ( tmp_dir, ionode_id, world_comm )
   CALL mp_bcast ( prefix, ionode_id, world_comm )
   CALL mp_bcast ( real_or_complex, ionode_id, world_comm )
@@ -134,15 +134,11 @@ PROGRAM bgw2pw
 
   CALL read_file ( )
 
-  ! this is needed to compute k+G indices and store them into igk_k
- 
-  CALL hinit0 ( )
-
   CALL openfil_pp ( )
 
   IF ( wfng_flag ) THEN
-    input_file_name = TRIM ( outdir ) // '/' // TRIM ( wfng_file )
-    output_dir_name = TRIM ( outdir ) // '/' // TRIM ( prefix ) // '.save'
+    input_file_name = TRIM ( tmp_dir ) // '/' // TRIM ( wfng_file )
+    output_dir_name = TRIM ( tmp_dir ) // '/' // TRIM ( prefix ) // '.save'
     IF ( ionode ) WRITE ( 6, '(5x,"call write_evc")' )
     CALL start_clock ( 'write_evc' )
     CALL write_evc ( input_file_name, real_or_complex, wfng_nband, &
@@ -152,8 +148,8 @@ PROGRAM bgw2pw
   ENDIF
 
   IF ( rhog_flag ) THEN
-    input_file_name = TRIM ( outdir ) // '/' // TRIM ( rhog_file )
-    output_dir_name = TRIM ( outdir ) // '/' // TRIM ( prefix ) // '.save'
+    input_file_name = TRIM ( tmp_dir ) // '/' // TRIM ( rhog_file )
+    output_dir_name = TRIM ( tmp_dir ) // '/' // TRIM ( prefix ) // '.save'
     IF ( ionode ) WRITE ( 6, '(5x,"call write_cd")' )
     CALL start_clock ( 'write_cd' )
     CALL write_cd ( input_file_name, real_or_complex, output_dir_name )
@@ -199,10 +195,10 @@ SUBROUTINE write_evc ( input_file_name, real_or_complex, &
   USE symm_base, ONLY : s, nsym
   USE xml_io_base, ONLY : create_directory
   USE qexml_module, ONLY : qexml_kpoint_dirname, qexml_wfc_filename
-#ifdef __MPI
+#if defined(__MPI)
   USE parallel_include, ONLY : MPI_INTEGER, MPI_DOUBLE_COMPLEX
 #endif
-  USE wvfct, ONLY : npwx, igk
+  USE wvfct, ONLY : npwx
 
   IMPLICIT NONE
 
@@ -214,8 +210,9 @@ SUBROUTINE write_evc ( input_file_name, real_or_complex, &
   logical :: f1, f2
   integer :: ierr, i, j, iu, ik, is, ib, ig, jg, fg, ir, &
     na, nk, ns, nb, nbgw, ng, ngkmax, ntran, cell_symmetry, &
-    nkbl, nkl, nkr, iks, ike, npw, npw_g, ngkdist_l, ngkdist_g, &
+    iks, ike, npw, npw_g, ngkdist_l, ngkdist_g, &
     igk_l2g, irecord, nrecord, ng_irecord, nr ( 3 )
+  integer :: global_kpoint_index
   real ( DP ) :: ecutrho, ecutwfn, celvol, recvol, al, bl, xdel, &
     a ( 3, 3 ), b ( 3, 3 ), adot ( 3, 3 ), bdot ( 3, 3 )
   character :: sdate*32, stime*32, stitle*32
@@ -405,7 +402,7 @@ SUBROUTINE write_evc ( input_file_name, real_or_complex, &
         ENDDO
       ENDDO
     ENDIF
-#ifdef __MPI
+#if defined(__MPI)
     CALL mp_barrier ( world_comm )
     CALL MPI_Scatter ( gk_buf, 3 * ngkdist_l, MPI_INTEGER, &
     gk_dist, 3 * ngkdist_l, MPI_INTEGER, &
@@ -457,7 +454,7 @@ SUBROUTINE write_evc ( input_file_name, real_or_complex, &
           ENDDO
         ENDDO
       ENDIF
-#ifdef __MPI
+#if defined(__MPI)
       DO is = 1, ns
         CALL mp_barrier ( world_comm )
         CALL MPI_Scatter ( wfng_buf ( :, is ), ngkdist_l, MPI_DOUBLE_COMPLEX, &
@@ -502,20 +499,14 @@ SUBROUTINE write_evc ( input_file_name, real_or_complex, &
 
   CALL mp_bcast ( ngk_g, ionode_id, world_comm )
 
-  nkbl = nkstot / kunit
-  nkl = kunit * ( nkbl / npool )
-  nkr = ( nkstot - nkl * npool ) / kunit
-  IF ( my_pool_id .LT. nkr ) nkl = nkl + kunit
-  iks = nkl * my_pool_id + 1
-  IF ( my_pool_id .GE. nkr ) iks = iks + nkr * kunit
-  ike = iks + nkl - 1
+  iks =  global_kpoint_index (nkstot, 1)
+  ike = iks + nks -1 
 
   npw_g = 0
   DO ik = 1, nks
     npw = ngk ( ik )
-    igk(1:npw) = igk_k(1:npw,ik)
     DO ig = 1, npw
-      igk_l2g = ig_l2g ( igk ( ig ) )
+      igk_l2g = ig_l2g ( igk_k (ig, ik) )
       IF ( igk_l2g .GT. npw_g ) npw_g = igk_l2g
     ENDDO
   ENDDO
@@ -555,7 +546,7 @@ SUBROUTINE write_evc ( input_file_name, real_or_complex, &
       CALL iotk_write_attr ( attr, "UNITS", "2 pi / a", FIRST = .TRUE. )
       CALL iotk_write_dat ( iu, "K-POINT_COORDS", k ( :, ik ), ATTR = attr )
     ENDIF
-#ifdef __MPI
+#if defined(__MPI)
     CALL mp_barrier ( world_comm )
     CALL MPI_Gather ( igk_dist ( :, ik ) , ngkdist_l, MPI_INTEGER, &
     igk_buf, ngkdist_l, MPI_INTEGER, &
@@ -613,7 +604,7 @@ SUBROUTINE write_evc ( input_file_name, real_or_complex, &
         CALL iotk_write_empty ( iu, "INFO", attr )
       ENDIF
       DO ib = 1, nb
-#ifdef __MPI
+#if defined(__MPI)
         CALL mp_barrier ( world_comm )
         CALL MPI_Gather ( wfng_dist ( :, ib, is, ik ), ngkdist_l, MPI_DOUBLE_COMPLEX, &
         wfng_buf ( :, is ), ngkdist_l, MPI_DOUBLE_COMPLEX, &

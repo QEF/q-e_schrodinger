@@ -968,7 +968,7 @@ CONTAINS
       dvar(5) = SSFMAX
       dvar(6) = SSFMIN
       !
-#ifdef __MPI
+#if defined(__MPI)
       CALL MPI_BCAST( dvar, 6, MPI_DOUBLE_PRECISION, 0, comm, ierr )
       IF( ierr /= 0 ) CALL lax_error__( ' ptredv ', 'error in mpi_bcast 4', ierr )
 #endif
@@ -1026,7 +1026,7 @@ CONTAINS
 
       END IF
 
-#ifdef __MPI
+#if defined(__MPI)
       CALL MPI_BCAST( e(l1), nm1-l1+1, MPI_DOUBLE_PRECISION, 0, comm, ierr )
       IF( ierr /= 0 ) CALL lax_error__( ' ptredv ', 'error in mpi_bcast 5', ierr )
       CALL MPI_BCAST( m, 1, MPI_INTEGER, 0, comm, ierr )
@@ -1086,7 +1086,7 @@ CONTAINS
 
          END IF
 
-#ifdef __MPI
+#if defined(__MPI)
          CALL MPI_BCAST( m, 1, MPI_INTEGER, 0, comm, ierr )
          IF( ierr /= 0 ) CALL lax_error__( ' ptredv ', 'error in mpi_bcast 7', ierr )
 #endif
@@ -1428,21 +1428,13 @@ CONTAINS
         REAL(DP), ALLOCATABLE :: RWORK(:)
         COMPLEX(DP), ALLOCATABLE :: ZWORK(:)
 
-#if defined __ESSL
-        IOPT = 0
-        IF((JOBZ .EQ. 'V') .OR. (JOBZ .EQ. 'v') ) iopt = iopt + 1
-        IF((UPLO .EQ. 'U') .OR. (UPLO .EQ. 'u') ) iopt = iopt + 20
-        ALLOCATE( rwork( 4*n ) )
-        CALL ZHPEV(IOPT, ap, w, z, ldz, n, rwork, 4*n)
-        DEALLOCATE( rwork )
-#else
         ALLOCATE( rwork( MAX(1, 3*n-2) ), zwork( MAX(1, 2*n-1)) )
         CALL ZHPEV(jobz, uplo, n, ap, w, z, ldz, zwork, rwork, INFO)
         DEALLOCATE( rwork, zwork )
         IF( INFO .NE. 0 ) THEN
           CALL lax_error__( ' dspev_drv ', ' diagonalization failed ',INFO )
         END IF
-#endif
+
         RETURN
    END SUBROUTINE zhpev_drv
 
@@ -1487,7 +1479,7 @@ CONTAINS
 
   SUBROUTINE pzheevd_drv( tv, n, nb, h, w, ortho_cntx, ortho_comm )
 
-#if defined(__ELPA)
+#if defined(__ELPA) || defined(__ELPA_2016) || defined(__ELPA_2015)
      USE elpa1
 #endif
      IMPLICIT NONE
@@ -1512,8 +1504,9 @@ CONTAINS
      INTEGER     :: LWORK, LRWORK, LIWORK
      INTEGER     :: desch( 10 ), info, ierr
      CHARACTER   :: jobv
-#if defined(__ELPA)
+#if defined(__ELPA) || defined(__ELPA_2016) || defined(__ELPA_2015)
      INTEGER     :: nprow,npcol,my_prow, my_pcol,mpi_comm_rows, mpi_comm_cols
+     LOGICAL     :: success
 #endif 
 
      !
@@ -1526,13 +1519,23 @@ CONTAINS
 
      call descinit( desch, n, n, nb, nb, 0, 0, ortho_cntx, size(h,1), info )
      
-#if defined(__ELPA)
-     CALL BLACS_Gridinfo( ortho_cntx, nprow, npcol, my_prow, my_pcol )
+#if defined(__ELPA) || defined(__ELPA_2016) || defined(__ELPA_2015)
+     CALL BLACS_Gridinfo(ortho_cntx,nprow, npcol, my_prow,my_pcol)
+#if defined(__ELPA_2016)
+     ierr = get_elpa_row_col_comms(ortho_comm, my_prow, my_pcol,mpi_comm_rows, mpi_comm_cols)
+     success = solve_evp_complex(n, n, h, size(h,1), w,  v, size(h,1), size(h,2), nb, &
+                           mpi_comm_rows, mpi_comm_cols)
+#elif defined(__ELPA_2015)
+     ierr = get_elpa_row_col_comms(ortho_comm, my_prow, my_pcol,mpi_comm_rows, mpi_comm_cols)
+     ierr = solve_evp_complex(n, n, h, size(h,1), w,  v, size(h,1), size(h,2), nb, &
+                           mpi_comm_rows, mpi_comm_cols)
+#elif defined(__ELPA)
      CALL get_elpa_row_col_comms(ortho_comm, my_prow, my_pcol,mpi_comm_rows,mpi_comm_cols)
      CALL solve_evp_complex(n, n, h, size(h,1), w, v, size(h,1), nb, &
                           mpi_comm_rows, mpi_comm_cols)
-     h = v
+#endif
 
+     h = v
 
 #if defined __MPI
      CALL mpi_comm_free( mpi_comm_rows, ierr )
@@ -1566,10 +1569,10 @@ CONTAINS
 
      IF( tv ) h = v
 #endif
-     IF( ALLOCATED (rwork) )DEALLOCATE( work )
+     IF ( ALLOCATED (work) )DEALLOCATE( work )
      IF ( ALLOCATED (rwork) )DEALLOCATE( rwork )
      IF ( ALLOCATED (iwork) )DEALLOCATE( iwork )
-     IF( ALLOCATED( v ) ) DEALLOCATE( v )
+     IF ( ALLOCATED( v ) ) DEALLOCATE( v )
      RETURN
   END SUBROUTINE pzheevd_drv
 

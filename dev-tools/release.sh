@@ -2,7 +2,7 @@
 
 #tempdir=$HOME/Downloads
 tempdir=/tmp
-version=5.3.0
+version=6.0
 
 # make sure there is no locale setting creating unneeded differences.
 LC_ALL=C
@@ -10,15 +10,15 @@ export LC_ALL
 
 mkdir $tempdir
 cd $tempdir
-/bin/rm -rf espresso/ espresso-$version
+/bin/rm -rf espresso/ qe-$version
 # get the svn copy
-svn checkout http://qeforge.qe-forge.org/svn/q-e/tags/QE-5.3.0/espresso
-mv espresso/ espresso-$version/
+svn checkout http://qeforge.qe-forge.org/svn/q-e/tags/QE-$version/espresso
+mv espresso/ qe-$version/
 
-cd espresso-$version
+cd qe-$version
 
 # generate version.f90 (requires svn files)
-touch make.sys
+touch make.inc
 cd Modules
 make version.f90
 # save version.f90 (make veryclean removes it)
@@ -42,54 +42,77 @@ chmod -x install/update_version
 # in order to build html files for user guide and developer manual,
 # "latex2html" and "convert" (from Image-Magick) are needed
 
-touch make.sys
-make doc
+touch make.inc
+make doc VERSION=$version
 
 # generate PWGUI
+
 make tar-gui PWGUI_VERSION=$version 
 tar -xzvf PWgui-$version.tgz
 /bin/rm PWgui-$version.tgz
 
+# generate QE-modes -- not working for me (NdFilippo
+
+# this creates a ready to use QE-modes-$version.tar.gz
+make tar-qe-modes VERSION=$version
+# move the package one directory down from espresso-$version/
+mv QE-modes-$version.tar.gz ..
+
 cd ..
+
+# Updating reference outputs on test-suite
+
+find . -name benchmark.out* > list-SVN.txt
+sed 's/SVN/$version/g' list-SVN.txt | grep -v svn  > list-$version.txt
+paste -d " " list-SVN.txt list-$version.txt > ./STUFF-TO-RENAME.txt
+IFS=$'\n'
+for x in `cat ./STUFF-TO-RENAME.txt `
+do
+file_src=`echo $x | awk '{ print $1}'`
+file_dst=`echo $x | awk '{ print $2}'`
+mv ${file_src} ${file_dst}
+done
+rm ./STUFF-TO-RENAME.txt ./list-SVN.txt ./list-$version.txt
 
 # core espresso
 
-tar -czvf espresso-$version.tar.gz espresso-$version/archive \
-                                   espresso-$version/clib \
-                                   espresso-$version/configure \
-                                   espresso-$version/COUPLE \
-                                   espresso-$version/CPV \
-                                   espresso-$version/dev-tools \
-                                   espresso-$version/Doc \
-                                   espresso-$version/environment_variables \
-                                   espresso-$version/LAXlib \
-                                   espresso-$version/FFTXlib \
-                                   espresso-$version/Makefile \
-                                   espresso-$version/include \
-                                   espresso-$version/install \
-                                   espresso-$version/License \
-                                   espresso-$version/Modules \
-                                   espresso-$version/PP \
-                                   espresso-$version/pseudo \
-                                   espresso-$version/PW \
-                                   espresso-$version/README \
-                                   espresso-$version/upftools
-#
+tar -czvf qe-$version.tar.gz qe-$version/archive \
+                                   qe-$version/clib \
+                                   qe-$version/configure \
+                                   qe-$version/COUPLE \
+                                   qe-$version/CPV \
+                                   qe-$version/dev-tools \
+                                   qe-$version/Doc \
+                                   qe-$version/environment_variables \
+                                   qe-$version/LAXlib \
+                                   qe-$version/FFTXlib \
+                                   qe-$version/Makefile \
+                                   qe-$version/include \
+                                   qe-$version/install \
+                                   qe-$version/License \
+                                   qe-$version/Modules \
+                                   qe-$version/PP \
+                                   qe-$version/pseudo \
+                                   qe-$version/PW \
+                                   qe-$version/README \
+                                   qe-$version/upftools \
+                                   qe-$version/NEB \
+                                   qe-$version/PHonon \
+                                   qe-$version/XSpectra \
+                                   qe-$version/PWCOND \
+                                   qe-$version/TDDFPT \
+                                   qe-$version/atomic \
+                                   qe-$version/gwl \
+                                   qe-$version/atomic \
+                                   qe-$version/EPW \
+                                   qe-$version/GWW \
+                                   qe-$version/PWgui-$version
+
 # Packages, ready for automatic unpacking
 
-cd espresso-$version
-tar -cvzf ../PWgui-$version.tar.gz    PWgui-$version
-tar -czvf ../PHonon-$version.tar.gz   PHonon # PlotPhon QHA
-tar -czvf ../EPW-$version.tar.gz      EPW
-tar -czvf ../neb-$version.tar.gz      NEB
-tar -czvf ../pwcond-$version.tar.gz   PWCOND
-tar -czvf ../xspectra-$version.tar.gz XSpectra
-tar -czvf ../GWW-$version.tar.gz      GWW
-#tar -czvf ../GIPAW-$version.tar.gz    GIPAW
-tar -czvf ../tddfpt-$version.tar.gz   TDDFPT
-tar -czvf ../atomic-$version.tar.gz   atomic
-tar -czvf ../test-suite-$version.tar.gz test-suite
-
+cd qe-$version
+tar -czvf ../qe-$version-test-suite.tar.gz test-suite
+tar -czvf ../qe-$version-examples.tar.gz Examples
 
 # Generating and uploading documentation
 

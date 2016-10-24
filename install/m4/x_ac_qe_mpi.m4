@@ -3,6 +3,7 @@
 AC_DEFUN([X_AC_QE_MPI], [
 
 have_mpi=0
+#parallel=0
 
 # some architectures require to link mpi libraries explicitly
 F77=$mpif90 # use parallel compiler
@@ -21,7 +22,7 @@ then
                         LDFLAGS="$test_ldflags"
                         LIBS="$mpi_libs"
                         AC_SEARCH_LIBS(mpi_init, mpi, 
-                                       have_mpi=1 parallel=1 mpi_libs="$LIBS" try_dflags="$try_dflags -D__MPI -D__PARA")
+                                       have_mpi=1 parallel=1 mpi_libs="$LIBS" try_dflags="$try_dflags -D__MPI")
                 fi
         fi
 fi

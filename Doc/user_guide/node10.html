@@ -1,0 +1,375 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>2.3 configure</TITLE>
+<META NAME="description" CONTENT="2.3 configure">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node11.html">
+<LINK REL="previous" HREF="node9.html">
+<LINK REL="up" HREF="node7.html">
+<LINK REL="next" HREF="node11.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html237"
+  HREF="node11.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html233"
+  HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html227"
+  HREF="node9.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html235"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html238"
+  HREF="node11.html">2.4 Libraries</A>
+<B> Up:</B> <A NAME="tex2html234"
+  HREF="node7.html">2 Installation</A>
+<B> Previous:</B> <A NAME="tex2html228"
+  HREF="node9.html">2.2 Prerequisites</A>
+ &nbsp; <B>  <A NAME="tex2html236"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A NAME="tex2html239"
+  HREF="node10.html#SECTION00033100000000000000">2.3.1 Manual configuration</A>
+</UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H2><A NAME="SECTION00033000000000000000">
+2.3 <TT>configure</TT></A>
+</H2>
+
+<P>
+To install the Q<SMALL>UANTUM </SMALL>ESPRESSO source package, run the <TT>configure</TT> script. This is actually a wrapper to the true <TT>configure</TT>,
+located in the <TT>install/</TT> subdirectory. <TT>configure</TT> will (try to) detect compilers and libraries available on
+your machine, and set up things accordingly. Presently it is expected
+to work on most Linux 32- and 64-bit PCs (all Intel and AMD CPUs) and
+PC clusters, SGI Altix, IBM SP and BlueGene machines, NEC SX, Cray XT
+machines, Mac OS X, MS-Windows PCs, and (for experts!) on several
+GPU-accelerated hardware. Detailed installation instructions for some
+specific HPC machines can be found in files <TT>install/README.</TT><EM>sys</EM>,
+where <EM>sys</EM> is the machine name.
+
+<P>
+Instructions for the impatient:
+<PRE>
+    cd espresso-X.Y.Z/
+    ./configure
+     make all
+</PRE>
+This will (try to) produce parallel (MPI) executable if a proper parallel
+environment is detected, serial executables otherwise. For OpenMP executables,
+specify <TT>./configure -enable-openmp</TT>. Symlinks to executable programs
+will be placed in the <TT>bin/</TT>
+subdirectory. Note that both C and Fortran compilers must be in your execution
+path, as specified in the PATH environment variable.
+Additional instructions for special machines:
+
+<P>
+<TABLE CELLPADDING=3>
+<TR><TD ALIGN="LEFT"><TT>./configure ARCH=crayxt4</TT></TD>
+<TD ALIGN="LEFT">for CRAY XT machines</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>./configure ARCH=necsx</TT></TD>
+<TD ALIGN="LEFT">for NEC SX machines</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>./configure ARCH=ppc64-mn</TT></TD>
+<TD ALIGN="LEFT">PowerPC Linux + xlf (Marenostrum)</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>./configure ARCH=ppc64-bg</TT></TD>
+<TD ALIGN="LEFT">IBM BG/P (BlueGene)</TD>
+</TR>
+</TABLE>
+
+<P>
+<TT>configure</TT> generates the following files:
+
+<P>
+<TABLE CELLPADDING=3>
+<TR><TD ALIGN="LEFT"><TT>make.inc</TT></TD>
+<TD ALIGN="LEFT">compilation rules and flags (used by <TT>Makefile</TT>)</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>install/configure.msg</TT></TD>
+<TD ALIGN="LEFT">a report of the configuration run (not needed for compilation)</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>install/config.log</TT></TD>
+<TD ALIGN="LEFT">detailed log of the configuration run (may be needed for debugging)</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>include/fft_defs.h</TT></TD>
+<TD ALIGN="LEFT">defines fortran variable for C pointer (used only by FFTW)</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>include/c_defs.h</TT></TD>
+<TD ALIGN="LEFT">defines C to fortran calling convention</TD>
+</TR>
+<TR><TD ALIGN="LEFT">&nbsp;</TD>
+<TD ALIGN="LEFT">and a few more definitions used by C files</TD>
+</TR>
+</TABLE>
+<BR>
+NOTA BENE: unlike previous versions, <TT>configure</TT> no longer runs the
+<TT>makedeps.sh</TT> shell script that updates dependencies. If you modify the
+sources, run <TT>./install/makedeps.sh</TT> or type <TT>make depend</TT>
+to update files <TT>make.depend</TT> in the various subdirectories.
+<BR>
+NOTA BENE 2: ``make.inc'' used to be called ``make.sys'' until v.6.0. The
+change of name is due to frequent probelms with mailers assuming that
+whatever ends in ``sys'' is a suspect virus.
+
+<P>
+You should always be able to compile the Q<SMALL>UANTUM </SMALL>ESPRESSO suite
+of programs without having to edit any of the generated files. However you
+may have to tune <TT>configure</TT> by specifying appropriate environment variables
+and/or command-line options. Usually the tricky part is to get external
+libraries recognized and used: see Sec.<A HREF="node11.html#Sec:Libraries">2.4</A>
+for details and hints.
+
+<P>
+Environment variables may be set in any of these ways:
+<PRE>
+     export VARIABLE=value; ./configure             # sh, bash, ksh
+     setenv VARIABLE value; ./configure             # csh, tcsh
+     ./configure VARIABLE=value                     # any shell
+</PRE>
+Some environment variables that are relevant to <TT>configure</TT> are:
+
+<P>
+<TABLE CELLPADDING=3>
+<TR><TD ALIGN="LEFT"><TT>ARCH</TT></TD>
+<TD ALIGN="LEFT">label identifying the machine type (see below)</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>F90, F77, CC</TT></TD>
+<TD ALIGN="LEFT">names of Fortran 90, Fortran 77, and C compilers</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>MPIF90</TT></TD>
+<TD ALIGN="LEFT">name of parallel Fortran 90 compiler (using MPI)</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>CPP</TT></TD>
+<TD ALIGN="LEFT">source file preprocessor (defaults to $CC -E)</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>LD</TT></TD>
+<TD ALIGN="LEFT">linker (defaults to $MPIF90)</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>(C,F,F90,CPP,LD)FLAGS</TT></TD>
+<TD ALIGN="LEFT">compilation/preprocessor/loader flags</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>LIBDIRS</TT></TD>
+<TD ALIGN="LEFT">extra directories where to search for libraries</TD>
+</TR>
+</TABLE>
+<BR>
+For example, the following command line:
+<PRE>
+     ./configure MPIF90=mpif90 FFLAGS="-O2 -assume byterecl" \
+                  CC=gcc CFLAGS=-O3 LDFLAGS=-static
+</PRE>
+instructs <TT>configure</TT> to use <TT>mpif90</TT> as Fortran 90 compiler
+with flags <TT>-O2 -assume byterecl</TT>, <TT>gcc</TT> as C compiler with
+flags <TT>-O3</TT>, and to link with flag <TT>-static</TT>.
+Note that the value of <TT>FFLAGS</TT> must be quoted, because it contains
+spaces. NOTA BENE: do not pass compiler names with the leading path
+included. <TT>F90=f90xyz</TT> is ok, <TT>F90=/path/to/f90xyz</TT> is not.
+Do not use
+environment variables with <TT>configure</TT> unless they are needed! try
+<TT>configure</TT> with no options as a first step.
+
+<P>
+If your machine type is unknown to <TT>configure</TT>, you may use the
+<TT>ARCH</TT>
+variable to suggest an architecture among supported ones. Some large
+parallel machines using a front-end (e.g. Cray XT) will actually
+need it, or else <TT>configure</TT> will correctly recognize the front-end
+but not the specialized compilation environment of those
+machines. In some cases, cross-compilation requires to specify the target machine with the
+<TT>-host</TT> option. This feature has not been extensively
+tested, but we had at least one successful report (compilation
+for NEC SX6 on a PC). Currently supported architectures are:
+
+<P>
+<TABLE CELLPADDING=3>
+<TR><TD ALIGN="LEFT"><TT>ia32</TT></TD>
+<TD ALIGN="LEFT">Intel 32-bit machines (x86) running Linux</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>ia64</TT></TD>
+<TD ALIGN="LEFT">Intel 64-bit (Itanium) running Linux</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>x86_64</TT></TD>
+<TD ALIGN="LEFT">Intel and AMD 64-bit running Linux - see note below</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>aix</TT></TD>
+<TD ALIGN="LEFT">IBM AIX machines</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>solaris</TT></TD>
+<TD ALIGN="LEFT">PC's running SUN-Solaris</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>sparc</TT></TD>
+<TD ALIGN="LEFT">Sun SPARC machines</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>crayxt4</TT></TD>
+<TD ALIGN="LEFT">Cray XT4/XT5/XE machines</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>mac686</TT></TD>
+<TD ALIGN="LEFT">Apple Intel machines running Mac OS X</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>cygwin</TT></TD>
+<TD ALIGN="LEFT">MS-Windows PCs with Cygwin</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>mingw32</TT></TD>
+<TD ALIGN="LEFT">Cross-compilation for MS-Windows, using mingw, 32 bits</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>mingw64</TT></TD>
+<TD ALIGN="LEFT">As above, 64 bits</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>necsx</TT></TD>
+<TD ALIGN="LEFT">NEC SX-6 and SX-8 machines</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>ppc64</TT></TD>
+<TD ALIGN="LEFT">Linux PowerPC machines, 64 bits</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>ppc64-mn</TT></TD>
+<TD ALIGN="LEFT">as above, with IBM xlf compiler</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>ppc64-bg</TT></TD>
+<TD ALIGN="LEFT">IBM BlueGene</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>arm</TT></TD>
+<TD ALIGN="LEFT">ARM machines (with gfortran)</TD>
+</TR>
+</TABLE>
+<BR><EM>Note</EM>: <TT>x86_64</TT> replaces <TT>amd64</TT> since v.4.1.
+Cray Unicos machines, SGI
+machines with MIPS architecture, HP-Compaq Alphas are no longer supported
+since v.4.2; PowerPC Macs are no longer
+supported since v.5.0.
+Finally, <TT>configure</TT> recognizes the following command-line options:
+<BR><TABLE CELLPADDING=3>
+<TR><TD ALIGN="LEFT"><TT>-enable-parallel</TT></TD>
+<TD ALIGN="LEFT">compile for parallel (MPI) execution if possible (default: yes)</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>-enable-openmp</TT></TD>
+<TD ALIGN="LEFT">compile for OpenMP execution if possible (default: no)</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>-enable-shared</TT></TD>
+<TD ALIGN="LEFT">use shared libraries if available (default: yes;</TD>
+</TR>
+<TR><TD ALIGN="LEFT">&nbsp;</TD>
+<TD ALIGN="LEFT">"no" is implemented, untested, in only a few cases)</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>-enable-debug</TT></TD>
+<TD ALIGN="LEFT">compile with debug flags (only for selected cases; default: no)</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>-disable-wrappers</TT></TD>
+<TD ALIGN="LEFT">disable C to fortran wrapper check (default: enabled)</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>-enable-signals</TT></TD>
+<TD ALIGN="LEFT">enable signal trapping (default: disabled)</TD>
+</TR>
+</TABLE>
+<BR>
+and the following optional packages:
+<BR><TABLE CELLPADDING=3>
+<TR><TD ALIGN="LEFT"><TT>-with-internal-blas</TT></TD>
+<TD ALIGN="LEFT">compile with internal BLAS (default: no)</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>-with-internal-lapack</TT></TD>
+<TD ALIGN="LEFT">compile with internal LAPACK (default: no)</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>-with-scalapack=no</TT></TD>
+<TD ALIGN="LEFT">do not use ScaLAPACK (default: yes)</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>-with-scalapack=intel</TT></TD>
+<TD ALIGN="LEFT">use ScaLAPACK for Intel MPI (default:OpenMPI)</TD>
+</TR>
+</TABLE>
+<BR>
+If you want to modify the <TT>configure</TT> script (advanced users only!),
+see the Developer Manual.
+
+<P>
+
+<H3><A NAME="SECTION00033100000000000000"></A>
+<A NAME="SubSec:manconf"></A>
+<BR>
+2.3.1 Manual configuration
+</H3>
+If <TT>configure</TT> stops before the end, and you don't find a way to fix
+it, you have to write working <TT>make.inc</TT>, <TT>include/fft_defs.h</TT>
+and <TT>include/c_defs.h</TT> files.
+For the latter two files, follow the explanations in
+<TT>include/defs.h.README</TT>.
+
+<P>
+If <TT>configure</TT> has run till the end, you should need only to
+edit <TT>make.inc</TT>. A few sample <TT>make.inc</TT> files
+are provided in <TT>install/Make.</TT><EM>system</EM>. The template used
+by <TT>configure</TT> is also found there as <TT>install/make.inc.in</TT>
+and contains explanations of the meaning
+of the various variables. Note that you may need
+to select appropriate preprocessing flags
+in conjunction with the desired or available
+libraries (e.g. you need to add <TT>-D__FFTW</TT> to <TT>DFLAGS</TT>
+if you want to link internal FFTW). For a correct choice of preprocessing
+flags, refer to the documentation in <TT>include/defs.h.README</TT>.
+
+<P>
+NOTA BENE: If you change any settings (e.g. preprocessing,
+compilation flags)
+after a previous (successful or failed) compilation, you must run
+<TT>make clean</TT> before recompiling, unless you know exactly which
+routines are affected by the changed settings and how to force their recompilation.
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html237"
+  HREF="node11.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html233"
+  HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html227"
+  HREF="node9.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html235"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html238"
+  HREF="node11.html">2.4 Libraries</A>
+<B> Up:</B> <A NAME="tex2html234"
+  HREF="node7.html">2 Installation</A>
+<B> Previous:</B> <A NAME="tex2html228"
+  HREF="node9.html">2.2 Prerequisites</A>
+ &nbsp; <B>  <A NAME="tex2html236"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+<ADDRESS>
+Filippo Spiga
+2016-10-04
+</ADDRESS>
+</BODY>
+</HTML>

@@ -1,9 +1,9 @@
 # Makefile for Modules
 
-include ../make.sys
+include ../make.inc
 
 # location of needed modules
-MODFLAGS= $(MOD_FLAG)../iotk/src $(MOD_FLAG)../ELPA/src $(MOD_FLAG)../FFTXlib $(MOD_FLAG)../LAXlib $(MOD_FLAG).
+MODFLAGS= $(MOD_FLAG)../iotk/src $(MOD_FLAG)../FFTXlib $(MOD_FLAG)../LAXlib $(IFLAGS) $(MOD_FLAG).
 
 # list of modules
 
@@ -31,9 +31,9 @@ fcp_variables.o \
 fd_gradient.o \
 fft_base.o \
 fft_custom.o \
+fsockets.o \
 funct.o \
 generate_function.o \
-griddim.o \
 gth.o \
 gvecw.o \
 input_parameters.o \
@@ -86,6 +86,7 @@ recvec_subs.o \
 run_info.o \
 space_group.o \
 set_signal.o \
+setqf.o \
 splinelib.o \
 timestep.o\
 tsvdw.o\
@@ -104,11 +105,14 @@ xc_vdW_DF.o \
 xc_rVV10.o \
 xml_input.o \
 xml_io_base.o \
+io_base.o \
 qes_module.o  \
 qes_types.o \
 qes_libs.o  \
 qexsd.o   \
 qexsd_input.o \
+qexsd_reader_module.o \
+hdf5_qe.o\
 xsf.o \
 wypos.o \
 zdotc_wrapper.o  \

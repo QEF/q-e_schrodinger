@@ -6,8 +6,9 @@
 # of the License. See the file `License' in the root directory
 # of the present distribution.
 
-AC_INIT(ESPRESSO, 5.4.0, , espresso)
+AC_INIT(ESPRESSO, 6.0-beta, , espresso)
 
+# Do not use Autoconf 2.69 
 AC_PREREQ(2.60)
 AC_CONFIG_MACRO_DIR([m4/])
 
@@ -24,8 +25,10 @@ AC_CANONICAL_BUILD
 X_AC_QE_ARCH()
 
 # Add all needed -D options to try_dflags
-try_dflags="-D__XSD"
-try_iflags="-I../include"
+try_dflags=""
+
+# "-I../include" is required by IOTK ...
+try_iflags="-I\$(TOPDIR)/include -I../include/"
 
 # Checking archiver...
 X_AC_QE_AR()
@@ -39,7 +42,7 @@ X_AC_QE_MPIF90()
 # Check environ...
 X_AC_QE_ENVIRON()
 
-# Checking MPIF90...
+# Checking CC...
 X_AC_QE_CC()
 
 # Checking FFTW pointers...
@@ -89,8 +92,11 @@ X_AC_QE_SCALAPACK()
 # Setting ELPA...
 X_AC_QE_ELPA()
 
+# Enable XML ...
+X_AC_QE_XML()
+
 # Setting HDF5...
-#X_AC_QE_HDF5()
+X_AC_QE_HDF5()
 
 # Checking SIGNAL...
 X_AC_QE_SIGNAL()
@@ -124,9 +130,9 @@ AC_CONFIG_FILES([include/fft_defs.h:include/fft_defs.h.in])
 AC_CONFIG_FILES([include/configure.h:include/configure.h.in])
 
 #AC_CONFIG_FILES(Makefile.cpu)
-AC_CONFIG_FILES(make.sys)
+AC_CONFIG_FILES(make.inc)
 AC_CONFIG_FILES(configure.msg)
-AC_CONFIG_FILES(install/make_wannier90.sys)
+AC_CONFIG_FILES(install/make_wannier90.inc)
 
 
 AC_OUTPUT

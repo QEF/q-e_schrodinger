@@ -11,13 +11,13 @@
 ! This macro force the normalization of betamix matrix, usually not necessary
 !#define __NORMALIZE_BETAMIX
 !
-#ifdef __GFORTRAN
+#if defined(__GFORTRAN)
 #if (__GNUC__<4) || ((__GNUC__==4) && (__GNUC_MINOR__<8))
 #define __GFORTRAN_HACK
 #endif
 #endif
 
-#ifdef __GFORTRAN_HACK   
+#if defined(__GFORTRAN_HACK)   
 ! gfortran hack - for some mysterious reason gfortran doesn't save
 !                 derived-type variables even with the SAVE attribute
 MODULE mix_save
@@ -55,7 +55,7 @@ SUBROUTINE mix_rho( input_rhout, rhoin, alphamix, dr2, tr2_min, iter, n_iter,&
                              high_frequency_mixing, &
                              mix_type_COPY, mix_type_SCAL
   USE io_global,     ONLY : stdout
-#ifdef __GFORTRAN_HACK
+#if defined(__GFORTRAN_HACK)
   USE mix_save
 #endif
   !
@@ -95,7 +95,7 @@ SUBROUTINE mix_rho( input_rhout, rhoin, alphamix, dr2, tr2_min, iter, n_iter,&
   REAL(DP),ALLOCATABLE :: betamix(:,:), work(:)
   INTEGER, ALLOCATABLE :: iwork(:)
   REAL(DP) :: gamma0
-#ifdef __NORMALIZE_BETAMIX
+#if defined(__NORMALIZE_BETAMIX)
   REAL(DP) :: norm2, obn
 #endif
   !
@@ -103,7 +103,7 @@ SUBROUTINE mix_rho( input_rhout, rhoin, alphamix, dr2, tr2_min, iter, n_iter,&
   !
   INTEGER, SAVE :: &
     mixrho_iter = 0    ! history of mixing
-#ifndef __GFORTRAN_HACK
+#if !defined(__GFORTRAN_HACK)
   TYPE(mix_type), ALLOCATABLE, SAVE :: &
     df(:),        &! information from preceding iterations
     dv(:)          !     "  "       "     "        "  "
@@ -111,12 +111,8 @@ SUBROUTINE mix_rho( input_rhout, rhoin, alphamix, dr2, tr2_min, iter, n_iter,&
   REAL(DP) :: dr2_paw, norm
   INTEGER, PARAMETER :: read_ = -1, write_ = +1
   !
-  ! ... external functions
-  !
-  INTEGER, EXTERNAL :: find_free_unit
   !
   CALL start_clock( 'mix_rho' )
-  !
   !
   ngm0 = ngms
   !
@@ -198,7 +194,7 @@ SUBROUTINE mix_rho( input_rhout, rhoin, alphamix, dr2, tr2_min, iter, n_iter,&
      !
      call mix_type_AXPY ( -1.d0, rhout_m, df(ipos) )
      call mix_type_AXPY ( -1.d0, rhoin_m, dv(ipos) )
-#ifdef __NORMALIZE_BETAMIX
+#if defined(__NORMALIZE_BETAMIX)
      ! NORMALIZE
      norm2 = rho_ddot( df(ipos), df(ipos), ngm0 )
      obn = 1.d0/sqrt(norm2)
