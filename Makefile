@@ -6,6 +6,11 @@
 # of the License. See the file `License' in the root directory
 # of the present distribution.
 
+<<<<<<< HEAD
+# QE Bundle v1.0, custom for Schrödinger 
+
+=======
+>>>>>>> 66ecac84e8b5571070181ca92a1b74b60546690a
 include make.inc
 
 default :
@@ -15,6 +20,16 @@ default :
 	@echo ' '
 	@echo 'where target identifies one or multiple CORE PACKAGES:'
 	@echo '  pw           basic code for scf, structure optimization, MD'
+<<<<<<< HEAD
+	@echo '  pwcond       ballistic conductance'
+	@echo '  neb          code for Nudged Elastic Band method'
+	@echo '  pp           postprocessing programs'
+	@echo '  pwall        same as "make pw pp pwcond neb"'
+	@echo '  ld1          utilities for pseudopotential generation'
+	@echo '  upf          utilities for pseudopotential conversion'
+	@echo '  all          same as "make pwall ld1 upf"'
+	@echo ' '
+=======
 	@echo '  ph           phonon code, Gamma-only and third-order derivatives'
 	@echo '  pwcond       ballistic conductance'
 	@echo '  neb          code for Nudged Elastic Band method'
@@ -44,13 +59,17 @@ default :
 	@echo '  plumed       Metadynamics plugin for pw or cp'
 	@echo '  d3q          general third-order code and thermal transport codes'
 	@echo ' '
+>>>>>>> 66ecac84e8b5571070181ca92a1b74b60546690a
 	@echo 'where target is one of the following suite operation:'
 	@echo '  doc          build documentation'
 	@echo '  links        create links to all executables in bin/'
 	@echo '  tar          create a tarball of the source tree'
+<<<<<<< HEAD
+=======
 	@if test -d GUI/; then \
 		echo '  tar-gui      create a standalone PWgui tarball from the GUI sources'; \
 		echo '  tar-qe-modes create a tarball for QE-modes (Emacs major modes for Quantum ESPRESSO)'; fi
+>>>>>>> 66ecac84e8b5571070181ca92a1b74b60546690a
 	@echo '  clean        remove executables and objects'
 	@echo '  veryclean    remove files produced by "configure" as well'
 	@echo '  distclean    revert distribution to the original status'
@@ -72,6 +91,17 @@ pw-lib : bindir libfft libla mods liblapack libs libiotk
 	if test -d PW ; then \
 	( cd PW ; $(MAKE) TLDEPS= pw-lib || exit 1) ; fi
 
+<<<<<<< HEAD
+### This target is not supported in this version
+#cp : bindir libfft libla mods liblapack libs libiotk
+#	if test -d CPV ; then \
+#	( cd CPV ; $(MAKE) TLDEPS= all || exit 1) ; fi
+
+### This target is not supported in this version
+#ph : bindir libfft libla mods libs pw lrmods
+#	if test -d PHonon; then \
+#	(cd PHonon; $(MAKE) all || exit 1) ; fi
+=======
 cp : bindir libfft libla mods liblapack libs libiotk
 	if test -d CPV ; then \
 	( cd CPV ; $(MAKE) TLDEPS= all || exit 1) ; fi
@@ -79,14 +109,22 @@ cp : bindir libfft libla mods liblapack libs libiotk
 ph : bindir libfft libla mods libs pw lrmods
 	if test -d PHonon; then \
 	(cd PHonon; $(MAKE) all || exit 1) ; fi
+>>>>>>> 66ecac84e8b5571070181ca92a1b74b60546690a
 
 neb : bindir libfft libla mods libs pw
 	if test -d NEB; then \
   (cd NEB; $(MAKE) all || exit 1) ; fi
 
+<<<<<<< HEAD
+### This target is not supported in this version
+#tddfpt : bindir libfft libla mods libs pw
+#	if test -d TDDFPT; then \
+#	(cd TDDFPT; $(MAKE) all || exit 1) ; fi
+=======
 tddfpt : bindir libfft libla mods libs pw
 	if test -d TDDFPT; then \
 	(cd TDDFPT; $(MAKE) all || exit 1) ; fi
+>>>>>>> 66ecac84e8b5571070181ca92a1b74b60546690a
 
 pp : bindir libfft libla mods libs pw
 	if test -d PP ; then \
@@ -96,14 +134,35 @@ pwcond : bindir libfft libla mods libs pw pp
 	if test -d PWCOND ; then \
 	( cd PWCOND ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
 
+<<<<<<< HEAD
+### This target is not supported in this version
+#acfdt : bindir libfft libla mods libs pw ph
+#	if test -d ACFDT ; then \
+#	( cd ACFDT ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
+=======
 acfdt : bindir libfft libla mods libs pw ph
 	if test -d ACFDT ; then \
 	( cd ACFDT ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
+>>>>>>> 66ecac84e8b5571070181ca92a1b74b60546690a
 
 # target still present for backward compatibility
 gww:
 	@echo '"make gww" is obsolete, use "make gwl" instead '
 
+<<<<<<< HEAD
+### This target is not supported in this version
+#gwl : ph
+#	if test -d GWW ; then \
+	( cd GWW ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
+
+### This target is not supported in this version
+#gipaw : pw
+#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+
+### This target is not supported in this version
+#d3q : pw ph
+#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+=======
 gwl : ph
 	if test -d GWW ; then \
 	( cd GWW ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
@@ -113,6 +172,7 @@ gipaw : pw
 
 d3q : pw ph
 	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+>>>>>>> 66ecac84e8b5571070181ca92a1b74b60546690a
 
 ld1 : bindir liblapack libfft libla mods libs
 	if test -d atomic ; then \
@@ -126,6 +186,36 @@ pw_export : libiotk bindir libfft mods libs pw
 	if test -d PP ; then \
 	( cd PP ; $(MAKE) TLDEPS= pw_export.x || exit 1 ) ; fi
 
+<<<<<<< HEAD
+### This target is not supported in this version
+#xspectra : bindir libfft mods libs pw
+#	if test -d XSpectra ; then \
+#	( cd XSpectra ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
+
+### This target is not supported in this version
+#couple : pw cp
+#	if test -d COUPLE ; then \
+#	( cd COUPLE ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
+
+### This target is not supported in this version
+# EPW needs to invoke make twice due to a Wannier90 workaround
+#epw: pw ph ld1
+#	if test -d EPW ; then \
+#	( cd EPW ; $(MAKE) all ; $(MAKE) all || exit 1; \
+#		cd ../bin; ln -fs ../EPW/bin/epw.x . ); fi
+
+### This target is not supported in this version
+#gui :
+#	@echo 'Check "PWgui-6.0/README" how to access the Graphical User Interface'
+
+### This target is not supported in this version
+#examples : touch-dummy
+#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+
+pwall : pw neb pp pwcond 
+
+all   : pwall ld1 upf
+=======
 xspectra : bindir libfft mods libs pw
 	if test -d XSpectra ; then \
 	( cd XSpectra ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
@@ -149,6 +239,7 @@ examples : touch-dummy
 pwall : pw neb ph pp pwcond acfdt
 
 all   : pwall cp ld1 upf tddfpt gwl xspectra
+>>>>>>> 66ecac84e8b5571070181ca92a1b74b60546690a
 
 ###########################################################
 # Auxiliary targets used by main targets:
@@ -194,6 +285,11 @@ libiotk: touch-dummy
 # plugins
 #########################################################
 
+<<<<<<< HEAD
+### This target is not supported in this version
+#w90: bindir liblapack
+#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+=======
 w90: bindir liblapack
 	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
@@ -202,19 +298,35 @@ want : touch-dummy
 
 SaX : touch-dummy
 	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+>>>>>>> 66ecac84e8b5571070181ca92a1b74b60546690a
 
-yambo: touch-dummy
-	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+### This target is not supported in this version
+#want : touch-dummy
+#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
-yambo-devel: touch-dummy
-	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+### This target is not supported in this version
+#SaX : touch-dummy
+#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
-plumed: touch-dummy
-	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+### This target is not supported in this version
+#yambo: touch-dummy
+#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
-west: pw touch-dummy
-	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+### This target is not supported in this version
+#yambo-devel: touch-dummy
+#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
+<<<<<<< HEAD
+### This target is not supported in this version
+#plumed: touch-dummy
+#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+
+### This target is not supported in this version
+#west: pw touch-dummy
+#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+
+=======
+>>>>>>> 66ecac84e8b5571070181ca92a1b74b60546690a
 touch-dummy :
 	$(dummy-variable)
 
@@ -270,8 +382,9 @@ install : touch-dummy
 #     already computed once (usualy during release)
 #########################################################
 
-test-suite: pw cp touch-dummy
-	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+### This target is not supported in this version
+#test-suite: pw touch-dummy
+#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
 #########################################################
 # Other targets: clean up
@@ -281,10 +394,17 @@ test-suite: pw cp touch-dummy
 clean : 
 	touch make.inc 
 	for dir in \
+<<<<<<< HEAD
+		LAXlib FFTXlib Modules PP PW \
+		NEB PWCOND \
+		atomic clib LR_Modules pwtools upftools \
+		dev-tools extlibs \
+=======
 		CPV LAXlib FFTXlib Modules PP PW EPW \
 		NEB ACFDT COUPLE GWW XSpectra PWCOND \
 		atomic clib LR_Modules pwtools upftools \
 		dev-tools extlibs Environ TDDFPT PHonon GWW \
+>>>>>>> 66ecac84e8b5571070181ca92a1b74b60546690a
 	; do \
 	    if test -d $$dir ; then \
 		( cd $$dir ; \
