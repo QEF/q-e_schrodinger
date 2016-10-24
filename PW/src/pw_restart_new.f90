@@ -333,8 +333,8 @@ MODULE pw_restart_new
             CALL  qexsd_init_total_energy(output%total_energy,etot/e2,eband/e2,ehart/e2,vtxc/e2,etxc/e2, &
                  ewld/e2,degauss/e2,demet/e2, etotefield/e2)
          ELSE 
-            CALL  qexsd_init_total_energy(output%total_energy,etot/e2,eband/e2,ehart/e2,vtxc/e2,etxc/e2, &
-                 ewld/e2,degauss/e2,demet/e2)
+            CALL  qexsd_init_total_energy(output%total_energy,etot,eband,ehart,vtxc,etxc, &
+                 ewld,degauss,demet)
          END IF
          IF (lfcpopt .OR. lfcpdyn ) THEN 
             output%total_energy%potentiostat_contr_ispresent = .TRUE.
@@ -833,20 +833,28 @@ MODULE pw_restart_new
       TYPE(parallel_info_type),OPTIONAL, INTENT(OUT)   :: restart_parallel_info
       TYPE(general_info_type ),OPTIONAL, INTENT(OUT)   :: restart_general_info
       ! 
-      LOGICAL                                   :: found
-      CHARACTER(LEN=80)                         :: errmsg = "" 
-      CHARACTER(LEN=256)                        :: dirname
+      LOGICAL               :: found
+      CHARACTER(LEN=80)     :: errmsg = ' '
+      CHARACTER(LEN=320)    :: filename
       !  
       ! 
       ierr = 0 
       ! 
-      dirname = TRIM( tmp_dir ) // TRIM( prefix ) // '.save'
       CALL iotk_free_unit( iunpun, iotk_err )
-      !
       CALL errore( 'pw_readschema_file', &
                    'no free units to read xsd output', iotk_err )
       CALL qexsd_init_schema( iunpun )
-      CALL iotk_open_read( iunpun, TRIM(dirname)//'/'//TRIM(xmlpun_schema))
+      !
+      filename = TRIM( tmp_dir ) // TRIM( prefix ) // '.save' &
+               & // '/' // TRIM( xmlpun_schema )
+      INQUIRE ( file=filename, exist=found )
+      IF (.NOT. found ) ierr = ierr + 1
+      IF ( ierr /=0 ) THEN
+         errmsg='xml data file not found'
+         GOTO 100
+      END IF
+      !
+      CALL iotk_open_read( iunpun, TRIM(filename) )
       !
       IF ( PRESENT ( restart_general_info ) ) THEN 
          CALL qexsd_get_general_info ( iunpun, restart_general_info , found)
@@ -965,7 +973,6 @@ MODULE pw_restart_new
       CASE( 'dim' )
          !
          ldim =       .TRUE.
-         lbz  =       .TRUE.
          need_qexml = .TRUE.
          !
       CASE( 'pseudo' )
@@ -1052,6 +1059,8 @@ MODULE pw_restart_new
          ! 
          CALL readschema_dim(par_info, input_obj%atomic_species, output_obj%atomic_structure, output_obj%symmetries, &
                              output_obj%basis_set, output_obj%band_structure, input_obj) 
+         CALL readschema_kdim(output_obj%symmetries,  output_obj%band_structure )
+
                                                                                                            
       ENDIF
       !
@@ -1866,6 +1875,29 @@ MODULE pw_restart_new
       !         
     END SUBROUTINE readschema_xc
     !  
+    !-----------------------------------------------------------------------------------------------------
+    SUBROUTINE readschema_kdim( symmetries_obj, band_struct_obj )
+    !-----------------------------------------------------------------------------------------------------
+       !
+       USE lsda_mod,         ONLY : lsda
+       USE klist,            ONLY : nkstot
+       USE symm_base,        ONLY : nrot 
+       USE qes_types_module, ONLY : symmetries_type, band_structure_type
+       !
+       IMPLICIT NONE
+       !
+       TYPE ( symmetries_type )    ,INTENT(IN)    :: symmetries_obj 
+       TYPE ( band_structure_type ),INTENT(IN)    :: band_struct_obj 
+       INTEGER                                    :: nks_
+       ! 
+       nks_ = band_struct_obj%nks
+       nkstot = nks_
+       IF ( band_struct_obj%lsda ) nkstot = nkstot * 2  
+       !
+       nrot = symmetries_obj%nrot
+       !
+    END SUBROUTINE readschema_kdim    
+
     !-----------------------------------------------------------------------------------------------------
     SUBROUTINE readschema_brillouin_zone( k_pointIBZ_obj , occupations_obj, symmetries_obj, band_struct_obj )
     !-----------------------------------------------------------------------------------------------------
