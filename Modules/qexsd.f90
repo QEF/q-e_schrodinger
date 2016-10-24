@@ -4,7 +4,7 @@
 ! in the root directory of the present distribution,
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
-#ifdef __XSD
+#if defined(__XSD)
 !----------------------------------------------------------------------------
 MODULE qexsd_module
   !----------------------------------------------------------------------------
@@ -161,10 +161,7 @@ CONTAINS
       CALL iotk_open_write(ounit,FILE=filename , root="qes:espresso",attr=attr,binary=.false., &
                            skip_head=.true.,IERR=ierr)
       !
-      IF (ierr /= 0) call errore(subname, 'opening xml input file', ierr)
-      !
-      IF ( input_xml_schema_file == ' ' ) CALL get_environment_VARIABLE ( 'QEXSD', input_xml_schema_file )
-      ! 
+      IF (ierr /= 0) call errore(subname, 'opening xml output file', ierr)
       ! the input file is mandatory to have a validating schema 
       ! here an error should be issued, instead
       !
@@ -600,11 +597,11 @@ CONTAINS
       CALL qes_init_basisSetItem(fft_box, "fft_box", nr1b, nr2b, nr3b, "" )
       CALL qes_init_reciprocal_lattice(recipr_latt, "reciprocal_lattice", b1, b2, b3)
 
-      CALL qes_init_basis_set(obj, "basis_set", gamma_only_ispresent=.TRUE., gamma_only=gamma_only, &
-                              ecutwfc=ecutwfc, ecutrho_ispresent=.TRUE., ecutrho=ecutrho, fft_grid=fft_grid, &
-                              fft_smooth_ispresent=.TRUE., fft_smooth=fft_smooth, &
-                              fft_box_ispresent=fft_box_ispresent, fft_box=fft_box, ngm=ngm, &
-                              ngms_ispresent=.TRUE., ngms=ngms, npwx=npwx, reciprocal_lattice=recipr_latt)
+      CALL qes_init_basis_set(obj, "basis_set", GAMMA_ONLY_ISPRESENT=.TRUE., GAMMA_ONLY=gamma_only, &
+                              ECUTWFC=ecutwfc, ECUTRHO_ISPRESENT=.TRUE., ECUTRHO=ecutrho, FFT_GRID=fft_grid, &
+                              FFT_SMOOTH_ISPRESENT=.TRUE., FFT_SMOOTH=fft_smooth, &
+                              FFT_BOX_ISPRESENT=fft_box_ispresent, FFT_BOX=fft_box, NGM=ngm, &
+                              NGMS_ISPRESENT=.TRUE., NGMS=ngms, NPWX=npwx, RECIPROCAL_LATTICE=recipr_latt )
       !
       CALL qes_reset_basisSetItem(fft_grid)
       CALL qes_reset_basisSetItem(fft_smooth)
@@ -615,13 +612,12 @@ CONTAINS
     !
     !
     !------------------------------------------------------------------------
-    SUBROUTINE qexsd_init_dft(obj, functional, root_is_output, &
-                   dft_is_hybrid, nqx1, nqx2, nqx3, ecutfock, exx_fraction, screening_parameter, &
-                                  exxdiv_treatment, x_gamma_extrapolation, ecutvcut, &
-                   dft_is_lda_plus_U, lda_plus_U_kind, llmax, nspin, nsp, ldim, nat, species, ityp, Hubbard_U, Hubbard_J0, &
-                                  Hubbard_alpha, Hubbard_beta, Hubbard_J, starting_ns, Hubbard_ns, Hubbard_ns_nc, &
-                                  U_projection_type, dft_is_vdW, vdw_corr, nonlocal_term, london_s6, london_c6, london_rcut, &
-                                  xdm_a1, xdm_a2 ,ts_vdw_econv_thr, ts_vdw_isolated,   is_hubbard, psd)
+    SUBROUTINE qexsd_init_dft(obj, functional, root_is_output, dft_is_hybrid, nqx1, nqx2, nqx3, ecutfock,       &
+                   exx_fraction, screening_parameter, exxdiv_treatment, x_gamma_extrapolation, ecutvcut,        &
+                   dft_is_lda_plus_U, lda_plus_U_kind, llmax, noncolin, nspin, nsp, ldim, nat, species, ityp,   &
+                   Hubbard_U, Hubbard_J0, Hubbard_alpha, Hubbard_beta, Hubbard_J, starting_ns, Hubbard_ns,      &
+                   Hubbard_ns_nc, U_projection_type, dft_is_vdW, vdw_corr, nonlocal_term, london_s6, london_c6, &
+                   london_rcut, xdm_a1, xdm_a2 ,ts_vdw_econv_thr, ts_vdw_isolated, is_hubbard, psd)
       !------------------------------------------------------------------------
       USE  parameters,           ONLY:  lqmax
       USE  input_parameters,     ONLY:  nspinx
@@ -639,7 +635,7 @@ CONTAINS
       LOGICAL,          INTENT(IN) :: x_gamma_extrapolation
       REAL(DP),         INTENT(IN) :: ecutvcut
       !
-      LOGICAL,          INTENT(IN) :: dft_is_lda_plus_U
+      LOGICAL,          INTENT(IN) :: dft_is_lda_plus_U, noncolin 
       INTEGER,          INTENT(IN) :: lda_plus_U_kind
       INTEGER,          INTENT(IN) :: llmax, nspin, nsp, ldim, nat
       CHARACTER(len=*), INTENT(IN) :: species(nsp)
@@ -677,6 +673,8 @@ CONTAINS
       TYPE(starting_ns_type),   ALLOCATABLE :: starting_ns_(:)
       TYPE(Hubbard_ns_type),    ALLOCATABLE :: Hubbard_ns_(:)
       TYPE(HubbardCommon_type), ALLOCATABLE :: london_c6_obj(:)
+      REAL(DP),                 ALLOCATABLE :: Hubb_occ_aux(:,:) 
+      INTEGER                               :: m1, m2
       LOGICAL  :: Hubbard_U_ispresent
       LOGICAL  :: Hubbard_J0_ispresent
       LOGICAL  :: Hubbard_alpha_ispresent
@@ -741,8 +739,13 @@ CONTAINS
           ALLOCATE( Hubbard_beta_(nsp) )
           ALLOCATE( Hubbard_J_(nsp) )
           !
-          ALLOCATE( starting_ns_(min(nspin,nspinx)*nsp) )
-          ALLOCATE( Hubbard_ns_(nspin*nat) )
+          IF (noncolin ) THEN 
+             ALLOCATE (starting_ns_(nsp))
+             ALLOCATE (Hubbard_ns_(nat))
+          ELSE 
+            ALLOCATE( starting_ns_(min(nspin,nspinx)*nsp) )
+            ALLOCATE( Hubbard_ns_(nspin*nat) )
+          END IF
           !
           DO i = 1, nsp
               CALL qes_init_HubbardCommon(Hubbard_U_(i),"Hubbard_U",TRIM(species(i)),TRIM(label(i)),Hubbard_U(i))
@@ -755,22 +758,50 @@ CONTAINS
           ENDDO
           !
           ind = 0
-          DO is = 1, MIN(nspin,nspinx) 
-              DO i  = 1, nsp
-                  ind = ind+1
-                  CALL qes_init_starting_ns(starting_ns_(ind),"starting_ns",TRIM(species(i)),TRIM(label(i)), &
-                                            is, llmax, starting_ns(1:llmax,is,i) )
-              ENDDO
-          ENDDO
+          IF (starting_ns_ispresent) THEN 
+             IF (noncolin) THEN 
+                DO i = 1, nsp 
+                   ind = ind + 1 
+                   CALL qes_init_starting_ns(starting_ns_(ind), "starting_ns", TRIM (species(i)),TRIM (label(i)),&
+                                             1,2*llmax, starting_ns(1:2*llmax, 1, i))
+                END DO
+             ELSE 
+                DO is = 1, MIN(nspin,nspinx) 
+                   DO i  = 1, nsp
+                      ind = ind+1
+                      CALL qes_init_starting_ns(starting_ns_(ind),"starting_ns",TRIM(species(i)),TRIM(label(i)), &
+                                                is, llmax, starting_ns(1:llmax,is,i) )
+                  ENDDO
+                ENDDO
+             END IF
+          END IF
           !
           ind = 0
-          DO i = 1, nat
-             DO is = 1, nspin
-                ind = ind+1
-                CALL qes_init_Hubbard_ns(Hubbard_ns_(ind),"Hubbard_ns", TRIM(species(ityp(i))),TRIM(label(ityp(i))), &
+          IF (noncolin) THEN 
+             ALLOCATE (Hubb_occ_aux(2*ldim,2*ldim))
+             DO i = 1, nat 
+                Hubb_occ_aux = 0.d0
+                DO m1 =1, ldim 
+                   DO m2 = 1, ldim 
+                      Hubb_occ_aux(     m1,     m2) = SQRT(DCONJG(Hubbard_ns_nc(m1,m2,1,i))*Hubbard_ns_nc(m1,m2,1,i))
+                      Hubb_occ_aux(     m1,ldim+m2) = SQRT(DCONJG(Hubbard_ns_nc(m1,m2,2,i))*Hubbard_ns_nc(m1,m2,2,i)) 
+                      Hubb_occ_aux(ldim+m1,     m2) = SQRT(DCONJG(Hubbard_ns_nc(m1,m2,3,i))*Hubbard_ns_nc(m1,m2,3,i))
+                      Hubb_occ_aux(ldim+m1,ldim+m2) = SQRT(DCONJG(Hubbard_ns_nc(m1,m2,4,i))*Hubbard_ns_nc(m1,m2,4,i))
+                   END DO
+                END DO
+                CALL qes_init_Hubbard_ns(Hubbard_ns_(i),"Hubbard_ns_mod", TRIM(species(ityp(i))),TRIM(label(ityp(i))), &
+                                         1, i, 2*ldim, 2*ldim, Hubb_occ_aux(:,:))
+             END DO 
+             DEALLOCATE ( Hubb_occ_aux) 
+          ELSE 
+             DO i = 1, nat
+                DO is = 1, nspin
+                   ind = ind+1
+                   CALL qes_init_Hubbard_ns(Hubbard_ns_(ind),"Hubbard_ns", TRIM(species(ityp(i))),TRIM(label(ityp(i))), &
                                        is, i, ldim, ldim, Hubbard_ns(:,:,is,i) )
+                ENDDO
              ENDDO
-          ENDDO
+          END IF
           !
           ! main init
           CALL qes_init_dftU(dftU, "dftU", .TRUE., lda_plus_u_kind, &
@@ -908,7 +939,7 @@ CONTAINS
     !
     ! 
     !---------------------------------------------------------------------------------------
-    SUBROUTINE qexsd_init_band_structure(obj, lsda, noncolin, lspinorb, nbnd, nelec, occupations_are_fixed, & 
+    SUBROUTINE qexsd_init_band_structure(obj, lsda, noncolin, lspinorb, nbnd, nelec, n_wfc_at, occupations_are_fixed, & 
                                          fermi_energy, two_fermi_energies, ef_updw, et, wg, nks, xk, ngk, wk)
     !----------------------------------------------------------------------------------------
     IMPLICIT NONE
@@ -916,16 +947,17 @@ CONTAINS
     TYPE(band_structure_type)             :: obj
     CHARACTER(LEN=*), PARAMETER           :: TAGNAME="band_structure"
     LOGICAL,INTENT(IN)                    :: lsda, noncolin, lspinorb, occupations_are_fixed
-    INTEGER,INTENT(IN)                    :: nbnd, nks
+    INTEGER,INTENT(IN)                    :: nbnd, nks, n_wfc_at
     REAL(DP),INTENT(IN)                   :: nelec, fermi_energy
     REAL(DP),DIMENSION(:,:),INTENT(IN)    :: et, wg, xk
     REAL(DP),DIMENSION(:),INTENT(IN)      :: wk
     INTEGER,DIMENSION(:),INTENT(IN)       :: ngk      
-    REAL(DP),DIMENSION(2),INTENT(IN)       :: ef_updw 
+    REAL(DP),DIMENSION(2),INTENT(IN)      :: ef_updw 
     LOGICAL,INTENT(IN)                    :: two_fermi_energies
     ! 
     LOGICAL                               :: nbnd_up_ispresent, nbnd_dw_ispresent, &
-                                             fermi_energy_ispresent, HOL_ispresent 
+                                             fermi_energy_ispresent, HOL_ispresent, & 
+                                             n_wfc_at_ispresent = .TRUE.  
     INTEGER                               :: nbnd_up,nbnd_dw
     INTEGER                               :: ndim_ks_energies,nbnd_tot,ik
     TYPE(k_point_type)                    :: kp_obj
@@ -1002,10 +1034,10 @@ CONTAINS
        CALL qes_reset_k_point(kp_obj)  
     END DO 
     !
-    CALL qes_init_band_structure(obj,TAGNAME,lsda,noncolin,lspinorb, nbnd , nbnd_up_ispresent,&
-                  nbnd_up,nbnd_dw_ispresent,nbnd_dw,nelec,fermi_energy_ispresent,&
-                  fermi_energy/e2, HOL_ispresent, fermi_energy/e2, two_fermi_energies, 2, ef_updw/e2, &
-                  ndim_ks_energies,ndim_ks_energies,ks_objs)
+    CALL qes_init_band_structure( obj,TAGNAME,lsda,noncolin,lspinorb, nbnd , nbnd_up_ispresent,&
+                  nbnd_up,nbnd_dw_ispresent,nbnd_dw,nelec, n_wfc_at_ispresent, n_wfc_at,       & 
+                  fermi_energy_ispresent, fermi_energy/e2, HOL_ispresent, fermi_energy/e2, &  
+                  two_fermi_energies, 2, ef_updw/e2, ndim_ks_energies,ndim_ks_energies,ks_objs )
     DO ik=1,ndim_ks_energies
        CALL qes_reset_ks_energies(ks_objs(ik))
     END DO
@@ -1014,7 +1046,8 @@ CONTAINS
     !
     ! 
     !---------------------------------------------------------------------------------------
-    SUBROUTINE qexsd_init_total_energy(obj,etot,eband,ehart,vtxc,etxc,ewald,degauss,demet,electric_field_corr)
+    SUBROUTINE qexsd_init_total_energy(obj,etot,eband,ehart,vtxc,etxc,ewald,degauss,demet,electric_field_corr,&
+                                       potentiostat_contr)
     !----------------------------------------------------------------------------------------
     !
     ! 
@@ -1024,6 +1057,7 @@ CONTAINS
     REAL(DP),INTENT(IN)             :: etot,eband,ehart,vtxc,etxc,ewald,demet
     REAL(DP),INTENT(IN)             :: degauss
     REAL(DP),OPTIONAL,INTENT(IN)    :: electric_field_corr
+    REAL(DP),OPTIONAL,INTENT(IN)    :: potentiostat_contr
     !
     LOGICAL                         :: demet_ispresent
     CHARACTER(LEN=*),PARAMETER      :: TAGNAME="total_energy"
@@ -1054,7 +1088,9 @@ CONTAINS
                                ehart_ispresent=.TRUE., ehart=ehart_har,vtxc_ispresent=.TRUE.,& 
                                vtxc=vtxc_har,etxc_ispresent=.TRUE., etxc=etxc_har,ewald_ispresent=.TRUE.,&
                                ewald=ewald_har, demet_ispresent=demet_ispresent,demet=demet_har, &
-                               efieldcorr_ispresent=PRESENT(electric_field_corr), efieldcorr=efield_corr) 
+                               efieldcorr_ispresent=PRESENT(electric_field_corr), efieldcorr=efield_corr,&
+                               POTENTIOSTAT_CONTR_ISPRESENT = PRESENT(potentiostat_contr), & 
+                               POTENTIOSTAT_CONTR = potentiostat_contr)
 
     END SUBROUTINE qexsd_init_total_energy
     ! 
@@ -1162,13 +1198,15 @@ CONTAINS
     !----------------------------------------------------------------------------------------
     SUBROUTINE   qexsd_step_addstep( i_step, max_steps, ntyp, atm, ityp, nat,& 
                                    tau, alat, a1, a2, a3, etot, eband, ehart, vtxc, etxc,&
-                                   ewald, degauss, demet, forces, stress, n_scf_steps, scf_error)
+                                   ewald, degauss, demet, forces, stress, n_scf_steps, scf_error, potstat_contr, &
+                                   fcp_force, fcp_tot_charge )
     !-----------------------------------------------------------------------------------------
     IMPLICIT NONE 
     ! 
     INTEGER ,INTENT(IN)             :: i_step, max_steps, ntyp, nat, n_scf_steps, ityp(:)
     REAL(DP),INTENT(IN)             :: tau(3,nat), alat, a1(3), a2(3), a3(3), etot, eband, ehart, vtxc, &
                                        etxc, ewald, degauss, demet, scf_error, forces(3,nat), stress(3,3) 
+    REAL(DP),OPTIONAL,INTENT (IN)   :: potstat_contr, fcp_force, fcp_tot_charge         
     CHARACTER(LEN=*),INTENT(IN)     :: atm(:)
     TYPE (step_type)                :: step_obj
     TYPE ( scf_conv_type )          :: scf_conv_obj
@@ -1196,7 +1234,12 @@ CONTAINS
     step_obj%atomic_structure=atomic_struct_obj
     CALL qes_reset_atomic_structure( atomic_struct_obj )
     ! 
-    CALL qexsd_init_total_energy ( tot_en_obj, etot, eband, ehart, vtxc, etxc, ewald, degauss, demet )   
+    CALL qexsd_init_total_energy ( tot_en_obj, etot/e2, eband/e2, ehart/e2, vtxc/e2, etxc/e2, ewald/e2, degauss/e2, &
+                                   demet/e2 )
+    IF ( PRESENT ( potstat_contr )) THEN  
+       tot_en_obj%potentiostat_contr_ispresent = .TRUE. 
+       tot_en_obj%potentiostat_contr = potstat_contr/e2 
+    END IF  
     step_obj%total_energy=tot_en_obj
     CALL qes_reset_total_energy( tot_en_obj )
     ! 
@@ -1207,6 +1250,12 @@ CONTAINS
     CALL qes_init_matrix( mat_stress, "stress", 3, 3, stress ) 
     step_obj%stress = mat_stress
     CALL qes_reset_matrix ( mat_stress ) 
+    IF ( PRESENT ( fcp_force ) ) THEN 
+       step_obj%FCP_force = fcp_force
+       step_obj%FCP_force_ispresent = .TRUE.
+       step_obj%FCP_tot_charge = fcp_tot_charge
+       step_obj%FCP_tot_charge_ispresent = .TRUE. 
+    END IF 
     !  
     ! 
     steps(step_counter) = step_obj

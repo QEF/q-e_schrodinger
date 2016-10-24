@@ -1,6 +1,17 @@
-
+!
+! Copyright (C) 2003-2016 Quantum ESPRESSO group
+! This file is distributed under the terms of the
+! GNU General Public License. See the file `License'
+! in the root directory of the present distribution,
+! or http://www.gnu.org/copyleft/gpl.txt .
+!
 MODULE qes_types_module
 
+! This module contains the data_types used for describing
+! the XML files produced by Quantum ESPRESSO package.
+!
+! Written by Giovanni Borghi, A. Ferretti, ... (2015).
+!
 USE kinds, only: DP
 
 TYPE :: closed_type
@@ -363,6 +374,8 @@ TYPE :: total_energy_type
    REAL(DP) :: demet
    LOGICAL  :: efieldcorr_ispresent
    REAL(DP) :: efieldcorr
+   LOGICAL  :: potentiostat_contr_ispresent
+   REAL(DP) :: potentiostat_contr
    !
 END TYPE total_energy_type
 
@@ -536,6 +549,10 @@ TYPE :: boundary_conditions_type
    CHARACTER(len=256) :: assume_isolated
    LOGICAL  :: esm_ispresent
    TYPE(esm_type) :: esm
+   LOGICAL  :: fcp_opt_ispresent
+   LOGICAL  :: fcp_opt
+   LOGICAL  :: fcp_mu_ispresent
+   REAL(DP) :: fcp_mu
    !
 END TYPE boundary_conditions_type
 
@@ -574,6 +591,7 @@ TYPE :: cell_control_type
    LOGICAL  :: lwrite = .true.
    !
    CHARACTER(len=256) :: cell_dynamics
+   REAL(DP) :: pressure
    LOGICAL  :: wmass_ispresent
    REAL(DP) :: wmass
    LOGICAL  :: cell_factor_ispresent
@@ -1129,6 +1147,10 @@ TYPE :: step_type
    TYPE(matrix_type) :: forces
    LOGICAL  :: stress_ispresent
    TYPE(matrix_type) :: stress
+   LOGICAL  :: FCP_force_ispresent
+   REAL(DP) :: FCP_force
+   LOGICAL  :: FCP_tot_charge_ispresent
+   REAL(DP) :: FCP_tot_charge
    !
 END TYPE step_type
 
@@ -1168,6 +1190,10 @@ TYPE :: output_type
    TYPE(matrix_type) :: stress
    LOGICAL  :: electric_field_ispresent
    TYPE(outputElectricField_type) :: electric_field
+   LOGICAL  :: FCP_force_ispresent
+   REAL(DP) :: FCP_force
+   LOGICAL  :: FCP_tot_charge_ispresent
+   REAL(DP) :: FCP_tot_charge
    !
 END TYPE output_type
 

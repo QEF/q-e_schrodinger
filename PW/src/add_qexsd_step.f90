@@ -12,6 +12,7 @@
  
 !----------------------------------------------------------------
 SUBROUTINE add_qexsd_step(i_step)
+#if defined (__XSD)
 !-----------------------------------------------------------------
 !
 !------------------------------------------------------------------------
@@ -19,10 +20,11 @@ SUBROUTINE add_qexsd_step(i_step)
 !--------------------------------------------------------------------------
 USE ions_base,    ONLY: tau, nat, nsp, atm, ityp
 USE cell_base,    ONLY: alat, at
-USE ener,         ONLY: etot, eband, ehart, etxc, vtxc, ewld, demet
-USE klist,        ONLY: degauss
+USE ener,         ONLY: etot, eband, ehart, etxc, vtxc, ewld, demet, ef 
+USE klist,        ONLY: degauss, tot_charge
 USE force_mod,    ONLY: force, sigma
 USE control_flags,ONLY: nstep, n_scf_steps, scf_error
+USE fcp_variables,ONLY: fcp_mu, lfcpopt, lfcpdyn 
 !-----------------------------------------------------------------------------
 !   END_GLOBAL_VARIABLES
 !----------------------------------------------------------------------------- 
@@ -30,9 +32,7 @@ USE control_flags,ONLY: nstep, n_scf_steps, scf_error
 !-------------------------------------------------------------------------------
 !   SUBROUTINES FROM MODULES
 !-------------------------------------------------------------------------------
-#ifdef __XSD
 USE qexsd_module, ONLY: qexsd_step_addstep
-#endif
 !-------------------------------------------------------------------------------
 !------------------------------------------------------------------------------
 IMPLICIT NONE
@@ -45,10 +45,16 @@ INTEGER,INTENT(IN)        ::   i_step
 !                    END_INPUT_VARIABLES
 !-------------------------------------------------------------------------------- 
 !            
-#ifdef __XSD 
-CALL qexsd_step_addstep ( i_step, nstep, nsp, atm, ityp, nat, tau, alat, at(:,1),   &
-                          at(:,2), at(:,3), etot, eband, ehart, vtxc, etxc, &
-                          ewld, degauss, demet, force, sigma, n_scf_steps, &
-                          scf_error) 
+IF ( lfcpopt .OR. lfcpdyn ) THEN 
+   CALL qexsd_step_addstep ( i_step, nstep, nsp, atm, ityp, nat, tau, alat, at(:,1),   &
+                          at(:,2), at(:,3), etot, eband, ehart, vtxc, etxc, ewld, degauss, demet, force, sigma,&
+                          n_scf_steps, scf_error, &
+                          POTSTAT_CONTR = (ef * tot_charge),  FCP_FORCE  = (fcp_mu-ef) , FCP_TOT_CHARGE = tot_charge)
+ELSE 
+   CALL qexsd_step_addstep ( i_step, nstep, nsp, atm, ityp, nat, tau, alat, at(:,1), at(:,2), at(:,3), etot, eband, &
+                             ehart, vtxc, etxc, ewld, degauss, demet, force, sigma, n_scf_steps, scf_error)
+END IF 
+#else
+CONTINUE 
 #endif    
 END SUBROUTINE  add_qexsd_step

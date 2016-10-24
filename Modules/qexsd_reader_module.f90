@@ -11,7 +11,7 @@
 ! This module should be, in the future, replaced by a script generated library. 
 ! 
 ! Written by Pietro Delugas -- May-June 2016. 
-#ifdef __XSD 
+#if defined(__XSD) 
 !--------------------------------------------------------------------------------------
 MODULE qexsd_reader_module
 !--------------------------------------------------------------------------------------
@@ -1519,10 +1519,10 @@ LOGICAL,INTENT(OUT)                   :: ispresent
 !                                
 INTEGER                               :: ierr 
 CHARACTER ( LEN = 256 )               :: cell_dynamics_
-REAL(DP)                              :: wmass_, cell_factor_
+REAL(DP)                              :: wmass_, cell_factor_, pressure_
 LOGICAL                               :: cell_fac_ispresent, wmass_ispresent, fix_vol_ispresent, & 
                                          fix_area_ispresent, free_cell_ispresent, isotropic_ispresent
-LOGICAL                               :: fix_volume_, fix_area_, isotropic_
+LOGICAL                               :: fix_volume_, fix_area_, isotropic_, found_pressure
 INTEGER                               :: free_cell_mat_(3,3)
 TYPE (integerMatrix_type)             :: mat_obj
  
@@ -1538,6 +1538,10 @@ IF (ierr /= 0 ) RETURN
 CALL iotk_scan_dat( iunit, "wmass", wmass_, IERR = ierr , FOUND = wmass_ispresent)
 IF ( ierr /= 0 ) RETURN 
 ! 
+CALL iotk_scan_dat( iunit, "pressure", pressure_, IERR = ierr, FOUND = found_pressure) 
+IF ( ierr /= 0 ) RETURN 
+IF (.NOT. found_pressure) pressure_=0.d0
+!
 CALL iotk_scan_dat( iunit, "cell_factor", cell_factor_, IERR = ierr , FOUND = cell_fac_ispresent)
 IF ( ierr /= 0 ) RETURN
 !  
@@ -1557,7 +1561,7 @@ CALL qes_init_integerMatrix(mat_obj, "free_cell", 3, 3, free_cell_mat_)
 CALL iotk_scan_end ( iunit, "cell_control", IERR = ierr )
 IF ( ierr /= 0)  RETURN 
 ! 
-CALL qes_init_cell_control( obj, "cell_control", cell_dynamics_, wmass_ispresent, wmass_, & 
+CALL qes_init_cell_control( obj, "cell_control", cell_dynamics_, pressure_, wmass_ispresent, wmass_, & 
                             cell_fac_ispresent, cell_factor_, fix_vol_ispresent, fix_volume_, &
                             fix_area_ispresent, fix_area_, isotropic_ispresent, isotropic_, & 
                             free_cell_ispresent, mat_obj)
@@ -1654,8 +1658,10 @@ LOGICAL,INTENT(OUT)                         :: ispresent
 ! 
 INTEGER                                     :: ierr 
 CHARACTER( LEN = 256 )                      :: assume_isolated_
+LOGICAL                                     :: fcp_opt_ = .FALSE. 
+REAL(DP)                                    :: fcp_mu_ 
 TYPE ( esm_type )                           :: esm_obj
-LOGICAL                                     :: esm_ispresent
+LOGICAL                                     :: esm_ispresent, fcp_opt_ispresent, fcp_mu_ispresent
 ! 
 ispresent = .FALSE. 
 CALL iotk_scan_begin( iunit, "boundary_conditions", IERR = ierr, FOUND = ispresent) 
@@ -1667,10 +1673,18 @@ IF ( ierr /= 0 ) RETURN
 ! 
 CALL qexsd_get_esm( iunit, esm_obj, esm_ispresent )  
 ! 
+CALL iotk_scan_dat(iunit, "fcp_opt", fcp_opt_, FOUND = fcp_opt_ispresent, IERR = ierr ) 
+IF ( ierr /= 0 ) RETURN 
+!
+CALL iotk_scan_dat(iunit, "fcp_mu", fcp_mu_, FOUND = fcp_mu_ispresent, IERR = ierr ) 
+IF ( ierr /= 0 ) RETURN 
+IF (  fcp_opt_ .AND. ( .NOT. fcp_mu_ispresent ) ) &
+   CALL errore( "qexsd_get_boundary_conditions","found fcp_opt true but no value for fcp_mu has been found", 10) 
 CALL iotk_scan_end(iunit, "boundary_conditions", IERR = ierr)
 IF ( ierr /= 0 ) RETURN
 !
-CALL qes_init_boundary_conditions(obj, "boundary_conditions", assume_isolated_, esm_ispresent, esm_obj ) 
+CALL qes_init_boundary_conditions(obj, "boundary_conditions", assume_isolated_, esm_ispresent, esm_obj, &
+                                  fcp_opt_ispresent, fcp_opt_, fcp_mu_ispresent, fcp_mu_ ) 
 !
 END SUBROUTINE qexsd_get_boundary_conditions
 !
@@ -1885,10 +1899,10 @@ LOGICAL,INTENT(OUT)                       :: ispresent
 ! 
 INTEGER                                   :: ierr
 REAL(DP)                                  :: etot_, eband_, ehart_, vtxc_, etxc_, ewald_, demet_, & 
-                                             efield_corr_ 
+                                             efield_corr_, potstat_contr_ 
 LOGICAL                                   :: efield_corr_ispresent, eband_ispresent, ehart_ispresent, & 
                                              vtxc_ispresent, etxc_ispresent, ewald_ispresent, & 
-                                             demet_ispresent
+                                             demet_ispresent, potstat_ispresent
 ! 
 
 ! 
@@ -1924,12 +1938,16 @@ IF ( ierr /= 0 ) RETURN
 CALL iotk_scan_dat ( iunit, "efield_corr", efield_corr_, IERR = ierr, FOUND = efield_corr_ispresent) 
 IF ( ierr /= 0 ) RETURN
 ! 
+CALL iotk_scan_dat ( iunit, "potentiostat_contr", potstat_contr_, IERR = ierr, FOUND = potstat_ispresent ) 
+IF ( ierr /= 0 ) RETURN 
+! 
 CALL iotk_scan_end( iunit, "total_energy", IERR = ierr ) 
 IF ( ierr /= 0 ) RETURN 
 ! 
 CALL qes_init_total_energy ( obj, "total_energy", etot_, eband_ispresent, eband_, ehart_ispresent, & 
                              ehart_, vtxc_ispresent, vtxc_, etxc_ispresent, etxc_, ewald_ispresent, & 
-                            ewald_, demet_ispresent, demet_, efield_corr_ispresent, efield_corr_)  
+                            ewald_, demet_ispresent, demet_, efield_corr_ispresent, efield_corr_, potstat_ispresent,& 
+                            potstat_contr_)  
 END SUBROUTINE qexsd_get_total_energy
 !
 !------------------------------------------------------------------------------------------------------
@@ -1972,13 +1990,13 @@ TYPE (step_type ),INTENT(OUT)        :: obj
 LOGICAL,INTENT(OUT)                  :: ispresent
 ! 
 INTEGER                              :: ierr, n_step_, nat_ 
-LOGICAL                              :: found, stress_ispresent
+LOGICAL                              :: found, stress_ispresent, fcp_force_ispresent, fcp_charge_ispresent
 TYPE( scf_conv_type )                :: scf_conv_obj
 TYPE( atomic_structure_type )        :: at_struct_obj
 TYPE( total_energy_type )            :: tot_en_obj
 TYPE ( matrix_type )                 :: for_mat_obj, stress_mat_obj
 REAL(DP),ALLOCATABLE                 :: forces_mat(:,:)
-REAL(DP)                             :: stress_mat(3,3)
+REAL(DP)                             :: stress_mat(3,3), fcp_force_, fcp_tot_charge_
 ! 
 
 ! 
@@ -2009,12 +2027,18 @@ CALL iotk_scan_dat( iunit, "stress", stress_mat, FOUND = stress_ispresent, IERR 
 IF ( ierr /= 0 ) RETURN 
 IF ( stress_ispresent ) CALL qes_init_matrix( stress_mat_obj, "stress", 3, 3, stress_mat )
 ! 
+CALL iotk_scan_dat( iunit, "FCP_force", fcp_force_, FOUND = fcp_force_ispresent, IERR = ierr ) 
+IF (ierr /= 0 ) RETURN
+! 
+CALL iotk_scan_dat ( iunit, "FCP_tot_charge", fcp_tot_charge_, FOUND = fcp_charge_ispresent, IERR = ierr ) 
+IF ( ierr /= 0 ) RETURN
+!
 CALL iotk_scan_end( iunit, "step", IERR = ierr ) 
 IF ( ierr /= 0 ) RETURN 
 !
-CALL qes_init_step( obj, "step", n_step_, scf_conv_obj, at_struct_obj, tot_en_obj, for_mat_obj, &
-                    stress_ispresent, stress_mat_obj ) 
-DEALLOCATE ( forces_mat)  
+CALL qes_init_step( obj, "step", n_step_, scf_conv_obj, at_struct_obj, tot_en_obj, for_mat_obj, stress_ispresent,&
+                    stress_mat_obj, fcp_force_ispresent, fcp_force_, fcp_charge_ispresent, fcp_tot_charge_ ) 
+DEALLOCATE ( forces_mat )  
 !
 END SUBROUTINE qexsd_get_step
 !

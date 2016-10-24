@@ -1,5 +1,16 @@
-
+!
+! Copyright (C) 2003-2016 Quantum ESPRESSO group
+! This file is distributed under the terms of the
+! GNU General Public License. See the file `License'
+! in the root directory of the present distribution,
+! or http://www.gnu.org/copyleft/gpl.txt .
+!
 MODULE qes_libs_module
+! This module contains some basic subroutines initialize data_type used for
+! reading and writing  XML files produced by Quantum ESPRESSO package.
+!
+! Written by Giovanni Borghi, A. Ferretti, ... (2015).
+!
 
    USE qes_types_module
    USE iotk_module
@@ -9,9 +20,9 @@ MODULE qes_libs_module
    CHARACTER(32)           :: fmtstr
    !
    PRIVATE :: attr, fmtstr
-
+!
 CONTAINS
-
+!
 SUBROUTINE qes_write_closed(iun, obj)
    IMPLICIT NONE
 
@@ -1661,6 +1672,12 @@ SUBROUTINE qes_write_total_energy(iun, obj)
          CALL iotk_write_end(iun, 'efieldcorr')
       ENDIF
       !
+      IF(obj%potentiostat_contr_ispresent) THEN
+         CALL iotk_write_begin(iun, 'potentiostat_contr')
+            WRITE(iun, '(E20.7)') obj%potentiostat_contr
+         CALL iotk_write_end(iun, 'potentiostat_contr')
+      ENDIF
+      !
    CALL iotk_write_end(iun, TRIM(obj%tagname))
    !
 END SUBROUTINE qes_write_total_energy
@@ -1668,7 +1685,8 @@ END SUBROUTINE qes_write_total_energy
 SUBROUTINE qes_init_total_energy(obj, tagname, etot, eband_ispresent, eband, &
                               ehart_ispresent, ehart, vtxc_ispresent, vtxc, etxc_ispresent, &
                               etxc, ewald_ispresent, ewald, demet_ispresent, demet, &
-                              efieldcorr_ispresent, efieldcorr)
+                              efieldcorr_ispresent, efieldcorr, &
+                              potentiostat_contr_ispresent, potentiostat_contr)
    IMPLICIT NONE
 
    TYPE(total_energy_type) :: obj
@@ -1689,6 +1707,8 @@ SUBROUTINE qes_init_total_energy(obj, tagname, etot, eband_ispresent, eband, &
    REAL(DP) :: demet
    LOGICAL  :: efieldcorr_ispresent
    REAL(DP) :: efieldcorr
+   LOGICAL  :: potentiostat_contr_ispresent
+   REAL(DP) :: potentiostat_contr
 
    obj%tagname = TRIM(tagname)
    obj%etot = etot
@@ -1720,6 +1740,10 @@ SUBROUTINE qes_init_total_energy(obj, tagname, etot, eband_ispresent, eband, &
    IF(obj%efieldcorr_ispresent) THEN
       obj%efieldcorr = efieldcorr
    ENDIF
+   obj%potentiostat_contr_ispresent = potentiostat_contr_ispresent
+   IF(obj%potentiostat_contr_ispresent) THEN
+      obj%potentiostat_contr = potentiostat_contr
+   ENDIF
 
 END SUBROUTINE qes_init_total_energy
 
@@ -1750,6 +1774,9 @@ SUBROUTINE qes_reset_total_energy(obj)
    ENDIF
    IF(obj%efieldcorr_ispresent) THEN
       obj%efieldcorr_ispresent = .FALSE.
+   ENDIF
+   IF(obj%potentiostat_contr_ispresent) THEN
+      obj%potentiostat_contr_ispresent = .FALSE.
    ENDIF
 
 END SUBROUTINE qes_reset_total_energy
@@ -2582,11 +2609,28 @@ SUBROUTINE qes_write_boundary_conditions(iun, obj)
          !
       ENDIF
       !
+      IF(obj%fcp_opt_ispresent) THEN
+         CALL iotk_write_begin(iun, 'fcp_opt',new_line=.FALSE.)
+            IF (obj%fcp_opt) THEN
+               WRITE(iun, '(A)',advance='no')  'true'
+            ELSE
+               WRITE(iun, '(A)',advance='no')  'false'
+            ENDIF
+         CALL iotk_write_end(iun, 'fcp_opt',indentation=.FALSE.)
+      ENDIF
+      !
+      IF(obj%fcp_mu_ispresent) THEN
+         CALL iotk_write_begin(iun, 'fcp_mu')
+            WRITE(iun, '(E20.7)') obj%fcp_mu
+         CALL iotk_write_end(iun, 'fcp_mu')
+      ENDIF
+      !
    CALL iotk_write_end(iun, TRIM(obj%tagname))
    !
 END SUBROUTINE qes_write_boundary_conditions
 
-SUBROUTINE qes_init_boundary_conditions(obj, tagname, assume_isolated, esm_ispresent, esm)
+SUBROUTINE qes_init_boundary_conditions(obj, tagname, assume_isolated, esm_ispresent, esm, &
+                              fcp_opt_ispresent, fcp_opt, fcp_mu_ispresent, fcp_mu)
    IMPLICIT NONE
 
    TYPE(boundary_conditions_type) :: obj
@@ -2595,12 +2639,24 @@ SUBROUTINE qes_init_boundary_conditions(obj, tagname, assume_isolated, esm_ispre
    CHARACTER(len=*) :: assume_isolated
    LOGICAL  :: esm_ispresent
    TYPE(esm_type) :: esm
+   LOGICAL  :: fcp_opt_ispresent
+   LOGICAL  :: fcp_opt
+   LOGICAL  :: fcp_mu_ispresent
+   REAL(DP) :: fcp_mu
 
    obj%tagname = TRIM(tagname)
    obj%assume_isolated = assume_isolated
    obj%esm_ispresent = esm_ispresent
    IF(obj%esm_ispresent) THEN
       obj%esm = esm
+   ENDIF
+   obj%fcp_opt_ispresent = fcp_opt_ispresent
+   IF(obj%fcp_opt_ispresent) THEN
+      obj%fcp_opt = fcp_opt
+   ENDIF
+   obj%fcp_mu_ispresent = fcp_mu_ispresent
+   IF(obj%fcp_mu_ispresent) THEN
+      obj%fcp_mu = fcp_mu
    ENDIF
 
 END SUBROUTINE qes_init_boundary_conditions
@@ -2615,6 +2671,12 @@ SUBROUTINE qes_reset_boundary_conditions(obj)
    IF(obj%esm_ispresent) THEN
       CALL qes_reset_esm(obj%esm)
       obj%esm_ispresent = .FALSE.
+   ENDIF
+   IF(obj%fcp_opt_ispresent) THEN
+      obj%fcp_opt_ispresent = .FALSE.
+   ENDIF
+   IF(obj%fcp_mu_ispresent) THEN
+      obj%fcp_mu_ispresent = .FALSE.
    ENDIF
 
 END SUBROUTINE qes_reset_boundary_conditions
@@ -2782,6 +2844,9 @@ SUBROUTINE qes_write_cell_control(iun, obj)
       CALL iotk_write_begin(iun, 'cell_dynamics',new_line=.FALSE.)
          WRITE(iun, '(A)',advance='no')  TRIM(obj%cell_dynamics)
       CALL iotk_write_end(iun, 'cell_dynamics',indentation=.FALSE.)
+      CALL iotk_write_begin(iun, 'pressure')
+         WRITE(iun, '(E20.7)') obj%pressure
+      CALL iotk_write_end(iun, 'pressure')
       IF(obj%wmass_ispresent) THEN
          CALL iotk_write_begin(iun, 'wmass')
             WRITE(iun, '(E20.7)') obj%wmass
@@ -2833,17 +2898,18 @@ SUBROUTINE qes_write_cell_control(iun, obj)
    !
 END SUBROUTINE qes_write_cell_control
 
-SUBROUTINE qes_init_cell_control(obj, tagname, cell_dynamics, wmass_ispresent, wmass, &
-                              cell_factor_ispresent, cell_factor, fix_volume_ispresent, &
-                              fix_volume, fix_area_ispresent, fix_area, &
-                              isotropic_ispresent, isotropic, free_cell_ispresent, &
-                              free_cell)
+SUBROUTINE qes_init_cell_control(obj, tagname, cell_dynamics, pressure, wmass_ispresent, &
+                              wmass, cell_factor_ispresent, cell_factor, &
+                              fix_volume_ispresent, fix_volume, fix_area_ispresent, &
+                              fix_area, isotropic_ispresent, isotropic, &
+                              free_cell_ispresent, free_cell)
    IMPLICIT NONE
 
    TYPE(cell_control_type) :: obj
    CHARACTER(len=*) :: tagname
    INTEGER  :: i
    CHARACTER(len=*) :: cell_dynamics
+   REAL(DP) :: pressure
    LOGICAL  :: wmass_ispresent
    REAL(DP) :: wmass
    LOGICAL  :: cell_factor_ispresent
@@ -2859,6 +2925,7 @@ SUBROUTINE qes_init_cell_control(obj, tagname, cell_dynamics, wmass_ispresent, w
 
    obj%tagname = TRIM(tagname)
    obj%cell_dynamics = cell_dynamics
+   obj%pressure = pressure
    obj%wmass_ispresent = wmass_ispresent
    IF(obj%wmass_ispresent) THEN
       obj%wmass = wmass
@@ -5713,12 +5780,25 @@ SUBROUTINE qes_write_step(iun, obj)
          !
       ENDIF
       !
+      IF(obj%FCP_force_ispresent) THEN
+         CALL iotk_write_begin(iun, 'FCP_force')
+            WRITE(iun, '(E20.7)') obj%FCP_force
+         CALL iotk_write_end(iun, 'FCP_force')
+      ENDIF
+      !
+      IF(obj%FCP_tot_charge_ispresent) THEN
+         CALL iotk_write_begin(iun, 'FCP_tot_charge')
+            WRITE(iun, '(E20.7)') obj%FCP_tot_charge
+         CALL iotk_write_end(iun, 'FCP_tot_charge')
+      ENDIF
+      !
    CALL iotk_write_end(iun, TRIM(obj%tagname))
    !
 END SUBROUTINE qes_write_step
 
 SUBROUTINE qes_init_step(obj, tagname, n_step, scf_conv, atomic_structure, total_energy, &
-                              forces, stress_ispresent, stress)
+                              forces, stress_ispresent, stress, FCP_force_ispresent, &
+                              FCP_force, FCP_tot_charge_ispresent, FCP_tot_charge)
    IMPLICIT NONE
 
    TYPE(step_type) :: obj
@@ -5731,6 +5811,10 @@ SUBROUTINE qes_init_step(obj, tagname, n_step, scf_conv, atomic_structure, total
    TYPE(matrix_type) :: forces
    LOGICAL  :: stress_ispresent
    TYPE(matrix_type) :: stress
+   LOGICAL  :: FCP_force_ispresent
+   REAL(DP) :: FCP_force
+   LOGICAL  :: FCP_tot_charge_ispresent
+   REAL(DP) :: FCP_tot_charge
 
    obj%tagname = TRIM(tagname)
 
@@ -5743,6 +5827,14 @@ SUBROUTINE qes_init_step(obj, tagname, n_step, scf_conv, atomic_structure, total
    obj%stress_ispresent = stress_ispresent
    IF(obj%stress_ispresent) THEN
       obj%stress = stress
+   ENDIF
+   obj%FCP_force_ispresent = FCP_force_ispresent
+   IF(obj%FCP_force_ispresent) THEN
+      obj%FCP_force = FCP_force
+   ENDIF
+   obj%FCP_tot_charge_ispresent = FCP_tot_charge_ispresent
+   IF(obj%FCP_tot_charge_ispresent) THEN
+      obj%FCP_tot_charge = FCP_tot_charge
    ENDIF
 
 END SUBROUTINE qes_init_step
@@ -5761,6 +5853,12 @@ SUBROUTINE qes_reset_step(obj)
    IF(obj%stress_ispresent) THEN
       CALL qes_reset_matrix(obj%stress)
       obj%stress_ispresent = .FALSE.
+   ENDIF
+   IF(obj%FCP_force_ispresent) THEN
+      obj%FCP_force_ispresent = .FALSE.
+   ENDIF
+   IF(obj%FCP_tot_charge_ispresent) THEN
+      obj%FCP_tot_charge_ispresent = .FALSE.
    ENDIF
 
 END SUBROUTINE qes_reset_step
@@ -5873,6 +5971,18 @@ SUBROUTINE qes_write_output(iun, obj)
          !
       ENDIF
       !
+      IF(obj%FCP_force_ispresent) THEN
+         CALL iotk_write_begin(iun, 'FCP_force')
+            WRITE(iun, '(E20.7)') obj%FCP_force
+         CALL iotk_write_end(iun, 'FCP_force')
+      ENDIF
+      !
+      IF(obj%FCP_tot_charge_ispresent) THEN
+         CALL iotk_write_begin(iun, 'FCP_tot_charge')
+            WRITE(iun, '(E20.7)') obj%FCP_tot_charge
+         CALL iotk_write_end(iun, 'FCP_tot_charge')
+      ENDIF
+      !
    CALL iotk_write_end(iun, TRIM(obj%tagname))
    !
 END SUBROUTINE qes_write_output
@@ -5881,7 +5991,9 @@ SUBROUTINE qes_init_output(obj, tagname, convergence_info, algorithmic_info, &
                               atomic_species, atomic_structure, symmetries, basis_set, dft, &
                               magnetization, total_energy, band_structure, &
                               forces_ispresent, forces, stress_ispresent, stress, &
-                              electric_field_ispresent, electric_field)
+                              electric_field_ispresent, electric_field, &
+                              FCP_force_ispresent, FCP_force, FCP_tot_charge_ispresent, &
+                              FCP_tot_charge)
    IMPLICIT NONE
 
    TYPE(output_type) :: obj
@@ -5903,6 +6015,10 @@ SUBROUTINE qes_init_output(obj, tagname, convergence_info, algorithmic_info, &
    TYPE(matrix_type) :: stress
    LOGICAL  :: electric_field_ispresent
    TYPE(outputElectricField_type) :: electric_field
+   LOGICAL  :: FCP_force_ispresent
+   REAL(DP) :: FCP_force
+   LOGICAL  :: FCP_tot_charge_ispresent
+   REAL(DP) :: FCP_tot_charge
 
    obj%tagname = TRIM(tagname)
    obj%convergence_info = convergence_info
@@ -5926,6 +6042,14 @@ SUBROUTINE qes_init_output(obj, tagname, convergence_info, algorithmic_info, &
    obj%electric_field_ispresent = electric_field_ispresent
    IF(obj%electric_field_ispresent) THEN
       obj%electric_field = electric_field
+   ENDIF
+   obj%FCP_force_ispresent = FCP_force_ispresent
+   IF(obj%FCP_force_ispresent) THEN
+      obj%FCP_force = FCP_force
+   ENDIF
+   obj%FCP_tot_charge_ispresent = FCP_tot_charge_ispresent
+   IF(obj%FCP_tot_charge_ispresent) THEN
+      obj%FCP_tot_charge = FCP_tot_charge
    ENDIF
 
 END SUBROUTINE qes_init_output
@@ -5958,6 +6082,12 @@ SUBROUTINE qes_reset_output(obj)
    IF(obj%electric_field_ispresent) THEN
       CALL qes_reset_outputElectricField(obj%electric_field)
       obj%electric_field_ispresent = .FALSE.
+   ENDIF
+   IF(obj%FCP_force_ispresent) THEN
+      obj%FCP_force_ispresent = .FALSE.
+   ENDIF
+   IF(obj%FCP_tot_charge_ispresent) THEN
+      obj%FCP_tot_charge_ispresent = .FALSE.
    ENDIF
 
 END SUBROUTINE qes_reset_output

@@ -19,7 +19,7 @@
   !---------------------------------------------------------------------------
   USE input_parameters,  ONLY:  title, calculation, restart_mode, prefix, pseudo_dir, outdir, tstress, tprnfor,       &
                                 wf_collect, disk_io, max_seconds, conv_thr, etot_conv_thr, forc_conv_thr,             &
-                                press_conv_thr,verbosity, iprint, ntyp,                                               &
+                                press, press_conv_thr,verbosity, iprint, ntyp,                                        &
                                 atm => atom_label, psfile => atom_pfile, amass => atom_mass, starting_magnetization,  &
                                 angle1, angle2, ip_nat => nat, ip_nspin => nspin, ip_ityp => sp_pos, ip_tau => rd_pos,&
                                 ip_atomic_positions => atomic_positions, lspinorb, ip_nqx1 => nqx1, ip_nqx2 => nqx2,  &
@@ -192,7 +192,7 @@
   IF ( london ) vdw_corr_ = 'grimme-d2'
   CALL qexsd_init_dft (obj%dft,TRIM(dft_name),.FALSE., dft_is_hybrid,ip_nqx1,ip_nqx2,ip_nqx3,ip_ecutfock,exx_fraction,&
                        screening_parameter,exxdiv_treatment, x_gamma_extrapolation, ip_ecutvcut,                      &
-                       ip_lda_plus_U,ip_lda_plus_u_kind,2*hubbard_lmax+1,ip_nspin,ntyp,0,ip_nat,atm,                  &
+                       ip_lda_plus_U,ip_lda_plus_u_kind,2*hubbard_lmax+1, ip_noncolin, ip_nspin,ntyp,0,ip_nat,atm,    &
                        ip_ityp,ip_hubbard_u,ip_hubbard_j0,ip_hubbard_alpha,ip_hubbard_beta,ip_hubbard_j,              &
                        starting_ns_eigenvalue,ns_null,ns_nc_null,u_projection_type,dft_is_nonlocc,                    &
                        vdw_corr_, TRIM (get_nonlocc_name()), london_s6, london_c6, london_rcut,                       &
@@ -265,7 +265,7 @@
   !--------------------------------------------------------------------------------------------------------------------------------
   !                                                        CELL CONTROL ELEMENT
   !-------------------------------------------------------------------------------------------------------------------------------
-  CALL qexsd_init_cell_control(obj%cell_control, cell_dynamics, wmass, cell_factor, cell_dofree, cb_iforceh)
+  CALL qexsd_init_cell_control(obj%cell_control, cell_dynamics, press, wmass, cell_factor, cell_dofree, cb_iforceh)
   !---------------------------------------------------------------------------------------------------------------------------------
   !                                SYMMETRY FLAGS
   !------------------------------------------------------------------------------------------------------------------------ 

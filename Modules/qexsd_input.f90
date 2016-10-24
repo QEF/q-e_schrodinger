@@ -5,7 +5,7 @@
 ! in the root directory of the present distribution,
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
-#ifdef __XSD
+#if defined(__XSD)
 !---------------------------------------------------------
 MODULE qexsd_input
 !--------------------------------------------------------
@@ -402,14 +402,14 @@ MODULE qexsd_input
    !
    !
    !------------------------------------------------------------------------------------------
-   SUBROUTINE qexsd_init_cell_control(obj,cell_dynamics,wmass,cell_factor,cell_dofree,iforceh)
+   SUBROUTINE qexsd_init_cell_control(obj,cell_dynamics, pressure, wmass,cell_factor,cell_dofree,iforceh)
    !------------------------------------------------------------------------------------------
    !
    IMPLICIT NONE
    ! 
    TYPE (cell_control_type)                     :: obj
-   CHARACTER(LEN=*),INTENT(IN)                  :: cell_dynamics,cell_dofree
-   REAL(DP),INTENT(IN)                          :: wmass,cell_factor
+   CHARACTER(LEN=*),INTENT(IN)                  :: cell_dynamics, cell_dofree
+   REAL(DP),INTENT(IN)                          :: pressure, wmass, cell_factor
    INTEGER,DIMENSION(3,3),INTENT(IN)            :: iforceh
    ! 
    CHARACTER(LEN=*),PARAMETER                   :: TAGNAME="cell_control"
@@ -443,12 +443,12 @@ MODULE qexsd_input
    END IF
    IF (free_cell_ispresent) CALL  qes_init_integerMatrix(free_cell_obj,"free_cell",3,3,my_forceh)
    !
-   CALL qes_init_cell_control(obj,TAGNAME,cell_dynamics=cell_dynamics,wmass_ispresent=.TRUE.,&
-                              wmass=wmass,cell_factor_ispresent=.TRUE.,cell_factor=cell_factor,&
-                              fix_volume_ispresent=fix_volume_ispresent,fix_volume=fix_volume,&
-                              fix_area_ispresent=fix_area_ispresent,fix_area=fix_area,& 
-                              isotropic_ispresent=isotropic_ispresent,isotropic=isotropic,&
-                              free_cell_ispresent=free_cell_ispresent,free_cell=free_cell_obj)
+   CALL qes_init_cell_control(obj,TAGNAME, PRESSURE = pressure, CELL_DYNAMICS=cell_dynamics, WMASS_ISPRESENT=.TRUE.,&
+                              WMASS=wmass, CELL_FACTOR_ISPRESENT=.TRUE., CELL_FACTOR=cell_factor,&
+                              FIX_VOLUME_ISPRESENT=fix_volume_ispresent,FIX_VOLUME=fix_volume,&
+                              FIX_AREA_ISPRESENT=fix_area_ispresent, FIX_AREA=fix_area,& 
+                              ISOTROPIC_ISPRESENT=isotropic_ispresent,ISOTROPIC=isotropic,&
+                              FREE_CELL_ISPRESENT=free_cell_ispresent, FREE_CELL=free_cell_obj)
    IF( free_cell_ispresent ) CALL qes_reset_integerMatrix(free_cell_obj)
    END SUBROUTINE  qexsd_init_cell_control
    !
@@ -473,27 +473,37 @@ MODULE qexsd_input
    !
    ! 
    !--------------------------------------------------------------------------------------------
-   SUBROUTINE qexsd_init_boundary_conditions(obj,assume_isolated,esm_bc,esm_nfit,esm_w,&
-                                             esm_efield)
+   SUBROUTINE qexsd_init_boundary_conditions(obj,assume_isolated,esm_bc, fcp_opt, fcp_mu, esm_nfit,esm_w, esm_efield)
    !--------------------------------------------------------------------------------------------
    ! 
    IMPLICIT NONE
    ! 
-   TYPE (boundary_conditions_type)              ::  obj
+   TYPE (boundary_conditions_type)              :: obj
    CHARACTER(LEN=*),INTENT(IN)                  :: assume_isolated
    CHARACTER(LEN=*),OPTIONAL,INTENT(IN)         :: esm_bc
+   LOGICAL,OPTIONAL,INTENT(IN)                  :: fcp_opt
+   REAL(DP),OPTIONAL,INTENT(IN)                 :: fcp_mu
    INTEGER,OPTIONAL,INTENT(IN)                  :: esm_nfit
    REAL(DP),OPTIONAL,INTENT(IN)                 :: esm_w,esm_efield
    ! 
    TYPE (esm_type)                              :: esm_obj
-   LOGICAL                                      :: esm_ispresent = .FALSE.
+   LOGICAL                                      :: esm_ispresent = .FALSE., fcp_opt_ispresent = .TRUE., &
+                                                   fcp_mu_ispresent = .FALSE. , fcp_opt_ = .FALSE.
+   REAL(DP)                                     :: fcp_mu_ = 0.d0  
    CHARACTER(LEN=*),PARAMETER                   :: TAGNAME="boundary_conditions"
    !
    IF ( TRIM(assume_isolated) .EQ. "esm" ) THEN 
       esm_ispresent = .TRUE. 
       CALL qes_init_esm(esm_obj,"esm",bc=TRIM(esm_bc),nfit=esm_nfit,w=esm_w,efield=esm_efield)
+      IF ( PRESENT(fcp_opt) ) THEN 
+          fcp_opt_ = fcp_opt
+          fcp_mu_ispresent = .TRUE. 
+          IF ( fcp_opt_ .AND. PRESENT ( fcp_mu)) fcp_mu_ = fcp_mu
+      END IF 
    END IF 
-   CALL qes_init_boundary_conditions(obj,TAGNAME,ASSUME_ISOLATED =assume_isolated,&
+   CALL qes_init_boundary_conditions(obj,TAGNAME,ASSUME_ISOLATED =assume_isolated, &
+                                     FCP_OPT_ISPRESENT = fcp_opt_ispresent, FCP_OPT= fcp_opt_, &
+                                     FCP_MU_ISPRESENT = fcp_mu_ispresent, FCP_MU = fcp_mu_, &  
                                      ESM_ISPRESENT = esm_ispresent, ESM = esm_obj)
    IF ( esm_ispresent ) CALL qes_reset_esm(esm_obj)
    END SUBROUTINE qexsd_init_boundary_conditions
