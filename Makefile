@@ -268,8 +268,8 @@ install : touch-dummy
 #########################################################
 
 ### This target is not supported in this version
-#test-suite: pw touch-dummy
-#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+test-suite: pw touch-dummy
+	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
 #########################################################
 # Other targets: clean up

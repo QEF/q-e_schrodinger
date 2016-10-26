@@ -1,0 +1,34 @@
+# Copyright (C) 2001-2020 Quantum ESPRESSO Foundation
+# Maintainer: Filippo Spiga (filippo.spiga@quantum-espresso.org)
+
+TEST-SUITE  v6.0
+------------------
+
+Type 'make' for the list of possible options. Currently only PW, CP and EPW
+are supported.
+
+'make compare' compare the latest run of tests (SERIAL or PARALLEl) and 
+redirect the output to a file called "out.XXX.`date +%Y%m%d_%H%M%S`" 
+'XXX' is replaced by the name of the package ('PW', 'CP', 'EPW')
+
+Clean all test files and leave only benchmark reference via 'make clean'
+command
+
+
+
+REFERENCE OUTPUTS
+-----------------
+
+All reference outputs have been computed using GCC 4.8.5
+
+The following configure options have been used:
+
+./configure --disable-openmp --disable-parallel --with-netlib
+
+DFLAGS         = -D__OPENMP -D__GFORTRAN -D__STD_F95 -D__FFTW
+CFLAGS         = -O3 $(DFLAGS) $(IFLAGS)
+F90FLAGS       = $(FFLAGS) -x f95-cpp-input -fopenmp
+FFLAGS         = -O3 -g -fopenmp
+FFLAGS_NOOPT   = -O0 -g
+LD             = gfortran
+LDFLAGS        = -g -pthread -fopenmp
