@@ -156,8 +156,6 @@ PROGRAM do_dos
      ndos = nint ( (Emax - Emin) / DeltaE+0.500001d0)
      DOSint = 0.d0
      !
-
-     !
      IF ( fildos == ' ' ) fildos = trim(prefix)//'.dos'
      OPEN (unit = 4, file = fildos, status = 'unknown', form = 'formatted')
      IF (lfixed) THEN
