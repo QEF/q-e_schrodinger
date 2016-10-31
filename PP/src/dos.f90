@@ -48,6 +48,8 @@ PROGRAM do_dos
 
   NAMELIST /dos/ outdir, prefix, fildos, degauss, ngauss, &
        Emin, Emax, DeltaE
+  REAL(DP) :: ehomo, elumo
+  LOGICAL  :: lgauss_tmp, ltetra_tmp, lfixed = .false.
   !
   ! initialise environment
   !
@@ -132,6 +134,7 @@ PROGRAM do_dos
              &        "ngauss,degauss=",i4,f12.6/)') ngauss,degauss
         ltetra=.false.
         lgauss=.true.
+        lfixed=.true.
      ENDIF
      !
      ! find min and max energy for plot (band extrema if not set)
@@ -155,7 +158,19 @@ PROGRAM do_dos
      !
      IF ( fildos == ' ' ) fildos = trim(prefix)//'.dos'
      OPEN (unit = 4, file = fildos, status = 'unknown', form = 'formatted')
-     IF ( two_fermi_energies ) THEN
+     IF (lfixed) THEN
+        lgauss_tmp = lgauss
+        ltetra_tmp = ltetra
+        lgauss = .false.
+        ltetra = .false.
+
+        CALL get_homo_lumo(ehomo, elumo)
+
+        lgauss = lgauss_tmp
+        ltetra = ltetra_tmp
+
+        WRITE(fermi_str,'(" EFermi = ",f7.3," eV")') ehomo*rytoev
+     ELSE IF ( two_fermi_energies ) THEN
         WRITE(fermi_str,'(" EFermi = ",2f7.3," eV")') ef_up*rytoev, ef_dw*rytoev
      ELSE
         WRITE(fermi_str,'(" EFermi = ",f7.3," eV")') ef*rytoev
