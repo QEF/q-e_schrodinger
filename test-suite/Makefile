@@ -16,13 +16,14 @@ default :
 	@echo '  make target'
 	@echo ' '
 	@echo 'where <target> identifies an action'
-	@echo ' run-tests          : run-tests-serial (default)'
-	@echo ' run-tests-serial   : run all tests in SERIAL'
-	@echo ' run-tests-XX-serial: run tests for XX={pw} only, as above'
-	@echo ' run-tests-parallel : run all tests in PARALLEL (4 MPI)'
-	@echo ' run-tests-XX-parallel: run tests for XX={pw} only, as above'
-	@echo ' compare            : compare last output generated with reference'
-	@echo ' clean              : clean output (our/err files) of all tests'
+	@echo ' run-tests                   : run-tests-serial (default)'
+	@echo ' run-tests-serial            : run all tests in SERIAL'
+	@echo ' run-tests-XX-serial         : run tests for XX={pw} only, as above'
+	@echo ' run-tests-parallel          : run all tests in PARALLEL (4 MPI)'
+	@echo ' run-tests-XX-parallel       : run tests for XX={pw} only, as above'
+	@echo ' run-custom-test testdir=DIR : run test in DIR only (serial)'
+	@echo ' compare                     : compare last output with reference'
+	@echo ' clean                       : clean stdout/sderr of all tests'
 	@echo ' '
 	@echo 'For additional advanced commands and settings please manually inspect'
 	@echo 'ENVIRONMENT and Makefile files'
@@ -58,6 +59,12 @@ run-custom-test-parallel : prolog pseudo
 	@if test -d $(testdir); then \
 	env QE_USE_MPI=1 ${TESTCODE_DIR}/bin/testcode.py --verbose --category=$(testdir) ; fi
 
+run-tests-xsd-pw-serial : prolog pseudo
+	cd xsd_pw ; for file in ./*.in ; do \
+  		echo "Running using $$file" ; \
+		env QE_USE_MPI=0 ../run-pw.sh -in $$file &> $$file.out ; \
+		python ../validate_xsd_pw.py $$file; \
+	done ; cd ..
 
 create-reference-pw : pseudo prolog
 	env QE_USE_MPI=0 ${TESTCODE_DIR}/bin/testcode.py --category=pw_all make-benchmarks
