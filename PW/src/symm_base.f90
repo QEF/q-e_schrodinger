@@ -138,6 +138,8 @@ SUBROUTINE set_sym_bl ( )
   CHARACTER (len=45) :: s0name (64)
   ! full name of the rotational part of each symmetry operation
 
+  CHARACTER(LEN=6), EXTERNAL :: int_to_char
+
   data s0/ 1.d0,  0.d0,  0.d0,  0.d0,  1.d0,  0.d0,  0.d0,  0.d0,  1.d0, &
           -1.d0,  0.d0,  0.d0,  0.d0, -1.d0,  0.d0,  0.d0,  0.d0,  1.d0, &
           -1.d0,  0.d0,  0.d0,  0.d0,  1.d0,  0.d0,  0.d0,  0.d0, -1.d0, &
@@ -300,8 +302,12 @@ SUBROUTINE set_sym_bl ( )
   ENDDO
   nrot = nrot-1
   IF ( nrot /= 1 .AND. nrot /= 2 .AND. nrot /= 4 .AND. nrot /= 6 .AND. &
-       nrot /= 8 .AND. nrot /=12 .AND. nrot /=24 ) CALL errore('set_sym_bl',&
-         'wrong number of symmetries! Use standard orientations for axis',nrot)
+       nrot /= 8 .AND. nrot /=12 .AND. nrot /=24 ) THEN
+     CALL infomsg('set_sym_bl', &
+         'NOTICE: Bravais lattice has wrong number (' // &
+         TRIM(int_to_char(nrot)) // ') of symmetries - symmetries are disabled')
+     nrot = 1
+  ENDIF
   !
   !     set the inversion symmetry ( Bravais lattices have always inversion
   !     symmetry )
