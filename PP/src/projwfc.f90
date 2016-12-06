@@ -555,12 +555,12 @@ SUBROUTINE projwave( filproj, lsym, lwrite_ovp, lbinary )
      IF (filproj/=' ') THEN
         DO is=1,nspin
            IF (nspin==2) THEN
-              IF (is==1) filename=trim(filproj)//'.up'
-              IF (is==2) filename=trim(filproj)//'.down'
+              IF (is==1) filename=trim(filproj)//'.projwfc_up'
+              IF (is==2) filename=trim(filproj)//'.projwfc_down'
               nksinit=(nkstot/2)*(is-1)+1
               nkslast=(nkstot/2)*is
            ELSE
-              filename=trim(filproj)
+              filename=trim(filproj)//'.projwfc_up'
               nksinit=1
               nkslast=nkstot
            ENDIF
