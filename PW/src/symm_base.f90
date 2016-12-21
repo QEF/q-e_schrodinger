@@ -297,8 +297,6 @@ SUBROUTINE set_sym_bl ( )
           'NOTICE: Bravais lattice has wrong number (' // &
           TRIM(int_to_char(nrot)) // ') of symmetries - symmetries are disabled')
       nrot = 1
-   ENDIF
-
   END IF
   !
   !     set the inversion symmetry ( Bravais lattices have always inversion
