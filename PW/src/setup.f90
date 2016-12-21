@@ -81,18 +81,18 @@ SUBROUTINE setup()
   USE noncollin_module,   ONLY : noncolin, npol, m_loc, i_cons, &
                                  angle1, angle2, bfield, ux, nspin_lsda, &
                                  nspin_gga, nspin_mag
-!
-! 
+#if defined(__XSD) 
   USE pw_restart_new,     ONLY : pw_readschema_file, init_vars_from_schema 
-  USE qes_libs_module,    ONLY : qes_reset_output, qes_reset_input, qes_reset_parallel_info, qes_reset_general_info
-  USE qes_types_module,   ONLY : output_type, input_type, parallel_info_type, general_info_type 
-!
+  USE qes_libs_module,    ONLY : qes_reset_output, qes_reset_parallel_info, qes_reset_general_info
+  USE qes_types_module,   ONLY : output_type, parallel_info_type, general_info_type 
+#else
   USE pw_restart,         ONLY : pw_readfile
-!
-  USE exx,                ONLY : ecutfock, exx_grid_init, exx_div_check
+#endif
+  USE exx,                ONLY : ecutfock, exx_grid_init, exx_mp_init, exx_div_check
   USE funct,              ONLY : dft_is_meta, dft_is_hybrid, dft_is_gradient
   USE paw_variables,      ONLY : okpaw
   USE fcp_variables,      ONLY : lfcpopt, lfcpdyn
+  USE extfield,           ONLY : monopole
   !
   IMPLICIT NONE
   !
@@ -104,7 +104,6 @@ SUBROUTINE setup()
 !
 #if defined(__XSD)
   TYPE(output_type),ALLOCATABLE             :: output_obj 
-  TYPE(input_type),ALLOCATABLE              :: input_obj
   TYPE(parallel_info_type),ALLOCATABLE      :: parinfo_obj
   TYPE(general_info_type),ALLOCATABLE       :: geninfo_obj
 #endif
@@ -141,7 +140,7 @@ SUBROUTINE setup()
                          'hybrid XC not allowed in non-scf calculations', 1 )
      IF ( ANY (upf(1:ntyp)%nlcc) ) CALL infomsg( 'setup ', 'BEWARE:' // &
                & ' nonlinear core correction is not consistent with hybrid XC')
-     IF (okpaw) CALL errore('setup','PAW and hybrid XC not tested',1)
+     !IF (okpaw) CALL errore('setup','PAW and hybrid XC not tested',1)
      IF (okvan) THEN
         IF (ecutfock /= 4*ecutwfc) CALL infomsg &
            ('setup','Warning: US/PAW use ecutfock=4*ecutwfc, ecutfock ignored')
@@ -170,17 +169,17 @@ SUBROUTINE setup()
   !
 #if defined (__XSD)
   IF ( lbands .OR. ( (lfcpopt .OR. lfcpdyn ) .AND. restart )) THEN 
-     ALLOCATE ( output_obj, input_obj, parinfo_obj, geninfo_obj )
-     CALL pw_readschema_file( ierr , output_obj, input_obj, parinfo_obj, geninfo_obj )
+     ALLOCATE ( output_obj, parinfo_obj, geninfo_obj )
+     CALL pw_readschema_file( ierr , output_obj, parinfo_obj, geninfo_obj )
   END IF
   !
   ! 
   IF (lfcpopt .AND. restart ) THEN  
-     CALL init_vars_from_schema( 'fcpopt', ierr,  output_obj, input_obj, parinfo_obj, geninfo_obj)
+     CALL init_vars_from_schema( 'fcpopt', ierr,  output_obj, parinfo_obj, geninfo_obj)
      tot_charge = ionic_charge - nelec
   END IF 
   IF (lfcpdyn .AND. restart ) THEN    
-     CALL init_vars_from_schema( 'fcpdyn', ierr,  output_obj, input_obj, parinfo_obj, geninfo_obj ) 
+     CALL init_vars_from_schema( 'fcpdyn', ierr,  output_obj, parinfo_obj, geninfo_obj ) 
      tot_charge = ionic_charge - nelec 
   END IF
 #else 
@@ -552,7 +551,7 @@ SUBROUTINE setup()
      ! ... eliminate rotations that are not symmetry operations
      !
      CALL find_sym ( nat, tau, ityp, dfftp%nr1, dfftp%nr2, dfftp%nr3, &
-                  magnetic_sym, m_loc )
+                  magnetic_sym, m_loc, monopole )
      !
   END IF
   !
@@ -583,7 +582,7 @@ SUBROUTINE setup()
      ! ... if calculating bands, we read the Fermi energy
      !
 #if defined (__XSD)
-     CALL init_vars_from_schema( 'ef',   ierr , output_obj, input_obj,parinfo_obj, geninfo_obj)
+     CALL init_vars_from_schema( 'ef',   ierr , output_obj, parinfo_obj, geninfo_obj)
 #else
      CALL pw_readfile( 'reset', ierr )
      CALL pw_readfile( 'ef',   ierr )
@@ -607,10 +606,9 @@ SUBROUTINE setup()
 #if defined(__XSD) 
   IF ( lbands .OR. ( (lfcpopt .OR. lfcpdyn ) .AND. restart ) ) THEN 
      CALL qes_reset_output ( output_obj ) 
-     CALL qes_reset_input ( input_obj ) 
      CALL qes_reset_parallel_info ( parinfo_obj ) 
      CALL qes_reset_general_info ( geninfo_obj ) 
-     DEALLOCATE ( output_obj, input_obj, parinfo_obj, geninfo_obj ) 
+     DEALLOCATE ( output_obj, parinfo_obj, geninfo_obj ) 
   END IF 
 #endif
   !
@@ -654,6 +652,7 @@ SUBROUTINE setup()
   !
   IF ( dft_is_hybrid() ) THEN
      CALL exx_grid_init()
+     CALL exx_mp_init()
      CALL exx_div_check()
   ENDIF
 
@@ -672,7 +671,7 @@ SUBROUTINE setup()
   !
   ! ... initialize d1 and d2 to rotate the spherical harmonics
   !
-  IF (lda_plus_u .or. okpaw ) CALL d_matrix( d1, d2, d3 )
+  IF (lda_plus_u .or. okpaw .or. (okvan.and.dft_is_hybrid()) ) CALL d_matrix( d1, d2, d3 )
   !
   RETURN
   !

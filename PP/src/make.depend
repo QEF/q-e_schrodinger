@@ -395,7 +395,6 @@ plot_whole_cell.o : ../../Modules/kind.o
 plotband.o : ../../Modules/kind.o
 plotband.o : ../../Modules/parser.o
 poormanwannier.o : ../../Modules/becmod.o
-poormanwannier.o : ../../Modules/cell_base.o
 poormanwannier.o : ../../Modules/constants.o
 poormanwannier.o : ../../Modules/control_flags.o
 poormanwannier.o : ../../Modules/environment.o
@@ -584,6 +583,7 @@ pw2wannier90.o : ../../Modules/uspp.o
 pw2wannier90.o : ../../Modules/wavefunctions.o
 pw2wannier90.o : ../../PW/src/pwcom.o
 pw2wannier90.o : ../../PW/src/scf_mod.o
+pw2wannier90.o : ../../PW/src/symm_base.o
 pw_export.o : ../../Modules/becmod.o
 pw_export.o : ../../Modules/control_flags.o
 pw_export.o : ../../Modules/environment.o
@@ -629,7 +629,6 @@ stm.o : ../../PW/src/symme.o
 stop_pp.o : ../../Modules/control_flags.o
 stop_pp.o : ../../Modules/io_files.o
 stop_pp.o : ../../Modules/mp_global.o
-stop_pp.o : ../../Modules/parallel_include.o
 sym_band.o : ../../FFTXlib/fft_interfaces.o
 sym_band.o : ../../FFTXlib/scatter_mod.o
 sym_band.o : ../../Modules/becmod.o
@@ -713,6 +712,7 @@ write_hamiltonians.o : ../../Modules/input_parameters.o
 write_hamiltonians.o : ../../Modules/io_global.o
 write_hamiltonians.o : ../../Modules/ions_base.o
 write_hamiltonians.o : ../../Modules/kind.o
+write_hamiltonians.o : ../../Modules/version.o
 write_hamiltonians.o : ../../Modules/wannier_new.o
 write_hamiltonians.o : ../../PW/src/pwcom.o
 write_io_header.o : ../../Modules/ions_base.o

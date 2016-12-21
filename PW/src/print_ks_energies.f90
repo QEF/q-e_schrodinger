@@ -14,9 +14,12 @@ SUBROUTINE print_ks_energies()
   !
   USE kinds,                ONLY : DP
   USE constants,            ONLY : rytoev
-  USE io_global,            ONLY : stdout, ionode
-  USE klist,                ONLY : xk, ngk, nks, nkstot, wk
-  USE ener,                 ONLY : ef
+  USE io_global,            ONLY : stdout
+  USE klist,                ONLY : xk, ngk, nks, nkstot, wk, lgauss, &
+                                   two_fermi_energies
+  USE ktetra,               ONLY : ltetra
+  USE fixed_occ,            ONLY : one_atom_occupations
+  USE ener,                 ONLY : ef, ef_up, ef_dw 
   USE lsda_mod,             ONLY : lsda, nspin
   USE spin_orb,             ONLY : lforcet
   USE wvfct,                ONLY : nbnd, et, wg
@@ -111,10 +114,35 @@ SUBROUTINE print_ks_energies()
   !
   ! ... print HOMO/Top of the VB and LUMO/Bottom of the CB, or E_Fermi
   !
-  IF ( .NOT. lbands ) CALL get_homo_lumo (ehomo, elumo)
+  IF ( .NOT. lbands ) THEN
+     !
+     IF ( lgauss .OR. ltetra ) THEN
+        !
+        ! ... presumably a metal: print Fermi energy
+        !
+        IF ( two_fermi_energies ) THEN
+           WRITE( stdout, 9041 ) ef_up*rytoev, ef_dw*rytoev
+        ELSE
+           WRITE( stdout, 9040 ) ef*rytoev
+        END IF
+        !
+     ELSE IF ( .NOT. one_atom_occupations ) THEN
+        !
+        ! ... presumably not a metal: print HOMO (and LUMO if available)
+        !
+        CALL get_homo_lumo (ehomo, elumo)
+        !
+        IF ( elumo < 1d+6) THEN
+           WRITE( stdout, 9042 ) ehomo*rytoev, elumo*rytoev
+        ELSE
+           WRITE( stdout, 9043 ) ehomo*rytoev
+        END IF
+        !
+     END IF
+     !
+  END IF
   !
   FLUSH( stdout )
-  !
   RETURN
   !
   ! ... formats
@@ -125,6 +153,11 @@ SUBROUTINE print_ks_energies()
 9021 FORMAT(/'          k =',3F7.4,' (',I6,' PWs)   bands (ev):'/ )
 9030 FORMAT( '  ',8F9.4 )
 9032 FORMAT(/'     occupation numbers ' )
+9043 FORMAT(/'     highest occupied level (ev): ',F10.4 )
+9042 FORMAT(/'     highest occupied, lowest unoccupied level (ev): ',2F10.4 )
+9041 FORMAT(/'     the spin up/dw Fermi energies are ',2F10.4,' ev' )
+9040 FORMAT(/'     the Fermi energy is ',F10.4,' ev' )
+!
   !
 END SUBROUTINE print_ks_energies
 !
@@ -132,121 +165,49 @@ END SUBROUTINE print_ks_energies
 SUBROUTINE get_homo_lumo ( ehomo, elumo )
   !----------------------------------------------------------------------------
   !
-  ! ... printout of Kohn-Sham eigenvalues: HOMO and LUMO, or Fermi Energy
+  ! ... Compute estimated HOMO and LUMO from occupations
+  ! ... HOMO = largest  E_k with occupation > eps (set to 0.001, see below)
+  ! ... LUMO = smallest E_k with occupation < eps
+  ! ... Can be done also for metals, in order to check if there is a gap
+  ! ... If LUMO is not available, a large 1.0D+6 value is returned
+  ! ... In parallel execution, only "ionode" returns the correct values
   !
-  USE kinds,                ONLY : DP
-  USE constants,            ONLY : rytoev
-  USE io_global,            ONLY : stdout, ionode
-  USE ener,                 ONLY : ef, ef_up, ef_dw 
-  USE klist,                ONLY : nelec, nkstot, lgauss, two_fermi_energies,&
-                                   nelup, neldw
-  USE lsda_mod,             ONLY : nspin
-  USE ktetra,               ONLY : ltetra
-  USE wvfct,                ONLY : nbnd, et
-  USE fixed_occ,            ONLY : f_inp, tfixed_occ, one_atom_occupations
+  USE kinds,                ONLY : dp
+  USE klist,                ONLY : nkstot, wk
+  USE wvfct,                ONLY : nbnd, et, wg
+  USE io_global,            ONLY : ionode
   !
   IMPLICIT NONE
   !
+  REAL(dp), PARAMETER :: eps = 0.001_dp ! threshold for zero occupancy
   REAL(DP), INTENT(OUT) :: &
       ehomo, elumo   ! highest occupied and lowest unoccupied levels
 
-  ! ... a few local variables
-
   INTEGER :: &
-      i,            &! counter on polarization
-      ik,           &! counter on k points
-      kbnd,         &! counter on bands
-      ibnd_up,      &! counter on bands
-      ibnd_dw,      &! counter on bands
-      ibnd         
+      kbnd,         &! possible position of HOMO
+      ibnd, ik       ! counters on bands and k-points
   !
-  ehomo=-1E+6
-  elumo=+1E+6
+  ehomo=-1D+6
+  elumo=+1D+6
   !
-  IF ( lgauss .OR. ltetra ) THEN
-     !
-     ! ... presumably a metal: print Fermi energy
-     !
-     IF ( two_fermi_energies ) THEN
-        WRITE( stdout, 9041 ) ef_up*rytoev, ef_dw*rytoev
-     ELSE
-        WRITE( stdout, 9040 ) ef*rytoev
-     END IF
-     !
-  ELSE
-     !
-     ! ... presumably not a metal: store in ibnd the position of HOMO
-     ! ... (or in ibnd_up, ibnd_dw for LSDA calculations)
-     !
-     IF ( tfixed_occ ) THEN
-        ibnd    = 0
-        ibnd_up = 0
-        ibnd_dw = 0
-        DO kbnd = 1, nbnd
-           IF ( nspin == 1 .OR. nspin == 4 ) THEN
-              IF ( f_inp(kbnd,1) > 0.D0 ) ibnd = kbnd
-           ELSE
-              IF ( f_inp(kbnd,1) > 0.D0 ) ibnd_up = kbnd
-              IF ( f_inp(kbnd,2) > 0.D0 ) ibnd_dw = kbnd
-              ibnd = MAX(ibnd_up, ibnd_dw)
+  IF ( .NOT. ionode ) RETURN
+  !
+  k_loop: DO ik = 1, nkstot
+     ! exclude states with zero weight (present in phonon calculation)
+     IF ( ABS(wk(ik)) > 1.d-10) THEN
+        kbnd = nbnd
+        band_loop: DO ibnd = 1, nbnd
+           ! Allow for negative occupancies (arising in Methfessel-Paxton)
+           IF ( ABS(wg(ibnd,ik)) / wk(ik) < eps ) THEN
+              kbnd = ibnd - 1
+              EXIT band_loop
            END IF
-        END DO
-     ELSE
-        IF ( nspin == 1 ) THEN
-           ibnd = NINT( nelec ) / 2
-        ELSE
-           ibnd    = NINT( nelec )
-           ibnd_up = NINT( nelup )
-           ibnd_dw = NINT( neldw )
+        END DO band_loop
+        ehomo = MAX ( ehomo, et(kbnd,ik) )
+        IF ( kbnd < nbnd ) THEN
+           elumo = MIN ( elumo, et(kbnd+1,ik) )
         END IF
      END IF
-     !
-     ! ... print HOMO and LUMO (or just the HOMO if LUMO is not there)
-     !
-     IF ( ionode .AND. .NOT. one_atom_occupations ) THEN
-        !
-        IF ( nspin == 1 .OR. nspin == 4 ) THEN
-           ehomo = MAXVAL( et(ibnd,  1:nkstot) )
-           IF ( nbnd > ibnd ) THEN
-              elumo = MINVAL( et(ibnd+1,1:nkstot) )
-              WRITE( stdout, 9042 ) ehomo*rytoev, elumo*rytoev
-           ELSE
-              WRITE( stdout, 9043 ) ehomo*rytoev
-           ENDIF
-        ELSE
-           IF ( ibnd_up == 0 ) THEN
-              !
-              ehomo = MAXVAL( et(ibnd_dw,1:nkstot/2) )
-              !
-           ELSE IF ( ibnd_dw == 0 ) THEN
-              !
-              ehomo = MAXVAL( et(ibnd_up,1:nkstot/2) )
-              !
-           ELSE
-              !
-              ehomo = MAX( MAXVAL( et(ibnd_up,1:nkstot/2) ), &
-                   MAXVAL( et(ibnd_dw,nkstot/2+1:nkstot) ) )
-              !
-           END IF
-           IF ( nbnd > ibnd_up .AND. nbnd > ibnd_dw ) THEN
-              elumo = MIN( MINVAL( et(ibnd_up+1,1:nkstot/2) ), &
-                   MINVAL( et(ibnd_dw+1,nkstot/2+1:nkstot) ) )
-              WRITE( stdout, 9042 ) ehomo*rytoev, elumo*rytoev
-           ELSE
-              WRITE( stdout, 9043 ) ehomo*rytoev
-           ENDIF
-        END IF
-        !
-     END IF
-  END IF
-  !
-  RETURN
-  !
-  ! ... formats
-  !
-9043 FORMAT(/'     highest occupied level (ev): ',F10.4 )
-9042 FORMAT(/'     highest occupied, lowest unoccupied level (ev): ',2F10.4 )
-9041 FORMAT(/'     the spin up/dw Fermi energies are ',2F10.4,' ev' )
-9040 FORMAT(/'     the Fermi energy is ',F10.4,' ev' )
+  END DO k_loop
   !
 END SUBROUTINE get_homo_lumo

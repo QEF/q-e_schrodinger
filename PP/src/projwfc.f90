@@ -192,7 +192,7 @@ ELSE
   IF ( ionode ) THEN
      IF ( tdosinboxes ) THEN
         CALL partialdos_boxes (Emin, Emax, DeltaE, kresolveddos, filpdos, n_proj_boxes)
-     ELSE IF ( lsym ) THEN
+     ELSE IF ( lsym .OR. kresolveddos ) THEN
         IF (noncolin) THEN
            CALL partialdos_nc (Emin, Emax, DeltaE, kresolveddos, filpdos)
         ELSE
@@ -1480,7 +1480,7 @@ SUBROUTINE projwave_paw( filproj)
   !
   DO ik = 1, nks
      CALL davcio (evc, 2*nwordwfc, iunwfc, ik, - 1)
-
+     npw = ngk(ik)
      CALL init_us_2 (npw, igk_k(1,ik), xk (1, ik), vkb)
 
      proj0=0; 

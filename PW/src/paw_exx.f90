@@ -12,11 +12,11 @@
 MODULE paw_exx
   !=----------------------------------------------------------------------------=!
   USE kinds, ONLY : DP
-  TYPE paw_keeq_type
+  TYPE paw_fockrnl_type
     REAL(DP),POINTER :: k(:,:,:,:)
-  END TYPE paw_keeq_type
-  TYPE(paw_keeq_type),ALLOCATABLE :: ke(:)
-  LOGICAL,PRIVATE :: paw_has_init_keeq = .false.
+  END TYPE paw_fockrnl_type
+  TYPE(paw_fockrnl_type),ALLOCATABLE :: ke(:)
+  LOGICAL,PRIVATE :: paw_has_init_paw_fockrnl = .false.
 
   CONTAINS
   !
@@ -29,8 +29,10 @@ MODULE paw_exx
     USE uspp_param,     ONLY : upf, nh
     USE uspp,           ONLY : nkb
     USE paw_variables,  ONLY : okpaw
-    USE mp_images,      ONLY : me_image
     USE uspp,           ONLY : indv_ijkb0
+    USE io_global,      ONLY : ionode, ionode_id
+    USE mp,             ONLY : mp_bcast
+    USE mp_global,      ONLY : intra_image_comm
     IMPLICIT NONE
     !
     ! In input I get a slice of <beta|left> and <beta|right> only for this kpoint and this band
@@ -40,41 +42,49 @@ MODULE paw_exx
     REAL(DP)                  :: weight
     !
     ! ... local variables
-    INTEGER :: ijkb0, ih, jh, na, np, ikb
+    INTEGER :: ijkb0, ih, jh, na, np, ikb, jkb, oh,uh,okb,ukb
     !
-    IF(.not.paw_has_init_keeq) &
-      CALL errore("PAW_deexx", "you have to initialize paw keeq before", 1)
+    !RETURN
+    !
+    IF(.not.paw_has_init_paw_fockrnl) &
+      CALL errore("PAW_newdxx", "you have to initialize paw paw_fockrnl before", 1)
     !
     CALL start_clock( 'PAW_newdxx' )
     !
-    IF(okpaw) RETURN
     ! Worst possible parallelisation:
-    IF(me_image/=0) RETURN
-    !
-    DO np = 1, ntyp
+    IF(ionode) THEN
+      !
+      DO np = 1, ntyp
       ONLY_FOR_PAW : &
       IF ( upf(np)%tpawp ) THEN
-        !
-        DO ih = 1, nh(np)
-        DO jh = 1, nh(np)
-            !
-            ATOMS_LOOP : &
-            DO na = 1, nat
-            IF (ityp(na)==np) THEN
-                !
-                ! NOTE: see addusxx_g for the next line:
-                ijkb0 = indv_ijkb0(na)
+      !
+      ATOMS_LOOP : &
+      DO na = 1, nat
+      IF (ityp(na)==np) THEN
+        ijkb0 = indv_ijkb0(na)
+        DO uh = 1, nh(np)
+          ukb = ijkb0 + uh
+          DO oh = 1, nh(np)
+            okb = ijkb0 + oh
+            DO jh = 1, nh(np)
+              jkb = ijkb0 + jh
+              DO ih = 1, nh(np)
                 ikb = ijkb0 + ih
-                deexx(ikb) = deexx(ikb) &
-                        - weight*PAW_deexx(na, ih, jh, ijkb0, becphi, becpsi)
-                !
-            END IF
-            ENDDO ATOMS_LOOP ! nat
-        ENDDO ! jh
-        ENDDO ! ih
-      END IF &
-      ONLY_FOR_PAW
-    ENDDO
+          ! Eq. 35 + 32 Ref. 1, the factor 1/2 comes from eq. 32.
+                deexx(ikb) = deexx(ikb)+weight*0.5_DP*ke(np)%k(ih,jh,oh,uh) * becphi(jkb) &
+                                * CONJG(becphi(ukb)) * becpsi(okb)
+                ENDDO !uh, ukb
+              ENDDO !oh, okb
+            ENDDO ! jh
+          ENDDO ! ih
+        END IF
+        ENDDO ATOMS_LOOP ! nat
+        END IF &
+        ONLY_FOR_PAW
+      ENDDO
+      !  the 1/2 factor comes from eq. 32 Ref 1
+    ENDIF
+!     CALL mp_bcast(deexx, ionode_id, intra_image_comm )
     !
     CALL stop_clock( 'PAW_newdxx' )
     !
@@ -85,58 +95,15 @@ MODULE paw_exx
   !-----------------------------------------------------------------------
   !
   !=----------------------------------------------------------------------------=!
-  FUNCTION PAW_deexx(na, ih, jh, ijkb0, becphi, becpsi)
-    !=----------------------------------------------------------------------------=!
-    ! Compute the 2-electron 4-wavefunctions integral 
-    ! Integral over bands and kpoints is done outside (doing it here does not fit properly with exx.f90)
-    USE ions_base,          ONLY : nat, ityp
-    USE uspp_param,         ONLY : nh, upf
-    USE uspp,               ONLY : nkb
-    IMPLICIT NONE
-    INTEGER,INTENT(in) :: na, ih, jh, ijkb0
-    COMPLEX(DP),INTENT(in) :: becphi(nkb), becpsi(nkb)
-    !
-    COMPLEX(DP) :: PAW_deexx
-    !
-    INTEGER :: np
-    INTEGER :: oh, uh
-    INTEGER :: ikb, jkb, okb, ukb 
-    !
-    PAW_deexx = 0._dp
-    np = ityp(na)
-    IF(.not.upf(np)%tpawp) RETURN
-    !
-    ! CALL start_clock("PAW_deexx")
-    ikb = ijkb0 + ih
-    jkb = ijkb0 + jh
-
-    DO oh = 1, nh(np)
-      okb = ijkb0 + oh
-      DO uh = 1, nh(np)
-        ukb = ijkb0 + uh
-        ! Eq. 35 + 32 Ref. 1, the 1/2 factor comes from 32
-        PAW_deexx = PAW_deexx  &
-                  +  0.5_DP *ke(np)%k(ih,jh,oh,uh) * becphi(jkb) &
-                            * CONJG(becphi(ukb)) * becpsi(okb)
-        !
-      ENDDO !uh, ukb
-    ENDDO !oh, okb
-    !
-    ! CALL stop_clock("PAW_deexx")
-    RETURN
-    !=----------------------------------------------------------------------------=!
-  END FUNCTION PAW_deexx
-  !=----------------------------------------------------------------------------=!
-  !
-  !=----------------------------------------------------------------------------=!
   FUNCTION PAW_xx_energy(becphi, becpsi)
     !=----------------------------------------------------------------------------=!
     ! Compute the energy: 2-electron 4-wavefunctions integral and sum with weights and <beta|psi>
     ! Integral over bands and kpoints is done outside (doing it here would not fit properly with exx.f90)
     USE ions_base,          ONLY : nat, ityp, ntyp => nsp
     USE uspp_param,         ONLY : nh, upf
-    USE uspp,               ONLY : nkb
+    USE uspp,               ONLY : nkb, indv_ijkb0
     USE mp_images,          ONLY : me_image
+    USE io_global,          ONLY : ionode
     IMPLICIT NONE
     COMPLEX(DP),INTENT(in) :: becphi(nkb), becpsi(nkb)
     !
@@ -145,49 +112,46 @@ MODULE paw_exx
     INTEGER :: np, na
     INTEGER :: ih, jh, oh, uh
     INTEGER :: ikb, jkb, okb, ukb, ijkb0
-    IF(.not.paw_has_init_keeq) &
-        CALL errore("PAW_xx_energy", "you have to initialize paw keeq before", 1)
-    !
-    PAW_xx_energy = 0._dp
-    IF(me_image/=0) RETURN
+    IF(.not.paw_has_init_paw_fockrnl) &
+        CALL errore("PAW_xx_energy", "you have to initialize paw paw_fockrnl before", 1)
     !
     CALL start_clock("PAW_xx_nrg")
+    PAW_xx_energy = 0._dp
+    IF(ionode) THEN
     !
-    ijkb0 = 0
     DO np = 1, ntyp
       ONLY_FOR_PAW : &
       IF ( upf(np)%tpawp ) THEN
-          DO na = 1, nat
-          IF (ityp(na)==np) THEN
-              !
-              DO ih = 1, nh(np)
-                ikb = ijkb0 + ih
-                DO jh = 1, nh(np)
-                  jkb = ijkb0 + jh
-                  DO oh = 1, nh(np)
-                    okb = ijkb0 + oh
-                    DO uh = 1, nh(np)
-                      ukb = ijkb0 + uh
-                      ! Eq. 32 and 42 Ref. 1 :
-                      PAW_xx_energy = PAW_xx_energy + 0.5_dp * ke(np)%k(ih,jh,oh,uh) &
-                                    * CONJG(becpsi(ikb)) * becpsi(okb) & ! \rho_ik eq. 31 ref. 1
-                                    * becphi(jkb) * CONJG(becphi(ukb))   ! \rho_lj eq. 31 ref. 1
-                      !
-                    ENDDO !uh, ukb
-                  ENDDO !oh, okb
-                ENDDO !jh, jkb
-              ENDDO !ih, ikb
-              !
-              ijkb0 = ijkb0 + nh(np)
-          END IF
-          ENDDO ! nat
-      ELSE ONLY_FOR_PAW 
-          DO na = 1, nat
-            IF ( ityp(na) == np ) ijkb0 = ijkb0 + nh(np)
-          ENDDO
+        DO na = 1, nat
+        IF (ityp(na)==np) THEN
+          ijkb0 = indv_ijkb0(na)
+          !
+          DO uh = 1, nh(np)
+            ukb = ijkb0 + uh
+            DO oh = 1, nh(np)
+              okb = ijkb0 + oh
+              DO jh = 1, nh(np)
+                jkb = ijkb0 + jh
+                DO ih = 1, nh(np)
+                  ikb = ijkb0 + ih
+                  ! Eq. 32 and 42 Ref. 1 :
+                  PAW_xx_energy = PAW_xx_energy - 0.5_dp * ke(np)%k(ih,jh,oh,uh) &
+                                * CONJG(becpsi(ikb)) * becpsi(okb) & ! \rho_ik eq. 31 ref. 1
+                                * becphi(jkb) * CONJG(becphi(ukb))   ! \rho_lj eq. 31 ref. 1
+                  !
+                ENDDO !ih, ukb
+              ENDDO !jh, okb
+            ENDDO !oh, jkb
+          ENDDO !uh, ikb
+          !
+        END IF
+        ENDDO ! nat
       END IF &
       ONLY_FOR_PAW 
     ENDDO
+
+    ENDIF !ionode
+    !CALL mp_sum(PAW_xx_energy)
     !
     CALL stop_clock("PAW_xx_nrg")
     RETURN
@@ -196,114 +160,117 @@ MODULE paw_exx
   !=----------------------------------------------------------------------------=!
   !
   !=----------------------------------------------------------------------------=!
-  SUBROUTINE PAW_init_keeq()
+  SUBROUTINE PAW_init_fock_kernel()
     !=----------------------------------------------------------------------------=!
-    ! Driver to compute the 2-electron 4-wavefunctions integrals
+    ! Driver to compute the 2-electron 4-wavefunctions integrals that constitue
+    ! the kernel of the Fock operator
     USE kinds,             ONLY : DP
     USE ions_base,         ONLY : ntyp => nsp
     USE uspp_param,        ONLY : nh
     IMPLICIT NONE
-    INTEGER :: ns, ih,jh,oh,uh
+    INTEGER :: ns !, ih,jh,oh,uh
     REAL(DP),ALLOCATABLE :: k_ae(:,:,:,:), k_ps(:,:,:,:)
 
-    IF(paw_has_init_keeq) RETURN !CALL errore("PAW_init_keeq", "already init paw keeq", 1)
-    paw_has_init_keeq = .true.
+    IF(paw_has_init_paw_fockrnl) RETURN !CALL errore("PAW_init_fock_kernel", "already init paw paw_fockrnl", 1)
+    paw_has_init_paw_fockrnl = .true.
     !
     ! We have one matrix for the all electron and one for the pseudo part for each atomic specie
     ALLOCATE(ke(ntyp))
-    CALL allocate_keeq(ntyp, nh, ke)
+    CALL allocate_paw_fockrnl(ntyp, nh, ke)
 
     DO ns = 1,ntyp
       !
       ALLOCATE(k_ae(nh(ns),nh(ns),nh(ns),nh(ns)))
-      CALL PAW_keeq('AE', ns, k_ae)
+      CALL PAW_fock_onecenter('AE', ns, k_ae)
       !
       ALLOCATE(k_ps(nh(ns),nh(ns),nh(ns),nh(ns)))
-      CALL PAW_keeq('PS', ns, k_ps)
+      CALL PAW_fock_onecenter('PS', ns, k_ps)
       !
+      ke(ns)%k = k_ae - k_ps
+      
       ! Symmetrize wrt the on-site wavefunctions indexes as the hartree kernel is not 
       ! perfectly symmetrical: the asymmetry accumulates and causes S matrix to be non-positive
       ! definite (especially with many k-points)
-      DO ih = 1, nh(ns)
-      DO jh = 1, nh(ns)
-      DO oh = 1, nh(ns)
-      DO uh = 1, nh(ns)
-        !
-        ke(ns)%k(ih,jh,oh,uh) = 0.25_dp * ( &
-                k_ae(ih,jh,oh,uh)-k_ps(ih,jh,oh,uh) &
-              + k_ae(oh,uh,ih,jh)-k_ps(oh,uh,ih,jh) &
-              + k_ae(jh,ih,uh,oh)-k_ps(jh,ih,uh,oh) &
-              + k_ae(uh,oh,jh,ih)-k_ps(uh,oh,jh,ih) )
-        !
-      ENDDO
-      ENDDO
-      ENDDO
-      ENDDO
-      !
+!       DO ih = 1, nh(ns)
+!       DO jh = 1, nh(ns)
+!       DO oh = 1, nh(ns)
+!       DO uh = 1, nh(ns)
+!         !
+!         ke(ns)%k(ih,jh,oh,uh) = 0.25_dp * ( &
+!                 k_ae(ih,jh,oh,uh)-k_ps(ih,jh,oh,uh) &
+!               + k_ae(oh,uh,ih,jh)-k_ps(oh,uh,ih,jh) &
+!               + k_ae(jh,ih,uh,oh)-k_ps(jh,ih,uh,oh) &
+!               + k_ae(uh,oh,jh,ih)-k_ps(uh,oh,jh,ih) )
+!         !
+!       ENDDO
+!       ENDDO
+!       ENDDO
+!       ENDDO
+!       !
       DEALLOCATE(k_ae, k_ps)
       !
     ENDDO
     !=----------------------------------------------------------------------------=!
-  END SUBROUTINE PAW_init_keeq
+  END SUBROUTINE PAW_init_fock_kernel
   !=----------------------------------------------------------------------------=!
   !
   !=----------------------------------------------------------------------------=!
-  SUBROUTINE PAW_destroy_keeq()
+  SUBROUTINE PAW_clean_fock_kernel()
     !=----------------------------------------------------------------------------=!
     ! ke_ae and ke_ps for later use
     USE ions_base,         ONLY : ityp, ntyp => nsp
     IMPLICIT NONE
 
-    IF(.not.paw_has_init_keeq) RETURN !CALL errore("PAW_destroy_keeq", "nothing to destroy :(", 1)
-    paw_has_init_keeq = .false.
+    IF(.not.paw_has_init_paw_fockrnl) RETURN
+    paw_has_init_paw_fockrnl = .false.
     !
     ! We have one matrix for the all electron and one for the pseudo part for each atomic specie
-    CALL deallocate_keeq(ntyp, ke)
+    CALL deallocate_paw_fockrnl(ntyp, ke)
     DEALLOCATE(ke)
     !
     !=----------------------------------------------------------------------------=!
-  END SUBROUTINE PAW_destroy_keeq
+  END SUBROUTINE PAW_clean_fock_kernel
   !=----------------------------------------------------------------------------=!
   !
   !=----------------------------------------------------------------------------=!
-  SUBROUTINE allocate_keeq(ntp, nh, keeq)
+  SUBROUTINE allocate_paw_fockrnl(ntp, nh, paw_fockrnl)
     !=----------------------------------------------------------------------------=!
     IMPLICIT NONE
     INTEGER,INTENT(in) :: ntp
     INTEGER,INTENT(in) :: nh(ntp)
-    TYPE(paw_keeq_type),INTENT(inout) :: keeq(ntp)
+    TYPE(paw_fockrnl_type),INTENT(inout) :: paw_fockrnl(ntp)
     INTEGER :: i
     !
     DO i = 1,ntp
-      ALLOCATE(keeq(i)%k(nh(i),nh(i),nh(i),nh(i)))
+      ALLOCATE(paw_fockrnl(i)%k(nh(i),nh(i),nh(i),nh(i)))
     ENDDO
     RETURN
     !=----------------------------------------------------------------------------=!
-  END SUBROUTINE allocate_keeq
+  END SUBROUTINE allocate_paw_fockrnl
   !=----------------------------------------------------------------------------=!
   !=----------------------------------------------------------------------------=!
-  SUBROUTINE deallocate_keeq(ntp, keeq)
+  SUBROUTINE deallocate_paw_fockrnl(ntp, paw_fockrnl)
     !=----------------------------------------------------------------------------=!
     IMPLICIT NONE
     INTEGER,INTENT(in) :: ntp
-    TYPE(paw_keeq_type),INTENT(inout) :: keeq(ntp)
+    TYPE(paw_fockrnl_type),INTENT(inout) :: paw_fockrnl(ntp)
     INTEGER :: i
     !
     DO i = 1,ntp
-      DEALLOCATE(keeq(i)%k)
+      DEALLOCATE(paw_fockrnl(i)%k)
     ENDDO
     !
     RETURN
     !=----------------------------------------------------------------------------=!
-  END SUBROUTINE deallocate_keeq
+  END SUBROUTINE deallocate_paw_fockrnl
   !=----------------------------------------------------------------------------=!
   !
   !=----------------------------------------------------------------------------=!
-  SUBROUTINE PAW_keeq(what, np, keeq)
+  SUBROUTINE PAW_fock_onecenter(what, np, paw_fockrnl)
     !=----------------------------------------------------------------------------=!
-    ! Compute the 2-electron 4-wavefunctions integrals and i.e. the exchange integral
-    ! between two one-center wavefunctions. Includes augmentation in the pseudo case.
-    ! Store it in global variables ke_ae and ke_ps for later use. 
+    ! Compute the 2-electron 4-wavefunctions integrals i.e. the exchange integral
+    ! for one atomic species (either pseudo or all-electron) 
+    ! Includes augmentation in the pseudo case.
     USE constants,         ONLY : e2
     USE atom,              ONLY : g => rgrid
     USE ions_base,         ONLY : nat, ityp, ntyp => nsp
@@ -313,7 +280,7 @@ MODULE paw_exx
     USE lsda_mod,  ONLY : nspin
     IMPLICIT NONE
     INTEGER, INTENT(in)  :: np ! atomic type
-    REAL(DP),INTENT(out) :: keeq(nh(np),nh(np),nh(np),nh(np))
+    REAL(DP),INTENT(out) :: paw_fockrnl(nh(np),nh(np),nh(np),nh(np))
     CHARACTER(len=2),INTENT(in) :: what ! "AE"= all-electron or "PS"=pseudo
     !
     TYPE(paw_info) :: i
@@ -324,15 +291,16 @@ MODULE paw_exx
     INTEGER  :: ih,jh,oh,uh,k,lm
     REAL(DP) :: kexx, e
 
-    IF(what/="AE" .and. what /="PS") CALL errore("PAW_keeq", "can only do all-electron or pseudo", 1)
+    IF(what/="AE" .and. what /="PS") &
+      CALL errore("PAW_fock_onecenter", "can only do all-electron or pseudo", 1)
 
     ! Only wavefunctions on the same atom exchange, and the result only depends on the atom type
     IF (.not.upf(np)%tpawp) THEN
-        keeq = 0._dp
+        paw_fockrnl = 0._dp
         RETURN
     ENDIF
     !
-    CALL start_clock('PAW_keeq')
+    CALL start_clock('PAW_fock_onecenter')
     !
     i%a = -1                  ! atom's index (UNUSED HERE)
     i%t = np                  ! type of atom
@@ -348,6 +316,8 @@ MODULE paw_exx
     ALLOCATE(aux(i%m))
     !
     DO ih = 1, nh(i%t)
+    ! It would be better to do jh = ih, nh(i%t), but it is a bit complicated
+    ! inside rho_lm_ij we always set ih as the highest of the two indexes
     DO jh = 1, nh(i%t)
       !
       rho_lm_ij = 0._dp
@@ -368,17 +338,18 @@ MODULE paw_exx
           CALL PAW_rho_lm_ij(i, oh, uh, upf(i%t)%paw%pfunc, rho_lm_ou)
         ENDIF
         !
-        ! Now I have rho_ij and rho_ou, I have to compute the 4-wfcs hartree kernel keeq=K_ijou
+        ! Now I have rho_ij and rho_ou, I have to compute the 4-wfcs hartree kernel paw_fockrnl=K_ijou
         kexx = 0._dp
         DO lm = 1, i%l**2
             DO k = 1, i%m
                 aux(k) = v_lm(k,lm) * rho_lm_ou(k,lm)
             ENDDO
-            CALL simpson (upf(i%t)%kkbeta, aux, g(i%t)%rab, e)
+            !CALL simpson(upf(i%t)%kkbeta, aux, g(i%t)%rab, e)
+            CALL simpson(i%m, aux, g(i%t)%rab, e)
             kexx = kexx + e
             !
         ENDDO
-        keeq(ih,jh,oh,uh) = e2*kexx ! = K_ijlk : Eq. 33 Ref. 1
+        paw_fockrnl(ih,jh,oh,uh) = e2*kexx ! = K_ijlk : Eq. 33 Ref. 1
         !
       ENDDO
       ENDDO
@@ -387,14 +358,14 @@ MODULE paw_exx
     !
     DEALLOCATE(aux, v_lm, rho_lm_ij, rho_lm_ou)
     !
-    CALL stop_clock('PAW_keeq')
+    CALL stop_clock('PAW_fock_onecenter')
     !
     !=----------------------------------------------------------------------------=!
-  END SUBROUTINE PAW_keeq
+  END SUBROUTINE PAW_fock_onecenter
   !=----------------------------------------------------------------------------=!
   !
   !=----------------------------------------------------------------------------=!
-  SUBROUTINE PAW_rho_lm_ij(i, ih, jh, pfunc, rho_lm, aug)
+  SUBROUTINE PAW_rho_lm_ij(i, ih_, jh_, pfunc, rho_lm, aug)
     !=----------------------------------------------------------------------------=!
     ! Computes the fake two-wavefunctions density i.e. phi_i(r)phi_j(r)^*, 
     ! Represent it as spherical harmonics. Details: this is a generalized version of PAW_rho_lm.
@@ -404,22 +375,37 @@ MODULE paw_exx
     USE paw_variables,     ONLY : paw_info
     IMPLICIT NONE
     TYPE(paw_info), INTENT(IN) :: i   ! atom's minimal info
-    INTEGER,INTENT(in) :: ih, jh
+    INTEGER,INTENT(in) :: ih_, jh_
+    INTEGER :: ih, jh
     REAL(DP), INTENT(IN)  :: pfunc(i%m,i%b,i%b)             ! psi_i * psi_j
     REAL(DP), INTENT(OUT) :: rho_lm(i%m,i%l**2)       ! AE charge density on rad. grid
     REAL(DP), OPTIONAL,INTENT(IN) :: &
-                            aug(i%m,i%b*(i%b+1)/2,0:2*upf(i%t)%lmax) ! augmentation functions (only for PS part)
+                            aug(i%m,(i%b*(i%b+1))/2,0:2*upf(i%t)%lmax) ! augmentation functions (only for PS part)
 
+    INTEGER                 :: nb_, mb_
     INTEGER                 :: nb, mb, &
                                nmb, &    ! composite "triangular" index for pfunc nmb = 1,nh*(nh+1)/2
                                lm,lp,l   ! counters for angular momentum lm = l**2+m
     REAL(DP) :: pref
     ! initialize density
     rho_lm(:,:) = 0._dp
-    ! loop on all pfunc for this kind of pseudo
-    nb = indv(ih,i%t)
-    mb = indv(jh,i%t)
-    nmb = mb * (mb-1)/2 + nb  ! mb has to be .ge. nb
+    
+    ! nb has to be less or equal mb for nmb to be compute correctly
+    ! the matrix is symmetric, hence the order does not matter
+    nb_ = indv(ih_,i%t)
+    mb_ = indv(jh_,i%t)
+    IF(mb_>=nb_)THEN
+      ih = ih_
+      jh = jh_
+      nb = nb_
+      mb = mb_
+    ELSE
+      ih = jh_
+      jh = ih_
+      nb = mb_
+      mb = nb_
+    ENDIF
+    nmb = (mb*(mb-1))/2 + nb  ! mb has to be .ge. nb
     !
     angular_momentum: &
     DO lp = 1, lpx (nhtolm(jh,i%t), nhtolm(ih,i%t)) !lmaxq**2

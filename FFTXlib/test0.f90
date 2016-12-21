@@ -15,11 +15,8 @@ program test
   USE fft_parallel
   USE fft_scalar
   USE fft_support
+  USE fft_param
   IMPLICIT NONE
-#if defined(__MPI)
-  include 'mpif.h'
-#endif
-  include 'fft_param.f90'
   TYPE(fft_type_descriptor) :: dfftp, dffts, dfft3d
   INTEGER :: nx = 128
   INTEGER :: ny = 128

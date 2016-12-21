@@ -49,18 +49,18 @@ test-suite: uncompress-test-suite
 	( cd ../test-suite ; $(MAKE) TLDEPS= run-tests || exit 1) ; fi
 
 uncompress-test-suite: touch-dummy
-	$(call download_and_unpack,$(TESTSUITE),$(TESTSUITE_URL),test-suite,test-suite-6.0)
+	$(call download_and_unpack,$(TESTSUITE),$(TESTSUITE_URL),test-suite,test-suite)
 	touch uncompress-test-suite
 
 ###########################################################
 # Examples
 ###########################################################
 
-examples: uncompress-examples
+#examples: uncompress-examples
 
-uncompress-examples: touch-dummy
-	$(call download_and_unpack,$(EXAMPLES),$(EXAMPLES_URL),Examples,Examples-6.0)
-	touch uncompress-examples
+#uncompress-examples: touch-dummy
+#	$(call download_and_unpack,$(EXAMPLES),$(EXAMPLES_URL),Examples,Examples)
+#	touch uncompress-examples
 
 ##########################################################
 # GIPAW
@@ -390,7 +390,7 @@ west_veryclean: west_clean
 # dir is not deleted for compatibility with the repository
 
 west_distclean: 
-	rm -f ../archive/$(WEST).tar.gz
+	   rm -f ../archive/$(WEST).tar.gz
 
 test-suite_clean:
 	if test -d ../test-suite; then (cd ../test-suite; \
@@ -398,11 +398,12 @@ test-suite_clean:
 
 test-suite_veryclean: test-suite_clean
 
-test-suite_distclean: test-suite_clean
+test-suite_distclean:
 	rm -f ../archive/$(TESTSUITE).tar.gz
 
-examples_distclean:
-	rm -f ../archive/$(EXAMPLES).tar.gz
+#examples_clean:
+
+#examples_veryclean: examples_clean
 
 ##########################################################
 # general cleaning
@@ -410,14 +411,14 @@ examples_distclean:
 
 clean: w90_clean want_clean yambo_clean yambo-devel_clean plumed_clean \
 	gipaw_clean west_clean test-suite_clean \
-	sax_clean d3q_clean
+	sax_clean d3q_clean #examples_clean
 
 veryclean: w90_veryclean want_veryclean yambo_veryclean yambo-devel_veryclean \
 	plumed_veryclean gipaw_veryclean west_veryclean \
-	test-suite_veryclean sax_veryclean d3q_veryclean
+	test-suite_veryclean sax_veryclean d3q_veryclean #examples_veryclean
 
 #distclean : veryclean
 distclean: w90_distclean want_distclean yambo_distclean yambo-devel_distclean \
   test-suite_distclean gipaw_distclean west_distclean \
-	sax_distclean d3q_distclean examples_distclean
+	sax_distclean d3q_distclean
 

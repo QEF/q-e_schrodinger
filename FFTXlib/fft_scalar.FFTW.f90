@@ -5,33 +5,20 @@
 ! GNU General Public License. See the file `License'
 ! in the root directory of the present distribution,
 ! or http://www.gnu.org/copyleft/gpl.txt .
-!
-!--------------------------------------------------------------------------!
-! FFT scalar drivers Module - contains machine-dependent routines for      !
-! FFTW, FFTW3, ESSL (both 3d for serial execution and 1d+2d FFTs for       !
-! parallel execution; NEC ASL libraries (3d only, no parallel execution)   !
-! Written by Carlo Cavazzoni, modified by P. Giannozzi, contributions      !
-! by Martin Hilgemans, Guido Roma, Pascal Thibaudeau, Stephane Lefranc,    !
-! Nicolas Lacorne, Filippo Spiga, Nicola Varini - Last update Jul 2015     !
-!--------------------------------------------------------------------------!
 
-#if defined(__FFTW)
+#include "fft_defs.h"
 
 !=----------------------------------------------------------------------=!
-   MODULE fft_scalar
+   MODULE fft_scalar_FFTW
 !=----------------------------------------------------------------------=!
 
-       USE, intrinsic ::  iso_c_binding
+       USE fft_param
        
        IMPLICIT NONE
        SAVE
 
        PRIVATE
        PUBLIC :: cft_1z, cft_2xy, cfft3d, cfft3ds
-
-! ...   Local Parameter
-
-#include "fft_param.f90"
 
 !=----------------------------------------------------------------------=!
    CONTAINS
@@ -744,7 +731,6 @@ SUBROUTINE cfft3ds (f, nx, ny, nz, ldx, ldy, ldz, howmany, isign, &
    END SUBROUTINE cfft3ds
 
 !=----------------------------------------------------------------------=!
-   END MODULE fft_scalar
+ END MODULE fft_scalar_FFTW
 !=----------------------------------------------------------------------=!
 
-#endif
