@@ -6,20 +6,11 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 !--------------------------------------------------------------------------
-! TB
-! included test in subroutine sgam_at to disable symmetries which
-! involve the z-axis, search for 'TB' or 'TS'
-! (TS as Thibault Sohier had the idea)
-!
-! note that verbosity is still set to high in input.f90 in order
-! to check if everything works as intended
-!--------------------------------------------------------------------------
-!
-!--------------------------------------------------------------------------
 !
 MODULE symm_base
 
   USE kinds,      ONLY : DP
+  USE io_global,  ONLY : stdout
   USE cell_base,  ONLY : at, bg
   !
   ! ... The variables needed to describe the symmetry properties
@@ -124,15 +115,15 @@ SUBROUTINE set_sym_bl ( )
   !
   ! sin3 = sin(pi/3), cos3 = cos(pi/3), msin3 = -sin(pi/3), mcos3 = -cos(pi/3)
   !
-  real(DP), PARAMETER :: sin3 = 0.866025403784438597d0, cos3 = 0.5d0, &
+  REAL(DP), PARAMETER :: sin3 = 0.866025403784438597d0, cos3 = 0.5d0, &
                         msin3 =-0.866025403784438597d0, mcos3 = -0.5d0
-  real(DP) :: s0(3, 3, 32), overlap (3, 3), rat (3), rot (3, 3), value
+  REAL(DP) :: s0(3, 3, 32), overlap (3, 3), rat (3), rot (3, 3), value
   ! s0: the s matrices in cartesian axis
   ! overlap: inverse overlap matrix between direct lattice
   ! rat: the rotated of a direct vector ( cartesian )
   ! rot: the rotated of a direct vector ( crystal axis )
   ! value: component of the s matrix in axis basis
-  INTEGER :: jpol, kpol, mpol, irot, imat(24)
+  INTEGER :: jpol, kpol, mpol, irot, imat(32)
   ! counters over the polarizations and the rotations
 
   CHARACTER (len=45) :: s0name (64)
@@ -297,17 +288,18 @@ SUBROUTINE set_sym_bl ( )
      sname(nrot)=s0name(irot)
      imat(nrot)=irot
      nrot = nrot+1
-     IF (nrot > 25) CALL errore('set_sym_bl','some problem with symmetries',1)
 10   CONTINUE
   ENDDO
   nrot = nrot-1
   IF ( nrot /= 1 .AND. nrot /= 2 .AND. nrot /= 4 .AND. nrot /= 6 .AND. &
        nrot /= 8 .AND. nrot /=12 .AND. nrot /=24 ) THEN
-     CALL infomsg('set_sym_bl', &
-         'NOTICE: Bravais lattice has wrong number (' // &
-         TRIM(int_to_char(nrot)) // ') of symmetries - symmetries are disabled')
-     nrot = 1
-  ENDIF
+       CALL infomsg('set_sym_bl', &
+          'NOTICE: Bravais lattice has wrong number (' // &
+          TRIM(int_to_char(nrot)) // ') of symmetries - symmetries are disabled')
+      nrot = 1
+   ENDIF
+
+  END IF
   !
   !     set the inversion symmetry ( Bravais lattices have always inversion
   !     symmetry )
@@ -328,8 +320,9 @@ SUBROUTINE set_sym_bl ( )
   IF ( .not. is_group ( nrot ) ) THEN
   !    This happens for instance for an hexagonal lattice with one axis 
   !    oriented at 15 degrees from the x axis, the other along (-1,1,0)
-     CALL errore ('set_sym_bl', &
-         'Symmetry group not a group! Use standard orientations for axis',1)
+      WRITE (stdout, '(80("-"),/,"NOTICE: Symmetry group for Bravais lattice &
+     & is not a group - symmetries are disabled",/,80("-"))' ) nrot
+      nrot = 1
   ENDIF
   !
   RETURN
@@ -337,7 +330,8 @@ SUBROUTINE set_sym_bl ( )
 END SUBROUTINE set_sym_bl
 !
 !-----------------------------------------------------------------------
-SUBROUTINE find_sym ( nat, tau, ityp, nr1, nr2, nr3, magnetic_sym, m_loc )
+SUBROUTINE find_sym ( nat, tau, ityp, nr1, nr2, nr3, magnetic_sym, m_loc, &
+                      no_z_inv )
   !-----------------------------------------------------------------------
   !
   !     This routine finds the point group of the crystal, by eliminating
@@ -347,8 +341,11 @@ SUBROUTINE find_sym ( nat, tau, ityp, nr1, nr2, nr3, magnetic_sym, m_loc )
   IMPLICIT NONE
   !
   INTEGER, INTENT(in) :: nat, ityp (nat), nr1, nr2, nr3
-  real(DP), INTENT(in) :: tau (3,nat), m_loc(3,nat)
+  REAL(DP), INTENT(in) :: tau (3,nat), m_loc(3,nat)
   LOGICAL, INTENT(in) :: magnetic_sym
+  LOGICAL, INTENT(IN), OPTIONAL :: no_z_inv
+  ! no_z_inv: if .true., disable symmetries sending z into -z.
+  !           Some calculations (e.g. monopole fields) require this
   !
   INTEGER :: i
   LOGICAL :: sym (48)
@@ -360,7 +357,11 @@ SUBROUTINE find_sym ( nat, tau, ityp, nr1, nr2, nr3, magnetic_sym, m_loc )
   !    Here we find the true symmetries of the crystal
   !
   symm: DO i=1,3 !emine: if it is not resolved in 3 steps it is sth else?
-    CALL sgam_at ( nat, tau, ityp, nr1, nr2, nr3, sym )
+    IF ( PRESENT(no_z_inv) ) THEN
+       CALL sgam_at ( nat, tau, ityp, nr1, nr2, nr3, sym, no_z_inv )
+    ELSE
+       CALL sgam_at ( nat, tau, ityp, nr1, nr2, nr3, sym )
+    ENDIF
     !
     !    Here we check for magnetic symmetries
     !
@@ -407,7 +408,7 @@ SUBROUTINE find_sym ( nat, tau, ityp, nr1, nr2, nr3, magnetic_sym, m_loc )
 END SUBROUTINE find_sym
 !
 !-----------------------------------------------------------------------
-SUBROUTINE sgam_at ( nat, tau, ityp, nr1, nr2, nr3, sym )
+SUBROUTINE sgam_at ( nat, tau, ityp, nr1, nr2, nr3, sym, no_z_inv)
   !-----------------------------------------------------------------------
   !
   !     Given the point group of the Bravais lattice, this routine finds
@@ -420,9 +421,6 @@ SUBROUTINE sgam_at ( nat, tau, ityp, nr1, nr2, nr3, sym )
   !     of the original point group that is also a symmetry operation
   !     of the crystal symmetry point group
   !
-  USE io_global,  ONLY : stdout
-  USE extfield,   ONLY : monopole ! TS & TB
-  USE kinds
   IMPLICIT NONE
   !
   INTEGER, INTENT(in) :: nat, ityp (nat), nr1, nr2, nr3
@@ -430,22 +428,23 @@ SUBROUTINE sgam_at ( nat, tau, ityp, nr1, nr2, nr3, sym )
   ! ityp : species of each atom in the unit cell
   ! nr*  : dimensions of the FFT mesh
   !
-  real(DP), INTENT(in) :: tau (3, nat)
-  !
+  REAL(DP), INTENT(in) :: tau (3, nat)
   ! tau  : cartesian coordinates of the atoms
   !
-  !     output variables
+  LOGICAL, INTENT(in), OPTIONAL :: no_z_inv
+  ! no_z_inv: if .true., disable symmetry operations sending z into -z.
+  !           Some calculations (e.g. monopole fields) require this
   !
   LOGICAL, INTENT(out) :: sym (48)
   ! sym(isym)    : flag indicating if sym.op. isym in the parent group
   !                is a true symmetry operation of the crystal
   !
-  INTEGER :: na, kpol, nb, irot, i, j, isymTS ! TS & TB
+  INTEGER :: na, kpol, nb, irot, i, j
   ! counters
-  real(DP) , ALLOCATABLE :: xau (:,:), rau (:,:)
+  REAL(DP) , ALLOCATABLE :: xau (:,:), rau (:,:)
   ! atomic coordinates in crystal axis
-  LOGICAL :: fractional_translations
-  real(DP) :: ft_(3), ftaux(3)
+  LOGICAL :: fractional_translations, no_z
+  REAL(DP) :: ft_(3), ftaux(3)
   !
   ALLOCATE(xau(3,nat))
   ALLOCATE(rau(3,nat))
@@ -581,13 +580,14 @@ SUBROUTINE sgam_at ( nat, tau, ityp, nr1, nr2, nr3, sym )
          ftau (:, irot) = nint (ftaux(:))
       ENDIF
   ENDDO
-  ! TS & TB disable all symmetries z -> -z when monopole is present
-  IF (monopole) THEN
-    do isymTS=1,48
-      if (s(3,3,isymTS).eq.-1) sym(isymTS)=.false.
-    enddo
+  ! disable all symmetries z -> -z
+  IF ( PRESENT(no_z_inv) ) THEN
+     IF ( no_z_inv ) THEN
+        DO irot=1,nrot
+           IF (s(3,3,irot) == -1) sym(irot)=.false.
+        END DO
+     ENDIF
   ENDIF
-  ! TS & TB
   !
   !   deallocate work space
   !
@@ -608,7 +608,7 @@ SUBROUTINE sgam_at_mag ( nat, m_loc, sym )
   IMPLICIT NONE
   !
   INTEGER, INTENT(in) :: nat
-  real(DP), INTENT(in) :: m_loc(3, nat)
+  REAL(DP), INTENT(in) :: m_loc(3, nat)
   !
   ! m_loc: local magnetization, must be invariant under the sym.op.
   !
@@ -619,7 +619,7 @@ SUBROUTINE sgam_at_mag ( nat, m_loc, sym )
   !
   INTEGER :: na, nb, irot
   LOGICAL :: t1, t2
-  real(DP) , ALLOCATABLE ::  mxau(:,:), mrau(:,:)
+  REAL(DP) , ALLOCATABLE ::  mxau(:,:), mrau(:,:)
   ! magnetization and rotated magnetization in crystal axis
   !
   ALLOCATE ( mxau(3,nat), mrau(3,nat) )
@@ -703,7 +703,7 @@ SUBROUTINE set_sym(nat, tau, ityp, nspin_mag, m_loc, nr1, nr2, nr3)
   !-----------------------------------------------------------------------
   !
   IMPLICIT NONE
-  ! input
+  !
   INTEGER, INTENT(in)  :: nat, ityp(nat), nspin_mag, nr1, nr2, nr3
   REAL(DP), INTENT(in) :: tau(3,nat)
   REAL(DP), INTENT(in) :: m_loc(3,nat)
@@ -711,7 +711,7 @@ SUBROUTINE set_sym(nat, tau, ityp, nspin_mag, m_loc, nr1, nr2, nr3)
   time_reversal = (nspin_mag /= 4)
   t_rev(:) = 0
   CALL set_sym_bl ( )
-  CALL find_sym ( nat, tau, ityp, nr1, nr2, nr3, .not.time_reversal, m_loc )
+  CALL find_sym ( nat, tau, ityp, nr1, nr2, nr3, .not.time_reversal, m_loc)
   !
   RETURN
   END SUBROUTINE set_sym
@@ -836,7 +836,7 @@ LOGICAL FUNCTION checksym ( irot, nat, ityp, xau, rau, ft_ )
   INTEGER, INTENT(in) :: nat, ityp (nat), irot
   ! nat : number of atoms
   ! ityp: the type of each atom
-  real(DP), INTENT(in) :: xau (3, nat), rau (3, nat), ft_(3)
+  REAL(DP), INTENT(in) :: xau (3, nat), rau (3, nat), ft_(3)
   ! xau: the initial vectors (in crystal coordinates)
   ! rau: the rotated vectors (as above)
   ! ft_: fractionary translation (as above)
@@ -884,12 +884,12 @@ SUBROUTINE checkallsym ( nat, tau, ityp, nr1, nr2, nr3 )
   IMPLICIT NONE
   !
   INTEGER, INTENT(in) :: nat, ityp (nat), nr1, nr2, nr3
-  real(DP), INTENT(in) :: tau (3, nat)
+  REAL(DP), INTENT(in) :: tau (3, nat)
   !
   INTEGER :: na, kpol, isym, i, j, k, l
   LOGICAL :: loksym (48)
-  real(DP) :: sx (3, 3), sy(3,3)
-  real(DP) , ALLOCATABLE :: xau(:,:), rau(:,:)
+  REAL(DP) :: sx (3, 3), sy(3,3)
+  REAL(DP) , ALLOCATABLE :: xau(:,:), rau(:,:)
   !
   ALLOCATE (xau( 3 , nat))
   ALLOCATE (rau( 3 , nat))
@@ -961,11 +961,10 @@ SUBROUTINE s_axis_to_cart ( )
   !     This routine transforms symmetry matrices expressed in the
   !     basis of the crystal axis into rotations in cartesian axis
   !
-  USE kinds
   IMPLICIT NONE
   !
   INTEGER :: isym
-  real(dp):: sa(3,3), sb(3,3)
+  REAL(dp):: sa(3,3), sb(3,3)
   !
   DO isym = 1,nsym
      sa (:,:) = dble ( s(:,:,isym) )
@@ -986,7 +985,7 @@ SUBROUTINE find_sym_ifc ( nat, tau, ityp)
   IMPLICIT NONE
   !
   INTEGER, INTENT(in) :: nat, ityp (nat)
-  real(DP), INTENT(in) :: tau (3,nat)
+  REAL(DP), INTENT(in) :: tau (3,nat)
   !
   INTEGER :: i
   LOGICAL :: sym (48)
@@ -997,28 +996,12 @@ SUBROUTINE find_sym_ifc ( nat, tau, ityp)
   !
   !    Here we find the true symmetries of the crystal
   !
-  !symm: DO i=1,3 !emine: if it is not resolved in 3 steps it is sth else?
-    CALL sgam_at_ifc ( nat, tau, ityp, sym )
-    !
-    !    Here we re-order all rotations in such a way that true sym.ops
-    !    are the first nsym; rotations that are not sym.ops. follow
-    !
-    nsym = copy_sym ( nrot, sym )
-    !
-  !  IF ( .not. is_group ( nsym ) ) THEN
-  !     IF (i == 1) CALL infomsg ('find_sym', &
-  !                    'Not a group! Trying with lower acceptance parameter...')
-  !     accep = accep * 0.5d0
-  !     IF (i == 3) THEN
-  !       CALL infomsg ('find_sym', 'Still not a group! symmetry disabled')
-  !       nsym = 1
-  !     ENDIF
-  !     CYCLE symm
-  !  ELSE
-  !     IF (i > 1) CALL infomsg ('find_sym', 'Symmetry operations form a group')
-  !     exit symm
-  !  ENDIF
-  !ENDDO symm
+  CALL sgam_at_ifc ( nat, tau, ityp, sym )
+  !
+  !    Here we re-order all rotations in such a way that true sym.ops
+  !    are the first nsym; rotations that are not sym.ops. follow
+  !
+  nsym = copy_sym ( nrot, sym )
   !
   ! check if inversion (I) is a symmetry.
   ! If so, it should be the (nsym/2+1)-th operation of the group
@@ -1047,15 +1030,13 @@ SUBROUTINE sgam_at_ifc ( nat, tau, ityp, sym )
   !     of the original point group that is also a symmetry operation
   !     of the crystal symmetry point group
   !
-  USE io_global,  ONLY : stdout
-  USE kinds
   IMPLICIT NONE
   !
   INTEGER, INTENT(in) :: nat, ityp (nat)
   ! nat  : number of atoms in the unit cell
   ! ityp : species of each atom in the unit cell
   !
-  real(DP), INTENT(in) :: tau (3, nat)
+  REAL(DP), INTENT(in) :: tau (3, nat)
   !
   ! tau  : cartesian coordinates of the atoms
   !
@@ -1067,10 +1048,10 @@ SUBROUTINE sgam_at_ifc ( nat, tau, ityp, sym )
   !
   INTEGER :: na, kpol, nb, irot, i, j
   ! counters
-  real(DP) , ALLOCATABLE :: xau (:,:), rau (:,:)
+  REAL(DP) , ALLOCATABLE :: xau (:,:), rau (:,:)
   ! atomic coordinates in crystal axis
   LOGICAL :: fractional_translations
-  real(DP) :: ft_(3)
+  REAL(DP) :: ft_(3)
   !
   ALLOCATE(xau(3,nat))
   ALLOCATE(rau(3,nat))

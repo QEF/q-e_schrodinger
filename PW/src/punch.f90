@@ -17,7 +17,6 @@ SUBROUTINE punch( what )
        tmp_dir, prefix
   USE control_flags,        ONLY : io_level, twfcollect, io_level, lscf
   USE klist,                ONLY : nks
-  USE pw_restart_new,       ONLY : pw_write_schema, pw_write_binaries
   USE io_files,             ONLY : xmlpun_schema, psfile, pseudo_dir
   USE wrappers,             ONLY : f_copy
   USE xml_io_base,          ONLY : create_directory
@@ -26,9 +25,13 @@ SUBROUTINE punch( what )
   USE scf,                  ONLY : rho
   USE lsda_mod,             ONLY : nspin
   USE ions_base,            ONLY : nsp
-!
+  USE funct,                ONLY : get_inlc
+  USE kernel_table,         ONLY : vdw_table_name, kernel_file_name
+#if defined (__XSD) 
+  USE pw_restart_new,       ONLY : pw_write_schema, pw_write_binaries
+#else
   USE pw_restart,           ONLY : pw_writefile
-!
+#endif
   USE a2F,                  ONLY : la2F, a2Fsave
   USE wavefunctions_module, ONLY : evc
   !
@@ -37,7 +40,7 @@ SUBROUTINE punch( what )
   CHARACTER(LEN=*) :: what
   LOGICAL :: exst
   CHARACTER(LEN=320) :: cp_source, cp_dest
-  INTEGER            :: cp_status, nt
+  INTEGER            :: cp_status, nt, inlc
   !
   !
   IF (io_level < 0 ) RETURN
@@ -94,7 +97,14 @@ SUBROUTINE punch( what )
         IF ( TRIM(cp_source) /= TRIM(cp_dest) ) &
              cp_status = f_copy(cp_source, cp_dest)
      END DO
-     !
+     inlc = get_inlc()
+     IF ( inlc > 0 ) THEN 
+        cp_source = TRIM(kernel_file_name)
+        cp_dest = TRIM(tmp_dir)//'/'//TRIM(prefix)//'.save/'//TRIM(vdw_table_name)
+        IF ( TRIM(cp_source) /= TRIM(cp_dest) ) & 
+           cp_status = f_copy(cp_source, cp_dest)
+     END IF  
+      !
   END IF
 #else
   !

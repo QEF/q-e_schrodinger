@@ -28,6 +28,7 @@ MODULE qexml_module
   ! in the root directory of the present distribution,
   ! or http://www.gnu.org/copyleft/gpl.txt .
   !
+#if ! defined(__XSD)
   !
   USE iotk_module
   USE kinds, ONLY : DP
@@ -500,8 +501,8 @@ CONTAINS
       LOGICAL :: dir_true
       !
       !
-      filename = ''
-      tag_     = ''
+      filename = ' '
+      tag_     = ' '
       ext_     = '.dat'
       dir_true = .true.
       !
@@ -4618,5 +4619,6 @@ CONTAINS
       !
     END SUBROUTINE qexml_read_rho
     !
+#endif
     !
 END MODULE qexml_module

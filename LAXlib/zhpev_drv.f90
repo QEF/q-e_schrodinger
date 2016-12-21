@@ -7,14 +7,9 @@
 !
 MODULE zhpev_module
 
+   USE la_param
    IMPLICIT NONE
    SAVE
-
-#if defined(__MPI)
-  INCLUDE 'mpif.h'
-#endif
-
-#include "la_param.f90"
 
    PRIVATE
 

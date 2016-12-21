@@ -9,10 +9,9 @@
 
 MODULE dspev_module
 
+    USE la_param
 
     IMPLICIT NONE
-
-#include "la_param.f90"
 
     SAVE
 
@@ -96,12 +95,6 @@ CONTAINS
 !
 
       IMPLICIT NONE
-
-#if defined (__MPI)
-   !
-   include 'mpif.h'
-   !
-#endif
 
       LOGICAL, INTENT(IN) :: tv
       INTEGER, intent(in) :: N, NRL, LDA, LDV
@@ -426,12 +419,6 @@ CONTAINS
 !
 
       IMPLICIT NONE
-
-#if defined (__MPI)
-   !
-   include 'mpif.h'
-   !
-#endif
 
       LOGICAL, INTENT(IN)  :: tv
       INTEGER, INTENT(IN)  :: n, nrl, ldz, mpime, comm
