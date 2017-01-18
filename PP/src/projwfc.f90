@@ -555,12 +555,12 @@ SUBROUTINE projwave( filproj, lsym, lwrite_ovp, lbinary )
      IF (filproj/=' ') THEN
         DO is=1,nspin
            IF (nspin==2) THEN
-              IF (is==1) filename=trim(filproj)//'.up'
-              IF (is==2) filename=trim(filproj)//'.down'
+              IF (is==1) filename=trim(filproj)//'.projwfc_up'
+              IF (is==2) filename=trim(filproj)//'.projwfc_down'
               nksinit=(nkstot/2)*(is-1)+1
               nkslast=(nkstot/2)*is
            ELSE
-              filename=trim(filproj)
+              filename=trim(filproj)//'.projwfc_up'
               nksinit=1
               nkslast=nkstot
            ENDIF
@@ -569,7 +569,7 @@ SUBROUTINE projwave( filproj, lsym, lwrite_ovp, lbinary )
                 dfftp%nr1, dfftp%nr2, dfftp%nr3, nat, ntyp, ibrav, celldm, at, gcutm, dual,   &
                 ecutwfc, nkstot/nspin, nbnd, natomwfc)
            DO nwfc = 1, natomwfc
-              WRITE(iunproj,'(2i5,a3,3i5)') &
+              WRITE(iunproj,'(2i5,1x,a4,3i5)') &
                   nwfc, nlmchi(nwfc)%na, atm(ityp(nlmchi(nwfc)%na)), &
                   nlmchi(nwfc)%n, nlmchi(nwfc)%l, nlmchi(nwfc)%m
               DO ik=nksinit,nkslast
