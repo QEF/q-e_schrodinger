@@ -569,9 +569,9 @@ SUBROUTINE projwave( filproj, lsym, lwrite_ovp, lbinary )
                 dfftp%nr1, dfftp%nr2, dfftp%nr3, nat, ntyp, ibrav, celldm, at, gcutm, dual,   &
                 ecutwfc, nkstot/nspin, nbnd, natomwfc)
            DO nwfc = 1, natomwfc
-              WRITE(iunproj,'(2i5,1x,a4,3i5)') &
+              WRITE(iunproj,'(2i5,1x,a4,1x,a2,1x,3i5)') &
                   nwfc, nlmchi(nwfc)%na, atm(ityp(nlmchi(nwfc)%na)), &
-                  nlmchi(nwfc)%n, nlmchi(nwfc)%l, nlmchi(nwfc)%m
+                  nlmchi(nwfc)%els, nlmchi(nwfc)%n, nlmchi(nwfc)%l, nlmchi(nwfc)%m
               DO ik=nksinit,nkslast
                  DO ibnd=1,nbnd
                    WRITE(iunproj,'(2i8,f20.10)') ik,ibnd, &
