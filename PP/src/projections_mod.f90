@@ -11,6 +11,7 @@ MODULE projections
   TYPE wfc_label
      INTEGER na, n, l, m, ind
      REAL (DP) jj
+     CHARACTER(LEN=2) els
   END TYPE wfc_label
   TYPE(wfc_label), ALLOCATABLE :: nlmchi(:)
   
@@ -61,6 +62,7 @@ MODULE projections
                            nlmchi(nwfc)%m  =  m
                            nlmchi(nwfc)%ind  =  ind
                            nlmchi(nwfc)%jj  =  jj
+                           nlmchi(nwfc)%els = upf(nt)%els(n)
                         ENDIF
                      ENDDO
                   ELSE
@@ -81,6 +83,7 @@ MODULE projections
                                  nlmchi(nwfc)%m  =  m
                                  nlmchi(nwfc)%ind  =  ind
                                  nlmchi(nwfc)%jj  =  jj
+                                 nlmchi(nwfc)%els = upf(nt)%els(n)
                               ENDIF
                            ENDDO
                         ENDIF
@@ -95,6 +98,7 @@ MODULE projections
                      nlmchi(nwfc)%m  =  m
                      nlmchi(nwfc)%ind=  m
                      nlmchi(nwfc)%jj =  0.d0
+                     nlmchi(nwfc)%els = upf(nt)%els(n)
                   ENDDO
                   IF ( noncolin) THEN
                      DO m = 1, 2 * l + 1
@@ -105,6 +109,7 @@ MODULE projections
                         nlmchi(nwfc)%m  =  m
                         nlmchi(nwfc)%ind=  m+2*l+1
                         nlmchi(nwfc)%jj =  0.d0
+                        nlmchi(nwfc)%els = upf(nt)%els(n)
                      END DO
                   ENDIF
                ENDIF
