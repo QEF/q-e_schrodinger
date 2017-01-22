@@ -15,9 +15,6 @@ env:
 install:
      - ./configure --enable-parallel=$PARA --with-netlib --enable-xml
      - make pw
-     - make cp
-     - make ph
-     - make epw  
 script:
     - make travis
 git:
