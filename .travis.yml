@@ -14,9 +14,8 @@ env:
      - PARA=no
 install:
      - ./configure --enable-parallel=$PARA --with-netlib --enable-xml
-     - make pw
 script:
-    - make travis
+     - make pw
 git:
   depth: 3
 
