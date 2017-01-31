@@ -318,8 +318,9 @@ SUBROUTINE set_sym_bl ( )
   IF ( .not. is_group ( nrot ) ) THEN
   !    This happens for instance for an hexagonal lattice with one axis 
   !    oriented at 15 degrees from the x axis, the other along (-1,1,0)
-      WRITE (stdout, '(80("-"),/,"NOTICE: Symmetry group for Bravais lattice &
-     & is not a group - symmetries are disabled",/,80("-"))' ) nrot
+       CALL infomsg('set_sym_bl', 'NOTICE: Symmetry group for Bravais lattice&
+       & is not a group (' // TRIM(int_to_char(nrot)) // &
+       ') - symmetries are disabled')
       nrot = 1
   ENDIF
   !
