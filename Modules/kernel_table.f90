@@ -117,7 +117,6 @@ CONTAINS
 
 
 
-
     kernel_file = find_free_unit()
 
     if (TRIM(vdw_table_name)==' ') then
