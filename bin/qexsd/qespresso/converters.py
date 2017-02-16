@@ -398,6 +398,7 @@ class PwInputConverter(RawInputConverter):
             }
         },
         'basis': {
+            'gamma_only':('K_POINTS', cards.get_k_points_card, None),
             'ecutwfc': "SYSTEM[ecutwfc]",
             'ecutrho': "SYSTEM[ecutrho]",
             'fft_grid': {
