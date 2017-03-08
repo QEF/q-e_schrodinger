@@ -279,6 +279,7 @@ clean_pw.o : realus.o
 clean_pw.o : scf_mod.o
 clean_pw.o : symm_base.o
 clean_pw.o : symme.o
+clean_pw.o : tetra.o
 clean_pw.o : xdm_dispersion.o
 close_files.o : ../../Modules/control_flags.o
 close_files.o : ../../Modules/io_files.o
@@ -932,6 +933,7 @@ input.o : pwcom.o
 input.o : realus.o
 input.o : start_k.o
 input.o : symm_base.o
+input.o : tetra.o
 input.o : update_pot.o
 input.o : wyckoff.o
 input.o : xdm_dispersion.o
@@ -1476,6 +1478,7 @@ pw_restart.o : realus.o
 pw_restart.o : scf_mod.o
 pw_restart.o : start_k.o
 pw_restart.o : symm_base.o
+pw_restart.o : tetra.o
 pw_restart_new.o : ../../Modules/bfgs_module.o
 pw_restart_new.o : ../../Modules/cell_base.o
 pw_restart_new.o : ../../Modules/constants.o
@@ -1525,6 +1528,7 @@ pw_restart_new.o : realus.o
 pw_restart_new.o : scf_mod.o
 pw_restart_new.o : start_k.o
 pw_restart_new.o : symm_base.o
+pw_restart_new.o : tetra.o
 pw_restart_new.o : xdm_dispersion.o
 pwcom.o : ../../Modules/cell_base.o
 pwcom.o : ../../Modules/constants.o
@@ -1844,6 +1848,7 @@ setup.o : pw_restart_new.o
 setup.o : pwcom.o
 setup.o : start_k.o
 setup.o : symm_base.o
+setup.o : tetra.o
 sph_ind.o : ../../Modules/kind.o
 spinor.o : ../../Modules/kind.o
 start_k.o : ../../Modules/cell_base.o
@@ -2049,6 +2054,11 @@ symmetrize_at.o : ../../Modules/io_global.o
 symmetrize_at.o : ../../Modules/kind.o
 symmetrize_at.o : pwcom.o
 tabd.o : ../../Modules/kind.o
+tetra.o : ../../Modules/constants.o
+tetra.o : ../../Modules/io_global.o
+tetra.o : ../../Modules/kind.o
+tetra.o : ../../Modules/noncol.o
+tetra.o : pwcom.o
 transform_becsum_nc.o : ../../Modules/ions_base.o
 transform_becsum_nc.o : ../../Modules/kind.o
 transform_becsum_nc.o : ../../Modules/noncol.o
@@ -2064,7 +2074,6 @@ transform_qq_so.o : ../../Modules/kind.o
 transform_qq_so.o : ../../Modules/uspp.o
 transform_qq_so.o : pwcom.o
 trnvecc.o : ../../Modules/kind.o
-tweights.o : ../../Modules/kind.o
 update_pot.o : ../../FFTXlib/fft_interfaces.o
 update_pot.o : ../../Modules/becmod.o
 update_pot.o : ../../Modules/cell_base.o
@@ -2223,6 +2232,7 @@ weights.o : ../../Modules/mp.o
 weights.o : ../../Modules/mp_images.o
 weights.o : ../../Modules/mp_pools.o
 weights.o : pwcom.o
+weights.o : tetra.o
 wfcinit.o : ../../Modules/becmod.o
 wfcinit.o : ../../Modules/cell_base.o
 wfcinit.o : ../../Modules/constants.o

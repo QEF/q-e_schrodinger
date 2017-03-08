@@ -240,7 +240,7 @@ module funct
   !              revPBE  Zhang and Yang, PRL 80, 890 (1998)
   !              pbesol  J.P. Perdew et al., PRL 100, 136406 (2008)
   !              q2d     L. Chiodo et al., PRL 108, 126402 (2012)
-  !              rw86    E. Amonn D. Murray et al, J. Chem. Theory comp. 5, 2754 (2009) 
+  !              rw86    Eamonn D. Murray et al, J. Chem. Theory Comput. 5, 2754 (2009) 
   !              wc      Z. Wu and R. E. Cohen, PRB 73, 235116 (2006)
   !              kzk     H.Kwee, S. Zhang, H. Krakauer, PRL 100, 126404 (2008)
   !              pbe0    J.P.Perdew, M. Ernzerhof, K.Burke, JCP 105, 9982 (1996)
@@ -285,7 +285,7 @@ module funct
   !    igcx:  type of gradient correction on exchange
   !    igcc:  type of gradient correction on correlation
   !    inlc:  type of non local correction on correlation
-  !    inlc:  type of meta-GGA
+  !    imeta: type of meta-GGA
   integer :: iexch = notset
   integer :: icorr = notset
   integer :: igcx  = notset
@@ -425,10 +425,12 @@ CONTAINS
     ! special case : HCTH
     else if ('HCTH'.EQ. TRIM(dftout)) then
        dft_defined = set_dft_values(0,0,5,5,0,0)
+       call errore('set_dft_from_name','HCTH yields suspicious results',1)
               
     ! special case : OLYP = OPTX + LYP
     else if ('OLYP'.EQ. TRIM(dftout)) then
        dft_defined = set_dft_values(0,3,6,3,0,0)
+       call errore('set_dft_from_name','OLYP yields suspicious results',1)
        
     else if ('WC' .EQ. TRIM(dftout) ) then
     ! special case : Wu-Cohen
@@ -1035,9 +1037,9 @@ CONTAINS
         shortname = 'VDW-DF2-C09'
      else if (iexch==1.and.icorr==4.and.igcx==26.and.igcc==0) then
         shortname = 'VDW-DF2-B86R'
-     else if ( inlc==3) then
-        shortname = 'RVV10'
      end if
+  else if ( inlc==3) then
+     shortname = 'RVV10'
   end if
   !
   get_dft_short = shortname
@@ -1644,14 +1646,18 @@ subroutine gcx_spin (rhoup, rhodw, grhoup2, grhodw2, &
      sx = 0.5_DP * (sxup + sxdw)
      v2xup = 2.0_DP * v2xup
      v2xdw = 2.0_DP * v2xdw
-  elseif (igcx == 3 .or. igcx == 4 .or. igcx == 8 .or. &
-          igcx == 10 .or. igcx == 12 .or. igcx == 20 .or. igcx == 25) then
+  elseif (igcx == 3 .or. igcx == 4 .or. igcx == 8 .or. igcx ==10 .or. &
+          igcx ==12 .or. igcx ==20 .or. igcx ==23 .or. igcx ==24 .or. igcx == 25) then
      ! igcx=3: PBE, igcx=4: revised PBE, igcx=8: PBE0, igcx=10: PBEsol
-     ! igcx=12: HSE,  igcx=20: gau-pbe, igcx=25: ev93
+     ! igcx=12: HSE,  igcx=20: gau-pbe, igcx=23: obk8, igcx=24: ob86, igcx=25: ev93
      if (igcx == 4) then
         iflag = 2
      elseif (igcx == 10) then
         iflag = 3
+     elseif (igcx == 23) then
+        iflag = 5
+     elseif (igcx == 24) then
+        iflag = 6
      elseif (igcx == 25) then
         iflag = 7
      else

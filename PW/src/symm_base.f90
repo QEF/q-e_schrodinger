@@ -1,5 +1,5 @@
 !
-! Copyright (C) 2010-2015 Quantum ESPRESSO group
+! Copyright (C) 2010-2017 Quantum ESPRESSO group
 ! This file is distributed under the terms of the
 ! GNU General Public License. See the file `License'
 ! in the root directory of the present distribution,
@@ -28,12 +28,14 @@ MODULE symm_base
   !
   PUBLIC :: s, sr, sname, ft, ftau, nrot, nsym, nsym_ns, nsym_na, t_rev, &
             no_t_rev, time_reversal, irt, invs, invsym, d1, d2, d3, &
-            allfrac, nofrac, nosym, nosym_evc
+            allfrac, nofrac, nosym, nosym_evc, fft_fact, spacegroup
   INTEGER :: &
        s(3,3,48),            &! symmetry matrices, in crystal axis
        invs(48),             &! index of inverse operation: S^{-1}_i=S(invs(i))
        ftau(3,48),           &! fractional translations, in FFT coordinates
+       fft_fact(3),          &! FFT dimensions must be multiple of fft_fact
        nrot,                 &! number of bravais lattice symmetries
+       spacegroup = 0,       &! space group index, as read from input
        nsym = 1,             &! total number of crystal symmetries
        nsym_ns = 0,          &! nonsymmorphic (fractional translation) symms
        nsym_na = 0            ! excluded nonsymmorphic symmetries because
@@ -43,9 +45,6 @@ MODULE symm_base
        sr (3,3,48),          &! symmetry matrices, in cartesian axis
        accep = 1.0d-5         ! initial value of the acceptance threshold
                               ! for position comparison by eqvect in checksym
-  !
-  ! ... note: ftau are used for symmetrization in real space (phonon, exx)
-  ! ... in which case they must be commensurated with the FFT grid
   !
   CHARACTER(len=45) ::  sname(48)   ! name of the symmetries
   INTEGER :: &
@@ -71,7 +70,7 @@ MODULE symm_base
   ! ... Exported routines
   !
   PUBLIC ::  find_sym, inverse_s, copy_sym, checkallsym, &
-             s_axis_to_cart, set_sym, set_sym_bl, find_sym_ifc
+             s_axis_to_cart, set_sym, set_sym_bl, find_sym_ifc, remove_sym 
   !
 CONTAINS
    !
@@ -113,6 +112,8 @@ SUBROUTINE set_sym_bl ( )
   USE matrix_inversion
   IMPLICIT NONE
   !
+  CHARACTER(LEN=6), EXTERNAL :: int_to_char
+  !
   ! sin3 = sin(pi/3), cos3 = cos(pi/3), msin3 = -sin(pi/3), mcos3 = -cos(pi/3)
   !
   REAL(DP), PARAMETER :: sin3 = 0.866025403784438597d0, cos3 = 0.5d0, &
@@ -128,8 +129,6 @@ SUBROUTINE set_sym_bl ( )
 
   CHARACTER (len=45) :: s0name (64)
   ! full name of the rotational part of each symmetry operation
-
-  CHARACTER(LEN=6), EXTERNAL :: int_to_char
 
   data s0/ 1.d0,  0.d0,  0.d0,  0.d0,  1.d0,  0.d0,  0.d0,  0.d0,  1.d0, &
           -1.d0,  0.d0,  0.d0,  0.d0, -1.d0,  0.d0,  0.d0,  0.d0,  1.d0, &
@@ -293,9 +292,8 @@ SUBROUTINE set_sym_bl ( )
   nrot = nrot-1
   IF ( nrot /= 1 .AND. nrot /= 2 .AND. nrot /= 4 .AND. nrot /= 6 .AND. &
        nrot /= 8 .AND. nrot /=12 .AND. nrot /=24 ) THEN
-       CALL infomsg('set_sym_bl', &
-          'NOTICE: Bravais lattice has wrong number (' // &
-          TRIM(int_to_char(nrot)) // ') of symmetries - symmetries are disabled')
+       WRITE (stdout, '(80("-"),/,"NOTICE: Bravais lattice has wrong number (",&
+      & i2,") of symmetries - symmetries are disabled",/,80("-"))' ) nrot
       nrot = 1
   END IF
   !
@@ -318,9 +316,9 @@ SUBROUTINE set_sym_bl ( )
   IF ( .not. is_group ( nrot ) ) THEN
   !    This happens for instance for an hexagonal lattice with one axis 
   !    oriented at 15 degrees from the x axis, the other along (-1,1,0)
-       CALL infomsg('set_sym_bl', 'NOTICE: Symmetry group for Bravais lattice&
-       & is not a group (' // TRIM(int_to_char(nrot)) // &
-       ') - symmetries are disabled')
+      CALL infomsg('set_sym_bl', 'NOTICE: Symmetry group for Bravais lattice &
+      &is not a group (' // TRIM(int_to_char(nrot)) // &
+      &') - symmetries are disabled')
       nrot = 1
   ENDIF
   !
@@ -329,8 +327,7 @@ SUBROUTINE set_sym_bl ( )
 END SUBROUTINE set_sym_bl
 !
 !-----------------------------------------------------------------------
-SUBROUTINE find_sym ( nat, tau, ityp, nr1, nr2, nr3, magnetic_sym, m_loc, &
-                      no_z_inv )
+SUBROUTINE find_sym ( nat, tau, ityp, magnetic_sym, m_loc, no_z_inv )
   !-----------------------------------------------------------------------
   !
   !     This routine finds the point group of the crystal, by eliminating
@@ -339,7 +336,7 @@ SUBROUTINE find_sym ( nat, tau, ityp, nr1, nr2, nr3, magnetic_sym, m_loc, &
   !
   IMPLICIT NONE
   !
-  INTEGER, INTENT(in) :: nat, ityp (nat), nr1, nr2, nr3
+  INTEGER, INTENT(in) :: nat, ityp (nat)
   REAL(DP), INTENT(in) :: tau (3,nat), m_loc(3,nat)
   LOGICAL, INTENT(in) :: magnetic_sym
   LOGICAL, INTENT(IN), OPTIONAL :: no_z_inv
@@ -357,9 +354,9 @@ SUBROUTINE find_sym ( nat, tau, ityp, nr1, nr2, nr3, magnetic_sym, m_loc, &
   !
   symm: DO i=1,3 !emine: if it is not resolved in 3 steps it is sth else?
     IF ( PRESENT(no_z_inv) ) THEN
-       CALL sgam_at ( nat, tau, ityp, nr1, nr2, nr3, sym, no_z_inv )
+       CALL sgam_at ( nat, tau, ityp, sym, no_z_inv )
     ELSE
-       CALL sgam_at ( nat, tau, ityp, nr1, nr2, nr3, sym )
+       CALL sgam_at ( nat, tau, ityp, sym )
     ENDIF
     !
     !    Here we check for magnetic symmetries
@@ -407,14 +404,14 @@ SUBROUTINE find_sym ( nat, tau, ityp, nr1, nr2, nr3, magnetic_sym, m_loc, &
 END SUBROUTINE find_sym
 !
 !-----------------------------------------------------------------------
-SUBROUTINE sgam_at ( nat, tau, ityp, nr1, nr2, nr3, sym, no_z_inv)
+SUBROUTINE sgam_at ( nat, tau, ityp, sym, no_z_inv)
   !-----------------------------------------------------------------------
   !
   !     Given the point group of the Bravais lattice, this routine finds
   !     the subgroup which is the point group of the considered crystal.
   !     Non symmorphic groups are allowed, provided that fractional
-  !     translations are allowed (nofrac=.false), that the unit cell is
-  !     not a supercell, and that they are commensurate with the FFT grid
+  !     translations are allowed (nofrac=.false) and that the unit cell
+  !     is not a supercell
   !
   !     On output, the array sym is set to .true.. for each operation
   !     of the original point group that is also a symmetry operation
@@ -422,10 +419,9 @@ SUBROUTINE sgam_at ( nat, tau, ityp, nr1, nr2, nr3, sym, no_z_inv)
   !
   IMPLICIT NONE
   !
-  INTEGER, INTENT(in) :: nat, ityp (nat), nr1, nr2, nr3
+  INTEGER, INTENT(in) :: nat, ityp (nat)
   ! nat  : number of atoms in the unit cell
   ! ityp : species of each atom in the unit cell
-  ! nr*  : dimensions of the FFT mesh
   !
   REAL(DP), INTENT(in) :: tau (3, nat)
   ! tau  : cartesian coordinates of the atoms
@@ -485,23 +481,9 @@ SUBROUTINE sgam_at ( nat, tau, ityp, nr1, nr2, nr3, sym, no_z_inv)
   !
 10 CONTINUE
   nsym_ns = 0
+  fft_fact(:)= 1
   DO irot = 1, nrot
      !
-     ! check that the grid is compatible with the S rotation
-     !
-     IF ( mod (s (2, 1, irot) * nr1, nr2) /= 0 .or. &
-          mod (s (3, 1, irot) * nr1, nr3) /= 0 .or. &
-          mod (s (1, 2, irot) * nr2, nr1) /= 0 .or. &
-          mod (s (3, 2, irot) * nr2, nr3) /= 0 .or. &
-          mod (s (1, 3, irot) * nr3, nr1) /= 0 .or. &
-          mod (s (2, 3, irot) * nr3, nr2) /= 0 ) THEN
-        sym (irot) = .false.
-        WRITE( stdout, '(5x,"warning: symmetry operation # ",i2, &
-             &         " not compatible with FFT grid. ")') irot
-        WRITE( stdout, '(3i4)') ( (s (i, j, irot) , j = 1, 3) , i = 1, 3)
-        GOTO 20
-     ENDIF
-
      DO na = 1, nat
         ! rau = rotated atom coordinates
         rau (:, na) = s (1,:, irot) * xau (1, na) + &
@@ -544,6 +526,14 @@ SUBROUTINE sgam_at ( nat, tau, ityp, nr1, nr2, nr3, sym, no_z_inv)
               IF (sym (irot) ) THEN
                  nsym_ns = nsym_ns + 1
                  ft (:,irot) = ft_(:)
+                 !
+                 ! Find factors that must be present in FFT grid dimensions
+                 ! in order to ensure that fractional translations are
+                 ! commensurate with FFT grids 
+                 DO i = 1, 3
+                    fft_fact(i) = mcm ( fft_fact(i), NINT(1.0_dp/ft_(i)) )
+                 END DO
+                 !
                  GOTO 20
               ENDIF
            ENDIF
@@ -553,32 +543,6 @@ SUBROUTINE sgam_at ( nat, tau, ityp, nr1, nr2, nr3, sym, no_z_inv)
 20   CONTINUE
   ENDDO
   !
-  ! convert ft to FFT coordinates, check if compatible with FFT grid
-  ! for real-space symmetrization (if done: currently, exx, phonon)
-  !
-  nsym_na = 0
-  DO irot =1, nrot
-     IF ( sym(irot) .and. .not. allfrac ) THEN
-        ftaux(1) = ft(1,irot) * nr1
-        ftaux(2) = ft(2,irot) * nr2
-        ftaux(3) = ft(3,irot) * nr3
-        ! check if the fractional translations are commensurate
-        ! with the FFT grid, discard sym.op. if not
-        ! (needed because ph.x symmetrizes in real space)
-        IF (abs (ftaux(1) - nint (ftaux(1)) ) / nr1 > eps2 .or. &
-            abs (ftaux(2) - nint (ftaux(2)) ) / nr2 > eps2 .or. &
-            abs (ftaux(3) - nint (ftaux(3)) ) / nr3 > eps2 ) THEN
-            !     WRITE( stdout, '(5x,"warning: symmetry operation", &
-            !          &     " # ",i2," not allowed.   fractional ", &
-            !          &     "translation:"/5x,3f11.7,"  in crystal", &
-            !          &     " coordinates")') irot, ft_
-            sym (irot) = .false.
-            nsym_na = nsym_na + 1
-            nsym_ns = nsym_ns - 1
-         ENDIF
-         ftau (:, irot) = nint (ftaux(:))
-      ENDIF
-  ENDDO
   ! disable all symmetries z -> -z
   IF ( PRESENT(no_z_inv) ) THEN
      IF ( no_z_inv ) THEN
@@ -691,11 +655,11 @@ SUBROUTINE sgam_at_mag ( nat, m_loc, sym )
   RETURN
 END SUBROUTINE sgam_at_mag
 !
-SUBROUTINE set_sym(nat, tau, ityp, nspin_mag, m_loc, nr1, nr2, nr3)
+SUBROUTINE set_sym(nat, tau, ityp, nspin_mag, m_loc)
   !
   ! This routine receives as input atomic types and positions, if there
-  ! is noncollinear magnetism and the initial magnetic moments, the fft
-  ! dimensions nr1, nr2, nr3; it sets the symmetry elements of this module.
+  ! is noncollinear magnetism and the initial magnetic moments;
+  ! it sets the symmetry elements of this module.
   ! Note that at and bg are those in cell_base. It sets nrot, nsym, s,
   ! sname, sr, invs, ftau, irt, t_rev,  time_reversal, and invsym
   !
@@ -703,14 +667,14 @@ SUBROUTINE set_sym(nat, tau, ityp, nspin_mag, m_loc, nr1, nr2, nr3)
   !
   IMPLICIT NONE
   !
-  INTEGER, INTENT(in)  :: nat, ityp(nat), nspin_mag, nr1, nr2, nr3
+  INTEGER, INTENT(in)  :: nat, ityp(nat), nspin_mag
   REAL(DP), INTENT(in) :: tau(3,nat)
   REAL(DP), INTENT(in) :: m_loc(3,nat)
   !
   time_reversal = (nspin_mag /= 4)
   t_rev(:) = 0
   CALL set_sym_bl ( )
-  CALL find_sym ( nat, tau, ityp, nr1, nr2, nr3, .not.time_reversal, m_loc)
+  CALL find_sym ( nat, tau, ityp, .not.time_reversal, m_loc)
   !
   RETURN
   END SUBROUTINE set_sym
@@ -873,16 +837,16 @@ LOGICAL FUNCTION checksym ( irot, nat, ityp, xau, rau, ft_ )
 END FUNCTION checksym
 !
 !-----------------------------------------------------------------------
-SUBROUTINE checkallsym ( nat, tau, ityp, nr1, nr2, nr3 )
+SUBROUTINE checkallsym ( nat, tau, ityp )
   !-----------------------------------------------------------------------
-  !     given a crystal group this routine checks that the actual
-  !     atomic positions and bravais lattice vectors are compatible with
-  !     it. Used in relaxation/MD runs to check that atomic motion is
+  !     given a crystal group this routine checks that the actual atomic
+  !     positions and bravais lattice vectors are compatible with it.
+  !     Used in relaxation/MD runs to check that atomic motion is
   !     consistent with assumed symmetry.
   !
   IMPLICIT NONE
   !
-  INTEGER, INTENT(in) :: nat, ityp (nat), nr1, nr2, nr3
+  INTEGER, INTENT(in) :: nat, ityp (nat)
   REAL(DP), INTENT(in) :: tau (3, nat)
   !
   INTEGER :: na, kpol, isym, i, j, k, l
@@ -1131,5 +1095,99 @@ SUBROUTINE sgam_at_ifc ( nat, tau, ityp, sym )
   !
   RETURN
 END SUBROUTINE sgam_at_ifc
+
+!-----------------------------------------------------------------------
+SUBROUTINE remove_sym ( nr1, nr2, nr3 )
+  !
+  ! ... ensure that ftau used for symmetrization in real space (phonon, exx)
+  ! ... are commensurated with the FFT grid
+  !
+  IMPLICIT NONE
+  !
+  INTEGER, INTENT(in) :: nr1, nr2, nr3
+  !
+  LOGICAL :: sym(48)
+  INTEGER :: isym, nsym_, i, j
+  REAL(dp) :: ftaux(3)
+  !
+  nsym_ = nsym
+  sym(1:nsym_) = .TRUE.
+  nsym_na = 0
+  !
+  DO isym = 1, nsym_
+     !
+     ! check that the grid is compatible with the S rotation
+     !
+     IF ( mod (s (2, 1, isym) * nr1, nr2) /= 0 .or. &
+          mod (s (3, 1, isym) * nr1, nr3) /= 0 .or. &
+          mod (s (1, 2, isym) * nr2, nr1) /= 0 .or. &
+          mod (s (3, 2, isym) * nr2, nr3) /= 0 .or. &
+          mod (s (1, 3, isym) * nr3, nr1) /= 0 .or. &
+          mod (s (2, 3, isym) * nr3, nr2) /= 0 ) THEN
+        sym (isym) = .false.
+        WRITE( stdout, '(5x,"warning: symmetry operation # ",i2, &
+             &         " not compatible with FFT grid. ")') isym
+        WRITE( stdout, '(3i4)') ( (s (i, j, isym) , j = 1, 3) , i = 1, 3)
+        sym(isym) = .FALSE.
+        IF ( abs (ft(1,isym)) > eps2 .or. &
+             abs (ft(2,isym)) > eps2 .or. &
+             abs (ft(3,isym)) > eps2 ) nsym_ns = nsym_ns - 1
+     ENDIF
+     !
+     ! convert ft to FFT coordinates, check if compatible with FFT grid
+     ! for real-space symmetrization 
+     !
+     ftaux(1) = ft(1,isym) * nr1
+     ftaux(2) = ft(2,isym) * nr2
+     ftaux(3) = ft(3,isym) * nr3
+     ! check if the fractional translations are commensurate
+     ! with the FFT grid, discard sym.op. if not
+     ! (needed because ph.x symmetrizes in real space)
+     IF ( abs (ftaux(1) - nint (ftaux(1)) ) / nr1 > eps2 .or. &
+          abs (ftaux(2) - nint (ftaux(2)) ) / nr2 > eps2 .or. &
+          abs (ftaux(3) - nint (ftaux(3)) ) / nr3 > eps2 ) THEN
+        !     WRITE( stdout, '(5x,"warning: symmetry operation", &
+        !          &     " # ",i2," not allowed.   fractional ", &
+        !          &     "translation:"/5x,3f11.7,"  in crystal", &
+        !          &     " coordinates")') isym, ft_
+        sym (isym) = .FALSE.
+        nsym_na = nsym_na + 1
+        nsym_ns = nsym_ns - 1
+     ENDIF
+     ftau (:, isym) = nint (ftaux(:))
+     !
+  ENDDO
+  !
+  ! ... count symmetries, reorder them exactly as in "find_sym" 
+  !
+  nsym = copy_sym ( nsym_, sym )
+  invsym = all ( s(:,:,nsym/2+1) == -s(:,:,1) )
+  CALL inverse_s ( )
+  CALL s_axis_to_cart ( )
+  !
+END SUBROUTINE remove_sym
+!
+
+INTEGER FUNCTION mcm(i,j)
+  ! returns minimum common multiple of two integers
+  ! if i=0, returns j, and vice versa; if i<0 or j<0, returns -1
+  INTEGER, INTENT(IN) :: i,j
+  INTEGER :: n1,n2,k
+  
+  IF ( i < 0 .OR. j < 0 ) THEN
+     mcm = -1
+  ELSE IF ( i == 0 .AND. j == 0 ) THEN
+     mcm = 0
+  ELSE
+     n1 = MIN (i,j)
+     n2 = MAX (i,j)
+     DO k=1,n1
+        mcm = k*n2 
+        IF ( MOD( mcm, n1 ) == 0 ) RETURN
+     END DO
+     mcm = n2
+  END IF
+  
+END FUNCTION mcm
 
 END MODULE symm_base

@@ -1,5 +1,5 @@
 !
-! Copyright (C) 2001-2009 Quantum ESPRESSO group
+! Copyright (C) 2001-2016 Quantum ESPRESSO group
 ! This file is distributed under the terms of the
 ! GNU General Public License. See the file `License'
 ! in the root directory of the present distribution,
@@ -21,7 +21,7 @@ PROGRAM do_dos
   USE constants,  ONLY : rytoev
   USE ener,       ONLY : ef, ef_up, ef_dw 
   USE kinds,      ONLY : DP
-  USE klist,      ONLY : xk, wk, degauss, ngauss, lgauss, nks, nkstot,&
+  USE klist,      ONLY : xk, wk, degauss, ngauss, lgauss, ltetra, nks, nkstot,&
                          two_fermi_energies
   USE wvfct,      ONLY : nbnd, et
   USE lsda_mod,   ONLY : lsda, nspin
@@ -30,8 +30,9 @@ PROGRAM do_dos
   USE mp_world,   ONLY : world_comm
   USE mp_global,     ONLY : mp_startup
   USE environment,   ONLY : environment_start, environment_end
-  USE ktetra,     ONLY : ntetra, tetra, ltetra
   ! following modules needed for generation of tetrahedra
+  USE ktetra,     ONLY : tetra, tetra_type, tetra_init, tetra_dos_t, &
+       opt_tetra_init, opt_tetra_dos_t
   USE symm_base,  ONLY : nsym, s, time_reversal, t_rev
   USE cell_base,  ONLY : at, bg
   USE start_k,    ONLY : k1, k2, k3, nk1, nk2, nk3
@@ -48,8 +49,6 @@ PROGRAM do_dos
 
   NAMELIST /dos/ outdir, prefix, fildos, degauss, ngauss, &
        Emin, Emax, DeltaE
-  REAL(DP) :: ehomo, elumo
-  LOGICAL  :: lgauss_tmp, ltetra_tmp, lfixed = .false.
   !
   ! initialise environment
   !
@@ -108,22 +107,35 @@ PROGRAM do_dos
         ltetra=.false.
         lgauss=.true.
      ELSEIF (ltetra) THEN
-        WRITE( stdout,'(/5x,"Tetrahedra used"/)')
-        IF ( .NOT. allocated(tetra) ) THEN
-           ALLOCATE ( tetra(ntetra,4) )
-           ! info on tetrahedra contained in variable "tetra" is no longer
-           ! written to file and must be rebuilt
-           IF ( lsda ) THEN
-              ! in the lsda case, only the first half of the k points
-              ! are needed in the input of "tetrahedra"
-              nks2 = nks/2
+        !
+        ! info on tetrahedra is no longer saved to file and must be rebuilt
+        !
+        ! workaround for old xml file, to be removed
+        IF ( ALLOCATED ( tetra ) ) DEALLOCATE (tetra)
+        ! in the lsda case, only the first half of the k points
+        ! are needed in the input of "tetrahedra"
+        !
+        IF ( lsda ) THEN
+           nks2 = nks/2
+        ELSE
+           nks2 = nks
+        END IF
+        !
+        IF(tetra_type == 0) THEN
+           WRITE( stdout,'(/5x,"Tetrahedra used"/)')
+           CALL tetra_init ( nsym, s, time_reversal, t_rev, at, bg, nks, &
+                k1,k2,k3, nk1,nk2,nk3, nks2, xk )
+        ELSE
+           IF(tetra_type == 1) THEN 
+              WRITE( stdout,'(/5x,"Linear tetrahedron method is used"/)')
            ELSE
-              nks2 = nks
+              WRITE( stdout,'(/5x,"Optimized tetrahedron method used"/)')
            END IF
-           CALL tetrahedra ( nsym, s, time_reversal, t_rev, at, bg, nks, &
-                k1,k2,k3, nk1,nk2,nk3, nks2, xk, wk, ntetra, tetra )
+           CALL opt_tetra_init(nsym, s, time_reversal, t_rev, at, bg, nks, &
+                &                k1, k2, k3, nk1, nk2, nk3, nks2, xk, 1)
            !
         END IF
+        !
      ELSEIF (lgauss) THEN
         WRITE( stdout,'(/5x,"Gaussian broadening (read from file): ",&
              &        "ngauss,degauss=",i4,f12.6/)') ngauss,degauss
@@ -134,7 +146,6 @@ PROGRAM do_dos
              &        "ngauss,degauss=",i4,f12.6/)') ngauss,degauss
         ltetra=.false.
         lgauss=.true.
-        lfixed=.true.
      ENDIF
      !
      ! find min and max energy for plot (band extrema if not set)
@@ -158,19 +169,7 @@ PROGRAM do_dos
      !
      IF ( fildos == ' ' ) fildos = trim(prefix)//'.dos'
      OPEN (unit = 4, file = fildos, status = 'unknown', form = 'formatted')
-     IF (lfixed) THEN
-        lgauss_tmp = lgauss
-        ltetra_tmp = ltetra
-        lgauss = .false.
-        ltetra = .false.
-
-        CALL get_homo_lumo(ehomo, elumo)
-
-        lgauss = lgauss_tmp
-        ltetra = ltetra_tmp
-
-        WRITE(fermi_str,'(" EFermi = ",f7.3," eV")') ehomo*rytoev
-     ELSE IF ( two_fermi_energies ) THEN
+     IF ( two_fermi_energies ) THEN
         WRITE(fermi_str,'(" EFermi = ",2f7.3," eV")') ef_up*rytoev, ef_dw*rytoev
      ELSE
         WRITE(fermi_str,'(" EFermi = ",f7.3," eV")') ef*rytoev
@@ -186,7 +185,11 @@ PROGRAM do_dos
      DO n= 1, ndos
         E = Emin + (n - 1) * DeltaE
         IF (ltetra) THEN
-           CALL dos_t(et,nspin,nbnd, nks,ntetra,tetra, E, DOSofE)
+           IF (tetra_type == 0) THEN
+              CALL tetra_dos_t( et, nspin, nbnd, nks, E, DOSofE)
+           ELSE
+              CALL opt_tetra_dos_t( et, nspin, nbnd, nks, E, DOSofE)
+           END IF
         ELSE
            CALL dos_g(et,nspin,nbnd, nks,wk,degauss,ngauss, E, DOSofE)
         ENDIF

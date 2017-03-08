@@ -16,10 +16,11 @@ PROGRAM do_projwfc
   ! See files INPUT_PROJWFC.* in Doc/ directory for usage
   ! IMPORTANT: since v.5 namelist name is &projwfc and no longer &inputpp
   !
+  USE parameters, ONLY : npk
   USE io_global,  ONLY : stdout, ionode, ionode_id
   USE constants,  ONLY : rytoev
   USE kinds,      ONLY : DP
-  USE klist,      ONLY : degauss, ngauss, lgauss
+  USE klist,      ONLY : nks, nkstot, xk, degauss, ngauss, lgauss, ltetra
   USE io_files,   ONLY : nd_nmbr, prefix, tmp_dir
   USE noncollin_module, ONLY : noncolin
   USE mp,         ONLY : mp_bcast
@@ -31,14 +32,21 @@ PROGRAM do_projwfc
   USE basis,      ONLY : natomwfc
   USE control_flags, ONLY: twfcollect
   USE paw_variables, ONLY : okpaw
+  ! following modules needed for generation of tetrahedra
+  USE ktetra,     ONLY : tetra, tetra_type, opt_tetra_init
+  USE symm_base,  ONLY : nsym, s, time_reversal, t_rev
+  USE cell_base,  ONLY : at, bg
+  USE start_k,    ONLY : k1, k2, k3, nk1, nk2, nk3
+  USE lsda_mod,   ONLY : lsda
   !
   IMPLICIT NONE
   !
   CHARACTER(LEN=256), EXTERNAL :: trimcheck
   !
   CHARACTER (len=256) :: filpdos, filproj, outdir
-  REAL (DP)      :: Emin, Emax, DeltaE, degauss1, ef_0
-  INTEGER :: ngauss1, ios
+  REAL (DP), allocatable :: xk_collect(:,:)
+  REAL (DP) :: Emin, Emax, DeltaE, degauss1, ef_0
+  INTEGER :: nks2, ngauss1, ios
   LOGICAL :: lwrite_overlaps, lbinary_data
   LOGICAL :: lsym, kresolveddos, tdosinboxes, plotboxes, pawproj
   INTEGER, PARAMETER :: N_MAX_BOXES = 999
@@ -145,15 +153,46 @@ PROGRAM do_projwfc
   !
   CALL openfil_pp ( )
   !
-  !   decide Gaussian broadening
+  !   Tetrahedron method
   !
-  IF (degauss1/=0.d0) THEN
+  IF ( ltetra .AND. tetra_type == 1 .OR. tetra_type == 2 ) THEN
+     !
+     ! info on tetrahedra is no longer saved to file and must be rebuilt
+     !
+     ! workaround for old xml file, to be removed
+     IF(ALLOCATED(tetra)) DEALLOCATE(tetra)
+     !
+     ! in the lsda case, only the first half of the k points
+     ! are needed in the input of "tetrahedra"
+     !
+     IF ( lsda ) THEN
+        nks2 = nkstot / 2
+     ELSE
+        nks2 = nkstot
+     END IF
+     IF(tetra_type == 1) THEN
+        WRITE( stdout,'(/5x,"Linear tetrahedron method (read from file) ")')
+     ELSE
+        WRITE( stdout,'(/5x,"Optimized tetrahedron method (read from file) ")')
+     END IF
+     !
+     ! not sure this is needed
+     !
+     ALLOCATE(xk_collect(3,nkstot))
+     CALL poolcollect(3, nks, xk, nkstot, xk_collect)
+     !
+     CALL opt_tetra_init(nsym, s, time_reversal, t_rev, at, bg, npk, k1,k2,k3, &
+          &              nk1, nk2, nk3, nks2, xk_collect, 1)
+     !
+     DEALLOCATE(xk_collect)
+     !
+  ELSE IF (degauss1/=0.d0) THEN
      degauss=degauss1
      ngauss =ngauss1
      WRITE( stdout,'(/5x,"Gaussian broadening (read from input): ",&
           &        "ngauss,degauss=",i4,f12.6/)') ngauss,degauss
      lgauss=.true.
-  ELSEIF (lgauss) THEN
+  ELSE IF (lgauss) THEN
      WRITE( stdout,'(/5x,"Gaussian broadening (read from file): ",&
           &        "ngauss,degauss=",i4,f12.6/)') ngauss,degauss
   ELSE
@@ -856,6 +895,7 @@ SUBROUTINE projwave_nc(filproj, lsym, lwrite_ovp, lbinary, ef_0 )
       CALL weights()
 !   write(6,*) 'ef_0 = ', ef_0
 !   write(6,*) wg
+      ef_0 = ef_0 / rytoev
       eband_tot = 0.d0
       ALLOCATE (eband_proj(natomwfc))
       eband_proj = 0.d0
@@ -1075,7 +1115,6 @@ SUBROUTINE projwave_nc(filproj, lsym, lwrite_ovp, lbinary, ef_0 )
 
 !-- AlexS
    IF ( lforcet ) THEN
-     ef_0 = ef_0 / rytoev     
      DO i = 1, nbnd
          psum = wg(i,ik) * (et(i,ik)-ef_0)
          eband_tot = eband_tot + psum
@@ -1221,7 +1260,7 @@ ENDIF
              nlmchi(nwfc)%n, nlmchi(nwfc)%jj, nlmchi(nwfc)%l,   &
              compute_mj(nlmchi(nwfc)%jj,nlmchi(nwfc)%l,nlmchi(nwfc)%m)
         ENDDO
-1000    FORMAT (5x,"state #",i3,": atom ",i3," (",a3,"), wfc ",i2, &
+1000    FORMAT (5x,"state #",i4,": atom ",i3," (",a3,"), wfc ",i2, &
                    " (j=",f3.1," l=",i1," m_j=",f4.1,")")
      ELSE
         DO nwfc = 1, natomwfc
@@ -1230,7 +1269,7 @@ ENDIF
              nlmchi(nwfc)%n, nlmchi(nwfc)%l, nlmchi(nwfc)%m, &
              0.5d0-int(nlmchi(nwfc)%ind/(2*nlmchi(nwfc)%l+2))
         ENDDO
-1500    FORMAT (5x,"state #",i3,": atom ",i3," (",a3,"), wfc ",i2, &
+1500    FORMAT (5x,"state #",i4,": atom ",i3," (",a3,"), wfc ",i2, &
                    " (l=",i1," m=",i2," s_z=",f4.1,")")
      ENDIF
      !
@@ -1260,10 +1299,10 @@ ENDIF
            !
            ! fancy (?!?) formatting
            !
-           WRITE( stdout, '(5x,"psi = ",5(f5.3,"*[#",i3,"]+"))') &
+           WRITE( stdout, '(5x,"psi = ",5(f5.3,"*[#",i4,"]+"))') &
                 (proj1 (i), idx(i), i = 1, min(5,nwfc))
            DO j = 1, (nwfc-1)/5
-              WRITE( stdout, '(10x,"+",5(f5.3,"*[#",i3,"]+"))') &
+              WRITE( stdout, '(10x,"+",5(f5.3,"*[#",i4,"]+"))') &
                    (proj1 (i), idx(i), i = 5*j+1, min(5*(j+1),nwfc))
            ENDDO
            psum = SUM ( proj(1:natomwfc, ibnd, ik) )
@@ -2129,12 +2168,12 @@ SUBROUTINE pprojwave( filproj, lsym, lwrite_ovp, lbinary )
      IF (filproj/=' ') THEN
         DO is=1,nspin
            IF (nspin==2) THEN
-              IF (is==1) filename=trim(filproj)//'.up'
-              IF (is==2) filename=trim(filproj)//'.down'
+              IF (is==1) filename=trim(filproj)//'.projwfc_up'
+              IF (is==2) filename=trim(filproj)//'.projwfc_down'
               nksinit=(nkstot/2)*(is-1)+1
               nkslast=(nkstot/2)*is
            ELSE
-              filename=trim(filproj)
+              filename=trim(filproj)//'.projwfc_up'
               nksinit=1
               nkslast=nkstot
            ENDIF
@@ -2143,9 +2182,9 @@ SUBROUTINE pprojwave( filproj, lsym, lwrite_ovp, lbinary )
                 dfftp%nr1, dfftp%nr2, dfftp%nr3, nat, ntyp, ibrav, celldm, at, gcutm, dual, &
                 ecutwfc, nkstot/nspin,nbnd,natomwfc)
            DO nwfc = 1, natomwfc
-              WRITE(iunproj,'(2i5,a3,3i5)') &
+              WRITE(iunproj,'(2i5,1x,a4,1x,a2,1x,3i5)') &
                   nwfc, nlmchi(nwfc)%na, atm(ityp(nlmchi(nwfc)%na)), &
-                  nlmchi(nwfc)%n, nlmchi(nwfc)%l, nlmchi(nwfc)%m
+                  nlmchi(nwfc)%els, nlmchi(nwfc)%n, nlmchi(nwfc)%l, nlmchi(nwfc)
               DO ik=nksinit,nkslast
                  DO ibnd=1,nbnd
                    WRITE(iunproj,'(2i8,f20.10)') ik,ibnd, &

@@ -100,13 +100,12 @@ SUBROUTINE iosys()
   USE fft_base, ONLY : dfftp
   USE fft_base, ONLY : dffts
   !
-  USE klist,         ONLY : lgauss, ngauss, two_fermi_energies, &
+  USE klist,         ONLY : ltetra, lgauss, ngauss, two_fermi_energies, &
                             smearing_          => smearing, &
                             degauss_           => degauss, &
                             tot_charge_        => tot_charge, &
                             tot_magnetization_ => tot_magnetization
-  !
-  USE ktetra,        ONLY : ltetra
+  USE ktetra,        ONLY : tetra_type
   USE start_k,       ONLY : init_start_k
   !
   USE ldaU,          ONLY : Hubbard_U_     => hubbard_u, &
@@ -191,7 +190,7 @@ SUBROUTINE iosys()
 
   !
   USE symm_base, ONLY : no_t_rev_ => no_t_rev, nofrac, allfrac, &
-                        nosym_ => nosym, nosym_evc_=> nosym_evc
+                        nosym_ => nosym, nosym_evc_=> nosym_evc, spacegroup
   !
   USE bfgs_module,   ONLY : bfgs_ndim_        => bfgs_ndim, &
                             trust_radius_max_ => trust_radius_max, &
@@ -546,11 +545,11 @@ SUBROUTINE iosys()
   tfixed_occ = .false.
   ltetra     = .false.
   lgauss     = .false.
+  ngauss     = 0
   !
   SELECT CASE( trim( occupations ) )
   CASE( 'fixed' )
      !
-     ngauss = 0
      IF ( degauss /= 0.D0 ) THEN
         CALL errore( ' iosys ', &
                    & ' fixed occupations, gauss. broadening ignored', -1 )
@@ -583,18 +582,18 @@ SUBROUTINE iosys()
      !
   CASE( 'tetrahedra' )
      !
-     ! replace "errore" with "infomsg" in the next line if you really want
-     ! to perform a calculation with forces using tetrahedra 
-     !
-     IF( lforce ) CALL errore( 'iosys', &
-        'force calculation with tetrahedra not recommanded: use smearing',1)
-     !
-     ! as above, for stress
-     !
-     IF( lstres ) CALL errore( 'iosys', &
-        'stress calculation with tetrahedra not recommanded: use smearing',1)
-     ngauss = 0
      ltetra = .true.
+     tetra_type = 0
+     !
+  CASE( 'tetrahedra_lin', 'tetrahedra-lin')
+     !
+     ltetra = .true.
+     tetra_type = 1
+     !
+  CASE('tetrahedra_opt', 'tetrahedra-opt')
+     !
+     ltetra = .true.
+     tetra_type = 2
      !
   CASE( 'from_input' )
      !
@@ -604,10 +603,16 @@ SUBROUTINE iosys()
   CASE DEFAULT
      !
      CALL errore( 'iosys','occupations ' // trim( occupations ) // &
-                & 'not implemented', 1 )
+                & ' not implemented', 1 )
      !
   END SELECT
   !
+  IF( ltetra ) THEN
+     IF( lforce ) CALL infomsg( 'iosys', &
+       'BEWARE:  force calculation with tetrahedra (not recommanded)')
+     IF( lstres ) CALL infomsg( 'iosys', &
+       'BEWARE: stress calculation with tetrahedra (not recommanded)')
+  END IF
   IF( nbnd < 1 ) &
      CALL errore( 'iosys', 'nbnd less than 1', nbnd )
   !
@@ -1305,6 +1310,7 @@ SUBROUTINE iosys()
                                                    &number',1 )
      CALL sup_spacegroup(rd_pos,sp_pos,rd_for,rd_if_pos,space_group,nat,&
               uniqueb,rhombohedral,origin_choice,ibrav_sg)
+     spacegroup = space_group
      IF (ibrav==-1) THEN
         ibrav=ibrav_sg
      ELSEIF (ibrav /= ibrav_sg) THEN
@@ -1557,7 +1563,7 @@ SUBROUTINE iosys()
      ! The next two lines have been moved before the call to read_config_from_file:
      !      at_old    = at
      !      omega_old = omega
-     IF ( cell_factor_ <= 0.D0 ) cell_factor_ = 1.2D0
+     IF ( cell_factor_ <= 0.0_dp ) cell_factor_ = 2.0_dp
      !
      IF ( cmass <= 0.D0 ) &
         CALL errore( 'iosys', &

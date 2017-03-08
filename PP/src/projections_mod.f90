@@ -35,6 +35,7 @@ MODULE projections
       INTEGER :: na, nt, n, n1, n2, l, m, ind
       REAL(dp) :: jj, fact(2)
       REAL(dp), EXTERNAL :: spinor
+      CHARACTER(LEN=2) :: spdf
       !
       ALLOCATE (nlmchi(natomwfc))
       nwfc=0
@@ -44,6 +45,7 @@ MODULE projections
          n2 = 0
          DO n = 1, upf(nt)%nwfc
             IF (upf(nt)%oc (n) >= 0.d0) THEN
+               spdf = upf(nt)%els(n)
                l = upf(nt)%lchi (n)
                lmax_wfc = max (lmax_wfc, l )
                IF (lspinorb) THEN
@@ -60,9 +62,9 @@ MODULE projections
                            nlmchi(nwfc)%n  =  n
                            nlmchi(nwfc)%l  =  l
                            nlmchi(nwfc)%m  =  m
-                           nlmchi(nwfc)%ind  =  ind
-                           nlmchi(nwfc)%jj  =  jj
-                           nlmchi(nwfc)%els = upf(nt)%els(n)
+                           nlmchi(nwfc)%ind = ind
+                           nlmchi(nwfc)%jj  = jj
+                           nlmchi(nwfc)%els = spdf
                         ENDIF
                      ENDDO
                   ELSE
@@ -81,9 +83,9 @@ MODULE projections
                                  nlmchi(nwfc)%n  =  n2
                                  nlmchi(nwfc)%l  =  l
                                  nlmchi(nwfc)%m  =  m
-                                 nlmchi(nwfc)%ind  =  ind
-                                 nlmchi(nwfc)%jj  =  jj
-                                 nlmchi(nwfc)%els = upf(nt)%els(n)
+                                 nlmchi(nwfc)%ind = ind
+                                 nlmchi(nwfc)%jj  = jj
+                                 nlmchi(nwfc)%els = spdf
                               ENDIF
                            ENDDO
                         ENDIF
@@ -98,7 +100,7 @@ MODULE projections
                      nlmchi(nwfc)%m  =  m
                      nlmchi(nwfc)%ind=  m
                      nlmchi(nwfc)%jj =  0.d0
-                     nlmchi(nwfc)%els = upf(nt)%els(n)
+                     nlmchi(nwfc)%els=  spdf
                   ENDDO
                   IF ( noncolin) THEN
                      DO m = 1, 2 * l + 1
@@ -109,7 +111,7 @@ MODULE projections
                         nlmchi(nwfc)%m  =  m
                         nlmchi(nwfc)%ind=  m+2*l+1
                         nlmchi(nwfc)%jj =  0.d0
-                        nlmchi(nwfc)%els = upf(nt)%els(n)
+                        nlmchi(nwfc)%els = spdf
                      END DO
                   ENDIF
                ENDIF

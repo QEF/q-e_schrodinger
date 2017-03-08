@@ -34,9 +34,7 @@ SUBROUTINE init_run()
   USE wavefunctions_module, ONLY : evc
 #if defined(__HDF5)
   USE hdf5_qe, ONLY : initialize_hdf5
-  USE wavefunctions_module,ONLY : evc
 #endif
-
   !
   IMPLICIT NONE
   !
@@ -50,9 +48,6 @@ SUBROUTINE init_run()
   ! ... determine the data structure for fft arrays
   !
   CALL data_structure( gamma_only )
-  !
-  IF ( dft_is_hybrid() .AND. dtgs%have_task_groups ) &
-     CALL errore ('init_run', '-ntg option incompatible with EXX',1)
   !
   ! ... print a summary and a memory estimate before starting allocating
   !
@@ -116,9 +111,6 @@ SUBROUTINE init_run()
   CALL initialize_hdf5()
 #endif 
   !
-#if defined __HDF5
-  CALL initialize_hdf5()
-#endif
   CALL wfcinit()
   !
   IF(use_wannier) CALL wannier_init()
