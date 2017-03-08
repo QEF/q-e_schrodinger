@@ -6,7 +6,7 @@
 # of the License. See the file `License' in the root directory
 # of the present distribution.
 
-# QE Bundle v1.0, custom for Schrödinger 
+# QE Bundle v2.0, custom for Schrödinger 
 
 include make.inc
 

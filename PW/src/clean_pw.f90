@@ -28,7 +28,7 @@ SUBROUTINE clean_pw( lflag )
                                    eigts1, eigts2, eigts3
   USE gvecs,                ONLY : nls, nlsm
   USE fixed_occ,            ONLY : f_inp
-  USE ktetra,               ONLY : tetra
+  USE ktetra,               ONLY : deallocate_tetra
   USE klist,                ONLY : deallocate_igk
   USE gvect,                ONLY : ig_l2g
   USE vlocal,               ONLY : strf, vloc
@@ -63,6 +63,9 @@ SUBROUTINE clean_pw( lflag )
   USE pseudo_types,         ONLY : deallocate_pseudo_upf
   USE bp,                   ONLY : deallocate_bp_efield
   USE exx,                  ONLY : deallocate_exx
+  !
+  USE control_flags,        ONLY : ts_vdw
+  USE tsvdw_module,         ONLY : tsvdw_finalize
   !
   IMPLICIT NONE
   !
@@ -100,8 +103,9 @@ SUBROUTINE clean_pw( lflag )
   !
   CALL deallocate_ldaU ( lflag )
   !
+  CALL deallocate_tetra ( )
+  !
   IF ( ALLOCATED( f_inp ) .and. lflag )      DEALLOCATE( f_inp )
-  IF ( ALLOCATED( tetra ) )      DEALLOCATE( tetra )
   !
   ! ... arrays allocated in ggen.f90
   !
@@ -206,6 +210,8 @@ SUBROUTINE clean_pw( lflag )
   if (use_wannier) CALL wannier_clean()
   !
   CALL deallocate_exx ( ) 
+  !
+  IF (ts_vdw) CALL tsvdw_finalize()
   !
   CALL plugin_clean( lflag )
   !

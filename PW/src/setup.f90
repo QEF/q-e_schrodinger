@@ -49,7 +49,7 @@ SUBROUTINE setup()
   USE fft_base,           ONLY : smap
   USE gvecs,              ONLY : doublegrid, gcutms, dual
   USE klist,              ONLY : xk, wk, nks, nelec, degauss, lgauss, &
-                                 lxkcry, nkstot, &
+                                 ltetra, lxkcry, nkstot, &
                                  nelup, neldw, two_fermi_energies, &
                                  tot_charge, tot_magnetization
   USE lsda_mod,           ONLY : lsda, nspin, current_spin, isk, &
@@ -58,10 +58,11 @@ SUBROUTINE setup()
   USE electrons_base,     ONLY : set_nelup_neldw
   USE start_k,            ONLY : nks_start, xk_start, wk_start, &
                                  nk1, nk2, nk3, k1, k2, k3
-  USE ktetra,             ONLY : tetra, ntetra, ltetra
+  USE ktetra,             ONLY : tetra_type, opt_tetra_init, tetra_init
   USE symm_base,          ONLY : s, t_rev, irt, nrot, nsym, invsym, nosym, &
                                  d1,d2,d3, time_reversal, sname, set_sym_bl, &
-                                 find_sym, inverse_s, no_t_rev, allfrac
+                                 find_sym, inverse_s, no_t_rev &
+                                 , allfrac, remove_sym
   USE wvfct,              ONLY : nbnd, nbndx
   USE control_flags,      ONLY : tr2, ethr, lscf, lmd, david, lecrpa,  &
                                  isolve, niter, noinv, ts_vdw, &
@@ -550,8 +551,9 @@ SUBROUTINE setup()
      !
      ! ... eliminate rotations that are not symmetry operations
      !
-     CALL find_sym ( nat, tau, ityp, dfftp%nr1, dfftp%nr2, dfftp%nr3, &
-                  magnetic_sym, m_loc, monopole )
+     CALL find_sym ( nat, tau, ityp, magnetic_sym, m_loc, monopole )
+     !
+     IF ( .NOT. allfrac ) CALL remove_sym ( dfftp%nr1, dfftp%nr2, dfftp%nr3 )
      !
   END IF
   !
@@ -575,8 +577,6 @@ SUBROUTINE setup()
            .AND. .NOT. ( calc == 'mm' .OR. calc == 'nm' ) ) &
        CALL infomsg( 'setup', 'Dynamics, you should have no symmetries' )
   !
-  ntetra = 0
-  !
   IF ( lbands ) THEN
      !
      ! ... if calculating bands, we read the Fermi energy
@@ -595,12 +595,13 @@ SUBROUTINE setup()
      !
      ! ... Calculate quantities used in tetrahedra method
      !
-     ntetra = 6 * nk1 * nk2 * nk3
-     !
-     ALLOCATE( tetra( 4, ntetra ) )
-     !
-     CALL tetrahedra( nsym, s, time_reversal, t_rev, at, bg, npk, k1, k2, k3, &
-          nk1, nk2, nk3, nkstot, xk, wk, ntetra, tetra )
+     IF (tetra_type == 0) then
+        CALL tetra_init( nsym, s, time_reversal, t_rev, at, bg, npk, k1,k2,k3, &
+             nk1, nk2, nk3, nkstot, xk )
+     ELSE 
+        CALL opt_tetra_init(nsym, s, time_reversal, t_rev, at, bg, npk, &
+             k1, k2, k3, nk1, nk2, nk3, nkstot, xk, 1)
+     END IF
      !
   END IF
 #if defined(__XSD) 

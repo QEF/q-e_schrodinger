@@ -8,7 +8,7 @@
 !
 !-----------------------------------------------------------------------
 SUBROUTINE punch_plot (filplot, plot_num, sample_bias, z, dz, &
-     emin, emax, kpoint, kband, spin_component, lsign, epsilon)
+     emin, emax, kpoint, kband, spin_component, lsign)
   !-----------------------------------------------------------------------
   !
   !     This subroutine writes on output several quantities
@@ -40,11 +40,12 @@ SUBROUTINE punch_plot (filplot, plot_num, sample_bias, z, dz, &
   USE paw_postproc,     ONLY : PAW_make_ae_charge
 
   IMPLICIT NONE
-  CHARACTER(len=*) :: filplot
-  INTEGER :: kpoint, kband, spin_component, plot_num
-  LOGICAL :: lsign
-  REAL(DP) :: sample_bias, dummy
-  REAL(DP) :: emin, emax, z, dz, charge, epsilon
+  CHARACTER(len=*), INTENT(IN) :: filplot
+  INTEGER, INTENT(IN) :: plot_num, kpoint, kband, spin_component
+  LOGICAL, INTENT(IN) :: lsign
+  REAL(DP), INTENT(IN) :: sample_bias, z, dz, &
+      emin, emax
+  REAL(DP) :: dummy, charge
   INTEGER :: is, ipol, istates
 #if defined(__MPI)
   ! auxiliary vector (parallel case)
@@ -60,10 +61,13 @@ SUBROUTINE punch_plot (filplot, plot_num, sample_bias, z, dz, &
 #endif
 
   WRITE( stdout, '(/5x,"Calling punch_plot, plot_num = ",i3)') plot_num
-  IF (plot_num == 7 ) &
-     WRITE( stdout, '(/5x,"Plotting k_point = ",i3,"  band =", i3  )') &
+  IF (plot_num == 3 ) &
+     WRITE(stdout, '(/5x,"Energy =", f10.5, " eV, broadening =", f10.5, "eV" )') &
+                       emin * rytoev, emax * rytoev
+  IF (plot_num == 7) &
+      WRITE( stdout, '(/5x,"Plotting k_point = ",i3,"  band =", i3  )') &
                                                    kpoint, kband
-  IF (plot_num == 7 .and. noncolin .and. spin_component /= 0 ) &
+  IF ((plot_num == 7) .and. noncolin .and. spin_component /= 0 ) &
      WRITE( stdout, '(/5x,"Plotting spin magnetization ipol = ",i3)') &
                                                           spin_component
   !
@@ -118,10 +122,12 @@ SUBROUTINE punch_plot (filplot, plot_num, sample_bias, z, dz, &
 
   ELSEIF (plot_num == 3) THEN
      !
-     !       The local density of states at e_fermi on output
+     !       The local density of states at emin, with broadening emax
      !
+     WRITE (title, '(" Energy = ",f8.4," eV, ", "broadening = ",f8.4," eV")') &
+                   emin * rytoev, emax * rytoev
      IF (noncolin) CALL errore('punch_plot','not implemented yet',1)
-     CALL local_dos (1, lsign, kpoint, kband, spin_component, emin, emax, raux)
+     CALL local_dos(1, lsign, kpoint, kband, spin_component, emin, emax, raux)
 
   ELSEIF (plot_num == 4) THEN
      !
@@ -153,6 +159,7 @@ SUBROUTINE punch_plot (filplot, plot_num, sample_bias, z, dz, &
      ENDIF
 
   ELSEIF (plot_num == 7) THEN
+     WRITE (title, '("k_point ",i4,", band ",i4)') kpoint ,kband
 
      IF (noncolin) THEN
         IF (spin_component==0) THEN
@@ -235,8 +242,9 @@ SUBROUTINE punch_plot (filplot, plot_num, sample_bias, z, dz, &
 
   ELSEIF (plot_num == 14 .or. plot_num == 15 .or. plot_num == 16 ) THEN
 
-     ipol = plot_num - 13
-     CALL polarization ( spin_component, ipol, epsilon, raux )
+     CALL errore('punch_plot','polarization no longer implemented',1)
+     ! ipol = plot_num - 13
+     ! CALL polarization ( spin_component, ipol, epsilon, raux )
 
   ELSEIF (plot_num == 17 .or. plot_num == 21) THEN
      WRITE(stdout, '(7x,a)') "Reconstructing all-electron valence charge."
@@ -306,53 +314,3 @@ SUBROUTINE punch_plot (filplot, plot_num, sample_bias, z, dz, &
   DEALLOCATE (raux)
   RETURN
 END SUBROUTINE punch_plot
-
-SUBROUTINE polarization ( spin_component, ipol, epsilon, raux )
-  !
-  USE kinds,     ONLY : DP
-  USE constants, ONLY : fpi
-  USE fft_base,  ONLY: dfftp
-  USE fft_interfaces, ONLY : fwfft, invfft
-  USE lsda_mod,  ONLY : nspin
-  USE gvect,     ONLY : gstart, ngm, nl, nlm, g, gg
-  USE scf, ONLY: rho
-  USE control_flags,    ONLY : gamma_only
-  USE wavefunctions_module,  ONLY: psic
-  !
-  IMPLICIT NONE
-  INTEGER :: spin_component, ipol, ig
-  REAL(DP) :: epsilon, raux ( dfftp%nnr)
-  !
-  IF (ipol < 1 .or. ipol > 3) CALL errore('polarization', &
-       'wrong component',1)
-  !
-  IF (spin_component == 0) THEN
-     IF (nspin == 1 .or. nspin == 4 ) THEN
-        psic(:) = cmplx(rho%of_r(:,1), 0.d0,kind=DP)
-     ELSEIF (nspin == 2) THEN
-        psic(:) = cmplx(rho%of_r(:,1) + rho%of_r(:,2), 0.d0,kind=DP)
-     ENDIF
-  ELSE
-     IF (spin_component > nspin .or. spin_component < 1) &
-          CALL errore('polarization', 'wrong spin component',1)
-     psic(:) = cmplx(rho%of_r(:,spin_component), 0.d0,kind=DP)
-  ENDIF
-  !
-  !   transform to G space
-  !
-  CALL fwfft ('Dense', psic, dfftp)
-  !
-  IF (gstart == 2) psic (1) = (epsilon - 1.d0) / fpi
-  DO ig = gstart, ngm
-     psic (nl (ig) ) = psic (nl (ig) ) * g (ipol, ig) / gg (ig) &
-       / (0.d0, 1.d0)
-     IF (gamma_only) psic (nlm(ig) ) = conjg ( psic (nl (ig) ) )
-  ENDDO
-  !
-  CALL invfft ('Dense', psic, dfftp)
-  !
-  raux (:) =  dble (psic (:) )
-  !
-  RETURN
-  !
-END SUBROUTINE polarization

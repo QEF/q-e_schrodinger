@@ -42,6 +42,7 @@ MODULE klist
        ngauss              ! type of smearing technique
   LOGICAL :: &
        lgauss,         &! if .TRUE.: use gaussian broadening
+       ltetra,         &! if .TRUE.: use tetrahedra
        lxkcry=.false., &! if .TRUE.:k-pnts in cryst. basis accepted in input
        two_fermi_energies ! if .TRUE.: nelup and neldw set ef_up and ef_dw
                           ! separately
@@ -105,23 +106,6 @@ MODULE lsda_mod
        isk(npk)          ! for each k-point: 1=spin up, 2=spin down
   !
 END MODULE lsda_mod
-!
-!
-MODULE ktetra
-  !
-  ! ... The variables for the tetrahedron method
-  !
-  SAVE
-  !
-  INTEGER :: &
-       ntetra            ! number of tetrahedra
-  INTEGER, ALLOCATABLE :: &
-       tetra(:,:)        ! index of k-points in a given tetrahedron
-                         ! shape (4,ntetra)
-  LOGICAL :: &
-       ltetra            ! if .TRUE.: use tetrahedron method
-  !
-END MODULE ktetra
 !
 !
 MODULE rap_point_group
@@ -371,6 +355,9 @@ MODULE extfield
       eopreg,        &! amplitude of the inverse region (0<eopreg<1)
       eamp,          &! field amplitude (in a.u.) (1 a.u. = 51.44 10^11 V/m)
       etotefield,    &! energy correction due to the field
+      el_dipole,     &! electronic_dipole used when dipole correction is on
+      ion_dipole,    &! ionic_dipole      used when dipole correction is on
+      tot_dipole,    &! total dipole      used when dipole correction is on
       ! TB
       zmon,          &! position of monopole plane
       block_1,       &! blocking potential
