@@ -5,8 +5,6 @@
 # as published by the Free Software Foundation; either version 2
 # of the License. See the file `License' in the root directory
 # of the present distribution.
-#
-# Maintainer: Filippo Spiga (filippo.spiga@quantum-espresso.org)
 
 include ./ENVIRONMENT
 
