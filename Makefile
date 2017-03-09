@@ -17,10 +17,12 @@ default :
 	@echo ' '
 	@echo 'where target identifies one or multiple CORE PACKAGES:'
 	@echo '  pw           basic code for scf, structure optimization, MD'
+	@echo '  ph           phonon code, Gamma-only and third-order derivatives'
 	@echo '  pwcond       ballistic conductance'
 	@echo '  neb          code for Nudged Elastic Band method'
 	@echo '  pp           postprocessing programs'
 	@echo '  pwall        same as "make pw pp pwcond neb"'
+	@echo '  tddfpt       time dependent dft code'
 	@echo '  ld1          utilities for pseudopotential generation'
 	@echo '  upf          utilities for pseudopotential conversion'
 	@echo '  all          same as "make pwall ld1 upf"'
@@ -56,18 +58,18 @@ pw-lib : bindir libfft libla mods liblapack libs libiotk
 #	( cd CPV ; $(MAKE) TLDEPS= all || exit 1) ; fi
 
 ### This target is not supported in this version
-#ph : bindir libfft libla mods libs pw lrmods
-#	if test -d PHonon; then \
-#	(cd PHonon; $(MAKE) all || exit 1) ; fi
+ph : bindir libfft libla mods libs pw lrmods
+	if test -d PHonon; then \
+	(cd PHonon; $(MAKE) all || exit 1) ; fi
 
 neb : bindir libfft libla mods libs pw
 	if test -d NEB; then \
   (cd NEB; $(MAKE) all || exit 1) ; fi
 
 ### This target is not supported in this version
-#tddfpt : bindir libfft libla mods libs pw
-#	if test -d TDDFPT; then \
-#	(cd TDDFPT; $(MAKE) all || exit 1) ; fi
+tddfpt : bindir libfft libla mods libs pw
+	if test -d TDDFPT; then \
+	(cd TDDFPT; $(MAKE) all || exit 1) ; fi
 
 pp : bindir libfft libla mods libs pw
 	if test -d PP ; then \
@@ -136,9 +138,9 @@ pw_export : libiotk bindir libfft mods libs pw
 #examples : touch-dummy
 #	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
-pwall : pw neb pp pwcond 
+pwall : pw neb ph pp pwcond
 
-all   : pwall ld1 upf
+all   : pwall ld1 upf tddfpt
 
 ###########################################################
 # Auxiliary targets used by main targets:
@@ -282,7 +284,7 @@ clean :
 		LAXlib FFTXlib Modules PP PW \
 		NEB PWCOND \
 		atomic clib LR_Modules pwtools upftools \
-		dev-tools extlibs \
+		dev-tools extlibs TDDFPT PHonon \
 	; do \
 	    if test -d $$dir ; then \
 		( cd $$dir ; \

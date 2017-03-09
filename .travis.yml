@@ -14,9 +14,8 @@ env:
      - PARA=no
 install:
      - ./configure --enable-parallel=$PARA --with-netlib
-     - make all
 script:
-    - make travis
+     - make all
 git:
   depth: 3
 
