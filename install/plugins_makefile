@@ -34,11 +34,18 @@ d3q_clean:
 	rm -f ../bin/d3q.x
 	rm -f ../bin/d3_*.x
 
-d3q_veryclean: d3q_clean
-	rm -f ../D3Q
+d3q_veryclean: d3q_distclean
+	# delete unpacked directory and its links, keep the archive
+	(cd ..; \
+		i=D3Q; \
+		while j=$$(readlink $$i);do rm -rf $$i; i=$$j;done;\
+		rm -rf $$i\
+	); \
 
-d3q_distclean: d3q_clean
-	rm -f ../archive/$(D3Q)
+d3q_distclean: d3q_distclean
+	# also delete the tgz archive
+	rm -f ../archive/$(D3Q); \
+	rm -f make-d3q uncompress-d3q
 
 ###########################################################
 # test-suite
@@ -86,7 +93,7 @@ configure-gipaw: touch-dummy
 
 w90: uncompress-w90 configure-w90
 	if test -d ../W90; then \
-	cd ../W90; $(MAKE) all || exit 1; cd ../bin; ln -fs ../W90/wannier90.x . ; fi
+	cd ../W90; $(MAKE) || exit 1; cd ../bin; ln -fs ../W90/wannier90.x . ; fi
 	-(cd ../bin; ln -fs ../W90/wannier90.x .)
 	touch make-w90
 
@@ -97,7 +104,7 @@ uncompress-w90: touch-dummy
 configure-w90: touch-dummy
 	cd ../W90 ; \
 	if (test -e ../install/make_wannier90.sys) || (test -d ../W90); then \
-	(cp ../install/make_wannier90.inc ../W90/make.sys); fi 
+	(cp ../install/make_wannier90.inc ../W90/make.inc); fi 
 	touch ./configure-w90
 
 ###########################################################
