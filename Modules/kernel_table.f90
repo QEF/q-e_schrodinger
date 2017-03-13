@@ -151,13 +151,13 @@ CONTAINS
        ! No "vdW_kernel_table" file in the current directory. Try the
        ! pseudopotential directory.
 
-       kernel_file_name = trim(pseudo_dir)//'/'//vdw_table_name
+       kernel_file_name = trim(pseudo_dir)//vdw_table_name
        inquire(file=kernel_file_name, exist=file_exists)
     end if
 
     IF (.NOT. file_exists) THEN
       ! Try the pseudopotential current directory.
-      kernel_file_name = trim(pseudo_dir_cur)//'/'//vdw_table_name
+      kernel_file_name = trim(pseudo_dir_cur)//vdw_table_name
       INQUIRE(FILE=kernel_file_name, EXIST = file_exists)
     END IF
 
