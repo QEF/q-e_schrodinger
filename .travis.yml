@@ -13,7 +13,7 @@ addons:
 env:
      - PARA=no
 install:
-     - ./configure --enable-parallel=$PARA --with-netlib
+     - ./configure --enable-parallel=$PARA --with-netlib --enable-xml
 script:
      - make all
 git:
