@@ -143,7 +143,7 @@ pw_export : libiotk bindir libfft mods libs pw
 #examples : touch-dummy
 #	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
-pwall : pw vdw_kernels neb ph pp pwcond
+pwall : pw neb ph pp pwcond
 
 all   : pwall ld1 upf tddfpt
 
