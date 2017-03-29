@@ -15,7 +15,7 @@ env:
 install:
      - ./configure --enable-parallel=$PARA --with-netlib --enable-xml
 script:
-     - make all
+     - make all vdw_kernels
 git:
   depth: 3
 
