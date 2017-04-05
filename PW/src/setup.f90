@@ -579,6 +579,8 @@ SUBROUTINE setup()
      !
      ! ... Calculate quantities used in tetrahedra method
      !
+     IF (nks_start /= 0) CALL errore( 'setup ', 'tetrahedra need automatic k-point grid',1)
+     !
      IF (tetra_type == 0) then
         CALL tetra_init( nsym, s, time_reversal, t_rev, at, bg, npk, k1,k2,k3, &
              nk1, nk2, nk3, nkstot, xk )
