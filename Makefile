@@ -17,6 +17,7 @@ default :
 	@echo ' '
 	@echo 'where target identifies one or multiple CORE PACKAGES:'
 	@echo '  pw           basic code for scf, structure optimization, MD'
+	@echo '  vdw_kernels  kernels for vdW functionals'
 	@echo '  ph           phonon code, Gamma-only and third-order derivatives'
 	@echo '  pwcond       ballistic conductance'
 	@echo '  neb          code for Nudged Elastic Band method'
@@ -78,6 +79,10 @@ pp : bindir libfft libla mods libs pw
 pwcond : bindir libfft libla mods libs pw pp
 	if test -d PWCOND ; then \
 	( cd PWCOND ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
+
+vdw_kernels : pw
+	bin/generate_vdW_kernel_table.x
+	bin/generate_rVV10_kernel_table.x
 
 ### This target is not supported in this version
 #acfdt : bindir libfft libla mods libs pw ph
@@ -294,6 +299,8 @@ clean :
 	- @(cd install ; $(MAKE) -f plugins_makefile clean)
 	- @(cd install ; $(MAKE) -f extlibs_makefile clean)
 	- /bin/rm -rf bin/*.x tmp
+	- /bin/rm -f vdW_kernel_table
+	- /bin/rm -f rVV10_kernel_table
 
 # remove files produced by "configure" as well
 veryclean : clean
