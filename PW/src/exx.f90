@@ -1037,12 +1037,23 @@ MODULE exx
                    ENDDO
 !$omp end parallel do
 #endif
+                   IF (index_sym(ikq) > 0 ) THEN
+                      ! sym. op. without time reversal: normal case
 !$omp parallel do default(shared) private(ir) firstprivate(ibnd,isym,ikq)
-                   DO ir=1,nrxxs
-                      exxbuff(ir,ibnd,ikq)=psic_nc(ir,1)
-                      exxbuff(ir+nrxxs,ibnd,ikq)=psic_nc(ir,2)
-                   ENDDO
+                      DO ir=1,nrxxs
+                         exxbuff(ir,ibnd,ikq)=psic_nc(ir,1)
+                         exxbuff(ir+nrxxs,ibnd,ikq)=psic_nc(ir,2)
+                      ENDDO
 !$omp end parallel do
+                   ELSE
+                      ! sym. op. with time reversal: spin 1->2*, 2->-1*
+!$omp parallel do default(shared) private(ir) firstprivate(ibnd,isym,ikq)
+                      DO ir=1,nrxxs
+                         exxbuff(ir,ibnd,ikq)=CONJG(psic_nc(ir,2))
+                         exxbuff(ir+nrxxs,ibnd,ikq)=-CONJG(psic_nc(ir,1))
+                      ENDDO
+!$omp end parallel do
+                   ENDIF
                 ELSE ! noncolinear
 #if defined(__MPI)
                    CALL gather_grid(exx_fft%dfftt,temppsic,temppsic_all)
