@@ -104,9 +104,9 @@ SUBROUTINE setup()
   LOGICAL, EXTERNAL  :: check_para_diag
 !
 #if defined(__XSD)
-  TYPE(output_type)         :: output_obj 
-  TYPE(parallel_info_type)  :: parinfo_obj
-  TYPE(general_info_type)   :: geninfo_obj
+  TYPE(output_type)                         :: output_obj 
+  TYPE(parallel_info_type)                  :: parinfo_obj
+  TYPE(general_info_type)                   :: geninfo_obj
 #endif
 !  
 #if defined(__MPI)
@@ -593,6 +593,8 @@ SUBROUTINE setup()
   ELSE IF ( ltetra ) THEN
      !
      ! ... Calculate quantities used in tetrahedra method
+     !
+     IF (nks_start /= 0) CALL errore( 'setup ', 'tetrahedra need automatic k-point grid',1)
      !
      IF (tetra_type == 0) then
         CALL tetra_init( nsym, s, time_reversal, t_rev, at, bg, npk, k1,k2,k3, &
