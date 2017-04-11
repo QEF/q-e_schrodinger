@@ -88,7 +88,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
       <element type="qes:algorithmic_infoType" name="algorithmic_info"/>
       <element type="qes:atomic_speciesType" name="atomic_species"/>
       <element type="qes:atomic_structureType" name="atomic_structure"/>
-      <element type="qes:symmetriesType" name="symmetries"/>
+      <element type="qes:symmetriesType" name="symmetries" minOccurs="0" maxOccurs="1"/>
       <element type="qes:basis_setType" name="basis_set"/>
       <element type="qes:dftType" name="dft"/>
       <element type="qes:magnetizationType" name="magnetization"/>
@@ -192,8 +192,8 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   </complexType>
   <complexType name="atomic_structureType">
     <sequence>
-      <choice>
-         <element type="qes:atomic_positionsType" name="atomic_positions"  minOccurs="0" />
+      <choice minOccurs="1" maxOccurs="1">
+         <element type="qes:atomic_positionsType" name="atomic_positions" minOccurs="0"  />
          <element type="qes:wyckoff_positionsType" name="wyckoff_positions" minOccurs="0" />
       </choice>
       <element type="qes:cellType" name="cell"/>
@@ -369,7 +369,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
       <element type="qes:smearingType" name="smearing" minOccurs="0"/>
       <element type="double" name="tot_charge" minOccurs="0"/>
       <element type="double" name="tot_magnetization" minOccurs="0"/>
-      <element type="qes:occupationsType" name="occupations" minOccurs="0 "/>
+      <element type="qes:occupationsType" name="occupations" />
       <element type="qes:inputOccupationsType" name="inputOccupations" minOccurs="0" maxOccurs="2" />
     </sequence>
   </complexType>
@@ -448,7 +448,8 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
       <element type="boolean" name="tbeta_smoothing"/>
       <element type="double" name="diago_thr_init"/>
       <element type="boolean" name="diago_full_acc"/>
-      <element type="nonNegativeInteger" name="diago_cg_maxiter"/>
+      <element type="nonNegativeInteger" name="diago_cg_maxiter" minOccurs="0"/>
+      <element type="positiveInteger" name="diago_david_ndim"    minOccurs="0"/>
     </sequence>
   </complexType>
   <simpleType name="mixingModeType">
@@ -465,7 +466,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
     </restriction>
   </simpleType>
   <complexType name="k_points_IBZType">
-    <choice>
+    <choice minOccurs="1" maxOccurs="1">
       <element type="qes:monkhorst_packType" name="monkhorst_pack" minOccurs="0" maxOccurs="1"/>
       <sequence>
         <element type="positiveInteger" name="nk" minOccurs="0"/>
@@ -715,9 +716,6 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
     </simpleContent>
   </complexType>
 
-
-
-
   <complexType name="convergence_infoType">
     <sequence>
       <element type="qes:scf_convType" name="scf_conv"/>
@@ -808,10 +806,14 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
       <element type="nonNegativeInteger" name="nbnd_dw" minOccurs="0" />
       <element type="double" name="nelec"/>
       <element type="integer" name = "num_of_atomic_wfc" minOccurs = "0"/>
+      <element type="boolean" name = "wf_collected" />
       <element type="double" name="fermi_energy" minOccurs="0" />
       <element type="double" name="highestOccupiedLevel" minOccurs ="0"/> 
       <element type="qes:vectorType" name="two_fermi_energies" minOccurs="0"/> 
+      <element type="qes:k_points_IBZType" name="starting_k_points" />
       <element type="positiveInteger" name="nks"/>
+      <element type="qes:occupationsType" name="occupations_kind" />
+      <element type="qes:smearingType"    name="smearing" minOccurs="0" /> 
       <element type="qes:ks_energiesType" name="ks_energies" maxOccurs="unbounded"/>
     </sequence>
   </complexType>
@@ -850,6 +852,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
        <length value="3"/>
     </restriction>
   </simpleType>
+
   <simpleType name="vectorType">
     <restriction>
        <simpleType>
@@ -877,6 +880,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
       <extension base="qes:integerListType"/>
     </simpleContent>
   </complexType>
+
   <complexType name="scalarQuantityType">
     <simpleContent>
       <extension base="double">

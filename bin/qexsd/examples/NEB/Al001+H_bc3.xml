@@ -1,0 +1,141 @@
+<neb:nebRun xmlns:neb="http://www.quantum-espresso.org/ns/neb"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="file:///home/pietro/qexsd-gh/qespresso/scheme/qes_neb_temp.xsd" >
+    <input>
+        <path>
+            <stringMethod>neb</stringMethod>
+            <restart_mode>from_scratch</restart_mode>
+            <pathNstep>50</pathNstep>
+            <optimizationScheme>broyden</optimizationScheme>
+            <climbingImage>no-CI</climbingImage>
+            <endImagesOptimizationFlag>false</endImagesOptimizationFlag>
+            <minimumImageFlag>false</minimumImageFlag>
+            <optimizationStepLength>1.e0</optimizationStepLength>
+            <pathThreshold>0.05</pathThreshold>
+            <elasticConstMax>0.1</elasticConstMax>
+            <elasticConstMin>0.1</elasticConstMin>
+            <useMassesFlag>false</useMassesFlag>
+            <useFreezingFlag>false</useFreezingFlag>
+        </path>
+        <engine>
+            <control_variables>
+                <title>Al001+H_bc3</title>
+                <calculation>scf</calculation>
+                <restart_mode>from_scratch</restart_mode>
+                <prefix>Al00+H_bc3</prefix>
+                <pseudo_dir>/scratch/pdelugas/espresso/pseudo/</pseudo_dir>
+                <outdir>/scratch/pdelugas/espresso/tempdir/</outdir>
+                <stress>false</stress>
+                <forces>true</forces>
+                <wf_collect>false</wf_collect>
+                <disk_io>low</disk_io>
+                <max_seconds>10000000</max_seconds>
+                <etot_conv_thr>1e-6</etot_conv_thr>
+                <forc_conv_thr>1e-5</forc_conv_thr>
+                <press_conv_thr>1e-3</press_conv_thr>
+                <verbosity>low</verbosity>
+                <print_every>100</print_every>
+            </control_variables>
+            <atomic_species>
+                <species name="Al">
+                    <mass>26.981538</mass>
+                    <pseudo_file>Al.pbe-n-van.UPF</pseudo_file>
+                </species>
+                <species name="H">
+                    <mass>1.00794</mass>
+                    <pseudo_file>H.pbe-van_ak.UPF</pseudo_file>
+                </species>
+            </atomic_species>
+            <atomic_structure nat ="5">
+                <atomic_positions>
+                    <atom name="Al" index="1">
+                        0.0000000000000 0.00000000000 0.0000000000
+                    </atom>
+                    <atom name="Al" index="2">
+                        5.4111111 0.00000000 0.00000000
+                    </atom>
+                    <atom name="Al" index="3">
+                        5.41113843 5.41113843 0.0000000000
+                    </atom>
+                    <atom name="Al" index ="4">
+                        5.41113843 5.41113843 0.0000000000
+                    </atom>
+                    <atom name="H" index="5">
+                        0.00000000 0.00000000 3.1105567
+                    </atom>
+                </atomic_positions>
+                <cell>
+                    <a1>10.82227686  0.00000000  0.000000000</a1>
+                    <a2> 0.00000000 10.82227686  0.000000000</a2>
+                    <a3> 0.00000000  0.00000000 22.67672253 </a3>
+                </cell>
+            </atomic_structure>
+            <atomic_structure nat ="5">
+                <atomic_positions>
+                    <atom name="Al" index="1">
+                        0.0000000000000 0.00000000000 0.0000000000
+                    </atom>
+                    <atom name="Al" index="2">
+                        5.4111111 0.00000000 0.00000000
+                    </atom>
+                    <atom name="Al" index="3">
+                        5.41113843 5.41113843 0.0000000000
+                    </atom>
+                    <atom name="Al" index ="4">
+                        5.41113843 5.41113843 0.0000000000
+                    </atom>
+                    <atom name="H" index="5">
+                        5.41113843 5.41113843 3.1105567
+                    </atom>
+                </atomic_positions>
+                <cell>
+                    <a1>10.82227686  0.00000000  0.000000000</a1>
+                    <a2> 0.00000000 10.82227686  0.000000000</a2>
+                    <a3> 0.00000000  0.00000000 22.67672253 </a3>
+                </cell>
+            </atomic_structure>
+            <dft>
+                <functional>PBE</functional>
+            </dft>
+            <spin>
+                <lsda>false</lsda>
+                <noncolin>false</noncolin>
+                <spinorbit>false</spinorbit>
+            </spin>
+            <bands>
+                <occupations>smearing</occupations>
+                <smearing degauss="0.02">mv</smearing>
+                <tot_charge>0.0000000</tot_charge>
+            </bands>
+            <basis>
+                <ecutwfc>20</ecutwfc>
+            </basis>
+            <electron_control>
+                <diagonalization>davidson</diagonalization>
+                <mixing_mode>plain</mixing_mode>
+                <mixing_beta>0.3</mixing_beta>
+                <conv_thr>1.e-6</conv_thr>
+                <mixing_ndim>8</mixing_ndim>
+                <max_nstep>100</max_nstep>
+                <real_space_q>false</real_space_q>
+                <tq_smoothing>false</tq_smoothing>
+                <tbeta_smoothing>false</tbeta_smoothing>
+                <diago_thr_init>1.e-3</diago_thr_init>
+                <diago_full_acc>false</diago_full_acc>
+                <diago_david_ndim>4</diago_david_ndim>
+            </electron_control>
+            <k_points_IBZ>
+                <monkhorst_pack nk1="6" nk2="6" nk3="1" k1="1" k2="1" k3="0"></monkhorst_pack>
+            </k_points_IBZ>
+            <ion_control></ion_control>
+            <cell_control></cell_control>
+            <free_positions>
+                0  0  0
+                0  0  0
+                0  0  0
+                0  0  0
+                0  0  1
+            </free_positions>
+        </engine>
+    </input>
+</neb:nebRun>

@@ -46,17 +46,32 @@ if __name__ == '__main__':
 
     import qespresso
     import os
+    import xml.etree.ElementTree as Etree
 
     qespresso.set_logger(args.verbosity)
 
-    xml_conf = qespresso.PwDocument()
     input_fn = getattr(args, 'in')
+    tree = Etree.parse(input_fn)
+    root = tree.getroot()
+    elementName = root.tag.split('}')[-1]
+    if elementName == 'espresso':
+        xml_conf = qespresso.PwDocument()
+    elif elementName == 'nebRun':
+        xml_conf = qespresso.NebDocument()
+    else:
+        sys.stderr.write("Could not find correct XML in %s, exiting...\n"
+                         % input_fn)
+        sys.exit(1)
+
+    root = None
+    tree = None
+
     xml_conf.read(input_fn)
-    pw_in = xml_conf.get_qe_input()
+    qe_in = xml_conf.get_qe_input()
 
     input_fn_name, input_fn_ext = os.path.splitext(input_fn)
     outfile = input_fn_name + '.in'
 
     with open(outfile, mode='w') as f:
-        f.write(pw_in)
+        f.write(qe_in)
         print("Input configuration written to file '%s' ..." % outfile)
