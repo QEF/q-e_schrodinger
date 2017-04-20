@@ -155,11 +155,10 @@ PROGRAM do_projwfc
   !
   !   Tetrahedron method
   !
-  IF ( ltetra .AND. tetra_type == 1 .OR. tetra_type == 2 ) THEN
+  IF ( ltetra ) THEN
      !
      ! info on tetrahedra is no longer saved to file and must be rebuilt
-     !
-     ! workaround for old xml file, to be removed
+     ! workaround for old xml file, to be removed when the old xml file is
      IF(ALLOCATED(tetra)) DEALLOCATE(tetra)
      !
      ! in the lsda case, only the first half of the k points
@@ -170,7 +169,9 @@ PROGRAM do_projwfc
      ELSE
         nks2 = nkstot
      END IF
-     IF(tetra_type == 1) THEN
+     IF(tetra_type < 2) THEN
+        ! use linear tetrahedron for both tetra_type=0 and tetra_type=1
+        IF ( tetra_type == 0 ) tetra_type = 1
         WRITE( stdout,'(/5x,"Linear tetrahedron method (read from file) ")')
      ELSE
         WRITE( stdout,'(/5x,"Optimized tetrahedron method (read from file) ")')
@@ -812,7 +813,7 @@ SUBROUTINE projwave_nc(filproj, lsym, lwrite_ovp, lbinary, ef_0 )
   IMPLICIT NONE
   !
   CHARACTER(len=*) :: filproj
-  CHARACTER(256) :: file_eband
+  CHARACTER(256) :: filename
   LOGICAL :: lwrite_ovp, lbinary
   LOGICAL :: lsym
   LOGICAL :: freeswfcatom
@@ -1138,8 +1139,8 @@ IF ( lforcet ) THEN
  CALL mp_sum( eband_proj, inter_pool_comm )
 IF ( ionode ) THEN
 
-       file_eband = trim(filproj)
-       OPEN (4,file=file_eband,form='formatted', status='unknown')
+       filename = trim(filproj)
+       OPEN (4,file=filename,form='formatted', status='unknown')
 
        eband_proj_tot = 0.d0
        DO na = 1, nat
@@ -1216,20 +1217,23 @@ ENDIF
      ! write on the file filproj
      !
      IF (filproj/=' ') THEN
+        filename = trim(filproj)//'.projwfc_up'
         iunproj=33
-        CALL write_io_header(filproj, iunproj, title, dfftp%nr1x, dfftp%nr2x, dfftp%nr3x, &
+        CALL write_io_header(filename, iunproj, title, dfftp%nr1x, dfftp%nr2x, dfftp%nr3x, &
            dfftp%nr1, dfftp%nr2, dfftp%nr3, nat, ntyp, ibrav, celldm, at, gcutm, dual, ecutwfc, &
            nkstot,nbnd,natomwfc)
         DO nwfc = 1, natomwfc
            IF (lspinorb) THEN
-              WRITE(iunproj,1000) &
-                   nwfc, nlmchi(nwfc)%na,atm(ityp(nlmchi(nwfc)%na)), &
-                   nlmchi(nwfc)%n,nlmchi(nwfc)%jj,nlmchi(nwfc)%l, &
-                   compute_mj(nlmchi(nwfc)%jj,nlmchi(nwfc)%l,nlmchi(nwfc)%m)
-           ELSE
-              WRITE(iunproj,1500) &
+              WRITE(iunproj,'(2i5,1x,a4,1x,a2,1x,2i5,f5.1,1x,f5.1)') &
                    nwfc, nlmchi(nwfc)%na, atm(ityp(nlmchi(nwfc)%na)), &
-                   nlmchi(nwfc)%n, nlmchi(nwfc)%l, nlmchi(nwfc)%m, &
+                   nlmchi(nwfc)%els, nlmchi(nwfc)%n, nlmchi(nwfc)%l, &
+                   nlmchi(nwfc)%jj, &
+                   compute_mj(nlmchi(nwfc)%jj,nlmchi(nwfc)%l, nlmchi(nwfc)%m)
+           ELSE
+              WRITE(iunproj,'(2i5,1x,a4,1x,a2,1x,3i5,1x,f4.1)') &
+                   nwfc, nlmchi(nwfc)%na, atm(ityp(nlmchi(nwfc)%na)), &
+                   nlmchi(nwfc)%els, nlmchi(nwfc)%n, nlmchi(nwfc)%l, &
+                   nlmchi(nwfc)%m, &
                    0.5d0-int(nlmchi(nwfc)%ind/(2*nlmchi(nwfc)%l+2))
            ENDIF
            DO ik=1,nkstot
@@ -1442,7 +1446,6 @@ SUBROUTINE projwave_paw( filproj)
   REAL(DP), ALLOCATABLE :: charges(:,:,:), charges_lm(:,:,:,:), proj1 (:)
   REAL(DP) :: psum, totcharge(2)
   INTEGER  :: nksinit, nkslast
-  CHARACTER(len=256) :: filename
   CHARACTER (len=1)  :: l_label(0:3)=(/'s','p','d','f'/)
   CHARACTER (len=7)  :: lm_label(1:7,1:3)=reshape( (/ &
     'z      ','x      ','y      ','       ','       ','       ','       ', &

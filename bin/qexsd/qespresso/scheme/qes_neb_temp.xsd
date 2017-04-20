@@ -1,34 +1,173 @@
 <?xml version="1.0"?>
 <!--
-Copyright (c), 2015-2016, Quantum Espresso Foundation. All rights reserved.
+Copyright (c), 2016, Quantum Espresso Foundation. All rights reserved.
 This file is distributed under the terms of the MIT License. See the
 file 'LICENSE' in the root directory of the present distribution, or
 http://opensource.org/licenses/MIT.
-Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
+Authors: Paolo Giannozzi, Pietro Delugas
 -->
 <schema xmlns="http://www.w3.org/2001/XMLSchema"
-	xmlns:qes="http://www.quantum-espresso.org/ns/qes/qes-1.0"
-	targetNamespace="http://www.quantum-espresso.org/ns/qes/qes-1.0">
-  <!-- ESPRESSO (root element) -->
-  <element name="espresso" type="qes:espressoType" />
-  <complexType name="espressoType">
-    <sequence>
-      <element type="qes:general_infoType" name="general_info" minOccurs="0" />
-      <element type="qes:parallel_infoType" name="parallel_info" minOccurs="0" />
-      <element type="qes:inputType" name="input" />
-      <element type="qes:stepType" name="step" minOccurs="0" maxOccurs="unbounded" />
-      <element type="qes:outputType" name="output" minOccurs="0" />
-      <element type="qes:statusType" name="status" minOccurs="0" />
-      <element type="nonNegativeInteger" name="cputime" minOccurs="0" />
-      <element type="qes:closedType" name="closed" minOccurs="0" />
-    </sequence>
-  </complexType>
+        xmlns:neb="http://www.quantum-espresso.org/ns/neb"
+        targetNamespace="http://www.quantum-espresso.org/ns/neb">
+    <element name="nebRun" type="neb:NebRunType"/>
+    <complexType name="NebRunType">
+        <sequence>
+            <element name="GeneralInfo" type="neb:general_infoType" minOccurs="0"/>
+            <element name="ParallelInfo" type="neb:nebPInfoType" minOccurs="0"/>
+            <element name="input" type="neb:nebInputType" minOccurs="1" maxOccurs="1"/>
+            <element name="nebStep" type="neb:nebStepType" minOccurs="0" maxOccurs="unbounded" />
+            <element name="nebOutput" type="neb:nebOutputType" minOccurs="0" maxOccurs="1"/>
+            <element type="nonNegativeInteger" name="CpuTime" minOccurs="0"/>
+            <element type="neb:statusType" name="status" minOccurs="0" />
+            <element type="neb:closedType" name="closed" minOccurs="0"/>
+        </sequence>
+    </complexType>
+    <complexType name="nebPInfoType">
+        <sequence>
+            <element type="positiveInteger" name="nimages"/>
+            <element type="neb:parallel_infoType" name="parallelInfo"/>
+        </sequence>
+    </complexType>
+
+    <complexType name="nebInputType">
+        <sequence>
+            <element name="path"    type="neb:pathInputType"/>
+            <element name="engine"  type="neb:engineInputType"/>
+        </sequence>
+    </complexType>
+
+    <complexType name="pathInputType">
+        <sequence>
+            <element name="stringMethod" type="neb:stringMethodType"/>
+            <element type="neb:controlRestartModeType" name="restart_mode" maxOccurs="1" default="from_scratch"/>
+            <element type="positiveInteger" name="pathNstep" maxOccurs="1" minOccurs="1"/>
+            <element type="positiveInteger" name="numOfImages" minOccurs ="0"/>
+            <element name="optimizationScheme" type="neb:optimizationSchemeType" minOccurs="1" maxOccurs="1"/>
+            <element name="climbingImage" type="neb:climbingImageType" maxOccurs="1" default="no-CI"/>
+            <element name="endImagesOptimizationFlag" type="boolean" maxOccurs="1" default="false"/>
+            <element name="minimumImageFlag" type="boolean" maxOccurs="1" default="false"/>
+            <element name="temperature" type="double" minOccurs="0" maxOccurs="1" />
+            <element name="optimizationStepLength" type="double" minOccurs="1" maxOccurs="1" />
+            <element name="pathThreshold" type="double"/>
+            <element name="elasticConstMax" type="double" minOccurs="1" maxOccurs="1" />
+            <element name="elasticConstMin" type="double" minOccurs="1" maxOccurs="1"/>
+            <element name="useMassesFlag" type="boolean" default="false" maxOccurs="1"/>
+            <element name="useFreezingFlag" type="boolean" default="false" maxOccurs="1"/>
+            <element name="constantBiasFlag" type="boolean" default="false" minOccurs="0" maxOccurs="1"/>
+            <element name="targetFermiEnergy" type="double" minOccurs="0" maxOccurs="1"/>
+            <element name="totChargeFirst" type="double" minOccurs="0" maxOccurs="1"/>
+            <element name="totChargeLast" type="double" minOccurs="0" maxOccurs="1" />
+            <element name="climbingImageIndex" type="positiveInteger" minOccurs="0" maxOccurs="unbounded"/>
+        </sequence>
+    </complexType>
+    <complexType name="engineInputType">
+        <sequence>
+            <element type="neb:control_variablesType" name="control_variables"/>
+            <element type="neb:atomic_speciesType" name="atomic_species" />
+            <element name="atomic_structure" type="neb:atomic_structureType" minOccurs="2" maxOccurs="unbounded"/>
+            <element type="neb:dftType" name="dft"/>
+            <element type="neb:spinType" name="spin" />
+            <element type="neb:bandsType" name="bands"/>
+            <element type="neb:basisType" name="basis"/>
+            <element type="neb:electron_controlType" name="electron_control"/>
+            <element type="neb:k_points_IBZType" name="k_points_IBZ"/>
+            <element type="neb:ion_controlType" name="ion_control"/>
+            <element type="neb:cell_controlType" name="cell_control"/>
+            <element type="neb:symmetry_flagsType" name="symmetry_flags" minOccurs="0" />
+            <element type="neb:boundary_conditionsType" name="boundary_conditions" minOccurs="0" />
+            <element type="neb:ekin_functionalType" name="ekin_functional" minOccurs="0" />
+            <element type="neb:matrixType" name="external_atomic_forces" minOccurs="0" />
+            <element type="neb:matrixType" name="free_positions" minOccurs="0" />
+            <element type="neb:matrixType" name="starting_atomic_velocities" minOccurs="0" />
+            <element type="neb:electric_fieldType" name="electric_field" minOccurs="0" />
+            <element type="neb:atomic_constraintsType" name="atomic_constraints" minOccurs="0" />
+            <element type="neb:spin_constraintsType" name="spin_constraints" minOccurs="0" />
+        </sequence>
+    </complexType>
+
+    <complexType name="nebStepType">
+        <sequence>
+            <element name="Iteration" type="positiveInteger"/>
+            <element name="ActivationEnergyForward" type="double" />
+            <element name="ActivationEnergyBack" type="double"/>
+            <element name="Bead" type="neb:nebBeadType" maxOccurs="unbounded"/>
+            <element name="pathLength" type="double"/>
+            <element name="InterBeadDistance" type="double"/>
+        </sequence>
+    </complexType>
+    <complexType name="nebOutputType">
+        <sequence>
+            <element name="finalNebStep" type="neb:nebStepType"/>
+            <element name="nebControl" type="neb:engineInputType"  />
+            <element name="nebPlot" type="neb:plotType"/>
+            <element name="finalImageGradient" type="neb:imageGradientType" maxOccurs="unbounded"/>
+        </sequence>
+    </complexType>
+
+    <complexType name="imageGradientType">
+        <sequence>
+            <element name="imageNumber" type="positiveInteger"/>
+            <element name="gradient" type="neb:matrixType"/>
+        </sequence>
+    </complexType>
+    <complexType name="plotType">
+        <sequence>
+            <element name="Abscissae" type="neb:vectorType"/>
+            <element name="Ordinates" type="neb:vectorType"/>
+        </sequence>
+    </complexType>
+    <complexType name="nebBeadType">
+        <sequence>
+            <element name="ImageIndex" type="positiveInteger"/>
+            <element name="Energy" type="double"/>
+            <element name="Error" type="double"/>
+            <element name="FrozenFlag" type="boolean"/>
+            <element name="Structure" type="neb:atomic_structureType"/>
+        </sequence>
+    </complexType>
+
+    <simpleType name="stringMethodType">
+        <restriction base="string">
+            <enumeration value="neb"/>
+            <enumeration value="smd"/>
+        </restriction>
+    </simpleType>
+    <simpleType name="optimizationSchemeType">
+        <restriction base="string">
+            <enumeration value="sd"/>
+            <enumeration value="broyden"/>
+            <enumeration value="broyden2"/>
+            <enumeration value="quick-min"/>
+            <enumeration value="langevin"/>
+        </restriction>
+    </simpleType>
+    <simpleType name="climbingImageType">
+        <restriction base="string">
+            <enumeration value="no-CI"/>
+            <enumeration value="auto"/>
+            <enumeration value="manual"/>
+        </restriction>
+    </simpleType>
+    <complexType name="manyPosStructType">
+        <sequence>
+            <choice minOccurs="2" maxOccurs="unbounded">
+                <element type="neb:atomic_positionsType" name="atomic_positions" minOccurs="2" maxOccurs="unbounded" />
+                <element type="neb:wyckoff_positionsType" name="wyckoff_positions" minOccurs="0" maxOccurs="unbounded" />
+            </choice>
+            <element type="neb:cellType" name="cell"/>
+        </sequence>
+        <attribute type="positiveInteger" name="nat" />
+        <attribute type="double" name="alat" use="optional"/>
+        <attribute type="positiveInteger" name="bravais_index" use="optional"/>
+    </complexType>
+
+
   <!-- GENERAL INFO -->
   <complexType name="general_infoType">
     <sequence>
-      <element type="qes:xml_formatType" name="xml_format"/>
-      <element type="qes:creatorType" name="creator"/>
-      <element type="qes:createdType" name="created"/>
+      <element type="neb:xml_formatType" name="xml_format"/>
+      <element type="neb:creatorType" name="creator"/>
+      <element type="neb:createdType" name="created"/>
       <element type="string" name="job"/>
     </sequence>
   </complexType>
@@ -46,36 +185,36 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   <!-- INPUT TYPE-->
   <complexType name="inputType">
     <sequence>
-      <element type="qes:control_variablesType" name="control_variables"/>
-      <element type="qes:atomic_speciesType" name="atomic_species"/>
-      <element type="qes:atomic_structureType" name="atomic_structure"/>
-      <element type="qes:dftType" name="dft"/>
-      <element type="qes:spinType" name="spin"/>
-      <element type="qes:bandsType" name="bands"/>
-      <element type="qes:basisType" name="basis"/>
-      <element type="qes:electron_controlType" name="electron_control"/>
-      <element type="qes:k_points_IBZType" name="k_points_IBZ"/>
-      <element type="qes:ion_controlType" name="ion_control"/>
-      <element type="qes:cell_controlType" name="cell_control"/>
-      <element type="qes:symmetry_flagsType" name="symmetry_flags" minOccurs="0" />
-      <element type="qes:boundary_conditionsType" name="boundary_conditions" minOccurs="0" />
-      <element type="qes:ekin_functionalType" name="ekin_functional" minOccurs="0" />
-      <element type="qes:matrixType" name="external_atomic_forces" minOccurs="0" />
-      <element type="qes:integerMatrixType" name="free_positions" minOccurs="0" />
-      <element type="qes:matrixType" name="starting_atomic_velocities" minOccurs="0" />
-      <element type="qes:electric_fieldType" name="electric_field" minOccurs="0" />
-      <element type="qes:atomic_constraintsType" name="atomic_constraints" minOccurs="0" />
-      <element type="qes:spin_constraintsType" name="spin_constraints" minOccurs="0" />
+      <element type="neb:control_variablesType" name="control_variables"/>
+      <element type="neb:atomic_speciesType" name="atomic_species"/>
+      <element type="neb:atomic_structureType" name="atomic_structure"/>
+      <element type="neb:dftType" name="dft"/>
+      <element type="neb:spinType" name="spin"/>
+      <element type="neb:bandsType" name="bands"/>
+      <element type="neb:basisType" name="basis"/>
+      <element type="neb:electron_controlType" name="electron_control"/>
+      <element type="neb:k_points_IBZType" name="k_points_IBZ"/>
+      <element type="neb:ion_controlType" name="ion_control"/>
+      <element type="neb:cell_controlType" name="cell_control"/>
+      <element type="neb:symmetry_flagsType" name="symmetry_flags" minOccurs="0" />
+      <element type="neb:boundary_conditionsType" name="boundary_conditions" minOccurs="0" />
+      <element type="neb:ekin_functionalType" name="ekin_functional" minOccurs="0" />
+      <element type="neb:matrixType" name="external_atomic_forces" minOccurs="0" />
+      <element type="neb:integerMatrixType" name="free_positions" minOccurs="0" />
+      <element type="neb:matrixType" name="starting_atomic_velocities" minOccurs="0" />
+      <element type="neb:electric_fieldType" name="electric_field" minOccurs="0" />
+      <element type="neb:atomic_constraintsType" name="atomic_constraints" minOccurs="0" />
+      <element type="neb:spin_constraintsType" name="spin_constraints" minOccurs="0" />
     </sequence>
   </complexType>
   <!-- STEP TYPE -->
   <complexType name="stepType">
     <sequence>
-      <element type="qes:scf_convType" name="scf_conv"/>
-      <element type="qes:atomic_structureType" name="atomic_structure"/>
-      <element type="qes:total_energyType" name="total_energy"/>
-      <element type="qes:matrixType" name="forces"/>
-      <element type="qes:matrixType" name="stress" minOccurs="0" />
+      <element type="neb:scf_convType" name="scf_conv"/>
+      <element type="neb:atomic_structureType" name="atomic_structure"/>
+      <element type="neb:total_energyType" name="total_energy"/>
+      <element type="neb:matrixType" name="forces"/>
+      <element type="neb:matrixType" name="stress" minOccurs="0" />
       <element type="double"         name="FCP_force" minOccurs="0"/>
       <element type="double"         name="FCP_tot_charge" minOccurs ="0"/>
     </sequence>
@@ -84,19 +223,19 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   <!-- OUTPUT TYPE -->
   <complexType name="outputType">
     <sequence>
-      <element type="qes:convergence_infoType" name="convergence_info"/>
-      <element type="qes:algorithmic_infoType" name="algorithmic_info"/>
-      <element type="qes:atomic_speciesType" name="atomic_species"/>
-      <element type="qes:atomic_structureType" name="atomic_structure"/>
-      <element type="qes:symmetriesType" name="symmetries" minOccurs="0" maxOccurs="1"/>
-      <element type="qes:basis_setType" name="basis_set"/>
-      <element type="qes:dftType" name="dft"/>
-      <element type="qes:magnetizationType" name="magnetization"/>
-      <element type="qes:total_energyType" name="total_energy"/>
-      <element type="qes:band_structureType" name="band_structure"/>
-      <element type="qes:matrixType" name="forces" minOccurs="0"/>
-      <element type="qes:matrixType" name="stress" minOccurs="0" />
-      <element type="qes:outputElectricFieldType" name="electric_field" minOccurs="0" />
+      <element type="neb:convergence_infoType" name="convergence_info"/>
+      <element type="neb:algorithmic_infoType" name="algorithmic_info"/>
+      <element type="neb:atomic_speciesType" name="atomic_species"/>
+      <element type="neb:atomic_structureType" name="atomic_structure"/>
+      <element type="neb:symmetriesType" name="symmetries" minOccurs="0" maxOccurs="1"/>
+      <element type="neb:basis_setType" name="basis_set"/>
+      <element type="neb:dftType" name="dft"/>
+      <element type="neb:magnetizationType" name="magnetization"/>
+      <element type="neb:total_energyType" name="total_energy"/>
+      <element type="neb:band_structureType" name="band_structure"/>
+      <element type="neb:matrixType" name="forces" minOccurs="0"/>
+      <element type="neb:matrixType" name="stress" minOccurs="0" />
+      <element type="neb:outputElectricFieldType" name="electric_field" minOccurs="0" />
       <element type="double"  name="FCP_force" minOccurs="0"/>
       <element type="double"  name="FCP_tot_charge" minOccurs="0"/>
     </sequence>
@@ -105,21 +244,21 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   <complexType name="control_variablesType">
     <sequence>
       <element type="string" name="title"/>
-      <element type="qes:calculationType" name="calculation" default="scf"/>
-      <element type="qes:controlRestartModeType" name="restart_mode" default="from_scratch"/>
+      <element type="neb:calculationType" name="calculation" default="scf"/>
+      <element type="neb:controlRestartModeType" name="restart_mode" default="from_scratch"/>
       <element type="string" name="prefix"/>
       <element type="string" name="pseudo_dir"/>
       <element type="string" name="outdir"/>
       <element type="boolean" name="stress"/>
       <element type="boolean" name="forces"/>
       <element type="boolean" name="wf_collect" default="false"/>
-      <element type="qes:lowhighType" name="disk_io" default="low"/>
+      <element type="neb:lowhighType" name="disk_io" default="low"/>
       <element type="positiveInteger" name="max_seconds"/>
       <element type="positiveInteger" name="nstep" minOccurs="0"/>
       <element type="double" name="etot_conv_thr" default="1.0e-5"/>
       <element type="double" name="forc_conv_thr" default="1.0e-3"/>
       <element type="double" name="press_conv_thr" default="5e-1"/>
-      <element type="qes:lowhighType" name="verbosity" default="low"/>
+      <element type="neb:lowhighType" name="verbosity" default="low"/>
       <element type="positiveInteger" name="print_every"/>
     </sequence>
   </complexType>
@@ -176,7 +315,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   <!-- INPUT TYPE -->
   <complexType name="atomic_speciesType">
     <sequence>
-      <element type="qes:speciesType" name="species" maxOccurs="unbounded"/>
+      <element type="neb:speciesType" name="species" maxOccurs="unbounded"/>
     </sequence>
     <attribute type="positiveInteger" name="ntyp"/>
   </complexType>
@@ -193,10 +332,10 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   <complexType name="atomic_structureType">
     <sequence>
       <choice minOccurs="1" maxOccurs="1">
-         <element type="qes:atomic_positionsType" name="atomic_positions" minOccurs="0"  />
-         <element type="qes:wyckoff_positionsType" name="wyckoff_positions" minOccurs="0" />
+         <element type="neb:atomic_positionsType" name="atomic_positions" minOccurs="0"  />
+         <element type="neb:wyckoff_positionsType" name="wyckoff_positions" minOccurs="0" />
       </choice>
-      <element type="qes:cellType" name="cell"/>
+      <element type="neb:cellType" name="cell"/>
     </sequence>
     <attribute type="positiveInteger" name="nat" />
     <attribute type="double" name="alat" use="optional"/>
@@ -204,12 +343,12 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   </complexType>
   <complexType name="atomic_positionsType">
     <sequence>
-      <element type="qes:atomType" name="atom" maxOccurs="unbounded" />
+      <element type="neb:atomType" name="atom" maxOccurs="unbounded" />
     </sequence>
   </complexType>
   <complexType name="atomType">
     <simpleContent>
-      <extension base="qes:d3vectorType">
+      <extension base="neb:d3vectorType">
     	<attribute type="string" name="name" />
     	<attribute type="string" name="position" use="optional" />
         <attribute type="positiveInteger" name="index" use="optional"/>
@@ -218,24 +357,24 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   </complexType>
   <complexType name="wyckoff_positionsType">
     <sequence>
-      <element type="qes:atomType" name="atom" maxOccurs="unbounded" />
+      <element type="neb:atomType" name="atom" maxOccurs="unbounded" />
     </sequence>
     <attribute type="unsignedByte" name="space_group" />
     <attribute type="string" name="more_options" use="optional"/>
   </complexType>
   <complexType name="cellType">
     <sequence>
-      <element type="qes:d3vectorType" name="a1"/>
-      <element type="qes:d3vectorType" name="a2"/>
-      <element type="qes:d3vectorType" name="a3"/>
+      <element type="neb:d3vectorType" name="a1"/>
+      <element type="neb:d3vectorType" name="a2"/>
+      <element type="neb:d3vectorType" name="a3"/>
     </sequence>
   </complexType>
   <complexType name="dftType">
     <sequence>
-      <element type="qes:functionalType" name="functional"/>
-      <element type="qes:hybridType" name="hybrid" minOccurs="0" />
-      <element type="qes:dftUType" name="dftU" minOccurs="0" />
-      <element type="qes:vdWType" name="vdW" minOccurs="0" />
+      <element type="neb:functionalType" name="functional"/>
+      <element type="neb:hybridType" name="hybrid" minOccurs="0" />
+      <element type="neb:dftUType" name="dftU" minOccurs="0" />
+      <element type="neb:vdWType" name="vdW" minOccurs="0" />
     </sequence>
   </complexType>
   <simpleType name="functionalType">
@@ -268,7 +407,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
 
     <complexType name="hybridType">
     <sequence>
-      <element type="qes:qpoint_gridType" name="qpoint_grid"/>
+      <element type="neb:qpoint_gridType" name="qpoint_grid"/>
       <element type="double" name="ecutfock"/>
       <element type="double" name="exx_fraction"/>
       <element type="double" name="screening_parameter"/>
@@ -289,14 +428,14 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   <complexType name="dftUType">
     <sequence>
       <element type="unsignedByte" name="lda_plus_u_kind" minOccurs="0"/>
-      <element type="qes:HubbardCommonType" name="Hubbard_U" minOccurs="0" maxOccurs="unbounded"/>
-      <element type="qes:HubbardCommonType" name="Hubbard_J0" minOccurs="0" maxOccurs="unbounded"/>
-      <element type="qes:HubbardCommonType" name="Hubbard_alpha" minOccurs="0" maxOccurs="unbounded"/>
-      <element type="qes:HubbardCommonType" name="Hubbard_beta" minOccurs="0" maxOccurs="unbounded"/>
-      <element type="qes:HubbardJType" name="Hubbard_J" minOccurs="0" maxOccurs="unbounded"/>
-      <element type="qes:starting_nsType" name="starting_ns" minOccurs="0" maxOccurs="unbounded"/>
-      <element type="qes:Hubbard_nsType" name="Hubbard_ns" minOccurs="0" maxOccurs="unbounded"/>
-      <element type="qes:HubbardProjType" name="U_projection_type" minOccurs="0"/>
+      <element type="neb:HubbardCommonType" name="Hubbard_U" minOccurs="0" maxOccurs="unbounded"/>
+      <element type="neb:HubbardCommonType" name="Hubbard_J0" minOccurs="0" maxOccurs="unbounded"/>
+      <element type="neb:HubbardCommonType" name="Hubbard_alpha" minOccurs="0" maxOccurs="unbounded"/>
+      <element type="neb:HubbardCommonType" name="Hubbard_beta" minOccurs="0" maxOccurs="unbounded"/>
+      <element type="neb:HubbardJType" name="Hubbard_J" minOccurs="0" maxOccurs="unbounded"/>
+      <element type="neb:starting_nsType" name="starting_ns" minOccurs="0" maxOccurs="unbounded"/>
+      <element type="neb:Hubbard_nsType" name="Hubbard_ns" minOccurs="0" maxOccurs="unbounded"/>
+      <element type="neb:HubbardProjType" name="U_projection_type" minOccurs="0"/>
     </sequence>
   </complexType>
   <complexType name="HubbardCommonType">
@@ -309,7 +448,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   </complexType>
   <complexType name="HubbardJType">
     <simpleContent>
-      <extension base="qes:d3vectorType">
+      <extension base="neb:d3vectorType">
         <attribute type="string" name="specie"/>
         <attribute type="string" name="label"/>
       </extension>
@@ -317,7 +456,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   </complexType>
   <complexType name="starting_nsType">
     <simpleContent>
-      <extension base="qes:vectorType">
+      <extension base="neb:vectorType">
         <attribute type="string" name="specie"/>
         <attribute type="string" name="label"/>
         <attribute type="positiveInteger" name="spin"/>
@@ -326,7 +465,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   </complexType>
   <complexType name="Hubbard_nsType">
     <simpleContent>
-      <extension base="qes:matrixType">
+      <extension base="neb:matrixType">
         <attribute type="string" name="specie"/>
         <attribute type="string" name="label"/>
         <attribute type="positiveInteger" name="spin"/>
@@ -353,7 +492,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
       <element type="double" name="london_rcut" minOccurs="0"/>
       <element type="double" name="xdm_a1" minOccurs="0"/>
       <element type="double" name="xdm_a2" minOccurs="0"/>
-      <element type="qes:HubbardCommonType" name = "london_c6" minOccurs="0" maxOccurs="unbounded"/>
+      <element type="neb:HubbardCommonType" name = "london_c6" minOccurs="0" maxOccurs="unbounded"/>
     </sequence>
   </complexType>
   <complexType name="spinType">
@@ -366,16 +505,16 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   <complexType name="bandsType">
     <sequence>
       <element type="positiveInteger" name="nbnd" minOccurs="0"/>
-      <element type="qes:smearingType" name="smearing" minOccurs="0"/>
+      <element type="neb:smearingType" name="smearing" minOccurs="0"/>
       <element type="double" name="tot_charge" minOccurs="0"/>
       <element type="double" name="tot_magnetization" minOccurs="0"/>
-      <element type="qes:occupationsType" name="occupations" />
-      <element type="qes:inputOccupationsType" name="inputOccupations" minOccurs="0" maxOccurs="2" />
+      <element type="neb:occupationsType" name="occupations" />
+      <element type="neb:inputOccupationsType" name="inputOccupations" minOccurs="0" maxOccurs="2" />
     </sequence>
   </complexType>
   <complexType name="smearingType">
     <simpleContent>
-      <extension base="qes:smearingChoiceType">
+      <extension base="neb:smearingChoiceType">
         <attribute type="double" name="degauss"/>
       </extension>
     </simpleContent>
@@ -400,9 +539,9 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
       <element type="boolean" name="gamma_only" minOccurs="0" />
       <element type="double" name="ecutwfc" />
       <element type="double" name="ecutrho" minOccurs="0" />
-      <element type="qes:basisSetItemType" name="fft_grid" minOccurs="0" />
-      <element type="qes:basisSetItemType" name="fft_smooth" minOccurs="0" />
-      <element type="qes:basisSetItemType" name="fft_box" minOccurs="0" />
+      <element type="neb:basisSetItemType" name="fft_grid" minOccurs="0" />
+      <element type="neb:basisSetItemType" name="fft_smooth" minOccurs="0" />
+      <element type="neb:basisSetItemType" name="fft_box" minOccurs="0" />
     </sequence>
   </complexType>
   <complexType name="basis_setType">
@@ -410,13 +549,13 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
       <element type="boolean" name="gamma_only" minOccurs="0" />
       <element type="double" name="ecutwfc" />
       <element type="double" name="ecutrho" minOccurs="0" />
-      <element type="qes:basisSetItemType" name="fft_grid" />
-      <element type="qes:basisSetItemType" name="fft_smooth" minOccurs="0" />
-      <element type="qes:basisSetItemType" name="fft_box" minOccurs="0" />
+      <element type="neb:basisSetItemType" name="fft_grid" />
+      <element type="neb:basisSetItemType" name="fft_smooth" minOccurs="0" />
+      <element type="neb:basisSetItemType" name="fft_box" minOccurs="0" />
       <element type="positiveInteger" name="ngm" />
       <element type="positiveInteger" name="ngms" minOccurs="0" />
       <element type="positiveInteger" name="npwx" />
-      <element type="qes:reciprocal_latticeType" name="reciprocal_lattice" />
+      <element type="neb:reciprocal_latticeType" name="reciprocal_lattice" />
     </sequence>
   </complexType>
   <complexType name="basisSetItemType">
@@ -430,26 +569,26 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   </complexType>
   <complexType name="reciprocal_latticeType">
     <sequence>
-      <element type="qes:d3vectorType" name="b1"/>
-      <element type="qes:d3vectorType" name="b2"/>
-      <element type="qes:d3vectorType" name="b3"/>
+      <element type="neb:d3vectorType" name="b1"/>
+      <element type="neb:d3vectorType" name="b2"/>
+      <element type="neb:d3vectorType" name="b3"/>
     </sequence>
   </complexType>
   <complexType name="electron_controlType">
     <sequence>
-      <element type="qes:diagoType" name="diagonalization"/>
-      <element type="qes:mixingModeType" name="mixing_mode"/>
-      <element type="double" name="mixing_beta"/>
-      <element type="double" name="conv_thr"/>
-      <element type="positiveInteger" name="mixing_ndim"/>
-      <element type="positiveInteger" name="max_nstep"/>
-      <element type="boolean" name="real_space_q"/>
-      <element type="boolean" name="tq_smoothing"/>
-      <element type="boolean" name="tbeta_smoothing"/>
-      <element type="double" name="diago_thr_init"/>
-      <element type="boolean" name="diago_full_acc"/>
-      <element type="nonNegativeInteger" name="diago_cg_maxiter" minOccurs="0"/>
-      <element type="positiveInteger" name="diago_david_ndim"    minOccurs="0"/>
+        <element type="neb:diagoType" name="diagonalization"/>
+        <element type="neb:mixingModeType" name="mixing_mode"/>
+        <element type="double" name="mixing_beta"/>
+        <element type="double" name="conv_thr"/>
+        <element type="positiveInteger" name="mixing_ndim"/>
+        <element type="positiveInteger" name="max_nstep"/>
+        <element type="boolean" name="real_space_q"/>
+        <element type="boolean" name="tq_smoothing"/>
+        <element type="boolean" name="tbeta_smoothing"/>
+        <element type="double" name="diago_thr_init"/>
+        <element type="boolean" name="diago_full_acc"/>
+        <element type="nonNegativeInteger" name="diago_cg_maxiter" minOccurs="0"/>
+        <element type="nonNegativeInteger" name="diago_david_ndim" minOccurs="0"/>
     </sequence>
   </complexType>
   <simpleType name="mixingModeType">
@@ -467,10 +606,10 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   </simpleType>
   <complexType name="k_points_IBZType">
     <choice minOccurs="1" maxOccurs="1">
-      <element type="qes:monkhorst_packType" name="monkhorst_pack" minOccurs="0" maxOccurs="1"/>
+      <element type="neb:monkhorst_packType" name="monkhorst_pack" minOccurs="0" maxOccurs="1"/>
       <sequence>
         <element type="positiveInteger" name="nk" minOccurs="0"/>
-        <element type="qes:k_pointType" name="k_point" maxOccurs="unbounded" minOccurs="0"/>
+        <element type="neb:k_pointType" name="k_point" maxOccurs="unbounded" minOccurs="0"/>
       </sequence>
     </choice>
   </complexType>
@@ -488,7 +627,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   </complexType>
   <complexType name="k_pointType">
     <simpleContent>
-      <extension base="qes:d3vectorType">
+      <extension base="neb:d3vectorType">
         <attribute type="double" name="weight" use="optional"/>
         <attribute type="string" name="label" use = "optional"/>  
       </extension>
@@ -496,12 +635,12 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   </complexType>
   <complexType name="ion_controlType">
     <sequence>
-      <element type="string" name="ion_dynamics" />
+      <element type="string" name="ion_dynamics" minOccurs="0"/>
       <element type="double" name="upscale" minOccurs="0" />
       <element type="boolean" name="remove_rigid_rot" minOccurs="0" />
       <element type="boolean" name="refold_pos" minOccurs="0" />
-      <element type="qes:bfgsType" name="bfgs" minOccurs="0" />
-      <element type="qes:mdType" name="md" minOccurs="0" />
+      <element type="neb:bfgsType" name="bfgs" minOccurs="0" />
+      <element type="neb:mdType" name="md" minOccurs="0" />
     </sequence>
   </complexType>
   <complexType name="bfgsType">
@@ -528,14 +667,14 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   </complexType>
   <complexType name="cell_controlType">
     <sequence>
-      <element type="string" name="cell_dynamics"/>
-      <element type="double" name="pressure" default="0.0" /> 
+      <element type="string" name="cell_dynamics" minOccurs ="0"/>
+      <element type="double" name="pressure" default="0.0" minOccurs ="0" />
       <element type="double" name="wmass" minOccurs="0" />
       <element type="double" name="cell_factor" minOccurs="0" />
       <element type="boolean" name="fix_volume" minOccurs="0" />
       <element type="boolean" name="fix_area"   minOccurs="0" />
       <element type="boolean" name="isotropic" minOccurs="0" />
-      <element type="qes:integerMatrixType" name="free_cell" minOccurs="0" />
+      <element type="neb:integerMatrixType" name="free_cell" minOccurs="0" />
     </sequence>
   </complexType>
   <complexType name="symmetry_flagsType">
@@ -551,7 +690,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   <complexType name="boundary_conditionsType">
     <sequence>
       <element type="string" name="assume_isolated"/>
-      <element type="qes:esmType" name="esm" minOccurs = "0"/>
+      <element type="neb:esmType" name="esm" minOccurs = "0"/>
       <element type="boolean"     name="fcp_opt" minOccurs = "0"/>
       <element type="double" name="fcp_mu" minOccurs ="0" /> 
     </sequence>
@@ -575,18 +714,18 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
     <sequence>
       <element type="string" name="spin_constraints"/>
       <element type="double" name="lagrange_multiplier"/>
-      <element type="qes:d3vectorType" name="target_magnetization" minOccurs="0" maxOccurs="1"/>
+      <element type="neb:d3vectorType" name="target_magnetization" minOccurs="0" maxOccurs="1"/>
     </sequence>
   </complexType>
   <complexType name="electric_fieldType">
     <sequence>
-       <element type="qes:electric_potentialType"  name="electric_potential" minOccurs="1" maxOccurs="1"/>
+       <element type="neb:electric_potentialType"  name="electric_potential" minOccurs="1" maxOccurs="1"/>
        <element type="boolean" name="dipole_correction" minOccurs="0" maxOccurs="1" default="false"/>
        <element type="integer" name="electric_field_direction" minOccurs="0" maxOccurs="1"/>
        <element type="double"  name="potential_max_position" minOccurs="0" maxOccurs="1"/>
        <element type="double"  name="potential_decrease_width" minOccurs="0" maxOccurs="1"/>
        <element type="double"  name="electric_field_amplitude"      minOccurs="0" maxOccurs="1"/>
-       <element type="qes:d3vectorType" name="electric_field_vector" minOccurs="0" maxOccurs="1"/>
+       <element type="neb:d3vectorType" name="electric_field_vector" minOccurs="0" maxOccurs="1"/>
        <element type="integer"          name="nk_per_string"  minOccurs="0"  maxOccurs="1"/>
        <element type="integer"   name = "n_berry_cycles" minOccurs="0" maxOccurs="1"/>
     </sequence>
@@ -602,13 +741,13 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
     <sequence>
        <element type="integer" name="num_of_constraints" minOccurs="1"  maxOccurs="1"/>
        <element type="double"  name="tolerance"          minOccurs="1" maxOccurs="1"/>
-       <element type="qes:atomic_constraintType" name="atomic_constraint" minOccurs="1" maxOccurs="unbounded"/>
+       <element type="neb:atomic_constraintType" name="atomic_constraint" minOccurs="1" maxOccurs="unbounded"/>
     </sequence>
   </complexType>
   <complexType name="atomic_constraintType">
      <sequence>
-        <element type="qes:constr_parms_listType" name="constr_parms" />
-        <element type="qes:constr_typeType" name="constr_type"/>
+        <element type="neb:constr_parms_listType" name="constr_parms" />
+        <element type="neb:constr_typeType" name="constr_type"/>
         <element type="double"  name="constr_target" />
      </sequence>
   </complexType>
@@ -634,7 +773,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
 
   <complexType name="inputOccupationsType">
      <simpleContent>
-        <extension base="qes:vectorType">
+        <extension base="neb:vectorType">
            <attribute type="positiveInteger" name="ispin"/>
            <attribute type="double" name="spin_factor"/>
         </extension>
@@ -645,37 +784,37 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
 
   <complexType name="outputElectricFieldType">
     <sequence>
-      <element name="BerryPhase" type="qes:BerryPhaseOutputType" minOccurs="0"/>
-      <element name="finiteElectricFieldInfo" type="qes:finiteFieldOutType" minOccurs="0" />
-      <element name="dipoleInfo" type="qes:dipoleOutputType" minOccurs="0" />
+      <element name="BerryPhase" type="neb:BerryPhaseOutputType" minOccurs="0"/>
+      <element name="finiteElectricFieldInfo" type="neb:finiteFieldOutType" minOccurs="0" />
+      <element name="dipoleInfo" type="neb:dipoleOutputType" minOccurs="0" />
     </sequence>
   </complexType>
   <complexType name="BerryPhaseOutputType">
     <sequence>
-      <element name="polarization" type="qes:polarizationType"  />
-      <element name="totalPhase" type="qes:phaseType"/>
-      <element name="ionicPolarization" type="qes:ionicPolarizationType" maxOccurs="unbounded"/>
-      <element name="electronicPolarization" type="qes:electronicPolarizationType" maxOccurs="unbounded"/>
+      <element name="polarization" type="neb:polarizationType"  />
+      <element name="totalPhase" type="neb:phaseType"/>
+      <element name="ionicPolarization" type="neb:ionicPolarizationType" maxOccurs="unbounded"/>
+      <element name="electronicPolarization" type="neb:electronicPolarizationType" maxOccurs="unbounded"/>
     </sequence>
   </complexType>
 
   <complexType name="dipoleOutputType">
     <sequence>
       <element type="positiveInteger" name="idir"/>
-      <element type="qes:scalarQuantityType" name = "dipole"/>
-      <element type="qes:scalarQuantityType" name = "ion_dipole"/>
-      <element type="qes:scalarQuantityType" name = "elec_dipole"/>
-      <element type="qes:scalarQuantityType" name="dipoleField"/>
-      <element type="qes:scalarQuantityType" name="potentialAmp"/>
-      <element type="qes:scalarQuantityType" name="totalLength"/>
+      <element type="neb:scalarQuantityType" name = "dipole"/>
+      <element type="neb:scalarQuantityType" name = "ion_dipole"/>
+      <element type="neb:scalarQuantityType" name = "elec_dipole"/>
+      <element type="neb:scalarQuantityType" name="dipoleField"/>
+      <element type="neb:scalarQuantityType" name="potentialAmp"/>
+      <element type="neb:scalarQuantityType" name="totalLength"/>
     </sequence>
   </complexType>
 
 
   <complexType name="finiteFieldOutType">
     <sequence>
-      <element type="qes:d3vectorType" name="electronicDipole"/>
-      <element type="qes:d3vectorType" name="ionicDipole"/>
+      <element type="neb:d3vectorType" name="electronicDipole"/>
+      <element type="neb:d3vectorType" name="ionicDipole"/>
     </sequence>
   </complexType>
 
@@ -683,26 +822,26 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
 
   <complexType name="polarizationType">
     <sequence>
-      <element type="qes:scalarQuantityType" name="polarization"/>
+      <element type="neb:scalarQuantityType" name="polarization"/>
       <element type="double" name="modulus" />
-      <element type="qes:d3vectorType" name="direction"/>
+      <element type="neb:d3vectorType" name="direction"/>
    </sequence>
   </complexType>
 
 
   <complexType name="ionicPolarizationType">
     <sequence>
-      <element name="ion" type="qes:atomType"/>
+      <element name="ion" type="neb:atomType"/>
       <element name="charge" type="double"/>
-      <element name="phase"  type="qes:phaseType"/>
+      <element name="phase"  type="neb:phaseType"/>
     </sequence>
   </complexType>
  
   <complexType name="electronicPolarizationType">
     <sequence>
-      <element name="firstKeyPoint" type="qes:k_pointType"/>
+      <element name="firstKeyPoint" type="neb:k_pointType"/>
       <element name="spin" type="positiveInteger" minOccurs="0"/>
-      <element name="phase" type="qes:phaseType"/>
+      <element name="phase" type="neb:phaseType"/>
     </sequence>
   </complexType>
 
@@ -718,8 +857,8 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
 
   <complexType name="convergence_infoType">
     <sequence>
-      <element type="qes:scf_convType" name="scf_conv"/>
-      <element type="qes:opt_convType" name="opt_conv" minOccurs="0"/>
+      <element type="neb:scf_convType" name="scf_conv"/>
+      <element type="neb:opt_convType" name="opt_conv" minOccurs="0"/>
     </sequence>
   </complexType>
   <complexType name="scf_convType">
@@ -746,20 +885,20 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
       <element type="unsignedByte" name="nsym"/>
       <element type="unsignedByte" name="nrot"/>
       <element type="unsignedByte" name="space_group"/>
-      <element type="qes:symmetryType" name="symmetry" maxOccurs="48" minOccurs="1"/>
+      <element type="neb:symmetryType" name="symmetry" maxOccurs="48" minOccurs="1"/>
     </sequence>
   </complexType>
   <complexType name="symmetryType">
     <sequence>
-      <element type="qes:infoType" name="info"/>
-      <element type="qes:matrixType" name="rotation"/>
-      <element type="qes:d3vectorType" name="fractional_translation" minOccurs="0"/>
-      <element type="qes:equivalent_atomsType" name="equivalent_atoms" minOccurs="0"/>
+      <element type="neb:infoType" name="info"/>
+      <element type="neb:matrixType" name="rotation"/>
+      <element type="neb:d3vectorType" name="fractional_translation" minOccurs="0"/>
+      <element type="neb:equivalent_atomsType" name="equivalent_atoms" minOccurs="0"/>
     </sequence>
   </complexType>
   <complexType name="equivalent_atomsType">
     <simpleContent>
-      <extension base="qes:integerListType">
+      <extension base="neb:integerListType">
         <attribute type="positiveInteger" name="nat"/>
       </extension>
     </simpleContent>
@@ -809,20 +948,20 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
       <element type="boolean" name = "wf_collected" />
       <element type="double" name="fermi_energy" minOccurs="0" />
       <element type="double" name="highestOccupiedLevel" minOccurs ="0"/> 
-      <element type="qes:vectorType" name="two_fermi_energies" minOccurs="0"/> 
-      <element type="qes:k_points_IBZType" name="starting_k_points" />
+      <element type="neb:vectorType" name="two_fermi_energies" minOccurs="0"/> 
+      <element type="neb:k_points_IBZType" name="starting_k_points" />
       <element type="positiveInteger" name="nks"/>
-      <element type="qes:occupationsType" name="occupations_kind" />
-      <element type="qes:smearingType"    name="smearing" minOccurs="0" /> 
-      <element type="qes:ks_energiesType" name="ks_energies" maxOccurs="unbounded"/>
+      <element type="neb:occupationsType" name="occupations_kind" />
+      <element type="neb:smearingType"    name="smearing" minOccurs="0" /> 
+      <element type="neb:ks_energiesType" name="ks_energies" maxOccurs="unbounded"/>
     </sequence>
   </complexType>
   <complexType name="ks_energiesType">
     <sequence>
-      <element type="qes:k_pointType" name="k_point"/>
+      <element type="neb:k_pointType" name="k_point"/>
       <element type="positiveInteger" name="npw"/>
-      <element type="qes:vectorType" name="eigenvalues"/>
-      <element type="qes:vectorType" name="occupations"/>
+      <element type="neb:vectorType" name="eigenvalues"/>
+      <element type="neb:vectorType" name="occupations"/>
     </sequence>
   </complexType>
   <complexType name="closedType">
@@ -853,39 +992,39 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
     </restriction>
   </simpleType>
 
-  <simpleType name="vectorType">
-    <restriction>
-       <simpleType>
-         <list itemType="double"/>
-       </simpleType>
-    </restriction>
-  </simpleType>
-  <simpleType name="integerListType">
-    <restriction>
-       <simpleType>
-         <list itemType="integer"/>
-       </simpleType>
-    </restriction>
-  </simpleType>
-  <simpleType name="doubleListType">
-    <list itemType="double"/>
-  </simpleType>
-  <complexType name="matrixType">
-    <simpleContent>
-      <extension base="qes:doubleListType" />
-    </simpleContent>
-  </complexType>
-  <complexType name="integerMatrixType">
-    <simpleContent>
-      <extension base="qes:integerListType"/>
-    </simpleContent>
-  </complexType>
+    <simpleType name="vectorType">
+        <restriction>
+            <simpleType>
+                <list itemType="double"/>
+            </simpleType>
+        </restriction>
+    </simpleType>
 
-  <complexType name="scalarQuantityType">
-    <simpleContent>
-      <extension base="double">
-        <attribute type="string" name="Units"/>
-      </extension>
-    </simpleContent>
-  </complexType>
+    <simpleType name="integerListType">
+        <restriction>
+            <simpleType>
+                <list itemType="integer"/>
+            </simpleType>
+        </restriction>
+    </simpleType>
+    <simpleType name="doubleListType">
+        <list itemType="double"/>
+    </simpleType>
+    <complexType name="matrixType">
+        <simpleContent>
+            <extension base="neb:doubleListType" />
+        </simpleContent>
+    </complexType>
+    <complexType name="integerMatrixType">
+        <simpleContent>
+            <extension base="neb:integerListType"/>
+        </simpleContent>
+    </complexType>
+    <complexType name="scalarQuantityType">
+        <simpleContent>
+            <extension base="double">
+                <attribute type="string" name="Units"/>
+            </extension>
+        </simpleContent>
+    </complexType>
 </schema>

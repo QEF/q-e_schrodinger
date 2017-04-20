@@ -169,10 +169,10 @@ class XmlDocument(object):
         import json
         return json.dumps(self.to_dict(), sort_keys=True, indent=4)
 
-    def to_yaml(self):
-        """Converts the configuration to to json."""
-        import yaml
-        return yaml.dump(self.to_dict(), default_flow_style=False)
+    #def to_yaml(self):
+    #    """Converts the configuration to to json."""
+    #    import yaml
+    #    return yaml.dump(self.to_dict(), default_flow_style=False)
 
     # ElementTree API wrappers
 

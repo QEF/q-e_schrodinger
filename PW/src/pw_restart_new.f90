@@ -286,12 +286,12 @@ MODULE pw_restart_new
          !
          vdw_corr_ = vdw_corr
          IF ( london ) vdw_corr_ = 'grimme-d2'
-         CALL qexsd_init_dft(output%dft, dft_name, .TRUE., dft_is_hybrid(), nq1, nq2, nq3, ecutfock, &
-              get_exx_fraction(), get_screening_parameter(), exxdiv_treatment, x_gamma_extrapolation,&
-              ecutvcut, lda_plus_u, lda_plus_u_kind, 2*Hubbard_lmax+1, noncolin, nspin, nsp,         &
-              2*Hubbard_lmax+1, nat, atm, ityp, Hubbard_U, Hubbard_J0, Hubbard_alpha, Hubbard_beta,  &
-              Hubbard_J, starting_ns_eigenvalue, rho%ns, rho%ns_nc, U_projection, dft_is_nonlocc(),  &
-              TRIM(vdw_corr_), TRIM ( get_nonlocc_name()), scal6, in_c6, lon_rcut, xdm_a1, xdm_a2,   &
+         CALL qexsd_init_dft(output%dft, dft_name, .TRUE., dft_is_hybrid(), nq1, nq2, nq3, ecutfock/e2, &
+              get_exx_fraction(), get_screening_parameter(), exxdiv_treatment, x_gamma_extrapolation,   &
+              ecutvcut/e2, lda_plus_u, lda_plus_u_kind, 2*Hubbard_lmax+1, noncolin, nspin, nsp,         &
+              2*Hubbard_lmax+1, nat, atm, ityp, Hubbard_U, Hubbard_J0, Hubbard_alpha, Hubbard_beta,     &
+              Hubbard_J, starting_ns_eigenvalue, rho%ns, rho%ns_nc, U_projection, dft_is_nonlocc(),     &
+              TRIM(vdw_corr), TRIM ( get_nonlocc_name()), scal6, in_c6, lon_rcut, xdm_a1, xdm_a2,       &
               vdw_econv_thr, vdw_isolated, is_hubbard, upf(1:nsp)%psd)
          !
 !-------------------------------------------------------------------------------
@@ -924,9 +924,9 @@ MODULE pw_restart_new
       USE mp,                   ONLY : mp_sum, mp_barrier
       USE qes_types_module,     ONLY : input_type, output_type, &
                                        general_info_type, parallel_info_type    
-!      !
+      !
       IMPLICIT NONE
-!      !
+      !
       CHARACTER(LEN=*), INTENT(IN)           :: what
       TYPE ( output_type), INTENT(IN)        :: output_obj
       TYPE ( parallel_info_type), INTENT(IN) :: par_info
@@ -1914,14 +1914,16 @@ MODULE pw_restart_new
         nk2 = band_struct_obj%starting_k_points%monkhorst_pack%nk2
         nk3 = band_struct_obj%starting_k_points%monkhorst_pack%nk3
         ntetra = 6* nk1 * nk2 * nk3 
-      ELSE IF (TRIM(input_parameters_occupations) == 'tetrahedra_lin' ) THEN 
+      ELSE IF (TRIM(input_parameters_occupations) == 'tetrahedra_lin' .OR. &
+               TRIM(input_parameters_occupations) == 'tetrahedra-lin' ) THEN
         ltetra = .TRUE. 
         nk1 = band_struct_obj%starting_k_points%monkhorst_pack%nk1
         nk2 = band_struct_obj%starting_k_points%monkhorst_pack%nk2
         nk3 = band_struct_obj%starting_k_points%monkhorst_pack%nk3
         tetra_type = 1
         ntetra = 6* nk1 * nk2 * nk3 
-      ELSE IF (TRIM(input_parameters_occupations) == 'tetrahedra_opt' ) THEN 
+      ELSE IF (TRIM(input_parameters_occupations) == 'tetrahedra_opt' .OR. &
+               TRIM(input_parameters_occupations) == 'tetrahedra-opt' ) THEN 
         ltetra = .TRUE. 
         nk1 = band_struct_obj%starting_k_points%monkhorst_pack%nk1
         nk2 = band_struct_obj%starting_k_points%monkhorst_pack%nk2
@@ -2156,6 +2158,7 @@ MODULE pw_restart_new
     SUBROUTINE readschema_ef ( band_struct_obj )
     !----------------------------------------------------------------------------------------
        !
+       USE constants, ONLY        : e2
        USE ener,  ONLY            : ef, ef_up, ef_dw
        USE klist, ONLY            : two_fermi_energies, nelec
        USE qes_types_module, ONLY : band_structure_type 
@@ -2167,16 +2170,17 @@ MODULE pw_restart_new
        two_fermi_energies = band_struct_obj%two_fermi_energies_ispresent 
        nelec = band_struct_obj%nelec
        IF ( two_fermi_energies) THEN 
-          ef_up = band_struct_obj%two_fermi_energies(1) 
-          ef_dw = band_struct_obj%two_fermi_energies(2)
+          ef_up = band_struct_obj%two_fermi_energies(1)*e2
+          ef_dw = band_struct_obj%two_fermi_energies(2)*e2
        ELSE IF ( band_struct_obj%fermi_energy_ispresent ) THEN 
-          ef = band_struct_obj%fermi_energy
+          ef = band_struct_obj%fermi_energy*e2
        END IF 
     END SUBROUTINE readschema_ef 
     !------------------------------------------------------------------------
     SUBROUTINE readschema_exx ( hybrid_obj) 
     !------------------------------------------------------------------------
       ! 
+      USE constants,            ONLY : e2
       USE funct,                ONLY : set_exx_fraction, set_screening_parameter, &
                                       set_gau_parameter, enforce_input_dft, start_exx
       USE exx,                  ONLY : x_gamma_extrapolation, nq1, nq2, nq3, &
@@ -2193,8 +2197,8 @@ MODULE pw_restart_new
       nq3 = hybrid_obj%qpoint_grid%nqx3
       CALL set_exx_fraction( hybrid_obj%exx_fraction) 
       CALL set_screening_parameter ( hybrid_obj%screening_parameter) 
-      ecutvcut = hybrid_obj%ecutvcut
-      ecutfock = hybrid_obj%ecutfock
+      ecutvcut = hybrid_obj%ecutvcut*e2
+      ecutfock = hybrid_obj%ecutfock*e2
       CALL start_exx() 
     END SUBROUTINE  readschema_exx 
     !-----------------------------------------------------------------------------------  

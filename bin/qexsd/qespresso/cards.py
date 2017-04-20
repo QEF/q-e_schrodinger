@@ -59,7 +59,7 @@ def get_atomic_positions_cell_card(name, **kwargs):
         return []
 
     # Find atoms
-    atomic_positions = atomic_structure.get('atomic_positions', {})
+    atomic_positions =  atomic_structure.get('atomic_positions', {})
     wyckoff_positions = atomic_structure.get('wyckoff_positions', {})
     try:
         is_wyckoff = False
@@ -85,13 +85,15 @@ def get_atomic_positions_cell_card(name, **kwargs):
     # Add atomic positions
     lines = ['%s %s' % (name, 'crystal_sg' if is_wyckoff else 'bohr')]
     for k in range(len(atoms)):
-        name = atoms[k]['name']
-        coords = ' '.join([str(value) for value in atoms[k]['_text']])
+        sp_name = '{:4}'.format( atoms[k]['name'] )
+        coords = '{:12.8f}  {:12.8f}  {:12.8f}'.format(*atoms[k]['_text'])
+        #coords = ' '.join([str(value) for value in atoms[k]['_text']])
         if k < len(free_positions):
-            free_pos = ' '.join([str(value) for value in free_positions[k]])
-            lines.append(' %s %s %s' % (name, coords, free_pos))
+            #free_pos = ' '.join([str(value) for value in free_positions[k]])
+            free_pos = '{:4d}{:4d}{:4d}'.format(*[int(value) for value in free_positions[k]])
+            lines.append('%s %s %s' % (sp_name, coords, free_pos))
         else:
-            lines.append(' %s %s' % (name, coords))
+            lines.append('%s %s' % (sp_name, coords))
 
     return lines
 
@@ -124,6 +126,7 @@ def get_atomic_constraints_card(name, **kwargs):
             ' '.join([str(item) for item in constr_parms]),
             constr_target
         ))
+    return lines
 
 
 def get_k_points_card(name, **kwargs):
@@ -218,7 +221,7 @@ def get_cell_parameters_card(name, **kwargs):
         for key in sorted(cells):
             if key not in ['a1', 'a2', 'a3']:
                 continue
-            lines.append(' %s' % ' '.join([str(value) for value in cells[key]]))
+            lines.append( (3*'{:12.8f} ').format(*cells[key]))
         return lines
     return []
 
@@ -256,3 +259,130 @@ def get_qpoints_card(name, **kwargs):
             lines.append(' %s %s' % (vector, q_point['weight']))
 
     return lines
+
+def get_climbing_images(name, **kwargs):
+    manualImages = False
+    try:
+        if kwargs['climbingImage'] == 'manual' or kwargs['climbingImage'] == 'MANUAL':
+            manualImages = True
+    except KeyError:
+        manualImages = False
+    if manualImages:
+        if isinstance(kwargs['climbingImageIndex'],list):
+            line = [int(l) for l in kwargs['climbingImageIndex'] ]
+            fmt  = len(line)*' %d, '
+            line = fmt%tuple(line)
+        else:
+            line =' %d '%int(kwargs['climbingImageIndex'])
+        return line
+    return ''
+
+def get_neb_images_positions_card(name, **kwargs):
+    """
+    Extract atomic posisitions for each image provided in engine with an atomic_structure element
+    :param name: Card name
+    :param kwargs: List of dictionaries each containing an atomic_structure element.
+    :return: List of lines
+    """
+    images = kwargs.get('atomic_structure',[])
+    try:
+        assert isinstance(images, list)
+    except AssertionError:
+        images=[images]
+    if len(images) < 2:
+        logger.error("At least the atomic structures for first and last image should be provided")
+        return []
+    first_positions = images[0].get('atomic_positions',{})
+    his_nat = int(images[0].get('nat',0) )
+    last_positions  = images[-1].get('atomic_positions',{})
+    if len(kwargs['atomic_structure']) > 2:
+        interm_pos = [ats.get('atomic_positions',{}) for ats in images[1:-1] ]
+    else:
+        interm_pos = []
+
+    lines = ['%s '%'BEGIN_POSITIONS']
+    lines.append('%s '%'FIRST_IMAGE')
+    atoms = first_positions.get('atom',[])
+    my_nat = len (atoms)
+    if my_nat <= 0:
+        logger.error("No atomic coordinates provided for first image")
+        return ''
+    if my_nat != his_nat:
+        logger.error ( "nat provided in first image differs from number of atoms in atomic_positions!!!")
+
+    free_positions = kwargs.get('free_positions', [])
+    if free_positions and len(free_positions) != len(atoms):
+        logger.error("ATOMIC_POSITIONS: incorrect number of position constraints!")
+
+    lines.append ('%s { %s }' % ('ATOMIC_POSITIONS', 'bohr') )
+    for k in range(len(atoms)):
+        sp_name = '{:4}'.format(atoms[k]['name'])
+        coords = '{:12.8f}  {:12.8f}  {:12.8f}'.format(*atoms[k]['_text'])
+        if k < len(free_positions):
+            free_pos = '{:4d}{:4d}{:4d}'.format(*[int(value) for value in free_positions[k]])
+            lines.append('%s %s %s' % (sp_name, coords, free_pos))
+        else:
+            lines.append('%s %s' % (sp_name, coords))
+
+    for inter in interm_pos:
+        atoms = inter['atom']
+        if len(atoms) != my_nat:
+            logger.error('Found images with differing number of atoms !!!')
+
+        lines.append('%s '%'INTERMEDIATE_IMAGE')
+        lines.append('%s { %s }'% ('ATOMIC_POSITIONS','bohr') )
+        for k in range(len(atoms)):
+            sp_name = '{:4}'.format(atoms[k]['name'])
+            coords = '{:12.8f}  {:12.8f}  {:12.8f}'.format(*atoms[k]['_text'])
+            if k < len(free_positions):
+                free_pos = '{:4d}{:4d}{:4d}'.format(*[int(value) for value in free_positions[k]])
+                lines.append('%s %s %s' % (sp_name, coords, free_pos))
+            else:
+                lines.append('%s %s' % (sp_name, coords))
+    atoms=last_positions['atom']
+    if len(atoms) != my_nat:
+        logger.error('Found images with differing number of atoms !!!')
+    lines.append('%s '%'LAST_IMAGE')
+    lines.append('%s { %s }'%('ATOMIC_POSITIONS', 'bohr') )
+    for k in range(len(atoms)):
+        sp_name = '{:4}'.format(atoms[k]['name'])
+        coords = '{:12.8f}  {:12.8f}  {:12.8f}'.format(*atoms[k]['_text'])
+        if k < len(free_positions):
+            free_pos = '{:4d}{:4d}{:4d}'.format(*[int(value) for value in free_positions[k]])
+            lines.append('%s %s %s' % (sp_name, coords, free_pos))
+        else:
+            lines.append('%s %s' % (sp_name, coords))
+    lines.append( '%s '%'END_POSITIONS')
+    return lines
+
+def get_neb_cell_parameters_card (name, **kwargs):
+    """
+    Extract cell parameter from the firt of the atomic_structure elements provided in engine
+    :param name: Card name
+    :param kwargs: list of the atomic_structure dictionaries translate for xml element engine
+    :return: list of text lines for the cell parameters card
+    """
+    images = kwargs.get('atomic_structure',[])
+    try:
+        assert isinstance(images,list)
+    except AssertionError:
+        images = [images]
+
+    if len(images) < 1:
+        logger.error (" No atomic_strucure element found in kwargs !!!")
+        return ''
+
+    atomic_structure  = images[0]
+    cells = atomic_structure.get('cell', {})
+    if cells:
+        lines = ['%s bohr' % name]
+        for key in sorted(cells):
+            if key not in ['a1', 'a2', 'a3']:
+                continue
+            lines.append( (3*'{:12.8f}').format(*cells[key]) )
+        return lines
+    return []
+
+
+def get_neb_atomic_forces_card   (name, **kwargs):
+    print (kwargs)

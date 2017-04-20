@@ -14,7 +14,6 @@ from .converters import PwInputConverter, PhononInputConverter, NebInputConverte
 from .exceptions import ConfigError
 from .xsdtypes import etree_node_to_dict, XmlDocument
 from .xsdtypes.etree import etree_iter_path
-
 logger = logging.getLogger('qespresso')
 
 
@@ -32,7 +31,11 @@ class QeDocument(XmlDocument):
             if self.default_namespace != self.namespaces['qes']:
                 raise ConfigError("Need a schema in 'qes' namespace!")
         except KeyError:
-            raise ConfigError("Need a schema in 'qes' namespace!")
+            try:
+                if self.default_namespace != self.namespaces['neb']:
+                    raise ConfigError("Need a schema in 'qes' or 'neb' namespace!")
+            except KeyError:
+                raise ConfigError("Need a schema in 'qes' of 'neb' namespace")
 
     def read_qe_input(self, filename):
         """
@@ -165,14 +168,14 @@ class PhononDocument(QeDocument):
 
 class NebDocument(QeDocument):
     """
-    Class to manage Phonon XML documents.
+    Class to manage NEB XML documents.
     """
     def __init__(self):
         self._input_tag = 'input'
         super(NebDocument, self).__init__(
-            xsd_file='%s/scheme/NebInputOutput.xsd' % os.path.dirname(os.path.abspath(__file__)),
+            xsd_file='%s/scheme/qes_neb_temp.xsd' % os.path.dirname(os.path.abspath(__file__)),
             input_builder=NebInputConverter
         )
 
     def get_input_path(self):
-        return './NebInput'
+        return './input'

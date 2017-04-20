@@ -1,0 +1,99 @@
+BEGIN
+BEGIN_PATH_INPUT
+&PATH
+ CI_scheme='no-CI'
+ ds=1.0
+ first_last_opt=.false.
+ k_max=0.1
+ k_min=0.1
+ lfcpopt=.false.
+ nstep_path=50
+ opt_scheme='broyden'
+ path_thr=0.05
+ string_method='neb'
+ use_freezing=.false.
+ use_masses=.false.
+/
+END_PATH_INPUT
+BEGIN_ENGINE_INPUT
+&CONTROL
+ calculation='scf'
+ dipfield=.false.
+ disk_io='low'
+ dt=20.0
+ etot_conv_thr=1e-06
+ forc_conv_thr=1e-05
+ iprint=100
+ max_seconds=10000000
+ nstep=250
+ outdir='/scratch/pdelugas/espresso/tempdir/'
+ prefix='Al001+H_pbc'
+ pseudo_dir='/scratch/pdelugas/espresso/pseudo/'
+ restart_mode='from_scratch'
+ title='Al001+H_pbc'
+ tprnfor=.true.
+ tstress=.false.
+ verbosity='low'
+ wf_collect=.false.
+/
+&SYSTEM
+ degauss=0.02
+ ecutwfc=20.0
+ input_dft='PBE'
+ lspinorb=.false.
+ nat = 5
+ noncolin=.false.
+ nspin=1
+ occupations='smearing'
+ smearing='mv'
+ starting_magnetization(1)=0.0
+ starting_magnetization(2)=0.0
+ tot_charge=0.0
+/
+&ELECTRONS
+ conv_thr=1e-06
+ diago_cg_maxiter=100
+ diago_full_acc=.false.
+ diago_thr_init=0.001
+ diagonalization='davidson'
+ electron_maxstep=100
+ mixing_beta=0.3
+ mixing_mode='plain'
+ mixing_ndim=8
+ tbeta_smoothing=.true.
+ tq_smoothing=.true.
+ tqr=.false.
+/
+&IONS
+/
+&CELL
+ press=0.0
+ press_conv_thr=0.001
+/
+ATOMIC_SPECIES
+ Al 26.981538 Al.pbe-n-van.UPF
+ H 1.00794 H.pbe-van_ak.UPF
+BEGIN POSITIONS 
+FIRST_IMAGE 
+ATOMIC_POSITIONS { bohr }
+Al     0.00000000    0.00000000    0.00000000    0   0   0
+Al     5.41111110    0.00000000    0.00000000    0   0   0
+Al     0.00000000    5.41113843    0.00000000    0   0   0
+Al     5.41113843    5.41113843    0.00000000    0   0   0
+H      0.00000000    0.00000000    3.11055670    0   0   1
+LAST_IMAGE 
+ATOMIC_POSITIONS { bohr }
+Al     0.00000000    0.00000000    0.00000000    0   0   0
+Al     5.41111110    0.00000000    0.00000000    0   0   0
+Al     0.00000000    5.41113843    0.00000000    0   0   0
+Al     5.41113843    5.41113843    0.00000000    0   0   0
+H      5.41113843    5.41113843    3.11055670    0   0   1
+END_POSITIONS 
+K_POINTS automatic
+ 6 6 1 1 1 1
+CELL_PARAMETERS bohr
+ 10.82227686 0.0 0.0
+ 0.0 10.82227686 0.0
+ 0.0 0.0 22.67672253
+END_ENGINE_INPUT
+END

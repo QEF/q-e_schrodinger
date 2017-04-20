@@ -77,7 +77,7 @@
   TYPE (input_type),INTENT(OUT)            ::   obj
   CHARACTER(len=*),INTENT(IN)              ::   obj_tagname
   !
-  CHARACTER(80)                            ::   tau_units,dft_name, diagonalization
+  CHARACTER(80)                            ::   tau_units, dft_name, diagonalization
   CHARACTER(256)                           ::   tagname
   REAL(DP),ALLOCATABLE                     ::   tau(:,:)
   REAL(DP)                                 ::   alat, a1(3), a2(3), a3(3), gamma_xk(3,1), gamma_wk(1)
@@ -131,13 +131,12 @@
   a3 = cb_at(:,3)*alat
   tau(1:3,1:ip_nat) = iob_tau(1:3,1:ip_nat)*alat
   tau_units="Bohr"
-  !tau=tau*bohr_radius_angs
   !
   IF ( ibrav_lattice ) THEN 
-     CALL qexsd_init_atomic_structure (obj%atomic_structure, ntyp, atm, ip_ityp, ip_nat, tau, tau_units = tau_units,     &
+     CALL qexsd_init_atomic_structure (obj%atomic_structure, ntyp, atm, ip_ityp, ip_nat, tau, tau_units = tau_units, &
                                        ALAT = alat, a1 = a1, a2 = a2, a3 = a3 , ibrav = ip_ibrav )
   ELSE 
-     CALL qexsd_init_atomic_structure (obj%atomic_structure, ntyp, atm, ip_ityp, ip_nat, tau, TAU_UNITS = tau_units,     &
+     CALL qexsd_init_atomic_structure (obj%atomic_structure, ntyp, atm, ip_ityp, ip_nat, tau, tau_units = tau_units, &
                                     alat = sqrt(sum(a1(1:3)*a1(1:3))), A1 = a1, A2 = a2, A3 = a3 , IBRAV = 0 )
   END IF 
   DEALLOCATE ( tau ) 
@@ -191,8 +190,8 @@
   !
   vdw_corr_ = vdw_corr
   IF ( london ) vdw_corr_ = 'grimme-d2'
-  CALL qexsd_init_dft (obj%dft,TRIM(dft_name),.FALSE., dft_is_hybrid,ip_nqx1,ip_nqx2,ip_nqx3,ip_ecutfock,exx_fraction,&
-                       screening_parameter,exxdiv_treatment, x_gamma_extrapolation, ip_ecutvcut,                      &
+  CALL qexsd_init_dft (obj%dft,TRIM(dft_name),.FALSE., dft_is_hybrid,ip_nqx1,ip_nqx2,ip_nqx3,ip_ecutfock/e2,          &
+                       exx_fraction,screening_parameter,exxdiv_treatment, x_gamma_extrapolation, ip_ecutvcut/e2,      &
                        ip_lda_plus_U,ip_lda_plus_u_kind,2*hubbard_lmax+1, ip_noncolin, ip_nspin,ntyp,0,ip_nat,atm,    &
                        ip_ityp,ip_hubbard_u,ip_hubbard_j0,ip_hubbard_alpha,ip_hubbard_beta,ip_hubbard_j,              &
                        starting_ns_eigenvalue,ns_null,ns_nc_null,u_projection_type,dft_is_nonlocc,                    &

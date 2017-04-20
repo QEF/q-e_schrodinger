@@ -10,7 +10,7 @@
 """
 Data format converters for Quantum Espresso
 """
-
+import copy
 import logging
 import re
 import os.path
@@ -23,7 +23,25 @@ logger = logging.getLogger('qespresso')
 
 def conversion_maps_builder(template_map):
     """
-    Build invariant and variant conversion maps from a template.
+    Build invariant and variant conversion maps from a template. The template
+    is a multilevel dictionary that reproduce the structure of the input data.
+    An entry maybe:
+
+      1) a string with the list and the option names (eg: "CONTROL[calculation]").
+         In this case the entry is mapped to this value, without modifications.
+
+      2) a tuple with three items:
+         - list and option names (eg: 'SYSTEM[Hubbard_U]');
+         - the function that has to be used to calculate the namelist option
+           value from XML value;
+         - the function that has to be used to calculate to calculate the XML
+           value data from namelist entry.
+
+      3) a list of tuples when the XML entry has to be used to calculate other
+         namelist or card's entries. Each tuple has the meaning of the previous
+         case. The second and third elements may be None or empty if the template
+         has another tuple with the same list and option names that indicate the
+         transformation functions associated.
 
     :param template_map: Template dictionary
     :return: A couple of dictionaries, the first for invariant
@@ -225,7 +243,12 @@ class RawInputConverter(Container):
                         '_related_tag': tag
                     })
             else:
-                self._input[group].update(node_dict.copy())
+                try:
+                    self._input[group][tag].append(node_dict[tag])
+                except AttributeError:
+                    self._input[group][tag] = [self._input[group][tag], node_dict[tag]]
+                except KeyError:
+                    self._input[group].update(node_dict.copy())
                 if _get_qe_input is not None:
                     self._input[group].update({'_get_qe_input': _get_qe_input})
 
@@ -321,7 +344,7 @@ class PwInputConverter(RawInputConverter):
         },
         'atomic_structure': {
             'nat': 'SYSTEM[nat]',
-            '_text': [
+            '_text': [('SYSTEM[ibrav]', options.set_ibrav_to_zero, None ),
                 ("ATOMIC_POSITIONS", cards.get_atomic_positions_cell_card, None),
                 ("CELL_PARAMETERS", cards.get_cell_parameters_card, None)
             ],
@@ -335,12 +358,12 @@ class PwInputConverter(RawInputConverter):
                     'nqx2': 'SYSTEM[nqx2]',
                     'nqx3': 'SYSTEM[nqx3]'
                 },
-                'ecutfock': 'SYSTEM[ecutfock]',
+                'ecutfock': ('SYSTEM[ecutfock]',options.Ha2Ry, None),
                 'exx_fraction': 'SYSTEM[exx_fraction]',
                 'screening_parameter': 'SYSTEM[screening_parameter]',
                 'exxdiv_treatment': 'SYSTEM[exxdiv_treatment]',
                 'x_gamma_extrapolation': 'SYSTEM[x_gamma_extrapolation]',
-                'ecutvcut': 'SYSTEM[ecutvcut]',
+                'ecutvcut': ('SYSTEM[ecutvcut]', options.Ha2Ry, None)
             },
             'dftU': {
                 'lda_plus_u_kind': 'SYSTEM[lda_plus_u_kind]',
@@ -534,11 +557,9 @@ class PwInputConverter(RawInputConverter):
         )
         if 'xml_file' in kwargs:
             self._input['CONTROL']['input_xml_schema_file'] = u'\'{}\''.format(os.path.basename(kwargs['xml_file']))
-        self._input['SYSTEM']['ibrav'] = 0
 
     def clear_input(self):
         super(PwInputConverter, self).clear_input()
-        self._input['SYSTEM']['ibrav'] = 0
 
 
 class PhononInputConverter(RawInputConverter):
@@ -651,11 +672,60 @@ class NebInputConverter(RawInputConverter):
     Convert to/from Fortran input for Phonon.
     """
     NEB_TEMPLATE_MAP = {
+        'path' : {
+            'restartMode': "PATH[restart_mode]",
+            'stringMethod': "PATH[string_method]",
+            'pathNstep': "PATH[nstep_path]",
+            'numOfImages': "PATH[num_of_images]",
+            'optimizationScheme': "PATH[opt_scheme]",
+            'optimizationStepLength': "PATH[ds]",
+            'elasticConstMax' : "PATH[k_max]",
+            'elasticConstMin' : "PATH[k_min]",
+            'pathThreshold'   : "PATH[path_thr]",
+            'endImagesOptimizationFlag' : "PATH[first_last_opt]",
+            'temperature'  :              "PATH[temp_req]",
+            'climbingImage': [
+                "PATH[CI_scheme]",
+                ("CLIMBING_IMAGES", cards.get_climbing_images, None)
+            ],
+            'useMassesFlag': "PATH[use_masses]",
+            'useFreezingFlag': "PATH[use_freezing]",
+            'constantBiasFlag': "PATH[lfcpopt]",
+            'targetFermiEnergy': "PATH[fcp_mu]",
+            'totChargeFirst': "PATH[fcp_tot_charge_first]",
+            'totChargeLast': "PATH[fcp_tot_charge_last]",
+            'climbingImageIndex': ("CLIMBING_IMAGES", cards.get_climbing_images, None)
+        }
     }
 
-    def __init__(self):
+    def __init__(self,**kwargs):
+        ENGINE_TEMPLATE_MAP = copy.deepcopy(PwInputConverter.PW_TEMPLATE_MAP)
+        ENGINE_TEMPLATE_MAP['atomic_structure'] = {
+            'nat': ("SYSTEM[nat]", options.neb_set_system_nat,None),
+            '_text': [('SYSTEM[ibrav]', options.set_ibrav_to_zero, None),
+                ("CELL_PARAMETERS", cards.get_neb_cell_parameters_card, None),
+                ("ATOMIC_POSITIONS", cards.get_neb_images_positions_card,None)
+            ],
+            'atomic_positions': ('ATOMIC_FORCES', cards.get_atomic_forces_card,None)
+        }
+        # ENGINE_TEMPLATE_MAP['_text'] = ("ATOMIC_POSITIONS", cards.get_neb_images_positions_card,None )
+        self.NEB_TEMPLATE_MAP.update({'engine': ENGINE_TEMPLATE_MAP} )
         super(NebInputConverter, self).__init__(
             *conversion_maps_builder(self.NEB_TEMPLATE_MAP),
-            input_namelists=tuple(),
-            input_cards=tuple()
+            input_namelists=('PATH','CONTROL','SYSTEM','ELECTRONS','IONS','CELL'),
+            input_cards=('CLIMBING_IMAGES', 'ATOMIC_SPECIES','ATOMIC_POSITIONS', 'K_POINTS',
+                         'CELL_PARAMETERS', 'ATOMIC_FORCES')
         )
+
+    def get_qe_input(self):
+        """
+        Overrides method in RawInputConverter because few lines in between the namelists are requested for
+        the NEB input.
+        :return: a string containing the text input for NEB calculations
+        """
+        qe_input = super(NebInputConverter, self).get_qe_input().split('\n')
+        qe_input =['BEGIN','BEGIN_PATH_INPUT'] +qe_input
+        index = qe_input.index('&CONTROL')
+        qe_input = qe_input[:index]+['END_PATH_INPUT','BEGIN_ENGINE_INPUT']+qe_input[index:]
+        qe_input += ['END_ENGINE_INPUT', 'END']
+        return '\n'.join(qe_input)

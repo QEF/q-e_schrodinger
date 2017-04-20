@@ -1,0 +1,101 @@
+BEGIN
+BEGIN_PATH_INPUT
+&PATH
+ CI_scheme='auto'
+ ds=2.0
+ first_last_opt=.false.
+ k_max=0.3
+ k_min=0.2
+ lfcpopt=.false.
+ nstep_path=20
+ num_of_images=7
+ opt_scheme='broyden'
+ path_thr=0.1
+ string_method='neb'
+ temp_req=0.0
+ use_freezing=.false.
+ use_masses=.false.
+/
+END_PATH_INPUT
+BEGIN_ENGINE_INPUT
+&CONTROL
+ calculation='scf'
+ dipfield=.false.
+ disk_io='low'
+ dt=20.0
+ etot_conv_thr=0.0001
+ forc_conv_thr=0.001
+ iprint=100000
+ max_seconds=10000000
+ outdir='/scratch/pdelugas/espresso/tempdir'
+ prefix='H2+H'
+ pseudo_dir='/scratch/pdelugas/espresso/pseudo'
+ restart_mode='from_scratch'
+ title='uffa'
+ tprnfor=.false.
+ tstress=.false.
+ verbosity='low'
+ wf_collect=.false.
+/
+&SYSTEM
+ degauss=0.03
+ ecutrho=50.0
+ ecutwfc=10.0
+ force_symmorphic=.false.
+ input_dft='PBE'
+ lspinorb=.false.
+ nat = 3
+ no_t_rev=.false.
+ noinv=.false.
+ noncolin=.false.
+ nosym=.false.
+ nosym_evc=.false.
+ nspin=2
+ ntyp=1
+ occupations='smearing'
+ smearing='gaussian'
+ starting_magnetization(1)=0.0
+ tot_charge=0.0
+ use_all_frac=.false.
+/
+&ELECTRONS
+ conv_thr=1e-08
+ diago_cg_maxiter=100
+ diago_full_acc=.false.
+ diago_thr_init=0.0
+ diagonalization='davidson'
+ electron_maxstep=100
+ mixing_beta=0.3
+ mixing_mode='plain'
+ mixing_ndim=8
+ tbeta_smoothing=.false.
+ tq_smoothing=.false.
+ tqr=.false.
+/
+&IONS
+/
+&CELL
+ press=0.0
+ press_conv_thr=0.5
+/
+ATOMIC_SPECIES
+ H 1.00794 HUSPBE.RRKJ3
+BEGIN POSITIONS 
+   FIRST_IMAGE 
+      ATOMIC_POSITIONS { bohr }
+         H -4.56670009 0.0 0.0
+         H 0.0 0.0 0.0
+         H 1.55776676 0.0 0.0
+   LAST_IMAGE 
+       ATOMIC_POSITIONS { bohr }
+      H -1.55776676 0.0 0.0
+      H 0.0 0.0 0.0
+      H 4.56670009 0.0 0.0
+END_POSITIONS 
+K_POINTS gamma
+CELL_PARAMETERS bohr
+ 12.0 0.0 0.0
+ 0.0 12.0 0.0
+ 0.0 0.0 12.0
+END_ENGINE_INPUT
+END
