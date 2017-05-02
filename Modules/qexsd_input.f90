@@ -306,7 +306,7 @@ MODULE qexsd_input
                                    s1,s2,s3,kind_of_grid)
       CALL qes_init_k_points_IBZ(obj,TAGNAME,monkhorst_pack_ispresent=.TRUE.,&
                                  monkhorst_pack=mpack_obj,nk_ispresent=.FALSE.,&
-                                 nk=0,k_point_ispresent=.FALSE.,ndim_k_point=0,k_point=dummy_kpobj)
+                                 nk=0,k_point_ispresent=.FALSE.,ndim_k_point=0,k_point=dummy_kp_obj)
       CALL qes_reset_monkhorst_pack(mpack_obj)
    ELSE
       IF ( ibrav_lattice ) THEN 
