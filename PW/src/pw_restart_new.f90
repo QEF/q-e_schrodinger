@@ -967,6 +967,7 @@ MODULE pw_restart_new
       lef     = .FALSE.
       lexx    = .FALSE.
       lesm    = .FALSE.
+      lheader = .FALSE. 
       !
      
          
