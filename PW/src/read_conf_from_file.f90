@@ -32,10 +32,10 @@ FUNCTION read_config_from_file(nat, at_old, omega_old, lmovecell, at, bg, &
   INTEGER :: ierr
 !
 #if defined(__XSD)
-  TYPE ( output_type), ALLOCATABLE   :: output_obj
-  TYPE ( input_type ), ALLOCATABLE   :: input_obj 
-  TYPE (parallel_info_type),ALLOCATABLE :: parinfo_obj
-  TYPE (general_info_type ),ALLOCATABLE :: geninfo_obj 
+  TYPE ( output_type) :: output_obj
+  TYPE ( input_type ) :: input_obj 
+  TYPE (parallel_info_type) :: parinfo_obj
+  TYPE (general_info_type ) :: geninfo_obj 
 #endif
 
   !
