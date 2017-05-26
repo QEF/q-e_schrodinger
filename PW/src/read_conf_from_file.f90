@@ -32,10 +32,10 @@ FUNCTION read_config_from_file(nat, at_old, omega_old, lmovecell, at, bg, &
   INTEGER :: ierr
 !
 #if defined(__XSD)
-  TYPE ( output_type), ALLOCATABLE   :: output_obj
-  TYPE ( input_type ), ALLOCATABLE   :: input_obj 
-  TYPE (parallel_info_type),ALLOCATABLE :: parinfo_obj
-  TYPE (general_info_type ),ALLOCATABLE :: geninfo_obj 
+  TYPE ( output_type) :: output_obj
+  TYPE ( input_type ) :: input_obj
+  TYPE (parallel_info_type) :: parinfo_obj
+  TYPE (general_info_type ) :: geninfo_obj 
 #endif
 
   !
@@ -46,7 +46,6 @@ FUNCTION read_config_from_file(nat, at_old, omega_old, lmovecell, at, bg, &
   ! ... check if restart file is present, if yes read config parameters
   !
 #if defined(__XSD) 
-  ALLOCATE (output_obj, input_obj, parinfo_obj, geninfo_obj) 
   CALL pw_readschema_file ( ierr, output_obj, input_obj, parinfo_obj, geninfo_obj)
   IF (ierr == 0 ) THEN 
      CALL init_vars_from_schema ( 'config', ierr, output_obj, input_obj, parinfo_obj, geninfo_obj ) 
@@ -55,7 +54,6 @@ FUNCTION read_config_from_file(nat, at_old, omega_old, lmovecell, at, bg, &
      CALL qes_reset_parallel_info (parinfo_obj) 
      CALL qes_reset_general_info  (geninfo_obj) 
   END IF 
-  DEALLOCATE ( output_obj, input_obj, parinfo_obj, geninfo_obj ) 
 #else
   CALL pw_readfile( 'config', ierr )
 #endif

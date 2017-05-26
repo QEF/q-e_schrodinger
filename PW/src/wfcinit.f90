@@ -46,7 +46,7 @@ SUBROUTINE wfcinit()
   CHARACTER (256 )                        :: dirname 
 !
 #if defined(__XSD)
-  TYPE ( input_type ), ALLOCATABLE      :: input_obj
+  TYPE ( input_type ) :: input_obj
 #endif
 !
   !
@@ -74,15 +74,13 @@ SUBROUTINE wfcinit()
      !
      ierr = 1
 #if defined(__XSD)
-     ALLOCATE (input_obj )  
      CALL pw_readschema_file(IERR = ierr, RESTART_INPUT = input_obj )
      IF ( ierr == 0 ) THEN 
         twfcollect_file = input_obj%control_variables%wf_collect   
         dirname = TRIM( tmp_dir ) // TRIM( prefix ) // '.save' 
         IF ( twfcollect_file ) CALL read_collected_to_evc(dirname )
      END IF 
-     CALL qes_reset_input ( input_obj ) 
-     DEALLOCATE ( input_obj )    
+     CALL qes_reset_input ( input_obj )  
 #else
      CALL pw_readfile( 'wave', ierr )
 #endif
