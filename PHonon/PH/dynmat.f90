@@ -21,7 +21,7 @@ program dynmat
 !  Input data (namelist "input")
 !
 !  prefix  character prepended to the input (fildyn) filename
-!                    (defualt: ' ')
+!                    (default: prefix=' ')
 !  fildyn  character input file containing the dynamical matrix
 !                    (default: fildyn='matdyn')
 !  q(3)      real    calculate LO modes (add nonanalytic terms) along
