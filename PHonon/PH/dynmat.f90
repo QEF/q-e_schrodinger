@@ -20,6 +20,8 @@ program dynmat
 !
 !  Input data (namelist "input")
 !
+!  prefix  character prepended to the input (fildyn) filename
+!                    (default: prefix=' ')
 !  fildyn  character input file containing the dynamical matrix
 !                    (default: fildyn='matdyn')
 !  q(3)      real    calculate LO modes (add nonanalytic terms) along
@@ -82,7 +84,7 @@ program dynmat
   !
   implicit none
   integer, parameter :: ntypx = 10
-  character(len=256):: fildyn, filout, filmol, filxsf, fileig
+  character(len=256):: fildyn, prefix, filout, filmol, filxsf, fileig
   character(len=3) :: atm(ntypx)
   character(len=10) :: asr
   logical :: lread, gamma
@@ -96,8 +98,8 @@ program dynmat
   logical, external :: has_xml
   integer :: ibrav, nqs
   integer, allocatable :: itau(:)
-  namelist /input/ amass, asr, axis, fildyn, filout, filmol, filxsf, &
-                   fileig, lperm, lplasma, q
+  namelist /input/ amass, asr, axis, prefix, fildyn, filout, filmol, &
+                   filxsf, fileig, lperm, lplasma, q
   !
   ! code is parallel-compatible but not parallel
   !
@@ -113,6 +115,7 @@ program dynmat
   filmol='dynmat.mold'
   filxsf='dynmat.axsf'
   fileig=' '
+  prefix=' '
   amass(:)=0.0d0
   q(:)=0.0d0
   lperm=.false.
@@ -126,11 +129,16 @@ program dynmat
   CALL mp_bcast(axis,ionode_id, world_comm)
   CALL mp_bcast(amass,ionode_id, world_comm)
   CALL mp_bcast(fildyn,ionode_id, world_comm)
+  CALL mp_bcast(prefix,ionode_id, world_comm)
   CALL mp_bcast(filout,ionode_id, world_comm)
   CALL mp_bcast(filmol,ionode_id, world_comm)
   CALL mp_bcast(fileig,ionode_id, world_comm)
   CALL mp_bcast(filxsf,ionode_id, world_comm)
   CALL mp_bcast(q,ionode_id, world_comm)
+  !
+  IF ( trim( prefix ) /= ' ' ) THEN
+     fildyn = trim(prefix) // '.save/' //trim(fildyn)
+  END IF
   !
   IF (ionode) inquire(file=fildyn,exist=lread)
   CALL mp_bcast(lread, ionode_id, world_comm)
