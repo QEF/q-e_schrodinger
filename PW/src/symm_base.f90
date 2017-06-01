@@ -910,8 +910,8 @@ SUBROUTINE checkallsym ( nat, tau, ityp )
   IF (any (.not.loksym (1:nsym) ) ) THEN
       !call symmetrize_at (nsym, s, invs, ft, irt, nat, tau, at, bg, &
       !                    alat, omega)
-      CALL errore ('checkallsym', &
-           'some of the original symmetry operations not satisfied ',1)
+      CALL infomsg ('checkallsym', &
+           'some of the original symmetry operations not satisfied ')
   ENDIF
   !
   RETURN
