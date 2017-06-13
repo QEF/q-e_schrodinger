@@ -73,7 +73,7 @@
     </atomic_structure>
     <dft>
       <functional>PZ</functional>
-    </dft>
+    </dft>:
     <spin>
       <lsda>
         false

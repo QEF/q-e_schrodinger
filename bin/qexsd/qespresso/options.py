@@ -33,7 +33,6 @@ def get_specie_related_values(name, **kwargs):
     """
     related_tag = kwargs['_related_tag']
     related_data = kwargs[related_tag]
-
     try:
         atomic_species = kwargs['atomic_species']
         species = atomic_species['species']
@@ -275,9 +274,21 @@ def neb_set_system_nat(name, **kwargs):
     return [' nat = {0}'.format(nat_value)]
 
 def Ha2Ry(name, **kwargs):
-    import pdb
-    pdb.set_trace()
     related_tag = kwargs['_related_tag']
     value = kwargs[related_tag]*2.e0
-    return [' {} = {:12.8}'.format(name,value)]
+    return [' {} = {:12.8f}'.format(name,value)]
+
+def setOneAmassLine(name,**kwargs):
+    lines=[]
+    try:
+        node  = kwargs['amass']
+        value = float(node['_text'])
+        index = node['atom']
+        lines.append(' {}({})={:7.3f}'.format(name, index, value))
+    except TypeError:
+        for node in kwargs['amass']:
+            value = float(node['_text'])
+            index = node['atom']
+            lines.append(' {}({})={:7.3f}'.format(name, index, value))
+    return lines
 

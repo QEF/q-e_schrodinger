@@ -39,6 +39,7 @@ BEGIN_ENGINE_INPUT
 &SYSTEM
  degauss=0.02
  ecutwfc=20.0
+  ibrav = 0
  input_dft='PBE'
  lspinorb=.false.
  nat = 5
@@ -52,7 +53,6 @@ BEGIN_ENGINE_INPUT
 /
 &ELECTRONS
  conv_thr=1e-06
- diago_cg_maxiter=100
  diago_full_acc=.false.
  diago_thr_init=0.001
  diagonalization='davidson'
@@ -73,7 +73,7 @@ BEGIN_ENGINE_INPUT
 ATOMIC_SPECIES
  Al 26.981538 Al.pbe-n-van.UPF
  H 1.00794 H.pbe-van_ak.UPF
-BEGIN POSITIONS 
+BEGIN_POSITIONS 
 FIRST_IMAGE 
 ATOMIC_POSITIONS { bohr }
 Al     0.00000000    0.00000000    0.00000000    0   0   0
@@ -92,8 +92,8 @@ END_POSITIONS
 K_POINTS automatic
  6 6 1 1 1 1
 CELL_PARAMETERS bohr
- 10.82227686 0.0 0.0
- 0.0 10.82227686 0.0
- 0.0 0.0 22.67672253
+ 10.82227686  0.00000000  0.00000000
+  0.00000000 10.82227686  0.00000000
+  0.00000000  0.00000000 22.67672253
 END_ENGINE_INPUT
 END
