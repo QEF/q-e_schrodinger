@@ -111,6 +111,107 @@ subroutine writemodes (nat,q,w2,z,iout)
 end subroutine writemodes
 !
 !-----------------------------------------------------------------------
+subroutine writespm (nat, w2, z, zstar, iout)
+  !-----------------------------------------------------------------------
+  !
+  !   write frequencies and intensities on output file in a spm-friendly way
+  !
+  use kinds, only: dp
+  use constants, only: ry_to_cmm1, amu_ry
+  implicit none
+  ! input
+  integer, intent(in) :: nat, iout
+  real(DP), intent(in) :: w2(3*nat), zstar(3, 3, nat)
+  complex(DP), intent(in) :: z(3*nat,3*nat)
+  ! local
+  integer nat3, na, ipol, jpol, nu
+  real(DP):: freq(3*nat), infrared(3*nat)
+  real(DP):: irfac, polar(3), znorm
+  !
+  nat3=3*nat
+  !
+  ! Compute IR intensities (stolen from dynmat_sub::RamanIR)
+  !
+  irfac = 4.80324d0**2/2.d0*amu_ry
+  !
+  do nu = 1, 3*nat
+    do ipol = 1, 3
+       polar(ipol)=0.0d0
+    end do
+    do na=1, nat
+       do ipol=1, 3
+          do jpol=1, 3
+             polar(ipol) = polar(ipol) +  &
+                  zstar(ipol,jpol,na)*z((na-1)*3+jpol, nu)
+          end do
+       end do
+    end do
+    !
+    infrared(nu) = 2.d0*(polar(1)**2+polar(2)**2+polar(3)**2)*irfac
+  end do
+  !
+  !  write frequencies and intensities
+  !
+  write(iout, '("{ ")')
+  write(iout, '(" s_m_m2io_version")')
+  write(iout, '(" :::")')
+  write(iout, '(" 2.0.0 ")')
+  write(iout, '("} ")')
+  write(iout, '("")')
+  write(iout, '("f_m_table { ")')
+  write(iout, '(" s_j_spectrum_type")')
+  write(iout, '(" s_j_x_label")')
+  write(iout, '(" s_j_y_label")')
+  write(iout, '(" :::")')
+  write(iout, '('' "Infrared Vibrational Frequencies" '')')
+  write(iout, '("  r_j_Frequency_(cm-1) ")')
+  write(iout, '("  r_matsci_Intensity_(D^2/A^2/amu) ")')
+  write(iout, '(" m_column[3] { ")')
+  write(iout, '("  s_m_data_name")')
+  write(iout, '("  s_m_column_name")')
+  write(iout, '("  i_m_width")')
+  write(iout, '("  b_m_visible")')
+  write(iout, '("  :::")')
+  write(iout, '(''  1 r_j_Frequency_(cm-1)  "Frequency (cm-1)"  10 1'')')
+  write(iout, '(''  2 r_matsci_Intensity_(D^2/A^2/amu)  "Intensity (D^2/A^2/amu)"  10 1'')')
+  write(iout, '(''  3 s_j_Symmetry  "Symmetry"  10 1'')')
+  write(iout, '("  :::")')
+  write(iout, '(" } ")')
+  !
+  write(iout, '(" m_row[", i0, "] { ")') nat3
+  write(iout, '("  r_j_Frequency_(cm-1)")')
+  write(iout, '("  r_matsci_Intensity_(D^2/A^2/amu)")')
+  write(iout, '("  s_j_Symmetry")')
+  write(iout, '("  :::")')
+  !
+  do nu = 1, nat3
+    freq(nu) = sqrt(abs(w2(nu)))
+    if (w2(nu).lt.0.0_DP) freq(nu) = -freq(nu)
+    !
+    write(iout, '(2x, i0, 1x, f15.6, 1x, f15.6, 1x, ''"Ap    "'')') nu, &
+      freq(nu)*ry_to_cmm1, infrared(nu)
+  end do
+  !
+  write(iout, '("  :::")')
+  write(iout, '(" } ")')
+  !
+  write(iout, '(" m_exists[", i0, "] { ")') nat3
+  write(iout, '(" s_m_exists")')
+  write(iout, '(" :::")')
+  !
+  do nu = 1, nat3
+    write(iout, '("  ", i0, " 111")') nu
+  end do
+  !
+  write(iout, '("  :::")')
+  write(iout, '(" } ")')
+  write(iout, '("} ")')
+  !
+  return
+  !
+end subroutine writespm
+!
+!-----------------------------------------------------------------------
 subroutine writemolden (flmol, gamma, nat, atm, a0, tau, ityp, w2, z)
   !-----------------------------------------------------------------------
   !
