@@ -252,6 +252,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
     <enumeration value="SOGGA"/>
     <enumeration value="EV93"/>
     <enumeration value="B3LYP"/>
+    <enumeration value="GauPBE"/>
     <enumeration value="PBE0"/>
     <enumeration value="HSE"/>
     <enumeration value="VDW-DF"/>

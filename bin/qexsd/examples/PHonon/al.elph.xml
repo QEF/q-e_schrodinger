@@ -1,0 +1,33 @@
+<qes_ph:espressoph xmlns:qes_ph="http://www.quantum-espresso.org/ns/qes/qes_ph_1.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.quantum-espresso.org/ns/qes/qes_ph_1.0 ../../qespresso/scheme/ph_temp.xsd">
+    <inputPH>
+        <scf_ph>
+            <tr2_ph>1.0e-10</tr2_ph>
+        </scf_ph>
+        <files>
+            <prefix>aluminum</prefix>
+            <outdir>/home/pietro/espresso-svn/tempdir/</outdir>
+            <fildyn>al.dyn</fildyn>
+            <fildvscf>aldv</fildvscf>
+        </files>
+        <control_ph>
+            <ldisp>true</ldisp>
+            <trans>true</trans>
+            <epsil>false</epsil>
+            <zeu>false</zeu>
+            <zue>false</zue>
+        </control_ph>
+        <electron_phonon_options>
+            <electron_phonon>interpolated</electron_phonon>
+            <sigma>0.005</sigma>
+            <nsigma>10</nsigma>
+        </electron_phonon_options>
+        <miscellanea>
+            <amass atom="1">26.98</amass>
+        </miscellanea>
+        <q_points>
+           <grid nq1="4" nq2="4" nq3="4"/>
+        </q_points>
+    </inputPH>
+</qes_ph:espressoph>
