@@ -26,16 +26,9 @@ class QeDocument(XmlDocument):
         self.input_builder = input_builder
 
         self.default_namespace = self.schema.target_namespace
-
-        try:
-            if self.default_namespace != self.namespaces['qes']:
-                raise ConfigError("Need a schema in 'qes' namespace!")
-        except KeyError:
-            try:
-                if self.default_namespace != self.namespaces['neb']:
-                    raise ConfigError("Need a schema in 'qes' or 'neb' namespace!")
-            except KeyError:
-                raise ConfigError("Need a schema in 'qes' of 'neb' namespace")
+        qe_nslist = list(map(self.namespaces.get, ['qes','neb','qes_ph']))
+        if not self.default_namespace in qe_nslist:
+            raise NotImplementedError("Converter not implemented for this schema {}".format(self.default_namespace) )
 
     def read_qe_input(self, filename):
         """
@@ -158,12 +151,20 @@ class PhononDocument(QeDocument):
     def __init__(self):
         self._input_tag = 'input'
         super(PhononDocument, self).__init__(
-            xsd_file='%s/scheme/ph_xmlschema.xsd' % os.path.dirname(os.path.abspath(__file__)),
+            xsd_file='%s/scheme/ph_temp.xsd' % os.path.dirname(os.path.abspath(__file__)),
             input_builder=PhononInputConverter
         )
 
     def get_input_path(self):
         return './inputPH'
+
+    def get_qe_input(self, use_defaults=False):
+        """
+        overrides get_qe_input calling super get_qe_input with use_defaults set to False. 
+        :param use_defaults: 
+        :return: the input as obtained from its input builder
+        """
+        return super(PhononDocument, self).get_qe_input(use_defaults=use_defaults)
 
 
 class NebDocument(QeDocument):

@@ -1,0 +1,20 @@
+<qes_ph:espressoph xmlns:qes_ph="http://www.quantum-espresso.org/ns/qes/qes_ph_1.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.quantum-espresso.org/ns/qes/qes_ph_1.0 ../../qespresso/scheme/ph_temp.xsd">
+    <inputPH>
+        <scf_ph>
+            <tr2_ph>1.0e-14</tr2_ph>
+        </scf_ph>
+        <files>
+            <prefix>SiO2_OR_36-2</prefix>
+            <fildyn>SiO2_36-2.dynG</fildyn>
+        </files>
+        <control_ph>
+            <epsil>true</epsil>
+            <trans>true</trans>
+            <zeu>true</zeu>
+            <zue>false</zue>
+        </control_ph>
+        <xq>0.0 0.0 0.0</xq>
+    </inputPH>
+</qes_ph:espressoph>

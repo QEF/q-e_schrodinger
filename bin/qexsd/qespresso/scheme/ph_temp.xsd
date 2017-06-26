@@ -1,0 +1,630 @@
+<?xml version="1.0"?>
+<!-- GENERAL COMMENTS AND NOTES                                              
+  
+ 0) qes-> quantum espresso schema created by Antonio Zambon Paol Giannozzi
+ 1) Date, time, general_infoType, parallel_infoType*, statusType, closedType, 
+     k_points_IBZType, atomic_speciesType and atomic_structureType from qes
+ * in parallel_infoType the field "nimages" has been added                                                                                                                                                         
+ 2) more units for some quantities can be added
+ 
+ OPEN POINTS
+
+ 1) k1, k2, k3 in monkhorst_packType as in qes are boolean. Integer in 
+    QuantumEspresso. Possible problem?
+    
+Created by Mauro Palumbo
+-->
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+	xmlns:qes_ph="http://www.quantum-espresso.org/ns/qes/qes_ph_1.0"
+	targetNamespace="http://www.quantum-espresso.org/ns/qes/qes_ph_1.0">
+
+    <!-- ESPRESSO (root element) -->
+    <element name="espressoph" type="qes_ph:espressophType" />
+    <complexType name="espressophType">
+        <sequence>
+            <element type="qes_ph:general_infoType" name="general_info" minOccurs="0"/>
+            <element type="qes_ph:parallel_infoType" name="parallel_info" minOccurs="0"/>
+            <element type="qes_ph:inputPHType" name="inputPH" />
+            <element type="qes_ph:outputPHType" name="outputPH" minOccurs="0" />
+            <element type="qes_ph:statusType" name="status" minOccurs="0" />
+            <element type="nonNegativeInteger" name="cputime" minOccurs="0" />
+            <element type="qes_ph:closedType" name="closed" minOccurs="0" />
+        </sequence>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+  <!-- GENERAL INFO, same as in qes schema -->
+    <complexType name="general_infoType">
+        <sequence>
+            <element type="qes_ph:formatType" name="format"/>
+            <element type="qes_ph:creatorType" name="creator"/>
+            <element type="qes_ph:createdType" name="created"/>
+            <element type="string" name="job"/>
+        </sequence>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <complexType name="formatType">
+        <simpleContent>
+            <extension base="string">
+                <attribute type="string" name="NAME"/>
+                <attribute type="string" name="VERSION"/>
+            </extension>
+        </simpleContent>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <complexType name="creatorType">
+        <simpleContent>
+            <extension base="string">
+                <attribute type="string" name="NAME"/>
+                <attribute type="string" name="VERSION"/>
+            </extension>
+        </simpleContent>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <complexType name="createdType">
+        <simpleContent>
+            <extension base="string">
+                <attribute type="string" name="DATE"/>
+                <attribute type="string" name="TIME"/>
+            </extension>
+        </simpleContent>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->    
+  <!-- PARALLEL INFO, same as in qes schema -->
+    <complexType name="parallel_infoType">
+        <sequence>
+            <element type="positiveInteger" name="nprocs"/>
+            <element type="positiveInteger" name="nthreads"/>
+            <element type="positiveInteger" name="ntasks"/>
+            <element type="positiveInteger" name="nbgrp"/>
+            <element type="positiveInteger" name="npool"/>
+            <element type="positiveInteger" name="ndiag"/>
+            <element type="positiveInteger" name="nimages" minOccurs="0"/>
+        </sequence>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->    
+  <!-- INPUTPH TYPE-->
+    <complexType name="inputPHType">
+        <all>
+            <element type="qes_ph:scf_phType" name="scf_ph" minOccurs="0" />
+            <element type="qes_ph:filesType" name="files" minOccurs="0" />
+            <element type="qes_ph:control_phType" name="control_ph" minOccurs="0" />
+            <element type="qes_ph:control_jobType" name="control_job" minOccurs="0" />
+            <element type="qes_ph:control_dielType" name="control_diel" minOccurs="0"/>
+            <element type="qes_ph:control_qplotType" name="control_qplot"
+                     minOccurs="0" />  
+            <element type="qes_ph:miscellaneaType" name="miscellanea" minOccurs="0" />
+            <!-- Irreproducible representation --> 
+            <element type="qes_ph:irr_reprType" name="irr_repr" minOccurs="0" />
+            <!-- Electron-phonon options -->            
+            <element type="qes_ph:electron_phonon_optionsType"
+                     name="electron_phonon_options" minOccurs="0" />                         
+            <!-- Raman options -->
+            <element type="qes_ph:lraman_optionsType" name="lraman_options"
+                     minOccurs="0" />
+            <!-- q-points mesh or list -->
+            <element type="qes_ph:q_pointsType" name="q_points" minOccurs="0" />
+            <element type="qes_ph:d3vectorType" name="xq" minOccurs="0"/>
+        </all>
+    </complexType> 
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <complexType name="scf_phType">
+        <sequence>
+            <element type="double" name="tr2_ph" default="1E-12" minOccurs="0" />
+            <element type="positiveInteger" name="niter_ph" default="100" 
+                 minOccurs="0" />
+            <element type="double" name="alpha_mix" default="0.7" minOccurs="0" />
+            <element type="positiveInteger" name="nmix_ph" default="4" 
+                 minOccurs="0" />        
+        </sequence>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <complexType name="filesType">
+        <all>
+            <element type="string" name="prefix" default="pwscf" minOccurs="0" />
+            <element type="string" name="outdir" default="./" minOccurs="0" /> 
+            <element type="string" name="fildyn" default="matdyn" minOccurs="0" />    
+            <element type="string" name="fildrho" default="" minOccurs="0" />  
+            <element type="string" name="fildvscf" default="" minOccurs="0" /> 
+            <element type="boolean" name="lqdir" default="false" minOccurs="0" /> 
+        </all>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <complexType name="control_phType">
+        <all>
+            <element type="boolean" name="ldisp" default="false" minOccurs="0" /> 
+            <element type="boolean" name="epsil" default="false" minOccurs="0" />     
+            <element type="boolean" name="trans" default="true" minOccurs="0" />          
+            <element type="boolean" name="zeu" default="false" minOccurs="0" /> 
+            <element type="boolean" name="zue" default="false" minOccurs="0" /> 
+            <element type="boolean" name="elop" default="false" minOccurs="0" />
+            <element type="boolean" name="fpol" default="false" minOccurs="0" />  
+            <element type="boolean" name="lraman" default="false" minOccurs="0" />
+            <element type="boolean" name="search_sym" default="true" minOccurs="0"/> 
+        </all>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <complexType name="control_jobType">
+        <sequence>
+            <element type="boolean" name="recover" default="false" minOccurs="0" />
+            <element type="double" name="max_seconds" default="1E7" minOccurs="0" />    
+        </sequence>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --> 
+    <complexType name="control_dielType">
+        <sequence>
+            <element type="boolean" name="lrpa" default="false" minOccurs="0" />                  
+            <element type="boolean" name="lnoloc" default="false" minOccurs="0" />    
+        </sequence>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <complexType name="control_qplotType">
+        <sequence>
+            <element type="boolean" name="qplot" default="false" minOccurs="0" /> 
+            <element type="boolean" name="q2d" default="false" minOccurs="0" /> 
+            <element type="boolean" name="q_in_band_form" default="false" 
+                 minOccurs="0" />  
+        </sequence>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->               
+    <complexType name="miscellaneaType">
+        <sequence>             
+            <!-- if amass is not present, should be taked from pw in the code -->                    
+            <element type="qes_ph:amassType" name="amass" minOccurs="0" maxOccurs="unbounded" />
+            <element type="double" name="start_magnetization" minOccurs="0" />  
+            <element type="nonNegativeInteger" name="verbosity" default="0" 
+                 minOccurs="0" />
+            <element type="boolean" name="reduce_io" default="false" minOccurs="0"/>
+            <element type="boolean" name="low_directory_check" default="false" 
+                 minOccurs="0" />
+            <element type="boolean" name="nogg" default="false" minOccurs="0" />
+            <element type="qes_ph:monkhorst_packType" name="nscf_MPgrid" minOccurs="0"/>
+        </sequence>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <complexType name="amassType">
+        <simpleContent>
+            <extension base="double">
+                <attribute type="positiveInteger" name="atom"/>
+            </extension>
+        </simpleContent>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->  
+    <complexType name="irr_reprType">
+        <sequence>
+        <sequence>
+            <element type="positiveInteger" name="start_q" default="1" 
+                 minOccurs="0" />      
+            <element type="positiveInteger" name="last_q" default="1" 
+                 minOccurs="0" /> 
+            <element type="positiveInteger" name="start_irr" default="1" 
+                 minOccurs="0" />     
+            <element type="positiveInteger" name="last_irr" default="3"
+                 minOccurs="0" />           
+            <element type="nonNegativeInteger" name="nat_todo" default="0"
+                 minOccurs="0" /> 
+            <element type="nonNegativeInteger" name="modenum" default="0" 
+                 minOccurs="0" />
+            <element type="boolean" name="only_init" default="false" 
+                 minOccurs="0" /> 
+            <element type="boolean" name="ldiag" default="false" minOccurs="0" />
+        </sequence>
+        </sequence>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->  
+    <complexType name="electron_phonon_optionsType">
+        <sequence>
+            <element type="qes_ph:electron_phononType" name="electron_phonon"
+                 minOccurs="0" />
+            <element type="double" name="sigma"   minOccurs="0"/>
+            <element type="integer" name="nsigma" minOccurs="0"/>
+        <element type="qes_ph:dvscf_starType" name="dvscf_star" minOccurs="0" />
+        <element type="qes_ph:drho_starType" name="drho_star" minOccurs="0" />
+        </sequence>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <simpleType name="electron_phononType">
+        <restriction base="string">
+            <enumeration value="" />
+            <enumeration value="simple" />
+            <enumeration value="interpolated" />
+        </restriction>
+    </simpleType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --> 
+    <complexType name="dvscf_starType">
+        <sequence>
+            <element type="boolean" name="open" default="false" 
+                 minOccurs="0" />      
+            <element type="string" name="dir" minOccurs="0" /> 
+            <element type="string" name="ext" default="dvscf" 
+                 minOccurs="0" />     
+            <element type="string" name="basis" default="cartesian"
+                 minOccurs="0" />           
+            <element type="boolean" name="pat" default="true"
+                 minOccurs="0" /> 
+        </sequence>
+    </complexType>
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->  
+    <complexType name="drho_starType">
+        <sequence>
+            <element type="boolean" name="open" default="false" 
+                 minOccurs="0" />      
+            <element type="string" name="dir" minOccurs="0" /> 
+            <element type="string" name="ext" default="drho" 
+                 minOccurs="0" />     
+            <element type="string" name="basis" default="modes"
+                 minOccurs="0" />           
+            <element type="boolean" name="pat" default="true"
+                 minOccurs="0" /> 
+        </sequence>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->   
+    <complexType name="lraman_optionsType">
+        <sequence>
+            <element type="double" name="eth_rps" default="1E-9" minOccurs="0" />
+            <element type="double" name="eth_ns" default="1E-12" minOccurs="0" />
+            <element type="double" name="dek" default="1E-3" minOccurs="0" />
+        </sequence>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <complexType name="q_pointsType">
+        <sequence>
+            <!-- monkhorst_pack -->
+            <element type="qes_ph:q_monkhorst_packType" name="grid"
+               minOccurs="0" maxOccurs="1"/>
+            <!-- monkhorst_pack grid, ex. 3 3 3 -->
+            <!-- Alternatively, a list of nqs q-points... (optionally with weight as attribute) -->
+            <element type="nonNegativeInteger" name="nqs" default="1" minOccurs="0" />
+            <element type="qes_ph:q_points_listType" name="q_points_list" minOccurs="0" />
+        </sequence>
+    </complexType> 
+  <!-- q points, similar but not the same as in qes schema (here no offset)  -->
+    <complexType name="q_points_listType">
+        <sequence>
+            <element type="qes_ph:k_pointType" name="q_point" maxOccurs="unbounded"
+               minOccurs="0"/>
+        </sequence>
+    </complexType>
+    <complexType name="q_monkhorst_packType">
+        <simpleContent>
+            <extension base="string">
+                <attribute type="positiveInteger" name="nq1"/>
+                <attribute type="positiveInteger" name="nq2"/>
+                <attribute type="positiveInteger" name="nq3"/>
+            </extension>
+        </simpleContent>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->  
+  <!-- k points, same as in qes schema -->
+    <complexType name="k_points_IBZType">
+        <sequence>
+            <element type="qes_ph:monkhorst_packType" name="monkhorst_pack" minOccurs="0"
+               maxOccurs="1"/>
+            <element type="positiveInteger" name="nk"/>
+            <element type="qes_ph:k_pointType" name="k_point" maxOccurs="unbounded"
+               minOccurs="0"/>
+        </sequence>
+    </complexType>
+    <complexType name="monkhorst_packType">
+        <simpleContent>
+            <extension base="string">
+                <attribute type="positiveInteger" name="nk1"/>
+                <attribute type="positiveInteger" name="nk2"/>
+                <attribute type="positiveInteger" name="nk3"/>
+                <attribute type="nonNegativeInteger" name="k1"/>
+                <attribute type="nonNegativeInteger" name="k2"/>
+                <attribute type="nonNegativeInteger" name="k3"/>
+            </extension>
+        </simpleContent>
+    </complexType>
+    <complexType name="k_pointType">
+        <simpleContent>
+            <extension base="qes_ph:d3vectorType">
+                <attribute type="double" name="weight" use="optional"/>
+            </extension>
+        </simpleContent>
+    </complexType>
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- CLOSED, same as in qes schema -->
+    <complexType name="closedType">
+        <simpleContent>
+            <extension base="string">
+                <attribute type="string" name="DATE"/>
+                <attribute type="string" name="TIME"/>
+            </extension>
+        </simpleContent>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+  <!-- STATUS, same as in qes schema -->
+    <simpleType name="statusType">
+        <restriction base="unsignedByte">
+            <enumeration value="0" />
+            <enumeration value="1" />
+            <enumeration value="2" />
+            <enumeration value="3" />
+            <enumeration value="255"/>
+        </restriction>
+    </simpleType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->    
+    <!-- OUTPUTPH TYPE-->   
+    <complexType name="outputPHType">
+        <sequence>
+            <!-- As in qes --> 
+            <element type="qes_ph:atomic_speciesType" name="atomic_species"/>
+            <element type="qes_ph:atomic_structureType" name="atomic_structure"/>
+            <!-- In addition to qes --> 
+            <element type="qes_ph:unit_cell_volumeType" name="unit_cell_volume"/>
+            <element type="nonNegativeInteger" name="ibrav" 
+                     minOccurs="0" />            
+            <element type="qes_ph:cell_dimensionsType" name="cell_dimensions"
+                     minOccurs="0" />
+            <element type="double" name="start_magnetization" minOccurs="0" />  
+            <element type="nonNegativeInteger" name="number_of_q" minOccurs="0"/>
+            <element type="nonNegativeInteger" name="number_of_irr_q" 
+                     minOccurs="0"/> 
+            <element type="qes_ph:irr_repr_listType" name="irr_repr_list"
+                     minOccurs="0" />
+            <element type="qes_ph:dynamical_matType" name="dynamical_mat"
+                     minOccurs="0" />
+            <element type="qes_ph:force_constantsType" name="force_constants"
+                     minOccurs="0" />
+            <element type="qes_ph:frequenciesType" name="frequencies"
+                     minOccurs="0"/>                      
+        </sequence>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->  
+  <!-- Unit cell volume with unit -->
+    <complexType name="unit_cell_volumeType">
+        <simpleContent>
+            <extension base="double">
+                <attribute type="string" name="unit" use="required"/>   
+            </extension>
+        </simpleContent>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+  <!-- Cell dimensions -->
+    <simpleType name="cell_dimensionsType">
+        <restriction>
+            <simpleType>
+                <list itemType="double"/>
+            </simpleType>
+            <length value="6"/>
+        </restriction>
+    </simpleType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+  <!-- Irr. representations -->
+    <complexType name="irr_repr_listType">
+        <sequence>
+            <element type="qes_ph:repr_at_qType" name="repr_at_q" maxOccurs="unbounded" />
+        </sequence>
+    </complexType>  
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->    
+    <complexType name="repr_at_qType">
+        <sequence>
+            <element type="qes_ph:d3vectorType" name="q_point" />
+            <element type="qes_ph:reprType" name="repr" maxOccurs="unbounded" />
+        </sequence>                
+    </complexType>  
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->    
+    <complexType name="reprType">
+        <sequence>
+            <element type="qes_ph:modeType" name="mode" maxOccurs="unbounded" />
+        </sequence>
+        <attribute type="nonNegativeInteger" name="number" />  
+        <attribute type="nonNegativeInteger" name="n_modes" />   
+        <attribute type="string" name="descr" />                            
+    </complexType>    
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->    
+    <complexType name="modeType">
+        <sequence>
+            <element type="qes_ph:displacementType" name="displacement" maxOccurs="unbounded"/>
+        </sequence>
+        <attribute type="nonNegativeInteger" name="number" />                        
+    </complexType>    
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+  <!-- Dynamical matrix -->
+    <complexType name="dynamical_matType">
+        <sequence>
+            <element type="qes_ph:D_elements_symmequivType"
+                     name="D_elements_symmequiv" maxOccurs="unbounded" />
+        </sequence> 
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- Dynamical matrix element (3x3 matrix at a given q point)-->
+    <complexType name="D_elements_symmequivType">
+        <sequence>
+            <element type="qes_ph:D_qType" name="D_q" maxOccurs="unbounded" />
+        </sequence>
+        <attribute type="nonNegativeInteger" name="number_of_equiv_q" />  
+    </complexType>  
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- Dynamical matrix (3x3) at a given q point)-->
+    <complexType name="D_qType">
+        <sequence>
+            <element type="qes_ph:d3vectorType" name="q_point" />
+            <element type="qes_ph:phi_qType" name="phi_q" maxOccurs="unbounded" />
+        </sequence>
+    </complexType> 
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- Dynamical matrix element (3x3 matrix at a given q point)-->
+    <complexType name="phi_qType">
+        <simpleContent>
+            <extension base="qes_ph:d3complexDType">
+                <attribute type="positiveInteger" name="at1" />
+                <attribute type="positiveInteger" name="at2" />
+            </extension>
+        </simpleContent>
+    </complexType>  
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --> 
+    <!-- Frequencies -->
+    <complexType name="frequenciesType">
+        <sequence>
+            <element type="qes_ph:frequencyType" name="frequency" minOccurs="0"
+                     maxOccurs="unbounded"/>
+        </sequence>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- frequency type, each containing omega (possibly in different units)
+    and a displacement -->  
+    <complexType name="frequencyType">
+        <sequence>
+            <!-- two frequencies because they can be in cm-1 and THz-->
+            <element type="qes_ph:omegaType" name="omega" maxOccurs="2"/>
+            <element type="qes_ph:displacementType" name="displacement" maxOccurs="unbounded"/>
+        </sequence>
+        <attribute type="integer" name="index" use="required"/>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->     
+    <!-- freq type, unit as attribute (THz and cm-1) -->
+    <complexType name="omegaType">
+        <simpleContent>
+            <extension base="double">
+                <attribute type="string" name="unit" use="required"/>
+            </extension>
+        </simpleContent>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->  
+    <complexType name="displacementType">
+        <sequence>
+            <element type="qes_ph:disp_x_y_zType" name="x" maxOccurs="1"/>
+            <element type="qes_ph:disp_x_y_zType" name="y" maxOccurs="1"/>
+            <element type="qes_ph:disp_x_y_zType" name="z" maxOccurs="1"/>
+        </sequence>
+        <attribute type="integer" name="atom" use="required"/>
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->     
+    <!-- displacement type -->
+    <simpleType name="disp_x_y_zType">
+        <restriction>
+            <simpleType>
+                <list itemType="double"/>
+            </simpleType>
+            <length value="2"/>
+        </restriction>
+    </simpleType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --> 
+  <!-- Force constants-->
+    <complexType name="force_constantsType">
+        <sequence>
+            <element type="qes_ph:phi_rType" name="phi_r" maxOccurs="unbounded" />
+        </sequence>
+        <attribute type="positiveInteger" name="nq1" />
+        <attribute type="positiveInteger" name="nq2" />
+        <attribute type="positiveInteger" name="nq3" />   
+    </complexType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --> 
+    <!-- Force constant element (3x3 matrix at a given q point)-->
+    <complexType name="phi_rType">
+        <sequence>
+            <element type="qes_ph:phi_r_elType" name="phi_r_el"
+                     maxOccurs="unbounded" />
+        </sequence>
+        <attribute type="positiveInteger" name="at1" />
+        <attribute type="positiveInteger" name="at2" />
+    </complexType>  
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --> 
+    <!-- Force constant element (3x3 matrix at a given q point)-->
+    <complexType name="phi_r_elType">
+        <simpleContent>
+            <extension base="double">
+                <attribute type="positiveInteger" name="m1" />
+                <attribute type="positiveInteger" name="m2" />
+                <attribute type="positiveInteger" name="m3" />
+            </extension>
+        </simpleContent>
+    </complexType>  
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->    
+    <!-- Input and Output types as in qes -->
+    <complexType name="atomic_speciesType">
+        <sequence>
+            <element type="qes_ph:specieType" name="specie" maxOccurs="unbounded"/>
+        </sequence>
+        <attribute type="positiveInteger" name="ntyp"/>
+    </complexType>
+    <complexType name="specieType">
+        <sequence>
+            <element type="double" name="mass" minOccurs="0" />
+            <element type="string" name="pseudo_file"/>
+            <element type="double" name="starting_magnetization" minOccurs="0"/>
+        </sequence>
+        <attribute type="string" name="name"/>
+    </complexType>
+    <complexType name="atomic_structureType">
+        <sequence>
+            <element type="qes_ph:atomic_positionsType" name="atomic_positions"
+                     minOccurs="0" />
+            <element type="qes_ph:wyckoff_positionsType" name="wyckoff_positions"
+                     minOccurs="0" />
+            <element type="qes_ph:cellType" name="cell"/>
+        </sequence>
+        <attribute type="positiveInteger" name="nat" use="optional"/>
+        <attribute type="double" name="alat" use="optional"/>
+    </complexType>
+    <complexType name="atomic_positionsType">
+        <sequence>
+            <element type="qes_ph:atomType" name="atom" maxOccurs="unbounded" />
+        </sequence>
+    </complexType>
+    <complexType name="atomType">
+        <simpleContent>
+            <extension base="qes_ph:d3vectorType">
+                <attribute type="string" name="name" />
+                <attribute type="string" name="position" use="optional" />
+            </extension>
+  	</simpleContent>
+    </complexType>
+    <complexType name="wyckoff_positionsType">
+        <sequence>
+            <element type="qes_ph:atomType" name="atom"/>
+        </sequence>
+        <attribute type="unsignedByte" name="space_group" use="optional"/>
+        <attribute type="string" name="more_options" use="optional"/>
+    </complexType>
+    <complexType name="cellType">
+        <sequence>
+            <element type="qes_ph:d3vectorType" name="a1"/>
+            <element type="qes_ph:d3vectorType" name="a2"/>
+            <element type="qes_ph:d3vectorType" name="a3"/>
+        </sequence>
+    </complexType>
+      
+    <!-- 3x3 real matrix type -->
+    <simpleType name="d3realDType">
+        <restriction>
+            <simpleType>
+                <list itemType="double"/>
+            </simpleType>
+            <length value="9"/>
+        </restriction>
+    </simpleType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- 3x3 complex matrix type -->
+    <simpleType name="d3complexDType">
+        <restriction>
+            <simpleType>
+                <list itemType="double"/>
+            </simpleType>
+        <length value="18"/>                                                           
+        </restriction>
+    </simpleType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->  
+  <!-- FPMD TYPES (ref: quantum-simulation.org) -->
+    <simpleType name="d3vectorType">
+        <restriction>
+            <simpleType>
+                <list itemType="double"/>
+            </simpleType>
+            <length value="3"/>
+        </restriction>
+    </simpleType>
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+</schema>
