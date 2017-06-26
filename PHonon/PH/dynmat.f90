@@ -73,6 +73,9 @@ program dynmat
 !  filspm character output file containing phonon frequencies and intensities
 !                    in Maestro spm format
 !                    (default: filspm=' ')
+!  filvib character output file containing phonon frequencies and vibrations
+!                    in Maestro vib format
+!                    (default: filvib=' ')
 !
   USE kinds, ONLY: DP
   USE mp,         ONLY : mp_bcast
@@ -88,6 +91,7 @@ program dynmat
   implicit none
   integer, parameter :: ntypx = 10
   character(len=256):: fildyn, prefix, filout, filmol, filxsf, fileig, filspm
+  character(len=256):: filvib
   character(len=3) :: atm(ntypx)
   character(len=10) :: asr
   logical :: lread, gamma
@@ -102,7 +106,7 @@ program dynmat
   integer :: ibrav, nqs
   integer, allocatable :: itau(:)
   namelist /input/ amass, asr, axis, prefix, fildyn, filout, filmol, &
-                   filxsf, fileig, filspm, lperm, lplasma, q
+                   filxsf, fileig, filspm, filvib, lperm, lplasma, q
   !
   ! code is parallel-compatible but not parallel
   !
@@ -119,6 +123,7 @@ program dynmat
   filxsf='dynmat.axsf'
   fileig=' '
   filspm=' '
+  filvib=' '
   prefix=' '
   amass(:)=0.0d0
   q(:)=0.0d0
@@ -139,6 +144,7 @@ program dynmat
   CALL mp_bcast(fileig,ionode_id, world_comm)
   CALL mp_bcast(filxsf,ionode_id, world_comm)
   CALL mp_bcast(filspm,ionode_id, world_comm)
+  CALL mp_bcast(filvib,ionode_id, world_comm)
   CALL mp_bcast(q,ionode_id, world_comm)
   !
   IF ( trim( prefix ) /= ' ' ) THEN
@@ -224,6 +230,11 @@ program dynmat
        OPEN (unit=16,file=TRIM(filspm),status='unknown',form='formatted')
        CALL writespm (nat, w2, z, zstar, 16)
        CLOSE (unit=16)
+     ENDIF
+     IF (filvib .ne. ' ') THEN
+       OPEN (unit=17,file=TRIM(filvib),status='unknown',form='formatted')
+       CALL writevib (nat, ntyp, amass, ityp, q_, w2, z, zstar, 17)
+       CLOSE (unit=17)
      ENDIF
      CALL writemolden (filmol, gamma, nat, atm, a0, tau, ityp, w2, z)
      CALL writexsf (filxsf, gamma, nat, atm, a0, at, tau, ityp, z)
