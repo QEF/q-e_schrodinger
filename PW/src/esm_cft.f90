@@ -92,6 +92,8 @@ SUBROUTINE esm_cft_1z_init(nsl, nz, ldz)
 #endif
 #if defined __OPENMP
   INTEGER, EXTERNAL   :: OMP_GET_MAX_THREADS
+#else
+  RETURN
 #endif
 
 #if defined(__SX6)
@@ -182,7 +184,9 @@ SUBROUTINE esm_cft_1z(c, nsl, nz, ldz, isign, cout)
 !     isign > 0 : forward (f(G)=>f(R)), isign <0 backward (f(R) => f(G))
 !     Up to "ndims" initializations (for different combinations of input
 !     parameters nz, nsl, ldz) are stored and re-used if available
-
+#if ! defined(__OPENMP)
+  USE fft_scalar, ONLY : cft_1z
+#endif
   INTEGER, INTENT(IN) :: isign
   INTEGER, INTENT(IN) :: nsl, nz, ldz
 
@@ -193,6 +197,9 @@ SUBROUTINE esm_cft_1z(c, nsl, nz, ldz, isign, cout)
 
 #if defined __OPENMP
   INTEGER, EXTERNAL :: OMP_GET_THREAD_NUM
+#else
+  CALL cft_1z(c, nsl, nz, ldz, isign, cout)
+  RETURN
 #endif
 
   IF( nsl < 0 ) THEN
