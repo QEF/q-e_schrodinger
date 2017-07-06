@@ -25,7 +25,7 @@
 &SYSTEM
  ecutwfc=30.0
  force_symmorphic=.false.
- ibrav=0
+  ibrav = 0
  input_dft='PZ'
  lspinorb=.false.
  nat=5
@@ -65,6 +65,7 @@
 &CELL
  cell_dynamics='none'
  cell_factor=0.0
+ press=0.0
  press_conv_thr=0.5
  wmass=276227.0
 /
@@ -73,14 +74,14 @@ ATOMIC_SPECIES
  Ti 47.867 Ti.pz-sp-van_ak.UPF
  O 15.9994 O.pz-van_ak.UPF
 ATOMIC_POSITIONS bohr
- Pb 0.0 0.0 0.001356871
- Ti 0.06784353 0.06784353 0.06784353
- O 0.0 0.06784353 0.06784353
- O 0.06784353 0.06784353 0.0
- O 0.06784353 0.0 0.06784353
+Pb     0.00000000    0.00000000    0.00135687
+Ti     0.06784353    0.06784353    0.06784353
+O      0.00000000    0.06784353    0.06784353
+O      0.06784353    0.06784353    0.00000000
+O      0.06784353    0.00000000    0.06784353
 K_POINTS automatic
  4 4 7 1 1 1
 CELL_PARAMETERS bohr
- 1.0 0.0 0.0
- 0.0 1.0 0.0
- 0.0 0.0 1.0
+  1.00000000   0.00000000   0.00000000 
+  0.00000000   1.00000000   0.00000000 
+  0.00000000   0.00000000   1.00000000 

@@ -366,7 +366,8 @@ class PwInputConverter(RawInputConverter):
             'dftU': {
                 'lda_plus_u_kind': 'SYSTEM[lda_plus_u_kind]',
                 'Hubbard_U': {
-                    '_text': ('SYSTEM[Hubbard_U]', options.get_specie_related_values, None),
+                    '_text': [('SYSTEM[Hubbard_U]', options.get_specie_related_values, None),
+                              ('SYSTEM[lda_plus_U]', options.set_lda_plus_u_flag, None)]
                 },
                 'Hubbard_J0': {
                     '_text': ('SYSTEM[Hubbard_J0]', options.get_specie_related_values, None),

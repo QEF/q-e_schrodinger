@@ -292,3 +292,12 @@ def setOneAmassLine(name,**kwargs):
             lines.append(' {}({})={:7.3f}'.format(name, index, value))
     return lines
 
+def set_lda_plus_u_flag(name,**kwargs):
+    lines=[]
+    related_tag = kwargs['_related_tag']
+    related_data = kwargs[related_tag]
+    for value in iter ( related_data if isinstance(related_data,list) else [related_data]):
+        if value.get('label') =="no Hubbard" or value['_text'] <= 0: continue
+        lines.append('lda_plus_u = .t.')
+        break
+    return lines

@@ -97,12 +97,12 @@
       <dftU>
         <lda_plus_u_kind>0</lda_plus_u_kind>
         <Hubbard_U specie="O1" label="no Hubbard">
-       0.0000000E+00
+       1.1000000E+00
         </Hubbard_U>
-        <Hubbard_U specie="Fe1" label="no Hubbard">
+        <Hubbard_U specie="Fe1" label="3d">
        0.3160442E+00
         </Hubbard_U>
-        <Hubbard_U specie="Fe2" label="no Hubbard">
+        <Hubbard_U specie="Fe2" label="3d">
        0.3160442E+00
         </Hubbard_U>
         <Hubbard_J0 specie="O1" label="no Hubbard">
@@ -111,7 +111,7 @@
         <Hubbard_J0 specie="Fe1" label="no Hubbard">
        0.0000000E+00
         </Hubbard_J0>
-        <Hubbard_J0 specie="Fe2" label="no Hubbard">
+        <Hubbard_J0 specie="Fe2" label="3d">
        0.0000000E+00
         </Hubbard_J0>
         <Hubbard_alpha specie="O1" label="no Hubbard">
