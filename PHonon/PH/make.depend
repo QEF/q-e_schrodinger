@@ -374,6 +374,7 @@ do_phonon.o : elph_scdft_mod.o
 do_phonon.o : elph_tetra_mod.o
 do_phonon.o : phcom.o
 do_phonon.o : yambo.o
+do_q2r.o : ../../LR_Modules/dynmat_sub.o
 drho.o : ../../LR_Modules/lrcom.o
 drho.o : ../../Modules/becmod.o
 drho.o : ../../Modules/cell_base.o
