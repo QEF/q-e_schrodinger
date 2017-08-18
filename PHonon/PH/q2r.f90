@@ -62,45 +62,20 @@ PROGRAM q2r
   USE mp,         ONLY : mp_bcast
   USE mp_world,   ONLY : world_comm
   USE mp_global,  ONLY : mp_startup, mp_global_end
-  USE dynamicalq, ONLY : phiq, tau, ityp, zeu
-  USE fft_scalar, ONLY : cfft3d
   USE io_global, ONLY : ionode_id, ionode, stdout
-  USE io_dyn_mat, ONLY : read_dyn_mat_param, read_dyn_mat_header, &
-                         read_dyn_mat, read_dyn_mat_tail, &
-                         write_dyn_mat_header, write_ifc
   USE environment, ONLY : environment_start, environment_end
   !
   IMPLICIT NONE
   !
-  INTEGER,       PARAMETER :: ntypx = 10
-  REAL(DP), PARAMETER :: eps=1.D-5, eps12=1.d-12
-  INTEGER                  :: nr1, nr2, nr3, nr(3)
-  !     dimensions of the FFT grid formed by the q-point grid
-  !
-  CHARACTER(len=20)  :: crystal
   CHARACTER(len=256) :: fildyn, filin, filj, filf, flfrc, prefix
-  CHARACTER(len=3)   :: atm(ntypx)
-  CHARACTER(LEN=6), EXTERNAL :: int_to_char
   CHARACTER(len=4) :: post=''
   !
   LOGICAL :: lq, lrigid, lrigid1, lnogridinfo, xmldyn
   CHARACTER (LEN=10) :: zasr
-  INTEGER :: m1, m2, m3, m(3), l1, l2, l3, i, j, j1, j2, na1, na2, ipol, nn
-  INTEGER :: nat, nq, ntyp, iq, icar, nfile, ifile, nqs, nq_log
-  INTEGER :: na, nt
   !
-  INTEGER :: gid, ibrav, ierr, nspin_mag, ios
+  INTEGER :: ios
   !
-  INTEGER, ALLOCATABLE ::  nc(:,:,:)
-  COMPLEX(DP), ALLOCATABLE :: phid(:,:,:,:,:)
-  REAL(DP), ALLOCATABLE :: m_loc(:,:)
-  !
-  REAL(DP) :: celldm(6), at(3,3), bg(3,3)
-  REAL(DP) :: q(3,48), omega, xq, amass(ntypx), resi
-  REAL(DP) :: epsil(3,3)
-  !
-  logical           :: la2F
-  LOGICAL, EXTERNAL :: has_xml
+  logical :: la2F
   !
   NAMELIST / input / fildyn, flfrc, prefix, zasr, la2F
   !

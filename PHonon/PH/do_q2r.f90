@@ -1,4 +1,17 @@
+!
+! Copyright (C) 2001-2013 Quantum ESPRESSO group
+! This file is distributed under the terms of the
+! GNU General Public License. See the file `License'
+! in the root directory of the present distribution,
+! or http://www.gnu.org/copyleft/gpl.txt .
+!
+!-----------------------------------------------------------------------
 SUBROUTINE do_q2r(fildyn_, flfrc, prefix, zasr, la2F)
+  !-----------------------------------------------------------------------
+  !
+  ! ... This is the main driver of the q2r code.
+  !
+
   USE kinds,      ONLY : DP
   USE mp,         ONLY : mp_bcast
   USE mp_world,   ONLY : world_comm
