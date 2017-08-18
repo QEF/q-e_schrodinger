@@ -299,7 +299,7 @@ PROGRAM matdyn
      !
      IF ( trim( fildyn ) /= ' ' ) THEN
         IF (ionode) THEN
-           WRITE(stdout, '')
+           WRITE(stdout, *)
            WRITE(stdout, '(4x,a)') ' fildyn has been provided, running q2r...'
         END IF
         CALL do_q2r(fildyn, flfrc, fildyn_prefix, asr, la2F)
