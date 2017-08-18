@@ -297,10 +297,10 @@ PROGRAM matdyn
      !
      ntyp_blk = ntypx ! avoids fake out-of-bound error
      !
-     IF ( trim( flfrc ) /= ' ' ) THEN
+     IF ( trim( fildyn ) /= ' ' ) THEN
         IF (ionode) THEN
            WRITE(stdout, '')
-           WRITE(stdout, '(4x,a)') ' flfrc has been provided, running q2r...'
+           WRITE(stdout, '(4x,a)') ' fildyn has been provided, running q2r...'
         END IF
         CALL do_q2r(fildyn, flfrc, fildyn_prefix, asr, la2F)
      END IF
