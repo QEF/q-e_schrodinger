@@ -159,7 +159,7 @@ PROGRAM matdyn
   REAL(DP), PARAMETER :: eps=1.0d-6
   INTEGER :: nr1, nr2, nr3, nsc, nk1, nk2, nk3, ibrav
   CHARACTER(LEN=256) :: flfrc, flfrq, flvec, fltau, fldos, filename, fldyn, fleig
-  CHARACTER(LEN=256) :: fildyn, prefix
+  CHARACTER(LEN=256) :: fildyn, fildyn_prefix
   CHARACTER(LEN=10)  :: asr
   LOGICAL :: dos, has_zstar, q_in_cryst_coord, eigen_similarity
   COMPLEX(DP), ALLOCATABLE :: dyn(:,:,:,:), dyn_blk(:,:,:,:), frc_ifc(:,:,:,:)
@@ -212,7 +212,7 @@ PROGRAM matdyn
        &           fldos, nk1, nk2, nk3, l1, l2, l3, ntyp, readtau, fltau, &
        &           la2F, ndos, DeltaE, q_in_band_form, q_in_cryst_coord, &
        &           eigen_similarity, fldyn, na_ifc, fd, point_label_type, &
-       &           nosym, fildyn, prefix
+       &           nosym, fildyn, fildyn_prefix
   !
   CALL mp_startup()
   CALL environment_start('MATDYN')
@@ -254,7 +254,7 @@ PROGRAM matdyn
      point_label_type='SC'
      nosym = .false.
      fildyn = ' '
-     prefix = ' '
+     fildyn_prefix = ' '
      !
      !
      IF (ionode) READ (5,input,IOSTAT=ios)
@@ -290,14 +290,20 @@ PROGRAM matdyn
      CALL mp_bcast(q_in_cryst_coord,ionode_id, world_comm)
      CALL mp_bcast(point_label_type,ionode_id, world_comm)
      CALL mp_bcast(fildyn,ionode_id, world_comm)
-     CALL mp_bcast(prefix,ionode_id, world_comm)
+     CALL mp_bcast(fildyn_prefix,ionode_id, world_comm)
 
      !
      ! read force constants
      !
      ntyp_blk = ntypx ! avoids fake out-of-bound error
      !
-     CALL do_q2r(fildyn, flfrc, prefix, asr, la2F)
+     IF ( trim( flfrc ) /= ' ' ) THEN
+        IF (ionode) THEN
+           WRITE(stdout, '')
+           WRITE(stdout, '(4x,a)') ' flfrc has been provided, running q2r...'
+        END IF
+        CALL do_q2r(fildyn, flfrc, fildyn_prefix, asr, la2F)
+     END IF
      !
      xmlifc=has_xml(flfrc)
      IF (xmlifc) THEN

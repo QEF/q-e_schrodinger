@@ -58,7 +58,6 @@ PROGRAM q2r
   !     filin      :  name of file containing C(q_n)
   !  The name and order of files is not important as long as q=0 is the first
   !
-  USE kinds,      ONLY : DP
   USE mp,         ONLY : mp_bcast
   USE mp_world,   ONLY : world_comm
   USE mp_global,  ONLY : mp_startup, mp_global_end
