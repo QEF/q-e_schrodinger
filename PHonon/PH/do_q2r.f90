@@ -750,5 +750,3 @@ subroutine set_zasr ( zasr, nr1,nr2,nr3, nat, ibrav, tau, zeu)
    !
    return
  end subroutine set_zasr
-!
-!----------------------------------------------------------------------
