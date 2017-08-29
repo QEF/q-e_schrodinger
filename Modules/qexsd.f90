@@ -1292,8 +1292,8 @@ CONTAINS
     step_obj%atomic_structure=atomic_struct_obj
     CALL qes_reset_atomic_structure( atomic_struct_obj )
     ! 
-    CALL qexsd_init_total_energy ( tot_en_obj, etot/e2, eband/e2, ehart/e2, vtxc/e2, etxc/e2, ewald/e2, degauss/e2, &
-                                   demet/e2 )
+    CALL qexsd_init_total_energy ( tot_en_obj, etot, eband, ehart, vtxc, etxc, ewald, degauss, &
+                                   demet )
     IF ( PRESENT ( potstat_contr )) THEN  
        tot_en_obj%potentiostat_contr_ispresent = .TRUE. 
        tot_en_obj%potentiostat_contr = potstat_contr/e2 
