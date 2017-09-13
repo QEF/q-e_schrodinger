@@ -39,7 +39,7 @@ MODULE dtr
       !
       dtr_handle = fopen_file_write(TRIM(prefix)//'_trj', nat)
       IF (ionode) THEN
-        WRITE(stdout, *) "  DTR module: initliazing..."
+        WRITE(stdout, *) "  DTR module: initializing..."
         IF (.not. C_ASSOCIATED(dtr_handle)) THEN
           WRITE(stdout, *) "  DTR module: ERROR: dtr_handle is null."
         ENDIF
@@ -63,12 +63,12 @@ MODULE dtr
 
       IF (ionode) THEN
         ret = fwrite_timestep_from_data(dtr_handle, pos, box, time)
-        WRITE(stdout, '("DTR write status = ", i3)') ret
+        WRITE(stdout, '("  DTR module: write status = ", i3)') ret
       ENDIF
     END SUBROUTINE dtr_add_step
     !
     FUNCTION fopen_file_write(fpath, fnatoms)
-    USE ISO_C_BINDING
+    USE ISO_C_BINDING, ONLY: c_ptr, c_char, c_int, C_NULL_CHAR
     IMPLICIT NONE
     TYPE(c_ptr) :: fopen_file_write
     CHARACTER(*), INTENT(in) :: fpath
@@ -77,7 +77,7 @@ MODULE dtr
     INTERFACE
     FUNCTION copen_file_write(cpath, ctype, cnatoms) BIND(C, name="open_file_write")
     !  void *open_file_write(const char *path, const char *type, int natoms)
-      USE ISO_C_BINDING
+      USE ISO_C_BINDING, ONLY: c_char, c_int, c_ptr
       TYPE(c_ptr) :: copen_file_write
       CHARACTER(kind=c_char) :: cpath(*)
       CHARACTER(kind=c_char) :: ctype(*)
@@ -111,7 +111,9 @@ MODULE dtr
   END SUBROUTINE dtr_close_writer
   !
   FUNCTION fwrite_timestep_from_data(fhandle, fcoords, fbox, ftime)
-    USE ISO_C_BINDING
+    USE ISO_C_BINDING, ONLY: c_ptr, c_float, c_double, c_int, C_LOC
+    USE mp,                  ONLY: mp_barrier
+    USE mp_world,            ONLY: world_comm
     IMPLICIT NONE
     INTEGER :: fwrite_timestep_from_data
     TYPE(c_ptr) :: fhandle
@@ -120,8 +122,8 @@ MODULE dtr
     !
     INTERFACE
     FUNCTION cwrite_timestep_from_data(chandle, ccoords, cbox, ctime) BIND(C, name="write_timestep_from_data")
-    !  int write_timestep_from_data(void *v, float *coords, float *box, float time)
-      USE ISO_C_BINDING
+    !  int write_timestep_from_data(void *v, float *coords, float *box, double time)
+      USE ISO_C_BINDING, ONLY: c_int, c_ptr, c_double
       INTEGER(c_int) :: cwrite_timestep_from_data
       TYPE(c_ptr), VALUE :: chandle
       TYPE(c_ptr), VALUE :: ccoords, cbox
@@ -136,9 +138,10 @@ MODULE dtr
     ccoords = REAL(fcoords, kind=c_float)
     cbox = REAL(fbox, kind=c_float)
     ctime = REAL(ftime, kind=c_double)
-    ! without this WRITE, code crashes, still trying to understand this
-    WRITE(*, *) ccoords(1), cbox(1), ctime
-
+    ! without this mp_barrier code crashes, still trying to understand this
+#if defined(__MPI)
+    CALL mp_barrier(world_comm)
+#endif
     tmp = cwrite_timestep_from_data(dtr_handle, C_LOC(ccoords), C_LOC(cbox), ctime)
     fwrite_timestep_from_data = INT(tmp)
   END FUNCTION fwrite_timestep_from_data
