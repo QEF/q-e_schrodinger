@@ -50,6 +50,7 @@ MODULE dtr
       USE cell_base,       ONLY : at, alat
       USE ions_base,       ONLY: nat, tau
       USE io_global, ONLY : ionode, ionode_id, stdout
+      USE constants, ONLY: BOHR_RADIUS_ANGS
       IMPLICIT NONE
       !
       INTEGER, INTENT(in) :: istep
@@ -57,8 +58,8 @@ MODULE dtr
       REAL :: pos(3 * nat), box(9)
       REAL(DP) :: time
       !
-      pos = REAL(RESHAPE(tau, (/3 * nat/) ) * alat)
-      box = REAL(RESHAPE(at, (/9/)) * alat)
+      pos = REAL(RESHAPE(tau, (/3 * nat/) ) * alat * BOHR_RADIUS_ANGS)
+      box = REAL(RESHAPE(at, (/9/)) * alat * BOHR_RADIUS_ANGS)
       time = REAL(istep, kind=DP)
 
       IF (ionode) THEN

@@ -12,7 +12,7 @@ AC_ARG_ENABLE(dtr,
    fi],
    [use_dtr=0])
    
-# preprocessing flag for XML
+# preprocessing flag for DTR
 if test "$use_dtr" -eq 1 ; then
     try_dflags="$try_dflags -D__DTR"
     AC_PROG_CXX()
