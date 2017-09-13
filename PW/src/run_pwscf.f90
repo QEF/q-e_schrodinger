@@ -41,6 +41,9 @@ SUBROUTINE run_pwscf ( exit_status )
   USE qmmm,             ONLY : qmmm_initialization, qmmm_shutdown, &
                                qmmm_update_positions, qmmm_update_forces
   USE qexsd_module,     ONLY:   qexsd_set_status
+#if defined (__DTR)
+  USE dtr,              ONLY: dtr_init_writer, dtr_close_writer, dtr_add_step
+#endif
   !
 
   IMPLICIT NONE
@@ -89,6 +92,12 @@ SUBROUTINE run_pwscf ( exit_status )
      RETURN
   ENDIF
   !
+#if defined (__DTR)
+  IF ( lmd ) THEN
+    CALL dtr_init_writer()
+  END IF
+#endif
+  !
   main_loop: DO idone = 1, nstep
      !
      ! ... electronic self-consistency or band structure calculation
@@ -105,6 +114,9 @@ SUBROUTINE run_pwscf ( exit_status )
         IF ( check_stop_now() ) exit_status = 255
         IF ( .NOT. conv_elec )  exit_status =  2
         CALL qexsd_set_status(exit_status)
+#if defined (__DTR)
+        CALL dtr_close_writer()
+#endif
         ! workaround for the case of a single k-point
         twfcollect = .FALSE.
         CALL punch( 'config' )
@@ -167,6 +179,9 @@ SUBROUTINE run_pwscf ( exit_status )
      ! ... exit condition (ionic convergence) is checked here
      !
      CALL add_qexsd_step(idone)
+#if defined (__DTR)
+     CALL dtr_add_step(idone)
+#endif
      IF ( conv_ions ) EXIT main_loop
      !
      ! ... receive new positions from MM code in QM/MM run
@@ -199,6 +214,9 @@ SUBROUTINE run_pwscf ( exit_status )
   !
   CALL qexsd_set_status(exit_status)
   CALL punch('all')
+#if defined (__DTR)
+  CALL dtr_close_writer()
+#endif
   !
   CALL qmmm_shutdown()
   !
