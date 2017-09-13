@@ -64,7 +64,7 @@ MODULE dtr
       IF (ionode) THEN
         ret = fwrite_timestep_from_data(dtr_handle, pos, box, time)
         WRITE(stdout, '("DTR write status = ", i3)') ret
-      END IF
+      ENDIF
     END SUBROUTINE dtr_add_step
     !
     FUNCTION fopen_file_write(fpath, fnatoms)
@@ -96,6 +96,8 @@ MODULE dtr
   END FUNCTION fopen_file_write
   !
   SUBROUTINE dtr_close_writer()
+    USE io_global, ONLY : ionode
+    IMPLICIT NONE
     !
     INTERFACE
     SUBROUTINE cclose_file_write(chandle) BIND(C, name="close_file_write")
@@ -105,7 +107,7 @@ MODULE dtr
     END SUBROUTINE cclose_file_write
     END INTERFACE
     !
-    CALL cclose_file_write(dtr_handle)
+    IF (ionode) CALL cclose_file_write(dtr_handle)
   END SUBROUTINE dtr_close_writer
   !
   FUNCTION fwrite_timestep_from_data(fhandle, fcoords, fbox, ftime)
@@ -134,6 +136,9 @@ MODULE dtr
     ccoords = REAL(fcoords, kind=c_float)
     cbox = REAL(fbox, kind=c_float)
     ctime = REAL(ftime, kind=c_double)
+    ! without this WRITE, code crashes, still trying to understand this
+    WRITE(*, *) ccoords(1), cbox(1), ctime
+
     tmp = cwrite_timestep_from_data(dtr_handle, C_LOC(ccoords), C_LOC(cbox), ctime)
     fwrite_timestep_from_data = INT(tmp)
   END FUNCTION fwrite_timestep_from_data
