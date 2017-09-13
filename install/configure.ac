@@ -95,6 +95,9 @@ X_AC_QE_ELPA()
 # Enable XML ...
 X_AC_QE_XML()
 
+# Enable DTR ...
+X_AC_QE_DTR()
+
 # Setting HDF5...
 X_AC_QE_HDF5()
 
