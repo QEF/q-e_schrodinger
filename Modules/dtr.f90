@@ -33,13 +33,18 @@ MODULE dtr
     SUBROUTINE dtr_init_writer()
       USE ISO_C_BINDING, ONLY: C_ASSOCIATED
       USE io_global, ONLY : ionode, stdout
-      USE io_files,   ONLY : prefix
+      USE io_files,   ONLY : prefix, tmp_dir
       USE ions_base,       ONLY: nat
+      USE xml_io_base, ONLY : create_directory
       IMPLICIT NONE
+      CHARACTER(256) :: dirname
       !
-      dtr_handle = fopen_file_write(TRIM(prefix)//'_trj', nat)
+      dirname = TRIM(TRIM(tmp_dir)//TRIM(prefix)//'_trj')
+      CALL create_directory(dirname)
+      dtr_handle = fopen_file_write(dirname, nat)
       IF (ionode) THEN
         WRITE(stdout, *) "  DTR module: initializing..."
+        WRITE(stdout, *) dirname
         IF (.not. C_ASSOCIATED(dtr_handle)) THEN
           WRITE(stdout, *) "  DTR module: ERROR: dtr_handle is null."
         ENDIF
@@ -51,6 +56,8 @@ MODULE dtr
       USE ions_base,       ONLY: nat, tau
       USE io_global, ONLY : ionode, ionode_id, stdout
       USE constants, ONLY: BOHR_RADIUS_ANGS
+      USE mp,                  ONLY: mp_barrier
+      USE mp_world,            ONLY: world_comm
       IMPLICIT NONE
       !
       INTEGER, INTENT(in) :: istep
@@ -62,10 +69,14 @@ MODULE dtr
       box = REAL(RESHAPE(at, (/9/)) * alat * BOHR_RADIUS_ANGS)
       time = REAL(istep, kind=DP)
 
+      CALL mp_barrier(world_comm)
+
       IF (ionode) THEN
         ret = fwrite_timestep_from_data(dtr_handle, pos, box, time)
         WRITE(stdout, '("  DTR module: write status = ", i3)') ret
       ENDIF
+
+      CALL mp_barrier(world_comm)
     END SUBROUTINE dtr_add_step
     !
     FUNCTION fopen_file_write(fpath, fnatoms)
@@ -113,8 +124,6 @@ MODULE dtr
   !
   FUNCTION fwrite_timestep_from_data(fhandle, fcoords, fbox, ftime)
     USE ISO_C_BINDING, ONLY: c_ptr, c_float, c_double, c_int, C_LOC
-    USE mp,                  ONLY: mp_barrier
-    USE mp_world,            ONLY: world_comm
     IMPLICIT NONE
     INTEGER :: fwrite_timestep_from_data
     TYPE(c_ptr) :: fhandle
@@ -139,10 +148,6 @@ MODULE dtr
     ccoords = REAL(fcoords, kind=c_float)
     cbox = REAL(fbox, kind=c_float)
     ctime = REAL(ftime, kind=c_double)
-    ! without this mp_barrier code crashes, still trying to understand this
-#if defined(__MPI)
-    CALL mp_barrier(world_comm)
-#endif
     tmp = cwrite_timestep_from_data(dtr_handle, C_LOC(ccoords), C_LOC(cbox), ctime)
     fwrite_timestep_from_data = INT(tmp)
   END FUNCTION fwrite_timestep_from_data
