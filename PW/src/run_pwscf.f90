@@ -93,9 +93,7 @@ SUBROUTINE run_pwscf ( exit_status )
   ENDIF
   !
 #if defined (__DTR)
-  IF ( lmd ) THEN
-    CALL dtr_init_writer()
-  END IF
+  IF ( lmd ) CALL dtr_init_writer()
 #endif
   !
   main_loop: DO idone = 1, nstep
@@ -115,7 +113,7 @@ SUBROUTINE run_pwscf ( exit_status )
         IF ( .NOT. conv_elec )  exit_status =  2
         CALL qexsd_set_status(exit_status)
 #if defined (__DTR)
-        CALL dtr_close_writer()
+        IF ( lmd ) CALL dtr_close_writer()
 #endif
         ! workaround for the case of a single k-point
         twfcollect = .FALSE.
@@ -180,7 +178,7 @@ SUBROUTINE run_pwscf ( exit_status )
      !
      CALL add_qexsd_step(idone)
 #if defined (__DTR)
-     CALL dtr_add_step(idone)
+     IF ( lmd ) CALL dtr_add_step(idone)
 #endif
      IF ( conv_ions ) EXIT main_loop
      !
@@ -215,7 +213,7 @@ SUBROUTINE run_pwscf ( exit_status )
   CALL qexsd_set_status(exit_status)
   CALL punch('all')
 #if defined (__DTR)
-  CALL dtr_close_writer()
+  IF ( lmd ) CALL dtr_close_writer()
 #endif
   !
   CALL qmmm_shutdown()
