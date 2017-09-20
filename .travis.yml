@@ -13,7 +13,7 @@ addons:
 env:
      - PARA=no
 install:
-     - ./configure --enable-parallel=$PARA --with-netlib --enable-xml
+     - ./configure --enable-parallel=$PARA --with-netlib --enable-xml --enable-dtr
 script:
      - make all vdw_kernels
 git:
