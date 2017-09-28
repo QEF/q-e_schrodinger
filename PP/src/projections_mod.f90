@@ -46,6 +46,10 @@ MODULE projections
          DO n = 1, upf(nt)%nwfc
             IF (upf(nt)%oc (n) >= 0.d0) THEN
                spdf = upf(nt)%els(n)
+               IF (spdf .eq. 'Xn' .and. n <= upf(nt)%gipaw_ncore_orbitals) THEN
+                  ! ATOMPAW stores labels in PP_GIPAW_CORE_ORBITAL
+                  spdf = upf(nt)%gipaw_core_orbital_el(n)
+               ENDIF
                l = upf(nt)%lchi (n)
                lmax_wfc = max (lmax_wfc, l )
                IF (lspinorb) THEN
