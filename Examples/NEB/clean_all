@@ -1,4 +1,0 @@
-#!/bin/bash
-
-\rm -rf *.out >& /dev/null
-\rm -rf */results* >& /dev/null

@@ -1,6 +1,0 @@
-&inputpp
-    prefix='water',
-    outdir='/home/pietro/espresso-svn/tempdir',
-    filplot = 'water.vpot'
-    plot_num= 11
-/
