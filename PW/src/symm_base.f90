@@ -341,7 +341,7 @@ SUBROUTINE find_sym ( nat, tau, ityp, magnetic_sym, m_loc, no_z_inv )
   LOGICAL, INTENT(in) :: magnetic_sym
   LOGICAL, INTENT(IN), OPTIONAL :: no_z_inv
   ! no_z_inv: if .true., disable symmetries sending z into -z.
-  !           Some calculations (e.g. monopole fields) require this
+  !           Some calculations (e.g. gate fields) require this
   !
   INTEGER :: i
   LOGICAL :: sym (48)
@@ -428,7 +428,7 @@ SUBROUTINE sgam_at ( nat, tau, ityp, sym, no_z_inv)
   !
   LOGICAL, INTENT(in), OPTIONAL :: no_z_inv
   ! no_z_inv: if .true., disable symmetry operations sending z into -z.
-  !           Some calculations (e.g. monopole fields) require this
+  !           Some calculations (e.g. gate fields) require this
   !
   LOGICAL, INTENT(out) :: sym (48)
   ! sym(isym)    : flag indicating if sym.op. isym in the parent group
@@ -439,6 +439,7 @@ SUBROUTINE sgam_at ( nat, tau, ityp, sym, no_z_inv)
   REAL(DP) , ALLOCATABLE :: xau (:,:), rau (:,:)
   ! atomic coordinates in crystal axis
   LOGICAL :: fractional_translations, no_z
+  INTEGER :: nfrac
   REAL(DP) :: ft_(3), ftaux(3)
   !
   ALLOCATE(xau(3,nat))
@@ -531,7 +532,12 @@ SUBROUTINE sgam_at ( nat, tau, ityp, sym, no_z_inv)
                  ! in order to ensure that fractional translations are
                  ! commensurate with FFT grids 
                  DO i = 1, 3
-                    fft_fact(i) = mcm ( fft_fact(i), NINT(1.0_dp/ft_(i)) )
+                    IF ( ABS (ft_(i)) > eps2 ) THEN
+                       nfrac = NINT(1.0_dp/ft_(i)) 
+                    ELSE
+                       nfrac = 0
+                    END IF
+                    fft_fact(i) = mcm ( fft_fact(i), nfrac )
                  END DO
                  !
                  GOTO 20

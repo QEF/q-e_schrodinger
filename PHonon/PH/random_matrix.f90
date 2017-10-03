@@ -5,6 +5,18 @@
 ! in the root directory of the present distribution,
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
+! The random matrix (see later) can be populated either with uniformly distributed
+! random numbers or with normal-distributed randm numbers. The former has been the default
+! until QE 6.1, however it sometimes produces accidentally degenerate eigenvalue, especially
+! when dealing with large number of atoms.
+! A matrix of normal-distributed numbers should have (on average) more evenly spaced
+! eigenvalues, reducing the chance of collision.
+!
+! See <http://web.math.princeton.edu/mathlab/projects/ranmatrices/yl/randmtx.PDF>
+! (If I understand it correctly)
+! LP 2017
+!
+!!#define __UNIFORM_DISTRIB
 !
 !----------------------------------------------------------------------
 subroutine random_matrix_new (irt, nsymq, minus_q, irotmq, nat, &
@@ -14,6 +26,14 @@ subroutine random_matrix_new (irt, nsymq, minus_q, irotmq, nat, &
   !   Create a random hermitian matrix with non zero elements similar to
   !   the dynamical matrix of the system
   !
+#if defined (__UNIFORM_DISTRIB)
+#define __RANDOM_DBLE  CMPLX(2.0_DP*randy () - 1.0_DP, 0.d0,kind=DP)
+#define __RANDOM_CMPLX CMPLX(2.0_DP * randy () - 1.0_DP, 2.0_DP * randy () - 1.0_DP,kind=DP)
+#else
+#define __RANDOM_DBLE  gauss_dist_scal(0._dp, 1._dp)
+#define __RANDOM_CMPLX gauss_dist_cmplx(0._dp, 1._dp)
+  USE random_numbers, ONLY : gauss_dist_scal, gauss_dist_cmplx
+#endif
   !
   USE kinds, only : DP
   USE random_numbers, ONLY : randy
@@ -46,13 +66,12 @@ subroutine random_matrix_new (irt, nsymq, minus_q, irotmq, nat, &
   wdyn (:, :, :, :) = (0d0, 0d0)
   do na = 1, nat
      do ipol = 1, 3
-        wdyn (ipol, ipol, na, na) = CMPLX(2.0_DP * randy () - 1.0_DP, 0.d0,kind=DP)
+        wdyn (ipol, ipol, na, na) = 2*__RANDOM_DBLE
         do jpol = ipol + 1, 3
            if (lgamma) then
-              wdyn (ipol, jpol, na, na) = CMPLX(2.0_DP * randy () - 1.0_DP, 0.d0,kind=DP)
+              wdyn (ipol, jpol, na, na) = __RANDOM_DBLE
            else
-              wdyn (ipol, jpol, na, na) = &
-                   CMPLX(2.0_DP * randy () - 1.0_DP, 2.0_DP * randy () - 1.0_DP,kind=DP)
+              wdyn (ipol, jpol, na, na) = __RANDOM_CMPLX
            endif
            wdyn (jpol, ipol, na, na) = CONJG(wdyn (ipol, jpol, na, na) )
         enddo
@@ -68,10 +87,9 @@ subroutine random_matrix_new (irt, nsymq, minus_q, irotmq, nat, &
               if ( (nb == ira) .or. (nb == iramq) ) then
                  do jpol = 1, 3
                     if (lgamma) then
-                       wdyn (ipol, jpol, na, nb) = CMPLX(2.0_DP*randy () - 1.0_DP, 0.d0,kind=DP)
+                       wdyn (ipol, jpol, na, nb) = __RANDOM_DBLE
                     else
-                       wdyn (ipol, jpol, na, nb) = &
-                            CMPLX(2.0_DP*randy()-1.0_DP, 2.0_DP*randy()-1.0_DP,kind=DP)
+                       wdyn (ipol, jpol, na, nb) = __RANDOM_CMPLX
                     endif
                     wdyn(jpol, ipol, nb, na) = CONJG(wdyn(ipol, jpol, na, nb))
                  enddo

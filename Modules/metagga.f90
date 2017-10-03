@@ -57,7 +57,7 @@ subroutine tpsscxc( rho, grho, tau, sx, sc, v1x, v2x, v3x, v1c, v2c, v3c )
   call xc_f90_func_init(xc_func, xc_info, func_id, XC_UNPOLARIZED)    
   call xc_f90_mgga_exc_vxc(xc_func, size, rho, grho, lapl_rho, 0.5_dp*tau,&
                                sx, v1x, v2x, vlapl_rho, v3x)  
-  call xc_f90_func_end(xc_func)	
+  call xc_f90_func_end(xc_func)
   
   sx  = sx * rho
   v2x = v2x*2.0_dp
@@ -1415,9 +1415,9 @@ subroutine tb09cxc(rho, grho, tau, sx, sc, v1x, v2x,v3x,v1c, v2c,v3c)
   call xc_f90_func_init(xc_func, xc_info, func_id, XC_UNPOLARIZED)    
   call xc_f90_mgga_vxc(xc_func, size, rho, grho, lapl_rho, 0.5_dp*tau, &
       v1x, v2x, vlapl_rho, v3x)  
-  call xc_f90_func_end(xc_func)	
+  call xc_f90_func_end(xc_func)
   
-  sx = 0.0d0		       
+  sx = 0.0d0      
   v2x = v2x*2.0_dp
   v3x = v3x*0.5_dp
 
@@ -1430,13 +1430,74 @@ subroutine tb09cxc(rho, grho, tau, sx, sc, v1x, v2x,v3x,v1c, v2c,v3c)
      sc, v1c, v2c, vlapl_rho, v3c)  
   call xc_f90_func_end(xc_func)
 
-  sc = sc * rho			       
+  sc = sc * rho      
   v2c = v2c*2.0_dp
   v3c = v3c*0.5_dp
 #else
+  sx=0.0_dp; sc=0.0_dp; v1x=0.0_dp; v2x=0.0_dp; v3x=0.0_dp; v1c=0.0_dp; v2c=0.0_dp; v3c=0.0_dp
   call errore('tb09','need libxc',1)
 #endif
 end subroutine tb09cxc
 
 !c     ==================================================================
+
+
+
+
+!======================================================================
+! SCAN meta-GGA
+!======================================================================
+subroutine SCANcxc(rho, grho, tau, sx, sc, v1x, v2x, v3x, v1c, v2c, v3c)
+  USE kinds,            ONLY : DP
+#if defined(__LIBXC)
+  USE funct,            ONLY : libxc_major, libxc_minor, libxc_micro, get_libxc_version
+  use xc_f90_types_m
+  use xc_f90_lib_m
+#endif
+  implicit none  
+  real(DP), intent(in) :: rho, grho, tau
+  real(dp), intent(out):: sx, sc, v1x, v2x, v3x, v1c, v2c, v3c
+
+#if defined(__LIBXC)
+  TYPE(xc_f90_pointer_t) :: xc_func
+  TYPE(xc_f90_pointer_t) :: xc_info
+  integer, SAVE :: major=0, minor=0, micro=0
+  integer :: size = 1
+  integer :: func_id
+  real(dp) :: lapl_rho, vlapl_rho ! not used?
+
+  if (libxc_major == 0) call get_libxc_version
+  if (libxc_major < 3 .or. (libxc_major == 3 .and. libxc_minor /= -1)) & 
+      call errore('SCAN meta-GGA','please, recompile with LibXC trunk (i.e. >3.0.0))',1)
+ 
+  lapl_rho = grho
+
+  ! exchange
+  func_id = 263  ! XC_MGGA_X_SCAN
+ 
+  call xc_f90_func_init(xc_func, xc_info, func_id, XC_UNPOLARIZED)
+  call xc_f90_mgga_exc_vxc(xc_func, size, rho, grho, lapl_rho, 0.5_dp*tau,&
+                           sx, v1x, v2x, vlapl_rho, v3x)  
+  call xc_f90_func_end(xc_func)
+  sx = 0.0d0
+  v2x = v2x*2.0_dp
+  v3x = v3x*0.5_dp
+
+  ! correlation  
+  func_id = 267  ! XC_MGGA_C_SCAN
+  call xc_f90_func_init(xc_func, xc_info, func_id, XC_UNPOLARIZED)   
+  call xc_f90_mgga_exc_vxc(xc_func, size, rho, grho, lapl_rho, 0.5_dp*tau, &
+                           sc, v1c, v2c, vlapl_rho, v3c)  
+  call xc_f90_func_end(xc_func)
+
+  sc = sc * rho
+  v2c = v2c*2.0_dp
+  v3c = v3c*0.5_dp
+
+#else
+  sx=0.0_dp; sc=0.0_dp; v1x=0.0_dp; v2x=0.0_dp; v3x=0.0_dp; v1c=0.0_dp; v2c=0.0_dp; v3c=0.0_dp
+  call errore('SCAN meta-GGA','please, recompile with LibXC trunk (i.e. >3.0.0))',1)
+#endif
+
+end subroutine SCANcxc
 

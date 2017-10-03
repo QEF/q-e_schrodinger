@@ -9,7 +9,7 @@ c_mkdir.o \
 copy.o \
 cptimer.o \
 eval_infix.o \
-indici.o \
+fletcher32.o \
 md5.o \
 md5_from_file.o \
 memstat.o \
@@ -18,28 +18,14 @@ sockets.o \
 qmmm_aux.o \
 qsort.o
 
-OBJSCXX = \
-dtrplugin.o
-
 all : clib.a
 
-clib.a :
-
-ifeq ($(findstring -D__DTR,$(DFLAGS)),-D__DTR)
-clib.a : $(OBJS) $(OBJSCXX)
+clib.a : $(OBJS) 
 	$(AR) $(ARFLAGS) $@ $?
 	$(RANLIB) $@
-else
-clib.a : $(OBJS)
-	$(AR) $(ARFLAGS) $@ $?
-	$(RANLIB) $@
-endif
 
 source :
 	co -l $(OBJS:.o=.c)
-
-dtrplugin.o: dtrplugin.cxx
-	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(IFLAGS) -c dtrplugin.cxx
 
 clean :
 	- rm -f clib.a *.o *.mod *.i core*

@@ -3,7 +3,7 @@
 include ../../make.inc
 
 # location of needed modules and included files (if any)
-MODFLAGS= $(MOD_FLAG)../../iotk/src $(MOD_FLAG)../../Modules $(MOD_FLAG)../../LAXlib \
+MODFLAGS= $(MOD_FLAG)../../iotk/src $(MOD_FLAG)../../Modules $(MOD_FLAG)../../LAXlib $(MOD_FLAG)../../UtilXlib \
           $(MOD_FLAG)../../FFTXlib $(MOD_FLAG)../../PW/src $(MOD_FLAG)../../LR_Modules $(MOD_FLAG).
 IFLAGS=
 
@@ -51,7 +51,6 @@ dfile_autoname.o \
 dfile_star.o \
 dielec.o \
 do_phonon.o \
-do_q2r.o \
 drho.o \
 drhodv.o \
 drhodvloc.o \
@@ -185,11 +184,13 @@ write_eigenvectors.o
 
 LRMODS = ../../LR_Modules/liblrmod.a
 PWOBJS = ../../PW/src/libpw.a
-QEMODS = ../../Modules/libqemod.a ../../FFTXlib/libqefft.a ../../LAXlib/libqela.a
+QEMODS = ../../Modules/libqemod.a ../../KS_Solvers/Davidson/libdavid.a ../../KS_Solvers/CG/libcg.a \
+         ../../FFTXlib/libqefft.a ../../LAXlib/libqela.a ../../UtilXlib/libutil.a
 
 TLDEPS= bindir mods libs pw-lib lrmods
 
-all : tldeps libs-ph ph.x dynmat.x matdyn.x q2r.x q2trans.x q2trans_fd.x lambda.x fqha.x q2qstar.x 
+all : tldeps libs-ph ph.x dynmat.x matdyn.x q2r.x q2trans.x q2trans_fd.x lambda.x fqha.x q2qstar.x \
+	alpha2f.x
 
 libs-ph : libph.a libphaux.a
 
@@ -204,12 +205,12 @@ dynmat.x : dynmat.o libphaux.a  libph.a $(PWOBJS) $(LRMODS) $(MODULES) $(LIBOBJS
 	- ( cd ../../bin ; ln -fs ../PHonon/PH/$@ . )
 
 matdyn.x : matdyn.o libphaux.a libph.a $(PWOBJS) $(LRMODS) $(MODULES) $(LIBOBJS)
-	$(LD) $(LDFLAGS) -o $@ do_q2r.o matdyn.o libphaux.a libph.a \
+	$(LD) $(LDFLAGS) -o $@ matdyn.o libphaux.a libph.a \
 		 $(PWOBJS) $(LRMODS) $(QEMODS) $(LIBOBJS) $(LIBS)
 	- ( cd ../../bin ; ln -fs ../PHonon/PH/$@ . )
 
 q2r.x : q2r.o libphaux.a libph.a $(PWOBJS) $(LRMODS) $(MODULES) $(LIBOBJS)
-	$(LD) $(LDFLAGS) -o $@ do_q2r.o q2r.o libphaux.a libph.a \
+	$(LD) $(LDFLAGS) -o $@ q2r.o libphaux.a libph.a \
 		 $(PWOBJS) $(LRMODS) $(QEMODS) $(LIBOBJS) $(LIBS)
 	- ( cd ../../bin ; ln -fs ../PHonon/PH/$@ . )
 
@@ -231,6 +232,11 @@ q2qstar.x : q2qstar.o libph.a $(PWOBJS) $(LRMODS) $(MODULES) $(LIBOBJS)
 
 lambda.x : lambda.o $(PWOBJS) $(LRMODS) $(QEMODS) $(LIBOBJS)
 	$(LD) $(LDFLAGS) -o $@ lambda.o \
+                 $(PWOBJS) $(LRMODS) $(QEMODS) $(LIBOBJS) $(LIBS)
+	- ( cd ../../bin ; ln -fs ../PHonon/PH/$@ . )
+
+alpha2f.x : alpha2f.o libph.a $(PWOBJS) $(LRMODS) $(QEMODS) $(LIBOBJS)
+	$(LD) $(LDFLAGS) -o $@ alpha2f.o libph.a \
                  $(PWOBJS) $(LRMODS) $(QEMODS) $(LIBOBJS) $(LIBS)
 	- ( cd ../../bin ; ln -fs ../PHonon/PH/$@ . )
 
@@ -257,7 +263,8 @@ libphaux.a : $(PHAUXOBJS)
 clean :
 	- /bin/rm -f *.x *.o *.a *~ *_tmp.f90 *.d *.mod *.i *.L
 	- /bin/rm -rf ../../bin/ph.x ../../bin/dynmat.x ../../bin/matdyn.x \
-	../../bin/q2r.x ../../bin/q2trans.x ../../bin/q2trans_fd.x ../../bin/lambda.x ../../bin/fqha.x
+	../../bin/q2r.x ../../bin/q2trans.x ../../bin/q2trans_fd.x ../../bin/lambda.x ../../bin/fqha.x \
+	../../bin/alpha2f.x ../../disp_width.x
 
 include make.depend
 # DO NOT DELETE

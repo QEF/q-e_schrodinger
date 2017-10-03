@@ -7,7 +7,7 @@
 !
 !----------------------------------------------------------------------------
 ! TB
-! included monopole related stuff, search for 'TB'
+! included gate related stuff, search for 'TB'
 !----------------------------------------------------------------------------
 !
 !----------------------------------------------------------------------------
@@ -70,8 +70,11 @@ SUBROUTINE iosys()
                             fcp_mu_ => fcp_mu, &
                             fcp_mass_ => fcp_mass, &
                             fcp_temperature, &
+                            fcp_relax_ => fcp_relax, &
                             fcp_relax_step_ => fcp_relax_step, &
-                            fcp_relax_crit_ => fcp_relax_crit
+                            fcp_relax_crit_ => fcp_relax_crit, &
+                            fcp_mdiis_size_ => fcp_mdiis_size, &
+                            fcp_mdiis_step_ => fcp_mdiis_step
   !
   USE extfield,      ONLY : tefield_  => tefield, &
                             dipfield_ => dipfield, &
@@ -79,16 +82,16 @@ SUBROUTINE iosys()
                             emaxpos_  => emaxpos, &
                             eopreg_   => eopreg, &
                             eamp_     => eamp, &
-  ! TB added monopole related variables
-                            zmon_     => zmon, &
-                            monopole_ => monopole, &
+  ! TB added gate related variables
+                            zgate_    => zgate, &
+                            gate_     => gate, &
                             relaxz_   => relaxz, &
-                            block_   => block, &
+                            block_    => block, &
                             block_1_   => block_1, &
                             block_2_   => block_2, &
                             block_height_   => block_height, &
                             forcefield, &
-                            forcemono
+                            forcegate
   !
   USE io_files,      ONLY : input_drho, output_drho, &
                             psfile, tmp_dir, wfc_dir, &
@@ -135,8 +138,9 @@ SUBROUTINE iosys()
                             exxdiv_treatment_ => exxdiv_treatment, &
                             yukawa_           => yukawa, &
                             ecutvcut_         => ecutvcut, &
-                            ecutfock_         => ecutfock
-  !
+                            ecutfock_         => ecutfock, &
+                            use_ace, local_thr 
+  USE loc_scdm,      ONLY : use_scdm, scdm_den, scdm_grd 
   !
   USE lsda_mod,      ONLY : nspin_                  => nspin, &
                             starting_magnetization_ => starting_magnetization, &
@@ -148,7 +152,10 @@ SUBROUTINE iosys()
   !
   USE extrapolation, ONLY : pot_order, wfc_order
   USE control_flags, ONLY : isolve, max_cg_iter, david, tr2, imix, gamma_only,&
-                            nmix, iverbosity, niter, &
+                            nmix, iverbosity, smallmem, niter, &
+                            io_level, ethr, lscf, lbfgs, lmd, &
+                            lbands, lconstrain, restart, twfcollect, &
+                            llondon, do_makov_payne, lxdm, &
                             remove_rigid_rot_ => remove_rigid_rot, &
                             diago_full_acc_   => diago_full_acc, &
                             tolp_             => tolp, &
@@ -161,13 +168,10 @@ SUBROUTINE iosys()
                             tqr_              => tqr, &
                             tq_smoothing_     => tq_smoothing, &
                             tbeta_smoothing_  => tbeta_smoothing, &
-                            io_level, ethr, lscf, lbfgs, lmd, &
-                            lbands, lconstrain, restart, twfcollect, &
-                            llondon, do_makov_payne, lxdm, &
                             ts_vdw_           => ts_vdw, &
                             lecrpa_           => lecrpa, &
-                            smallmem
-  USE control_flags, ONLY: scf_must_converge_ => scf_must_converge
+                            scf_must_converge_=> scf_must_converge
+  USE check_stop,    ONLY : max_seconds_ => max_seconds
   !
   USE wvfct,         ONLY : nbnd_ => nbnd
   USE gvecw,         ONLY : ecfixed_ => ecfixed, &
@@ -207,8 +211,7 @@ SUBROUTINE iosys()
 
   USE read_pseudo_mod,       ONLY : readpp
 
-  USE qmmm, ONLY : qmmm_config
-
+  USE qmmm,                  ONLY : qmmm_config
   !
   ! ... CONTROL namelist
   !
@@ -218,8 +221,8 @@ SUBROUTINE iosys()
                                pseudo_dir, disk_io, tefield, dipfield, lberry, &
                                gdir, nppstr, wf_collect,lelfield,lorbm,efield, &
                                nberrycyc, lkpoint_dir, efield_cart, lecrpa,    &
-                               vdw_table_name, memory, tqmmm,                  &
-                               efield_phase, monopole
+                               vdw_table_name, memory, max_seconds, tqmmm,     &
+                               efield_phase, gate
 
   !
   ! ... SYSTEM namelist
@@ -229,7 +232,7 @@ SUBROUTINE iosys()
                                ecutwfc, ecutrho, nr1, nr2, nr3, nr1s, nr2s, &
                                nr3s, noinv, nosym, nosym_evc, no_t_rev,     &
                                use_all_frac, force_symmorphic,              &
-                               starting_magnetization,                      &
+                               starting_charge, starting_magnetization,     &
                                occupations, degauss, smearing, nspin,       &
                                ecfixed, qcutz, q2sigma, lda_plus_U,         &
                                lda_plus_U_kind, Hubbard_U, Hubbard_J,       &
@@ -239,7 +242,8 @@ SUBROUTINE iosys()
                                x_gamma_extrapolation, nqx1, nqx2, nqx3,     &
                                exxdiv_treatment, yukawa, ecutvcut,          &
                                exx_fraction, screening_parameter, ecutfock, &
-                               gau_parameter,                               &
+                               gau_parameter, localization_thr, scdm, ace,    &
+                               scdmden, scdmgrd,                              & 
                                edir, emaxpos, eopreg, eamp, noncolin, lambda, &
                                angle1, angle2, constrained_magnetization,     &
                                B_field, fixed_magnetization, report, lspinorb,&
@@ -251,9 +255,10 @@ SUBROUTINE iosys()
                                one_atom_occupations,                          &
                                esm_bc, esm_efield, esm_w, esm_nfit, esm_a,    &
                                lfcpopt, lfcpdyn, fcp_mu, fcp_mass, fcp_tempw, & 
-                               fcp_relax_step, fcp_relax_crit,                &
+                               fcp_relax, fcp_relax_step, fcp_relax_crit,     &
+                               fcp_mdiis_size, fcp_mdiis_step,                &
                                space_group, uniqueb, origin_choice,           &
-                               rhombohedral, zmon, relaxz, block, block_1,    &
+                               rhombohedral, zgate, relaxz, block, block_1,   &
                                block_2, block_height
   !
   ! ... ELECTRONS namelist
@@ -275,7 +280,7 @@ SUBROUTINE iosys()
                                pot_extrapolation,  wfc_extrapolation,          &
                                w_1, w_2, trust_radius_max, trust_radius_min,   &
                                trust_radius_ini, bfgs_ndim, rd_pos, sp_pos, &
-                               rd_for, rd_if_pos => if_pos, lsg
+                               rd_for, rd_if_pos, lsg
   !
   ! ... CELL namelist
   !
@@ -290,9 +295,9 @@ SUBROUTINE iosys()
   !
   ! ... CARDS
   !
-  USE input_parameters,   ONLY : k_points, xk, wk, nk1, nk2, nk3,  &
+  USE input_parameters,      ONLY : k_points, xk, wk, nk1, nk2, nk3,  &
                                  k1, k2, k3, nkstot
-  USE input_parameters, ONLY : nconstr_inp, trd_ht, rd_ht, cell_units
+  USE input_parameters,      ONLY : nconstr_inp, trd_ht, rd_ht, cell_units
   !
   USE constraints_module,    ONLY : init_constraint
   USE read_namelists_module, ONLY : read_namelists, sm_not_set
@@ -305,6 +310,8 @@ SUBROUTINE iosys()
   USE wyckoff,               ONLY : nattot, sup_spacegroup
   USE qexsd_module,          ONLY : qexsd_input_obj
   USE qes_types_module,      ONLY: input_type
+  !
+  USE vlocal,        ONLY : starting_charge_ => starting_charge
   ! 
   IMPLICIT NONE
   !
@@ -322,7 +329,6 @@ SUBROUTINE iosys()
   INTEGER  :: ia, nt, inlc, ibrav_sg, ierr
   LOGICAL  :: exst, parallelfs
   REAL(DP) :: theta, phi, ecutwfc_pp, ecutrho_pp
-  !
   !
   ! ... various initializations of control variables
   !
@@ -493,30 +499,30 @@ SUBROUTINE iosys()
   !
   ! TB
   ! IF ( tefield .and. ( .not. nosym ) ) THEN
-  IF ( tefield .and. ( .not. nosym ) .and. ( .not. monopole)) THEN
+  IF ( tefield .and. ( .not. nosym ) .and. ( .not. gate )) THEN
      nosym = .true.
      WRITE( stdout, &
             '(5x,"Presently no symmetry can be used with electric field",/)' )
   ENDIF
   !TB begin some checks on input
-  IF ( (monopole) .AND. ( .NOT. nosym )) THEN
-     WRITE( stdout,'(/,5x,"Presently symmetry can be used with monopole field",/)' )
+  IF ( (gate) .AND. ( .NOT. nosym )) THEN
+     WRITE( stdout,'(/,5x,"Presently symmetry can be used with gate field",/)' )
      WRITE( stdout,'(5x,"setting verbosity to high",/)' )
      WRITE( stdout,'(5x,"CAREFULLY CHECK ALL SYMMETRIES",/)' )
      verbosity='high'
   ENDIF
-  IF ((zmon>1.0).OR.(zmon<0.0)) &
-     CALL errore( 'iosys', 'Position of the monopole has to be between within ]0,1[' , 1 )
-  IF ( (monopole) .AND. ((tefield).OR.(dipfield)) ) THEN
+  IF ((zgate>1.0).OR.(zgate<0.0)) &
+     CALL errore( 'iosys', 'Position of the charged plate representing the gate has to be between within ]0,1[' , 1 )
+  IF ( (gate) .AND. ((tefield).OR.(dipfield)) ) THEN
      IF (edir .ne. 3) &
-        CALL errore( 'iosys','Using monopole and tefield/dipfield, edir must be 3', 1)
-     IF ((zmon>=emaxpos).AND.(zmon<=(emaxpos+eopreg))) &
-        CALL errore( 'iosys', 'Monopole between the 2 dipole planes not allowed' , 1 )
+        CALL errore( 'iosys','Using gate and tefield/dipfield, edir must be 3', 1)
+     IF ((zgate>=emaxpos).AND.(zgate<=(emaxpos+eopreg))) &
+        CALL errore( 'iosys', 'Charged plate between the 2 dipole planes not allowed' , 1 )
      IF ((block).AND.(block_1.NE.emaxpos).AND.(block_2.NE.(emaxpos+eopreg))) THEN
         WRITE( stdout,'(/,5x,"Neither block_1=emaxpos, nor block_2=emaxpos+eopreg, CHECK IF THIS IS WHAT YOU WANT",/)' )
         WRITE( stdout,'(/,5x,"eopreg is nevertheless used for the smooth increase of the barrier",/)' )
   ENDIF
-  IF ( (monopole) .AND. (block) ) THEN
+  IF ( (gate) .AND. (block) ) THEN
      IF ((block_1<0.0) .OR. (block_1>1.0) .OR. (block_2<0.0) .OR. (block_2>1.0)) &
         CALL errore( 'iosys', 'Both block_1, block_2 have to be between wihtin ]0,1[' , 1 )
      IF (block_1>=block_2) &
@@ -524,14 +530,13 @@ SUBROUTINE iosys()
      ENDIF
   ENDIF
   !TB end
-  IF ( (tefield.or.monopole) .and. tstress ) THEN !TB no stress with monopole
+  IF ( (tefield.or.gate) .and. tstress ) THEN !TB no stress with gate
      lstres = .false.
      WRITE( stdout, &
-            '(5x,"Presently stress not available with electric field and monopole",/)' )
+            '(5x,"Presently stress not available with electric field and gates",/)' )
   ENDIF
   !TB Why no E-field with SOC?
-  !IF ( tefield .and. ( nspin > 2 ) ) THEN
-  IF ( (tefield .and. ( nspin > 2 )) .and. (.not.monopole) ) THEN
+  IF ( (tefield .and. ( nspin > 2 )) .and. (.not.gate) ) THEN
      CALL errore( 'iosys', 'LSDA not available with electric field' , 1 )
   ENDIF
   !
@@ -1139,8 +1144,8 @@ SUBROUTINE iosys()
   tefield_    = tefield
   dipfield_   = dipfield
   !TB start
-  monopole_   = monopole
-  zmon_    = zmon
+  gate_   = gate
+  zgate_    = zgate
   relaxz_  = relaxz
   block_   = block
   block_1_ = block_1
@@ -1198,6 +1203,7 @@ SUBROUTINE iosys()
   lda_plus_u_kind_        = lda_plus_u_kind
   la2F_                   = la2F
   nspin_                  = nspin
+  starting_charge_        = starting_charge
   starting_magnetization_ = starting_magnetization
   starting_ns             = starting_ns_eigenvalue
   U_projection            = U_projection_type
@@ -1269,14 +1275,17 @@ SUBROUTINE iosys()
   END SELECT
   IF ( london ) THEN
      CALL infomsg("iosys","london is obsolete, use ""vdw_corr='grimme-d2'"" instead")
+     vdw_corr='grimme-d2'
      llondon = .TRUE.
   END IF
   IF ( xdm ) THEN
      CALL infomsg("iosys","xdm is obsolete, use ""vdw_corr='xdm'"" instead")
+     vdw_corr='xdm'
      lxdm = .TRUE.
   END IF
   IF ( ts_vdw ) THEN
      CALL infomsg("iosys","ts_vdw is obsolete, use ""vdw_corr='TS'"" instead")
+     vdw_corr='TS'
      ts_vdw_ = .TRUE.
   END IF
   IF ( llondon.AND.lxdm .OR. llondon.AND.ts_vdw_ .OR. lxdm.AND.ts_vdw_ ) &
@@ -1396,8 +1405,11 @@ SUBROUTINE iosys()
   !
   IF ( fcp_temperature == 0.0_DP ) &
      fcp_temperature = temperature
+  fcp_relax_      = fcp_relax
   fcp_relax_step_ = fcp_relax_step
   fcp_relax_crit_ = fcp_relax_crit
+  fcp_mdiis_size_ = fcp_mdiis_size
+  fcp_mdiis_step_ = fcp_mdiis_step
   !
   CALL plugin_read_input()
   !
@@ -1419,7 +1431,7 @@ SUBROUTINE iosys()
   ENDIF
   !
   IF ( tefield ) ALLOCATE( forcefield( 3, nat_ ) )
-  IF ( monopole ) ALLOCATE( forcemono( 3, nat_ ) ) !TB monopole forces
+  IF ( gate ) ALLOCATE( forcegate( 3, nat_ ) ) !TB gate forces
   !
   ! ... note that read_cards_pw no longer reads cards!
   !
@@ -1524,6 +1536,18 @@ SUBROUTINE iosys()
   exxdiv_treatment_ = trim(exxdiv_treatment)
   yukawa_   = yukawa
   ecutvcut_ = ecutvcut
+  use_ace   = ace
+  local_thr = localization_thr
+  use_scdm  = scdm
+  scdm_den = scdmden
+  scdm_grd = scdmgrd
+  IF ( local_thr > 0.0_dp .AND. .NOT. gamma_only) &
+     CALL errore('input','localization for k-points not yet implemented',1)
+  IF ( local_thr > 0.0_dp .AND. .NOT. use_ace ) &
+     CALL errore('input','localization without ACE not yet implemented',1)
+  IF ( local_thr > 0.0_dp .AND. nspin > 1 ) &
+     CALL errore('input','spin-polarized localization not yet implemented',1)
+  IF ( use_scdm ) CALL errore('input','use_scdm not yet implemented',1)
   !
   IF(ecutfock <= 0.0_DP) THEN
      ! default case
@@ -1609,7 +1633,9 @@ SUBROUTINE iosys()
   END IF
   IF ( TRIM(wfc_dir) /= TRIM(tmp_dir) ) &
      CALL check_tempdir( wfc_dir, exst, parallelfs )
-
+  !
+  max_seconds_ = max_seconds
+  !
   RETURN
   !
 END SUBROUTINE iosys
@@ -1661,14 +1687,14 @@ SUBROUTINE read_cards_pw ( psfile, tau_format )
   !
   USE kinds,              ONLY : DP
   USE input_parameters,   ONLY : atom_label, atom_pfile, atom_mass, taspc, &
-                                 tapos, rd_pos, atomic_positions, if_pos,  &
+                                 tapos, rd_pos, atomic_positions, rd_if_pos,  &
                                  sp_pos, f_inp, rd_for, tavel, sp_vel, rd_vel, &
                                  lsg
   USE dynamics_module,    ONLY : vel
   USE cell_base,          ONLY : at, ibrav
   USE ions_base,          ONLY : nat, ntyp => nsp, ityp, tau, atm, extfor
   USE fixed_occ,          ONLY : tfixed_occ, f_inp_ => f_inp
-  USE ions_base,          ONLY : if_pos_ =>  if_pos, amass, fixatom
+  USE ions_base,          ONLY : if_pos, amass, fixatom
   USE control_flags,      ONLY : textfor, tv0rd
   USE wyckoff,            ONLY : nattot, tautot, ityptot, extfortot, &
                                  if_postot, clean_spacegroup
@@ -1710,7 +1736,7 @@ SUBROUTINE read_cards_pw ( psfile, tau_format )
      tau(:,:)=tautot(:,:)
      ityp(:) = ityptot(:)
      extfor(:,:) = extfortot(:,:)
-     if_pos_(:,:) = if_postot(:,:)
+     if_pos(:,:) = if_postot(:,:)
      CALL clean_spacegroup()
   ELSE 
      DO ia = 1, nat
@@ -1718,7 +1744,7 @@ SUBROUTINE read_cards_pw ( psfile, tau_format )
         tau(:,ia) = rd_pos(:,ia)
         ityp(ia)  = sp_pos(ia)
         extfor(:,ia) = rd_for(:,ia)
-        if_pos_(:,ia) = if_pos(:,ia)
+        if_pos(:,ia) = rd_if_pos(:,ia)
         !
      ENDDO
   ENDIF
@@ -1740,7 +1766,7 @@ SUBROUTINE read_cards_pw ( psfile, tau_format )
   ! ... if_pos whose value is 0 when the coordinate is to be kept fixed, 1
   ! ... otherwise. 
   !
-  fixatom = COUNT( if_pos_(1,:)==0 .AND. if_pos_(2,:)==0 .AND. if_pos_(3,:)==0 )
+  fixatom = COUNT( if_pos(1,:)==0 .AND. if_pos(2,:)==0 .AND. if_pos(3,:)==0 )
   !
   tau_format = trim( atomic_positions )
   !

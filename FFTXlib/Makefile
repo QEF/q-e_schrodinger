@@ -6,7 +6,6 @@ include ../make.inc
 #MODFLAGS= $(MOD_FLAG)../iotk/src $(MOD_FLAG).
 
 FFTX = \
-task_groups.o \
 scatter_mod.o  \
 fft_fwinv.o  \
 fft_scalar.o  \
@@ -14,6 +13,7 @@ fft_scalar.ARM_LIB.o  \
 fft_scalar.DFTI.o  \
 fft_scalar.ESSL.o  \
 fft_scalar.FFTW.o  \
+fftw_interfaces.o  \
 fft_scalar.FFTW3.o  \
 fft_scalar.SX6.o  \
 fft_parallel.o  \
@@ -25,6 +25,8 @@ fft_support.o  \
 fft_error.o  \
 fft_stick.o  \
 fft_types.o \
+tg_gather.o \
+fft_helper_subroutines.o \
 fft_param.o
 
 

@@ -43,16 +43,17 @@ SUBROUTINE move_ions ( idone )
   USE relax,                  ONLY : epse, epsf, epsp, starting_scf_threshold
   USE lsda_mod,               ONLY : lsda, absmag
   USE mp_images,              ONLY : intra_image_comm
-  USE mp_bands,               ONLY : intra_bgrp_comm
+  USE mp_bands,               ONLY : intra_bgrp_comm, nyfft
   USE io_global,              ONLY : ionode_id, ionode
   USE mp,                     ONLY : mp_bcast
   USE bfgs_module,            ONLY : bfgs, terminate_bfgs
   USE basic_algebra_routines, ONLY : norm
   USE dynamics_module,        ONLY : verlet, terminate_verlet, proj_verlet
   USE dynamics_module,        ONLY : smart_MC, langevin_md
-  USE fcp                ,    ONLY : fcp_verlet, fcp_line_minimisation
+  USE fcp                ,    ONLY : fcp_verlet, fcp_line_minimisation, &
+                                     fcp_mdiis_update, fcp_mdiis_end
   USE fcp_variables,          ONLY : lfcpopt, lfcpdyn, fcp_mu, &
-                                     fcp_relax_crit
+                                     fcp_relax, fcp_relax_crit
   USE klist,                  ONLY : nelec
   USE dfunct,                 only : newd
   !
@@ -121,7 +122,11 @@ SUBROUTINE move_ions ( idone )
         ! ... relax for FCP
         !
         IF ( lfcpopt ) THEN
-           CALL fcp_line_minimisation( conv_fcp )
+           IF ( TRIM(fcp_relax) == 'lm' ) THEN
+              CALL fcp_line_minimisation( conv_fcp )
+           ELSE IF ( TRIM(fcp_relax) == 'mdiis' ) THEN
+              CALL fcp_mdiis_update( conv_fcp )
+           END IF
            IF ( .not. conv_fcp .and. idone < nstep ) THEN
              conv_ions = .FALSE.
            END IF
@@ -174,6 +179,9 @@ SUBROUTINE move_ions ( idone )
                & "( criteria force < ",ES8.1," )")') fcp_relax_crit
              WRITE( stdout, '(5X,"FCP Optimisation : tot_charge =",F12.6,/)') &
                SUM( zv(ityp(1:nat)) ) - nelec
+             IF ( TRIM(fcp_relax) == 'mdiis' ) THEN
+                CALL fcp_mdiis_end()
+             END IF
            END IF
            !
         ELSE
@@ -226,7 +234,11 @@ SUBROUTINE move_ions ( idone )
            ! ... relax for FCP
            !
            IF ( lfcpopt ) THEN
-              CALL fcp_line_minimisation( conv_fcp )
+              IF ( TRIM(fcp_relax) == 'lm' ) THEN
+                 CALL fcp_line_minimisation( conv_fcp )
+              ELSE IF ( TRIM(fcp_relax) == 'mdiis' ) THEN
+                 CALL fcp_mdiis_update( conv_fcp )
+              END IF
               IF ( .not. conv_fcp .and. idone < nstep ) conv_ions = .FALSE.
               !
               ! ... FCP output
@@ -236,6 +248,9 @@ SUBROUTINE move_ions ( idone )
                       & "( criteria force < ", ES8.1," )")') fcp_relax_crit
                  WRITE( stdout, '(5X,"FCP : final tot_charge =",F12.6,/)') &
                       SUM( zv(ityp(1:nat)) ) - nelec
+                 IF ( TRIM(fcp_relax) == 'mdiis' ) THEN
+                    CALL fcp_mdiis_end()
+                 END IF
               END IF
            END IF
            IF ( .NOT. conv_ions .AND. idone >= nstep ) THEN
@@ -338,9 +353,9 @@ SUBROUTINE move_ions ( idone )
      ! ... re-set and re-calculate FFT grid 
      !
      dfftp%nr1=0; dfftp%nr2=0; dfftp%nr3=0
-     CALL fft_type_allocate (dfftp, at, bg, gcutm, intra_bgrp_comm )
+     CALL fft_type_allocate (dfftp, at, bg, gcutm, intra_bgrp_comm, nyfft=nyfft)
      dffts%nr1=0; dffts%nr2=0; dffts%nr3=0
-     CALL fft_type_allocate (dffts, at, bg, gcutms, intra_bgrp_comm)
+     CALL fft_type_allocate (dffts, at, bg, gcutms,intra_bgrp_comm, nyfft=nyfft)
      !
      CALL init_run()
      !

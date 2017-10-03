@@ -20,18 +20,18 @@ SUBROUTINE punch( what )
   USE io_files,             ONLY : xmlpun_schema, psfile, pseudo_dir
   USE wrappers,             ONLY : f_copy
   USE xml_io_base,          ONLY : create_directory
-  USE io_rho_xml,           ONLY : write_rho
   USE spin_orb,             ONLY : lforcet
   USE scf,                  ONLY : rho
   USE lsda_mod,             ONLY : nspin
   USE ions_base,            ONLY : nsp
   USE funct,                ONLY : get_inlc
   USE kernel_table,         ONLY : vdw_table_name, kernel_file_name
-#if defined (__XSD) 
-  USE pw_restart_new,       ONLY : pw_write_schema, pw_write_binaries
-#else
+#if defined (__OLDXML) 
   USE pw_restart,           ONLY : pw_writefile
+#else
+  USE pw_restart_new,       ONLY : pw_write_schema, pw_write_binaries
 #endif
+  USE io_rho_xml,           ONLY : write_scf
   USE a2F,                  ONLY : la2F, a2Fsave
   USE wavefunctions_module, ONLY : evc
   !
@@ -58,7 +58,11 @@ SUBROUTINE punch( what )
   END IF
   iunpun = 4
   !
-#if defined(__XSD)
+#if defined(__OLDXML)
+  !
+  CALL pw_writefile( TRIM( what ) )
+  !
+#else
   !
   ! ...New-style I/O with xml schema and (optionally) hdf5 binaries
   !
@@ -73,7 +77,7 @@ SUBROUTINE punch( what )
   ! ... (except in the 'force theorem' calculation of MAE where the
   ! ...  charge density differs from the one read from disk)
   !
-  IF ( lscf .OR. lforcet ) CALL write_rho( rho, nspin )
+  IF ( lscf .OR. lforcet ) CALL write_scf( rho, nspin )
   !
   IF (TRIM(what) == 'all') THEN 
      !
@@ -106,11 +110,6 @@ SUBROUTINE punch( what )
      END IF  
       !
   END IF
-#else
-  !
-  ! ...Old-style I/O
-  !
-  CALL pw_writefile( TRIM( what ) )
   !
 #endif
   !

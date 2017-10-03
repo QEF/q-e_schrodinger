@@ -92,7 +92,8 @@ SUBROUTINE new_hamiltonian(form, plot_bands)
   USE constants,  ONLY : rytoev , tpi
   USE buffers
   USE symm_base,  ONLY : nsym
-
+  USE mytime, ONLY : f_wall
+  !
   IMPLICIT NONE
   LOGICAL :: plot_bands
   CHARACTER(len=256), INTENT(IN) :: form
@@ -101,7 +102,6 @@ SUBROUTINE new_hamiltonian(form, plot_bands)
   COMPLEX(DP), ALLOCATABLE :: hamk(:,:,:), hamh(:,:,:)
   real(DP), ALLOCATABLE :: ek(:,:)
   real(DP) :: e(nwan), x, hoping(3), nelec
-  REAL(DP), EXTERNAL :: cclock
   CHARACTER(20) :: fmt
 
   ALLOCATE(ek(nwan,nks))
@@ -197,7 +197,7 @@ SUBROUTINE new_hamiltonian(form, plot_bands)
   ! write HMLT file
   IF (form == 'amulet') THEN
 
-    seconds = cclock()
+    seconds = f_wall()
 
     CALL write_hamiltonian_amulet(nwan,hamk,seconds,114)
 

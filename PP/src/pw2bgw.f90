@@ -291,7 +291,7 @@ PROGRAM pw2bgw
   if ( ionode ) WRITE ( 6, '("")' )
 
   IF ( wfng_flag ) THEN
-    output_file_name = TRIM ( tmp_dir ) // '/' // TRIM ( wfng_file )
+    output_file_name = TRIM ( tmp_dir ) // TRIM ( wfng_file )
     IF ( ionode ) WRITE ( 6, '(5x,"call write_wfng")' )
     CALL start_clock ( 'write_wfng' )
     CALL write_wfng ( output_file_name, real_or_complex, symm_type, &
@@ -302,7 +302,7 @@ PROGRAM pw2bgw
   ENDIF
 
   IF ( vxcg_flag ) THEN
-    output_file_name = TRIM ( tmp_dir ) // '/' // TRIM ( vxcg_file )
+    output_file_name = TRIM ( tmp_dir ) // TRIM ( vxcg_file )
     IF ( ionode ) WRITE ( 6, '(5x,"call write_vxcg")' )
     CALL start_clock ( 'write_vxcg' )
     CALL write_vxcg ( output_file_name, real_or_complex, symm_type, &
@@ -312,7 +312,7 @@ PROGRAM pw2bgw
   ENDIF
 
   IF ( vxc0_flag ) THEN
-    output_file_name = TRIM ( tmp_dir ) // '/' // TRIM ( vxc0_file )
+    output_file_name = TRIM ( tmp_dir ) // TRIM ( vxc0_file )
     IF ( ionode ) WRITE ( 6, '(5x,"call write_vxc0")' )
     CALL start_clock ( 'write_vxc0' )
     CALL write_vxc0 ( output_file_name, vxc_zero_rho_core )
@@ -321,7 +321,7 @@ PROGRAM pw2bgw
   ENDIF
 
   IF ( vxc_flag ) THEN
-    output_file_name = TRIM ( tmp_dir ) // '/' // TRIM ( vxc_file )
+    output_file_name = TRIM ( tmp_dir ) // TRIM ( vxc_file )
     IF ( vxc_integral .EQ. 'r' ) THEN
       IF ( ionode ) WRITE ( 6, '(5x,"call write_vxc_r")' )
       CALL start_clock ( 'write_vxc_r' )
@@ -345,7 +345,7 @@ PROGRAM pw2bgw
   ENDIF
 
   IF ( vscg_flag ) THEN
-    output_file_name = TRIM ( tmp_dir ) // '/' // TRIM ( vscg_file )
+    output_file_name = TRIM ( tmp_dir ) // TRIM ( vscg_file )
     IF ( ionode ) WRITE ( 6, '(5x,"call write_vscg")' )
     CALL start_clock ( 'write_vscg' )
     CALL write_vscg ( output_file_name, real_or_complex, symm_type )
@@ -354,7 +354,7 @@ PROGRAM pw2bgw
   ENDIF
 
   IF ( vkbg_flag ) THEN
-    output_file_name = TRIM ( tmp_dir ) // '/' // TRIM ( vkbg_file )
+    output_file_name = TRIM ( tmp_dir ) // TRIM ( vkbg_file )
     IF ( ionode ) WRITE ( 6, '(5x,"call write_vkbg")' )
     CALL start_clock ( 'write_vkbg' )
     CALL write_vkbg ( output_file_name, symm_type, wfng_kgrid, wfng_nk1, &
@@ -367,7 +367,7 @@ PROGRAM pw2bgw
   ! it must be called after v_xc (called from write_vxcg, write_vxc0,
   ! write_vxc_r, write_vxc_g)
   IF ( rhog_flag ) THEN
-    output_file_name = TRIM ( tmp_dir ) // '/' // TRIM ( rhog_file )
+    output_file_name = TRIM ( tmp_dir ) // TRIM ( rhog_file )
     IF ( ionode ) WRITE ( 6, '(5x,"call write_rhog")' )
     CALL start_clock ( 'write_rhog' )
     CALL write_rhog ( output_file_name, real_or_complex, symm_type, &
@@ -426,7 +426,7 @@ SUBROUTINE write_wfng ( output_file_name, real_or_complex, symm_type, &
   USE start_k, ONLY : nk1, nk2, nk3, k1, k2, k3
   USE symm_base, ONLY : s, ftau, nsym
   USE wavefunctions_module, ONLY : evc
-  USE wvfct, ONLY : npwx, nbnd, npw, et, wg
+  USE wvfct, ONLY : npwx, nbnd, et, wg
   USE gvecw, ONLY : ecutwfc
   USE matrix_inversion
 #if defined(__MPI)
@@ -454,7 +454,7 @@ SUBROUTINE write_wfng ( output_file_name, real_or_complex, symm_type, &
   integer :: unit, i, j, k, cell_symmetry, nrecord
   integer :: id, ib, ik, iks, ike, is, ig, ierr
   integer :: nd, ntran, nb, nk_l, nk_g, ns, ng_l, ng_g
-  integer :: ngg, npw_g, npwx_g
+  integer :: npw, ngg, npw_g, npwx_g
   integer :: local_pw, ipsour, igwx, ngkdist_g, ngkdist_l
   real (DP) :: alat2, recvol, t1 ( 3 ), t2 ( 3 )
   real (DP) :: r1 ( 3, 3 ), r2 ( 3, 3 ), adot ( 3, 3 )
@@ -1433,14 +1433,14 @@ SUBROUTINE calc_rhog (rhog_nvmin, rhog_nvmax)
   USE scf, ONLY : rho
   USE symme, ONLY : sym_rho, sym_rho_init
   USE wavefunctions_module, ONLY : evc, psic
-  USE wvfct, ONLY : npw, wg
+  USE wvfct, ONLY : wg
 
   IMPLICIT NONE
 
   integer, intent (in) :: rhog_nvmin
   integer, intent (in) :: rhog_nvmax
   integer, external :: global_kpoint_index
-  integer :: ik, is, ib, ig, ir, iks, ike
+  integer :: npw, ik, is, ib, ig, ir, iks, ike
 
   iks = global_kpoint_index (nkstot, 1)
   ike = iks + nks - 1 
@@ -1808,7 +1808,7 @@ SUBROUTINE write_vxc_r (output_file_name, diag_nmin, diag_nmax, &
   USE mp_pools, ONLY : intra_pool_comm, inter_pool_comm
   USE scf, ONLY : rho, rho_core, rhog_core
   USE wavefunctions_module, ONLY : evc, psic
-  USE wvfct, ONLY : npw, nbnd
+  USE wvfct, ONLY : nbnd
 
   IMPLICIT NONE
 
@@ -1819,7 +1819,7 @@ SUBROUTINE write_vxc_r (output_file_name, diag_nmin, diag_nmax, &
   integer, intent (inout) :: offdiag_nmax
   logical, intent (in) :: vxc_zero_rho_core
 
-  integer :: ik, is, ib, ig, ir, unit, iks, ike, ndiag, noffdiag, ib2
+  integer :: npw, ik, is, ib, ig, ir, unit, iks, ike, ndiag, noffdiag, ib2
   integer, external :: global_kpoint_index
   real (DP) :: dummyr
   complex (DP) :: dummyc
@@ -1994,7 +1994,7 @@ SUBROUTINE write_vxc_g (output_file_name, diag_nmin, diag_nmax, &
   USE mp_pools, ONLY : intra_pool_comm, inter_pool_comm
   USE scf, ONLY : rho, rho_core, rhog_core
   USE wavefunctions_module, ONLY : evc, psic
-  USE wvfct, ONLY : npwx, npw, nbnd
+  USE wvfct, ONLY : npwx, nbnd
 
   IMPLICIT NONE
 
@@ -2005,7 +2005,7 @@ SUBROUTINE write_vxc_g (output_file_name, diag_nmin, diag_nmax, &
   integer, intent (inout) :: offdiag_nmax
   logical, intent (in) :: vxc_zero_rho_core
 
-  integer :: ik, is, ib, ig, ir, unit, iks, ike, ndiag, noffdiag, ib2, ikk
+  integer :: npw, ik, is, ib, ig, ir, unit, iks, ike, ndiag, noffdiag, ib2, ikk
   integer, external :: global_kpoint_index
   complex (DP) :: dummy
   complex (DP), allocatable :: mtxeld (:, :)
@@ -2414,7 +2414,7 @@ SUBROUTINE write_vkbg (output_file_name, symm_type, wfng_kgrid, &
   USE symm_base, ONLY : s, ftau, nsym
   USE uspp, ONLY : nkb, vkb, deeq
   USE uspp_param, ONLY : nhm, nh
-  USE wvfct, ONLY : npwx, npw
+  USE wvfct, ONLY : npwx
   USE gvecw, ONLY : ecutwfc
   USE matrix_inversion
 
@@ -2432,7 +2432,7 @@ SUBROUTINE write_vkbg (output_file_name, symm_type, wfng_kgrid, &
 
   character :: cdate*9, ctime*9, sdate*32, stime*32, stitle*32
   integer :: i, j, k, ierr, ik, is, ig, ikb, iat, isp, ih, jh, &
-    unit, iks, ike, npw_g, npwx_g, ngg, ipsour, &
+    unit, iks, ike, npw, npw_g, npwx_g, ngg, ipsour, &
     igwx, local_pw, id, nd, ntran, cell_symmetry, nrecord
   real (DP) :: alat2, recvol, t1 ( 3 ), t2 ( 3 )
   real (DP) :: r1 ( 3, 3 ), r2 ( 3, 3 ), adot ( 3, 3 )

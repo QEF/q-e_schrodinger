@@ -356,7 +356,8 @@ SUBROUTINE write_export (pp_file,kunit,uspp_spsi, ascii, single_file, raw)
 
 
   USE kinds,          ONLY : DP
-  USE pwcom
+  USE gvecs,          ONLY : dual
+  USE gvect,          ONLY : ngm, ngm_g, mill, ig_l2g
   USE gvecw,          ONLY : ecutwfc, gcutw
   USE start_k,        ONLY : nk1, nk2, nk3, k1, k2, k3
   USE control_flags,  ONLY : gamma_only
@@ -371,6 +372,7 @@ SUBROUTINE write_export (pp_file,kunit,uspp_spsi, ascii, single_file, raw)
   USE io_base_export, ONLY : write_restart_wfc
   USE io_global,      ONLY : ionode, stdout
   USE ions_base,      ONLY : atm, nat, ityp, tau, nsp
+  USE cell_base,      ONLY : at, bg, alat, omega, tpiba, tpiba2  
   USE mp_pools,       ONLY : my_pool_id, intra_pool_comm, inter_pool_comm, &
                              nproc_pool
   USE mp,             ONLY : mp_sum, mp_max
@@ -385,7 +387,7 @@ SUBROUTINE write_export (pp_file,kunit,uspp_spsi, ascii, single_file, raw)
   CHARACTER(80), INTENT(in) :: pp_file
   LOGICAL, INTENT(in) :: uspp_spsi, ascii, single_file, raw
 
-  INTEGER :: i, j, k, ig, ik, ibnd, na, ngg,ig_, ierr
+  INTEGER :: npw, i, j, k, ig, ik, ibnd, na, ngg,ig_, ierr
   real(DP) :: xyz(3), tmp(3)
   INTEGER :: ike, iks, npw_g, npwx_g, ispin, local_pw
   INTEGER, EXTERNAL :: global_kpoint_index
@@ -428,7 +430,7 @@ SUBROUTINE write_export (pp_file,kunit,uspp_spsi, ascii, single_file, raw)
 
   IF( ionode ) THEN
     WRITE(0,*) "Opening file "//trim(pp_file)
-    CALL iotk_open_write(50,file=trim(tmp_dir)//'/'//trim(pp_file))
+    CALL iotk_open_write(50,file=trim(tmp_dir) // trim(pp_file))
     WRITE(0,*) "Reconstructing the main grid"
   ENDIF
 
@@ -817,7 +819,7 @@ SUBROUTINE write_export (pp_file,kunit,uspp_spsi, ascii, single_file, raw)
 
                npw = ngk(ik-iks+1)
                local_pw = npw
-	       CALL init_us_2(npw, igk_k(1,ik-iks+1), xk(1, ik), vkb)
+               CALL init_us_2(npw, igk_k(1,ik-iks+1), xk(1, ik), vkb)
 
                IF ( gamma_only ) THEN
                   CALL calbec ( npw, vkb, evc, becp )

@@ -39,17 +39,13 @@ CONTAINS
       !
       ! ... Local variables
       !
-      INTEGER                   :: i, ir, ir_end
-      INTEGER                   :: idx, idx0, narea
+      INTEGER                   :: i, j, k, j0, k0, ir, ir_end
+      INTEGER                   :: idx, narea
       !
-      idx0 = 0
       ir_end = nnr
       !
 #if defined (__MPI)
-      DO i = 1, me_bgrp
-        idx0 = idx0 + dfftp%nr1x*dfftp%nr2x*dfftp%npp(i)
-      END DO
-      ir_end = MIN(nnr,dfftp%nr1x*dfftp%nr2x*dfftp%npp(me_bgrp+1))
+      ir_end = MIN(nnr,dfftp%nr1x*dfftp%my_nr2p*dfftp%my_nr3p)
 #endif
       !
       narea = dfftp%nr1*dfftp%nr2*dfftp%nr3 / naxis
@@ -60,17 +56,26 @@ CONTAINS
         f1d = 0.D0
       END IF
       !
-      DO ir = 1, ir_end
+      j0 = dfftp%my_i0r2p ; k0 = dfftp%my_i0r3p
+      DO ir = 1, dfftp%nr1x*dfftp%my_nr2p*dfftp%my_nr3p
          !
          ! ... find the index along the selected axis
          !
-         i = idx0 + ir - 1
-         idx = i / (dfftp%nr1x*dfftp%nr2x)
+         idx = ir -1
+         i   = idx / (dfftp%nr1x*dfftp%my_nr2p)
+         idx = idx - (dfftp%nr1x*dfftp%my_nr2p)*i
+         i   = i + k0
+         IF ( idx .GE. dfftp%nr3 ) CYCLE
          IF ( axis .LT. 3 ) THEN
-           i = i - (dfftp%nr1x*dfftp%nr2x)*idx
-           idx = i / dfftp%nr1x
+            i   = idx / dfftp%nr1x
+            idx = idx - dfftp%nr1x * i
+            i   = i + j0
+           IF ( idx .GE. dfftp%nr2 ) CYCLE
          END IF
-         IF ( axis .EQ. 1 ) idx = i - dfftp%nr1x*idx
+         IF ( axis .EQ. 1 ) THEN
+            i   = idx
+            IF ( idx .GE. dfftp%nr1 ) CYCLE
+         END IF
          !
          idx = idx + 1 + shift
          !
@@ -121,8 +126,7 @@ CONTAINS
       !
       ! ... Local variables
       !
-      INTEGER                   :: i, j, k, ir, ir_end, ip
-      INTEGER                   :: idx0
+      INTEGER                   :: idx, i, j, k, j0, k0, ir, ir_end, ip
       !
       REAL( DP )                :: inv_nr1, inv_nr2, inv_nr3
       REAL( DP )                :: scale, spr2, dist, length
@@ -133,16 +137,8 @@ CONTAINS
       inv_nr2 = 1.D0 / DBLE( dfftp%nr2 )
       inv_nr3 = 1.D0 / DBLE( dfftp%nr3 )
       !
-      idx0 = 0
-      !
 #if defined (__MPI)
-      DO i = 1, me_bgrp
-        idx0 = idx0 + dfftp%nr1x*dfftp%nr2x*dfftp%npp(i)
-      END DO
-#endif
-      !
-#if defined (__MPI)
-      ir_end = MIN(nnr,dfftp%nr1x*dfftp%nr2x*dfftp%npp(me_bgrp+1))
+      ir_end = MIN(nnr,dfftp%nr1x*dfftp%my_nr2p*dfftp%my_nr3p)
 #else
       ir_end = nnr
 #endif
@@ -164,16 +160,23 @@ CONTAINS
       ALLOCATE( rholocal( nnr ) )
       rholocal = 0.D0
       !
+      j0 = dfftp%my_i0r2p ; k0 = dfftp%my_i0r3p
       DO ir = 1, ir_end
          !
          ! ... three dimensional indexes
          !
-         i = idx0 + ir - 1
-         k = i / (dfftp%nr1x*dfftp%nr2x)
-         i = i - (dfftp%nr1x*dfftp%nr2x)*k
-         j = i / dfftp%nr1x
-         i = i - dfftp%nr1x*j
-         !
+         idx = ir -1
+         k   = idx / (dfftp%nr1x*dfftp%my_nr2p)
+         idx = idx - (dfftp%nr1x*dfftp%my_nr2p)*k
+         k   = k + k0
+         IF ( k .GE. dfftp%nr3 ) CYCLE
+         j   = idx / dfftp%nr1x
+         idx = idx - dfftp%nr1x * j
+         j   = j + j0
+         IF ( j .GE. dfftp%nr2 ) CYCLE
+         i   = idx
+         IF ( i .GE. dfftp%nr1 ) CYCLE
+
          DO ip = 1, 3
             r(ip) = DBLE( i )*inv_nr1*at(ip,1) + &
                     DBLE( j )*inv_nr2*at(ip,2) + &
@@ -234,8 +237,7 @@ CONTAINS
       !
       ! ... Local variables
       !
-      INTEGER                   :: i, j, k, ir, ir_end, ip
-      INTEGER                   :: idx0
+      INTEGER                   :: idx, i, j, k, j0, k0, ir, ir_end, ip
       !
       REAL( DP )                :: inv_nr1, inv_nr2, inv_nr3
       REAL( DP )                :: scale, spr2, dist, length
@@ -246,16 +248,8 @@ CONTAINS
       inv_nr2 = 1.D0 / DBLE( dfftp%nr2 )
       inv_nr3 = 1.D0 / DBLE( dfftp%nr3 )
       !
-      idx0 = 0
-      !
 #if defined (__MPI)
-      DO i = 1, me_bgrp
-        idx0 = idx0 + dfftp%nr1x*dfftp%nr2x*dfftp%npp(i)
-      END DO
-#endif
-      !
-#if defined (__MPI)
-      ir_end = MIN(nnr,dfftp%nr1x*dfftp%nr2x*dfftp%npp(me_bgrp+1))
+      ir_end = MIN(nnr,dfftp%nr1x*dfftp%my_nr2p*dfftp%my_nr3p)
 #else
       ir_end = nnr
 #endif
@@ -277,15 +271,22 @@ CONTAINS
       ALLOCATE( gradrholocal( 3, nnr ) )
       gradrholocal = 0.D0
       !
+      j0 = dfftp%my_i0r2p ; k0 = dfftp%my_i0r3p
       DO ir = 1, ir_end
          !
          ! ... three dimensional indexes
          !
-         i = idx0 + ir - 1
-         k = i / (dfftp%nr1x*dfftp%nr2x)
-         i = i - (dfftp%nr1x*dfftp%nr2x)*k
-         j = i / dfftp%nr1x
-         i = i - dfftp%nr1x*j
+         idx = ir -1
+         k   = idx / (dfftp%nr1x*dfftp%my_nr2p)
+         idx = idx - (dfftp%nr1x*dfftp%my_nr2p)*k
+         k   = k + k0
+         IF ( k .GE. dfftp%nr3 ) CYCLE
+         j   = idx / dfftp%nr1x
+         idx = idx - dfftp%nr1x * j
+         j   = j + j0
+         IF ( j .GE. dfftp%nr2 ) CYCLE
+         i   = idx
+         IF ( i .GE. dfftp%nr1 ) CYCLE
          !
          DO ip = 1, 3
             r(ip) = DBLE( i )*inv_nr1*at(ip,1) + &
@@ -345,8 +346,7 @@ CONTAINS
       !
       ! ... Local variables
       !
-      INTEGER                   :: i, j, k, ir, ir_end, ip
-      INTEGER                   :: idx0
+      INTEGER                   :: idx, i, j, k, j0, k0, ir, ir_end, ip
       !
       REAL( DP )                :: inv_nr1, inv_nr2, inv_nr3
       REAL( DP )                :: dist, arg
@@ -358,16 +358,8 @@ CONTAINS
       inv_nr2 = 1.D0 / DBLE( dfftp%nr2 )
       inv_nr3 = 1.D0 / DBLE( dfftp%nr3 )
       !
-      idx0 = 0
-      !
 #if defined (__MPI)
-      DO i = 1, me_bgrp
-        idx0 = idx0 + dfftp%nr1x*dfftp%nr2x*dfftp%npp(i)
-      END DO
-#endif
-      !
-#if defined (__MPI)
-      ir_end = MIN(nnr,dfftp%nr1x*dfftp%nr2x*dfftp%npp(me_bgrp+1))
+      ir_end = MIN(nnr,dfftp%nr1x*dfftp%my_nr2p*dfftp%my_nr3p)
 #else
       ir_end = nnr
 #endif
@@ -375,16 +367,22 @@ CONTAINS
       ALLOCATE( rholocal( nnr ) )
       rholocal = 0.D0
       !
+      j0 = dfftp%my_i0r2p ; k0 = dfftp%my_i0r3p
       DO ir = 1, ir_end
          !
          ! ... three dimensional indexes
          !
-         i = idx0 + ir - 1
-         k = i / (dfftp%nr1x*dfftp%nr2x)
-         i = i - (dfftp%nr1x*dfftp%nr2x)*k
-         j = i / dfftp%nr1x
-         i = i - dfftp%nr1x*j
-         r = 0.D0
+         idx = ir -1
+         k   = idx / (dfftp%nr1x*dfftp%my_nr2p)
+         idx = idx - (dfftp%nr1x*dfftp%my_nr2p)*k
+         k   = k + k0
+         IF ( k .GE. dfftp%nr3 ) CYCLE
+         j   = idx / dfftp%nr1x
+         idx = idx - dfftp%nr1x * j
+         j   = j + j0
+         IF ( j .GE. dfftp%nr2 ) CYCLE
+         i   = idx
+         IF ( i .GE. dfftp%nr1 ) CYCLE
          !
          DO ip = 1, 3
             r(ip) = DBLE( i )*inv_nr1*at(ip,1) + &
@@ -439,8 +437,7 @@ CONTAINS
       !
       ! ... Local variables
       !
-      INTEGER                   :: i, j, k, ir, ir_end, ip
-      INTEGER                   :: idx0
+      INTEGER                   :: idx, i, j, k, j0, k0, ir, ir_end, ip
       !
       REAL( DP )                :: inv_nr1, inv_nr2, inv_nr3
       REAL( DP )                :: dist, arg
@@ -452,16 +449,8 @@ CONTAINS
       inv_nr2 = 1.D0 / DBLE( dfftp%nr2 )
       inv_nr3 = 1.D0 / DBLE( dfftp%nr3 )
       !
-      idx0 = 0
-      !
 #if defined (__MPI)
-      DO i = 1, me_bgrp
-        idx0 = idx0 + dfftp%nr1x*dfftp%nr2x*dfftp%npp(i)
-      END DO
-#endif
-      !
-#if defined (__MPI)
-      ir_end = MIN(nnr,dfftp%nr1x*dfftp%nr2x*dfftp%npp(me_bgrp+1))
+      ir_end = MIN(nnr,dfftp%nr1x*dfftp%my_nr2p*dfftp%my_nr3p)
 #else
       ir_end = nnr
 #endif
@@ -469,15 +458,22 @@ CONTAINS
       ALLOCATE( gradrholocal( 3, nnr ) )
       gradrholocal = 0.D0
       !
+      j0 = dfftp%my_i0r2p ; k0 = dfftp%my_i0r3p
       DO ir = 1, ir_end
          !
          ! ... three dimensional indexes
          !
-         i = idx0 + ir - 1
-         k = i / (dfftp%nr1x*dfftp%nr2x)
-         i = i - (dfftp%nr1x*dfftp%nr2x)*k
-         j = i / dfftp%nr1x
-         i = i - dfftp%nr1x*j
+         idx = ir -1
+         k   = idx / (dfftp%nr1x*dfftp%my_nr2p)
+         idx = idx - (dfftp%nr1x*dfftp%my_nr2p)*k
+         k   = k + k0
+         IF ( k .GE. dfftp%nr3 ) CYCLE
+         j   = idx / dfftp%nr1x
+         idx = idx - dfftp%nr1x * j
+         j   = j + j0
+         IF ( j .GE. dfftp%nr2 ) CYCLE
+         i   = idx
+         IF ( i .GE. dfftp%nr1 ) CYCLE
          !
          DO ip = 1, 3
             r(ip) = DBLE( i )*inv_nr1*at(ip,1) + &
@@ -533,8 +529,8 @@ CONTAINS
       !
       ! ... Local variables
       !
-      INTEGER                   :: i, j, k, ir, ir_end, ip
-      INTEGER                   :: idx0, ntot
+      INTEGER                   :: idx, i, j, k, j0, k0, ir, ir_end, ip
+      INTEGER                   :: ntot
       !
       REAL( DP )                :: inv_nr1, inv_nr2, inv_nr3
       REAL( DP )                :: scale, dist, arg, chargeanalytic, chargelocal
@@ -546,14 +542,10 @@ CONTAINS
       inv_nr2 = 1.D0 / DBLE( dfftp%nr2 )
       inv_nr3 = 1.D0 / DBLE( dfftp%nr3 )
       !
-      idx0 = 0
       ir_end = nnr
       !
 #if defined (__MPI)
-      DO i = 1, me_bgrp
-        idx0 = idx0 + dfftp%nr1x*dfftp%nr2x*dfftp%npp(i)
-      END DO
-      ir_end = MIN(nnr,dfftp%nr1x*dfftp%nr2x*dfftp%npp(me_bgrp+1))
+      ir_end = MIN(nnr,dfftp%nr1x*dfftp%my_nr2p*dfftp%my_nr3p)
 #endif
       !
       ntot = dfftp%nr1 * dfftp%nr2 * dfftp%nr3
@@ -566,15 +558,22 @@ CONTAINS
       ALLOCATE( rholocal( nnr ) )
       rholocal = 0.D0
       !
+      j0 = dfftp%my_i0r2p ; k0 = dfftp%my_i0r3p
       DO ir = 1, ir_end
          !
          ! ... three dimensional indexes
          !
-         i = idx0 + ir - 1
-         k = i / (dfftp%nr1x*dfftp%nr2x)
-         i = i - (dfftp%nr1x*dfftp%nr2x)*k
-         j = i / dfftp%nr1x
-         i = i - dfftp%nr1x*j
+         idx = ir -1
+         k   = idx / (dfftp%nr1x*dfftp%my_nr2p)
+         idx = idx - (dfftp%nr1x*dfftp%my_nr2p)*k
+         k   = k + k0
+         IF ( k .GE. dfftp%nr3 ) CYCLE
+         j   = idx / dfftp%nr1x
+         idx = idx - dfftp%nr1x * j
+         j   = j + j0
+         IF ( j .GE. dfftp%nr2 ) CYCLE
+         i   = idx
+         IF ( i .GE. dfftp%nr1 ) CYCLE
          !
          DO ip = 1, 3
             r(ip) = DBLE( i )*inv_nr1*at(ip,1) + &
@@ -650,8 +649,8 @@ CONTAINS
       !
       ! ... Local variables
       !
-      INTEGER                   :: i, j, k, ir, ir_end, ip
-      INTEGER                   :: idx0, ntot
+      INTEGER                   :: idx, i, j, k, j0, k0, ir, ir_end, ip
+      INTEGER                   :: ntot
       !
       REAL( DP )                :: inv_nr1, inv_nr2, inv_nr3
       REAL( DP )                :: scale, dist, arg, chargeanalytic, chargelocal
@@ -663,14 +662,10 @@ CONTAINS
       inv_nr2 = 1.D0 / DBLE( dfftp%nr2 )
       inv_nr3 = 1.D0 / DBLE( dfftp%nr3 )
       !
-      idx0 = 0
       ir_end = nnr
       !
 #if defined (__MPI)
-      DO i = 1, me_bgrp
-        idx0 = idx0 + dfftp%nr1x*dfftp%nr2x*dfftp%npp(i)
-      END DO
-      ir_end = MIN(nnr,dfftp%nr1x*dfftp%nr2x*dfftp%npp(me_bgrp+1))
+      ir_end = MIN(nnr,dfftp%nr1x*dfftp%my_nr2p*dfftp%my_nr3p)
 #endif
       !
       ntot = dfftp%nr1 * dfftp%nr2 * dfftp%nr3
@@ -688,15 +683,22 @@ CONTAINS
       gradrholocal = 0.D0
       chargelocal = 0.D0
       !
+      j0 = dfftp%my_i0r2p ; k0 = dfftp%my_i0r3p
       DO ir = 1, ir_end
          !
          ! ... three dimensional indexes
          !
-         i = idx0 + ir - 1
-         k = i / (dfftp%nr1x*dfftp%nr2x)
-         i = i - (dfftp%nr1x*dfftp%nr2x)*k
-         j = i / dfftp%nr1x
-         i = i - dfftp%nr1x*j
+         idx = ir -1
+         k   = idx / (dfftp%nr1x*dfftp%my_nr2p)
+         idx = idx - (dfftp%nr1x*dfftp%my_nr2p)*k
+         k   = k + k0
+         IF ( k .GE. dfftp%nr3 ) CYCLE
+         j   = idx / dfftp%nr1x
+         idx = idx - dfftp%nr1x * j
+         j   = j + j0
+         IF ( j .GE. dfftp%nr2 ) CYCLE
+         i   = idx
+         IF ( i .GE. dfftp%nr1 ) CYCLE
          !
          DO ip = 1, 3
             r(ip) = DBLE( i )*inv_nr1*at(ip,1) + &
@@ -761,7 +763,7 @@ CONTAINS
   REAL(DP), INTENT(IN) :: pos(3)
   REAL(DP), INTENT(OUT) :: axis( dfftp%nnr )
   !
-  INTEGER  :: i, j, k, ir, ir_end, ip, idx0
+  INTEGER  :: idx, i, j, k, j0, k0, ir, ir_end, ip
   REAL(DP) :: inv_nr1, inv_nr2, inv_nr3
   REAL(DP) :: r(3)
   !
@@ -769,29 +771,28 @@ CONTAINS
   inv_nr2 = 1.D0 / DBLE( dfftp%nr2 )
   inv_nr3 = 1.D0 / DBLE( dfftp%nr3 )
   !
-  idx0 = 0
-  !
 #if defined (__MPI)
-  DO i = 1, me_bgrp
-    idx0 = idx0 + dfftp%nr1x*dfftp%nr2x*dfftp%npp(i)
-  END DO
-#endif
-  !
-#if defined (__MPI)
-  ir_end = MIN(nnr,dfftp%nr1x*dfftp%nr2x*dfftp%npp(me_bgrp+1))
+  ir_end = MIN(nnr,dfftp%nr1x*dfftp%my_nr2p*dfftp%my_nr3p)
 #else
   ir_end = nnr
 #endif
   !
+  j0 = dfftp%my_i0r2p ; k0 = dfftp%my_i0r3p
   DO ir = 1, ir_end
      !
      ! ... three dimensional indexes
      !
-     i = idx0 + ir - 1
-     k = i / (dfftp%nr1x*dfftp%nr2x)
-     i = i - (dfftp%nr1x*dfftp%nr2x)*k
-     j = i / dfftp%nr1x
-     i = i - dfftp%nr1x*j
+     idx = ir -1
+     k   = idx / (dfftp%nr1x*dfftp%my_nr2p)
+     idx = idx - (dfftp%nr1x*dfftp%my_nr2p)*k
+     k   = k + k0
+     IF ( k .GE. dfftp%nr3 ) CYCLE
+     j   = idx / dfftp%nr1x
+     idx = idx - dfftp%nr1x * j
+     j   = j + j0
+     IF ( j .GE. dfftp%nr2 ) CYCLE
+     i   = idx
+     IF ( i .GE. dfftp%nr1 ) CYCLE
      !
      DO ip = 1, 3
         r(ip) = DBLE( i )*inv_nr1*at(ip,1) + &
@@ -832,7 +833,7 @@ CONTAINS
   REAL(DP), INTENT(IN) :: pos(3)
   REAL(DP), INTENT(OUT) :: distance( 3, dfftp%nnr )
   !
-  INTEGER  :: i, j, k, ir, ir_end, ip, idx0
+  INTEGER  :: idx, i, j, k, j0, k0, ir, ir_end, ip
   REAL(DP) :: inv_nr1, inv_nr2, inv_nr3
   REAL(DP) :: r(3), s(3)
   !
@@ -840,29 +841,28 @@ CONTAINS
   inv_nr2 = 1.D0 / DBLE( dfftp%nr2 )
   inv_nr3 = 1.D0 / DBLE( dfftp%nr3 )
   !
-  idx0 = 0
-  !
 #if defined (__MPI)
-  DO i = 1, me_bgrp
-    idx0 = idx0 + dfftp%nr1x*dfftp%nr2x*dfftp%npp(i)
-  END DO
-#endif
-  !
-#if defined (__MPI)
-  ir_end = MIN(nnr,dfftp%nr1x*dfftp%nr2x*dfftp%npp(me_bgrp+1))
+  ir_end = MIN(nnr,dfftp%nr1x*dfftp%my_nr2p*dfftp%my_nr3p)
 #else
   ir_end = nnr
 #endif
   !
+  j0 = dfftp%my_i0r2p ; k0 = dfftp%my_i0r3p
   DO ir = 1, ir_end
      !
      ! ... three dimensional indexes
      !
-     i = idx0 + ir - 1
-     k = i / (dfftp%nr1x*dfftp%nr2x)
-     i = i - (dfftp%nr1x*dfftp%nr2x)*k
-     j = i / dfftp%nr1x
-     i = i - dfftp%nr1x*j
+     idx = ir -1
+     k   = idx / (dfftp%nr1x*dfftp%my_nr2p)
+     idx = idx - (dfftp%nr1x*dfftp%my_nr2p)*k
+     k   = k + k0
+     IF ( k .GE. dfftp%nr3 ) CYCLE
+     j   = idx / dfftp%nr1x
+     idx = idx - dfftp%nr1x * j
+     j   = j + j0
+     IF ( j .GE. dfftp%nr2 ) CYCLE
+     i   = idx
+     IF ( i .GE. dfftp%nr1 ) CYCLE
      !
      DO ip = 1, 3
         r(ip) = DBLE( i )*inv_nr1*at(ip,1) + &
@@ -926,7 +926,7 @@ CONTAINS
          ( ( 1.D0 + 1.5D0 * t**2 ) * f1 + ( 1.D0 + t**2 ) * t * f2 )
     CASE ( 1 )
        ! one-dimensional erfc, volume is approx the one of the
-       ! cylinder of radius=width and lenght=alat*at(axis,axis)
+       ! cylinder of radius=width and length=alat*at(axis,axis)
        erfcvolume = pi * width**2 * at(axis,axis) * alat * &
          ( ( 1.D0 + 0.5D0 * t**2 ) * f1  + t * f2 )
     CASE ( 2 )
@@ -941,5 +941,3 @@ CONTAINS
 !=----------------------------------------------------------------------=!
 END MODULE generate_function
 !=----------------------------------------------------------------------=!
-
-

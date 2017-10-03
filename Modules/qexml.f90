@@ -6,7 +6,7 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 ! TB
-! included monopole related variables in qexml_write_efield and qexml_read_efield
+! included gate related variables in qexml_write_efield and qexml_read_efield
 !
 !----------------------------------------------------------------------------
 MODULE qexml_module
@@ -28,7 +28,7 @@ MODULE qexml_module
   ! in the root directory of the present distribution,
   ! or http://www.gnu.org/copyleft/gpl.txt .
   !
-#if ! defined(__XSD)
+#if defined(__OLDXML)
   !
   USE iotk_module
   USE kinds, ONLY : DP
@@ -607,8 +607,7 @@ CONTAINS
       !
       ! ... main restart directory
       !
-      !dirname = trim( prefix ) // '.save'
-      dirname = TRIM( prefix ) // '_' // TRIM( int_to_char( runit ) )// '.save'
+      dirname = TRIM( prefix ) // '_' // TRIM( int_to_char( runit ) )// '.save/'
       !
       IF ( len( outdir ) > 1 ) THEN
          !
@@ -1004,21 +1003,21 @@ CONTAINS
     !
     !------------------------------------------------------------------------
     SUBROUTINE qexml_write_efield( tefield, dipfield, edir, emaxpos, eopreg, eamp, &
-                                   monopole, zmon, relaxz, block, block_1, block_2,&
+                                   gate, zgate, relaxz, block, block_1, block_2,&
                                    block_height)
      !------------------------------------------------------------------------
      !
       LOGICAL, INTENT(in)   :: tefield        ! if .TRUE. a finite electric field
                                               ! is added to the local potential
       LOGICAL, INTENT(in)   :: dipfield       ! if .TRUE. the dipole field is subtracted
-      LOGICAL, INTENT(in)   :: monopole       ! if .TRUE. counter charge is represented by monopole (gate)
+      LOGICAL, INTENT(in)   :: gate           ! if .TRUE. counter charge is represented by charged plate
       LOGICAL, INTENT(in)   :: block          ! add potential barrier
       LOGICAL, INTENT(in)   :: relaxz         ! relax in z direction  
       INTEGER, INTENT(in)   :: edir           ! direction of the field
       REAL(DP), INTENT(in) :: emaxpos        ! position of the maximum of the field (0<emaxpos<1)
       REAL(DP), INTENT(in) :: eopreg         ! amplitude of the inverse region (0<eopreg<1)
       REAL(DP), INTENT(in) :: eamp           ! field amplitude (in a.u.) (1 a.u. = 51.44 10^11 V/m)
-      REAL(DP), INTENT(in) :: zmon           ! position of monopole plane in units of cell vector in z direction
+      REAL(DP), INTENT(in) :: zgate          ! position of charged plate in units of cell vector in z direction
       REAL(DP), INTENT(in) :: block_1        ! potential barrier
       REAL(DP), INTENT(in) :: block_2
       REAL(DP), INTENT(in) :: block_height
@@ -1038,9 +1037,9 @@ CONTAINS
       !
       CALL iotk_write_dat( ounit, "FIELD_AMPLITUDE", eamp )
       !
-      CALL iotk_write_dat( ounit, "MONOPOLE_PLANE", monopole )
+      CALL iotk_write_dat( ounit, "CHARGED_PLATE", gate )
       !
-      CALL iotk_write_dat( ounit, "MONOPOLE_POS", zmon )
+      CALL iotk_write_dat( ounit, "GATE_POS", zgate )
       !
       CALL iotk_write_dat( ounit, "RELAX_Z", relaxz )
       !
@@ -1078,8 +1077,6 @@ CONTAINS
       CHARACTER(*),  INTENT(in) :: cutoff_units
 #if defined __HDF5
       CHARACTER(LEN=256) :: filename_hdf5
-      CHARACTER          :: gammaonly
-      !integer          :: gammaonly, ierr
       integer           :: ierr
 #endif
 
@@ -1091,8 +1088,7 @@ CONTAINS
       CALL add_attributes_hdf5(g_hdf5_write,ecutwfc,"WFC_CUTOFF")
       CALL add_attributes_hdf5(g_hdf5_write,ecutrho,"RHO_CUTOFF")
       CALL add_attributes_hdf5(g_hdf5_write,npwx,"MAX_NUMBER_OF_GK-VECTORS")
-      write(gammaonly,'(I1)') gamma_only
-      CALL add_attributes_hdf5(g_hdf5_write,gammaonly,"GAMMA_ONLY")
+      CALL add_attributes_hdf5(g_hdf5_write,gamma_only,"GAMMA_ONLY")
       CALL add_attributes_hdf5(g_hdf5_write,trim(cutoff_units),"UNITS_FOR_CUTOFF")
       CALL add_attributes_hdf5(g_hdf5_write,nr1,"nr1")
       CALL add_attributes_hdf5(g_hdf5_write,nr2,"nr2")
@@ -1319,7 +1315,8 @@ CONTAINS
                          Hubbard_lmax, Hubbard_l, Hubbard_U, Hubbard_J, Hubbard_J0, &
                          Hubbard_beta, Hubbard_alpha,                               &
                          inlc, vdw_table_name, pseudo_dir, acfdt_in_pw, dirname, & 
-                         llondon, london_s6, london_rcut, lxdm, ts_vdw, vdw_isolated )
+                         llondon, london_s6, london_rcut, london_c6, london_rvdw, &
+                         lxdm, ts_vdw, vdw_isolated )
       !------------------------------------------------------------------------
       !
       CHARACTER(LEN=*),   INTENT(IN) :: dft
@@ -1336,7 +1333,7 @@ CONTAINS
       LOGICAL, OPTIONAL,  INTENT(IN) :: acfdt_in_pw
       !
       LOGICAL,  OPTIONAL, INTENT(IN) :: llondon, lxdm, ts_vdw, vdw_isolated
-      REAL(DP), OPTIONAL, INTENT(IN) :: london_s6, london_rcut
+      REAL(DP), OPTIONAL, INTENT(IN) :: london_s6, london_rcut, london_c6(:), london_rvdw(:)
 
       INTEGER            :: i, flen, ierrl
       CHARACTER(LEN=256) :: file_table
@@ -1345,17 +1342,22 @@ CONTAINS
       !
       CALL iotk_write_dat( ounit, "DFT", dft )
       !
+      IF ( lda_plus_u .OR. (PRESENT(llondon) .AND. llondon) ) THEN         
+         ! N.B.: nsp is needed for LDA+U and DFT-D2
+         IF ( .NOT. PRESENT( nsp ) ) &
+              CALL errore( 'write_xc', ' variable nsp not present', 1 )
+         CALL iotk_write_dat( ounit, "NUMBER_OF_SPECIES", nsp )
+      ENDIF
+      !
       IF ( lda_plus_u ) THEN
          !
          IF ( .NOT. PRESENT( Hubbard_lmax ) .OR. &
               .NOT. PRESENT( Hubbard_l )    .OR. & 
-              .NOT. PRESENT( Hubbard_U )    .OR. &
-              .NOT. PRESENT( nsp )              )&
+              .NOT. PRESENT( Hubbard_U )    ) &
             CALL errore( 'write_xc', &
                          ' variables for LDA+U not present', 1 )
          !
          CALL iotk_write_dat( ounit, "LDA_PLUS_U_CALCULATION", lda_plus_u )
-         CALL iotk_write_dat( ounit, "NUMBER_OF_SPECIES", nsp )
          CALL iotk_write_dat( ounit, "HUBBARD_LMAX", Hubbard_lmax )
          CALL iotk_write_dat( ounit, "HUBBARD_L", Hubbard_l(1:nsp) )
          CALL iotk_write_dat( ounit, "HUBBARD_U", Hubbard_U(1:nsp) )
@@ -1408,12 +1410,18 @@ CONTAINS
       IF ( PRESENT (llondon) ) THEN
          IF ( llondon ) THEN
             IF ( .NOT. PRESENT( london_s6 )  .OR. &
-                 .NOT. PRESENT( london_rcut ) ) & 
-               CALL errore( 'write_xc', &
-                            ' variables for DFT+D not present', 1 )
+                 .NOT. PRESENT( london_rcut ).OR. &
+                 .NOT. PRESENT( london_c6 )  .OR. &
+                 .NOT. PRESENT( london_rvdw ) ) & 
+                 CALL errore( 'write_xc', &
+                              ' variables for DFT+D not present', 1 )
             CALL iotk_write_begin( ounit, "DFT_D2" )
+            !
             CALL iotk_write_dat( ounit, "SCALING_FACTOR", london_s6 )
             CALL iotk_write_dat( ounit, "CUTOFF_RADIUS",  london_rcut )
+            CALL iotk_write_dat( ounit, "C6",             london_c6(1:nsp) )
+            CALL iotk_write_dat( ounit, "RADIUS_VDW",     london_rvdw(1:nsp) )
+            !
             CALL iotk_write_end  ( ounit, "DFT_D2" )
          ENDIF
       ENDIF
@@ -1496,12 +1504,14 @@ CONTAINS
     !
     !
     !------------------------------------------------------------------------
-    SUBROUTINE qexml_write_occ( lgauss, ngauss, degauss, degauss_units, ltetra, ntetra, tetra, &
-                                tfixed_occ, lsda, nstates_up, nstates_dw, input_occ )
+    SUBROUTINE qexml_write_occ( lgauss, ngauss, degauss, degauss_units, &
+         ltetra, tetra_type, ntetra, tetra, tfixed_occ, &
+         lsda, nstates_up, nstates_dw, input_occ )
       !------------------------------------------------------------------------
       !
       LOGICAL,                INTENT(in) :: lgauss, ltetra, tfixed_occ, lsda
-      INTEGER,      OPTIONAL, INTENT(in) :: ngauss, ntetra, nstates_up, nstates_dw
+      INTEGER,      OPTIONAL, INTENT(in) :: ngauss, ntetra, tetra_type, &
+           nstates_up, nstates_dw
       INTEGER,      OPTIONAL, INTENT(in) :: tetra(:,:)
       REAL(DP),    OPTIONAL, INTENT(in) :: degauss, input_occ(:,:)
       CHARACTER(*), OPTIONAL, INTENT(in) :: degauss_units
@@ -1529,12 +1539,18 @@ CONTAINS
          !
          CALL iotk_write_dat( ounit, "NUMBER_OF_TETRAHEDRA", ntetra )
          !
-         DO i = 1, ntetra
+         CALL iotk_write_dat( ounit, "TETRAHEDRON_TYPE", tetra_type)
+         !
+         IF(tetra_type == 0) then
             !
-            CALL iotk_write_dat( ounit, "TETRAHEDRON" // &
-                               & iotk_index( i ), tetra(1:4,i) )
+            DO i = 1, ntetra
+               !
+               CALL iotk_write_dat( ounit, "TETRAHEDRON" // &
+                                  & iotk_index( i ), tetra(1:4,i) )
+               !
+            ENDDO
             !
-         ENDDO
+         END IF
          !
       ENDIF
       !
@@ -2938,21 +2954,21 @@ CONTAINS
     !
     !------------------------------------------------------------------------
     SUBROUTINE qexml_read_efield( tefield, dipfield, edir, emaxpos, eopreg, eamp, &
-                                  monopole, zmon, relaxz, block, block_1, block_2,&
+                                  gate, zgate, relaxz, block, block_1, block_2,&
                                   block_height, found, ierr )
       !----------------------------------------------------------------------
       !
       IMPLICIT NONE
       !
-      LOGICAL,   OPTIONAL, INTENT(out) :: tefield, dipfield, monopole, relaxz, block
+      LOGICAL,   OPTIONAL, INTENT(out) :: tefield, dipfield, gate, relaxz, block
       INTEGER,   OPTIONAL, INTENT(out) :: edir
-      REAL(DP),  OPTIONAL, INTENT(out) :: emaxpos, eopreg, eamp, zmon, block_1, block_2, block_height
+      REAL(DP),  OPTIONAL, INTENT(out) :: emaxpos, eopreg, eamp, zgate, block_1, block_2, block_height
       LOGICAL,             INTENT(out) :: found
       INTEGER,             INTENT(out) :: ierr
       !
-      LOGICAL   :: tefield_, dipfield_, monopole_, block_, relaxz_
+      LOGICAL   :: tefield_, dipfield_, gate_, block_, relaxz_
       INTEGER   :: edir_
-      REAL(DP)  :: emaxpos_, eopreg_, eamp_, zmon_, block_1_, block_2_, block_height_
+      REAL(DP)  :: emaxpos_, eopreg_, eamp_, zgate_, block_1_, block_2_, block_height_
       !
       ierr = 0
       !
@@ -2978,25 +2994,25 @@ CONTAINS
       CALL iotk_scan_dat( iunit, "FIELD_AMPLITUDE", eamp_, IERR=ierr )
       IF ( ierr /= 0 ) RETURN
       !
-      CALL iotk_scan_dat( iunit, "MONOPOLE_PLANE", monopole_ )
+      CALL iotk_scan_dat( iunit, "CHARGED_PLATE", gate_, IERR=ierr )
       IF ( ierr /= 0 ) RETURN
       !
-      CALL iotk_scan_dat( iunit, "MONOPOLE_POS", zmon_ )
+      CALL iotk_scan_dat( iunit, "GATE_POS", zgate_, IERR=ierr )
       IF ( ierr /= 0 ) RETURN
       !
-      CALL iotk_scan_dat( iunit, "RELAX_Z", relaxz_ )
+      CALL iotk_scan_dat( iunit, "RELAX_Z", relaxz_, IERR=ierr )
       IF ( ierr /= 0 ) RETURN
       !
-      CALL iotk_scan_dat( iunit, "BLOCK", block_ )
+      CALL iotk_scan_dat( iunit, "BLOCK", block_, IERR=ierr )
       IF ( ierr /= 0 ) RETURN
       !
-      CALL iotk_scan_dat( iunit, "BLOCK_1", block_1_ )
+      CALL iotk_scan_dat( iunit, "BLOCK_1", block_1_, IERR=ierr )
       IF ( ierr /= 0 ) RETURN
       !
-      CALL iotk_scan_dat( iunit, "BLOCK_2", block_2_ )
+      CALL iotk_scan_dat( iunit, "BLOCK_2", block_2_, IERR=ierr )
       IF ( ierr /= 0 ) RETURN
       !
-      CALL iotk_scan_dat( iunit, "BLOCK_HEIGHT", block_height_ )
+      CALL iotk_scan_dat( iunit, "BLOCK_HEIGHT", block_height_, IERR=ierr )
       IF ( ierr /= 0 ) RETURN
       !
       CALL iotk_scan_end( iunit, "ELECTRIC_FIELD", IERR=ierr )
@@ -3009,8 +3025,8 @@ CONTAINS
       IF ( present(emaxpos) )        emaxpos      = emaxpos_
       IF ( present(eopreg) )         eopreg       = eopreg_
       IF ( present(eamp) )           eamp         = eamp_
-      IF ( present(monopole) )       monopole     = monopole_
-      IF ( present(zmon) )           zmon         = zmon_
+      IF ( present(gate) )           gate         = gate_
+      IF ( present(zgate) )          zgate        = zgate_
       IF ( present(relaxz) )         relaxz       = relaxz_
       IF ( present(block) )          block        = block_
       IF ( present(block_1) )        block_1      = block_1_
@@ -3421,7 +3437,8 @@ CONTAINS
                               Hubbard_lmax, Hubbard_l, nsp, Hubbard_U, Hubbard_J,&
                               Hubbard_J0, Hubbard_alpha, Hubbard_beta, &
                               inlc, vdw_table_name, acfdt_in_pw, llondon, london_s6, &
-                              london_rcut, lxdm, ts_vdw, vdw_isolated, ierr )
+                              london_rcut, london_c6, london_rvdw, &
+                              lxdm, ts_vdw, vdw_isolated, ierr )
       !----------------------------------------------------------------------
       !
       CHARACTER(len=*), OPTIONAL, INTENT(out) :: dft
@@ -3439,12 +3456,12 @@ CONTAINS
       CHARACTER(LEN=*), OPTIONAL, INTENT(out) :: vdw_table_name
       LOGICAL,          OPTIONAL, INTENT(out) :: acfdt_in_pw
       LOGICAL,  OPTIONAL, INTENT(out) :: llondon, lxdm, ts_vdw, vdw_isolated
-      REAL(DP), OPTIONAL, INTENT(out) :: london_s6, london_rcut
+      REAL(DP), OPTIONAL, INTENT(out) :: london_s6, london_rcut, london_c6(:), london_rvdw(:)
       !
       INTEGER,                    INTENT(out) :: ierr
       !
       CHARACTER(LEN=256)      :: dft_, vdw_table_name_, U_projection_
-      LOGICAL                 :: lda_plus_u_, found
+      LOGICAL                 :: lda_plus_u_, found, found_nsp
       LOGICAL                 :: acfdt_in_pw_
       INTEGER                 :: Hubbard_lmax_, nsp_,lda_plus_u_kind_, inlc_
       INTEGER,    ALLOCATABLE :: Hubbard_l_(:)
@@ -3452,6 +3469,7 @@ CONTAINS
       REAL(DP),   ALLOCATABLE :: Hubbard_alpha_(:), Hubbard_J0_(:), Hubbard_beta_(:)
       LOGICAL                 :: llondon_, lxdm_, ts_vdw_, vdw_isolated_
       REAL(DP)                :: london_s6_=0._dp, london_rcut_=0._dp
+      REAL(DP),   ALLOCATABLE :: london_c6_(:), london_rvdw_(:)
       !
       ierr = 0
       !
@@ -3462,14 +3480,16 @@ CONTAINS
       CALL iotk_scan_dat( iunit, "DFT", dft_, IERR=ierr )
       IF ( ierr/=0 ) RETURN
       !
+      CALL iotk_scan_dat( iunit, "NUMBER_OF_SPECIES", nsp_, FOUND=found_nsp, IERR=ierr )
+      IF ( ierr/=0 ) RETURN
+      !
       CALL iotk_scan_dat( iunit, "LDA_PLUS_U_CALCULATION", lda_plus_u_, FOUND=found, IERR=ierr )
       IF ( ierr/=0 ) RETURN
       IF ( .NOT. found ) lda_plus_u_ = .FALSE.
       !
       IF ( lda_plus_u_ ) THEN
          !
-         CALL iotk_scan_dat( iunit, "NUMBER_OF_SPECIES", nsp_, IERR=ierr )
-         IF ( ierr/=0 ) RETURN
+         IF ( .not.found_nsp ) RETURN
          !
          CALL iotk_scan_dat( iunit, "HUBBARD_LMAX", Hubbard_lmax_, IERR=ierr )
          IF ( ierr/=0 ) RETURN
@@ -3546,8 +3566,19 @@ CONTAINS
       IF ( ierr/=0 ) RETURN
       llondon_ = found
       IF ( llondon_ ) THEN
+         !         
+         IF ( .not. found_nsp ) RETURN
+         !
+         ALLOCATE( london_c6_(nsp_) )
+         ALLOCATE( london_rvdw_(nsp_) )
+         !
+         london_c6_(:) = -1.0_DP
+         london_rvdw_(:) = -1.0_DP
+         !
          CALL iotk_scan_dat( iunit, "SCALING_FACTOR", london_s6_ )
          CALL iotk_scan_dat( iunit, "CUTOFF_RADIUS",  london_rcut_)
+         CALL iotk_scan_dat( iunit, "C6",             london_c6_ )
+         CALL iotk_scan_dat( iunit, "RADIUS_VDW",     london_rvdw_ )
          CALL iotk_scan_end( iunit, "DFT_D2" )
       ENDIF
       !
@@ -3599,6 +3630,15 @@ CONTAINS
          llondon = llondon_
          IF (present(london_s6) )   london_s6   = london_s6_
          IF (present(london_rcut) ) london_rcut = london_rcut_
+         IF ( llondon ) THEN
+            !
+            IF (present(london_c6) )   london_c6(1:nsp_)  =london_c6_(1:nsp_)
+            IF (present(london_rvdw) ) london_rvdw(1:nsp_)=london_rvdw_(1:nsp_)
+            DEALLOCATE( london_c6_ )
+            DEALLOCATE( london_rvdw_ )
+           !
+        END IF
+        !
       ELSE IF (present(lxdm) ) THEN
          lxdm = lxdm_
       ELSE IF (present(ts_vdw) ) THEN
@@ -3611,12 +3651,12 @@ CONTAINS
     !
     !------------------------------------------------------------------------
     SUBROUTINE qexml_read_occ( lgauss, ngauss, degauss, degauss_units, &
-                               ltetra, ntetra, tetra, tfixed_occ,      &
+                               ltetra, tetra_type, ntetra, tetra, tfixed_occ, &
                                nstates_up, nstates_dw, input_occ, ierr )
       !------------------------------------------------------------------------
       !
       LOGICAL,      OPTIONAL, INTENT(out) :: lgauss, ltetra, tfixed_occ
-      INTEGER,      OPTIONAL, INTENT(out) :: ngauss, ntetra
+      INTEGER,      OPTIONAL, INTENT(out) :: ngauss, ntetra, tetra_type
       INTEGER,      OPTIONAL, INTENT(out) :: tetra(:,:)
       INTEGER,      OPTIONAL, INTENT(out) :: nstates_up, nstates_dw
       REAL(DP),     OPTIONAL, INTENT(out) :: degauss, input_occ(:,:)
@@ -3624,7 +3664,7 @@ CONTAINS
       INTEGER,                INTENT(out) :: ierr
       !
       LOGICAL        :: lgauss_, ltetra_, tfixed_occ_
-      INTEGER        :: ngauss_, ntetra_, nstates_up_, nstates_dw_
+      INTEGER        :: ngauss_, ntetra_, nstates_up_, nstates_dw_, tetra_type_
       LOGICAL        :: lsda_
       REAL(DP)      :: degauss_
       CHARACTER(256) :: degauss_units_
@@ -3671,15 +3711,21 @@ CONTAINS
          CALL iotk_scan_dat( iunit, "NUMBER_OF_TETRAHEDRA", ntetra_, IERR=ierr )
          IF (ierr/=0) RETURN
          !
-         ALLOCATE( tetra_(4, ntetra_) )
+         CALL iotk_scan_dat( iunit, "TETRAHEDRON_TYPE", tetra_type_, IERR=ierr )
          !
-         DO i = 1, ntetra_
+         IF(tetra_type_ == 0) then
             !
-            CALL iotk_scan_dat( iunit, "TETRAHEDRON"//iotk_index(i), &
-                                        tetra_(1:4,i), IERR=ierr )
-            IF (ierr/=0) RETURN
+            ALLOCATE( tetra_(4, ntetra_) )
             !
-         ENDDO
+            DO i = 1, ntetra_
+               !
+               CALL iotk_scan_dat( iunit, "TETRAHEDRON"//iotk_index(i), &
+                                               tetra_(1:4,i), IERR=ierr )
+               IF (ierr/=0) RETURN
+               !
+            ENDDO
+            !
+         END IF
          !
       ENDIF
       !
@@ -3743,12 +3789,13 @@ CONTAINS
       IF ( present( tfixed_occ ))       tfixed_occ  = tfixed_occ_
       IF ( present( ngauss ))           ngauss      = ngauss_
       IF ( present( ntetra ))           ntetra      = ntetra_
+      IF ( present( tetra_type ))       tetra_type  = tetra_type_
       IF ( present( degauss ))          degauss     = degauss_
       IF ( present( degauss_units ))    degauss_units  = trim(degauss_units_)
       IF ( present( nstates_up ))       nstates_up  = nstates_up_
       IF ( present( nstates_dw ))       nstates_dw  = nstates_dw_
       !
-      IF ( ltetra_ ) THEN
+      IF ( ltetra_ .and. (tetra_type_ == 0)) THEN
          !
          IF ( present( tetra ) )         tetra(1:4, 1:ntetra_)  = tetra_
          !

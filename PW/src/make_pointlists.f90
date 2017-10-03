@@ -32,8 +32,8 @@ SUBROUTINE make_pointlists
   !
   IMPLICIT NONE
   !
-  INTEGER idx0,idx,indproc,iat,ir,iat1
-  INTEGER i,j,k,i0,j0,k0,ipol,nt,nt1
+  INTEGER idx,indproc,iat,ir,iat1
+  INTEGER i,j,k,i0,j0,k0,jj0,kk0,ipol,nt,nt1
 
   REAL(DP) :: posi(3), distance
   REAL(DP), ALLOCATABLE :: tau0(:,:), distmin(:)
@@ -107,18 +107,25 @@ SUBROUTINE make_pointlists
   ! Set as well the integration weight
   ! This also works in the parallel case.
 
-  ! idx0 = starting index of real-space FFT arrays for this processor
-  idx0 = dfftp%nr1x*dfftp%nr2x * dfftp%ipp(me_bgrp+1)
   pointlist(:) = 0
   factlist(:) = 0.d0
-  DO ir=1,dfftp%nr1x*dfftp%nr2x * dfftp%npl
-
-     idx = idx0 + ir - 1
-     k0  = idx/(dfftp%nr1x*dfftp%nr2x)
-     idx = idx - (dfftp%nr1x*dfftp%nr2x) * k0
+  jj0 = dfftp%my_i0r2p ; kk0 = dfftp%my_i0r3p
+  DO ir = 1, dfftp%nr1x*dfftp%my_nr2p*dfftp%my_nr3p
+     !
+     ! ... three dimensional indexes
+     !
+     idx = ir -1
+     k0  = idx / (dfftp%nr1x*dfftp%my_nr2p)
+     idx = idx - (dfftp%nr1x*dfftp%my_nr2p)*k0
+     k0  = k0 + kk0
      j0  = idx / dfftp%nr1x
-     idx = idx - dfftp%nr1x*j0
+     idx = idx - dfftp%nr1x * j0
+     j0  = j0 + jj0
      i0  = idx
+
+     ! ... do not include points outside the physical range
+
+     IF ( i0 >= dfftp%nr1 .OR. j0 >= dfftp%nr2 .OR. k0 >= dfftp%nr3 ) CYCLE
 
      DO i = i0-dfftp%nr1,i0+dfftp%nr1, dfftp%nr1
         DO j = j0-dfftp%nr2, j0+dfftp%nr2, dfftp%nr2
@@ -136,10 +143,14 @@ SUBROUTINE make_pointlists
                                   (posi(3)-tau0(3,iat))**2)
 
                  IF (distance.LE.r_m(nt)) THEN
+                    IF( ir .GT. SIZE( factlist ) .OR. ir .GT. SIZE( pointlist ))  &
+                      CALL errore( ' make_pointlists ', ' inconsistent sizes ', 1 )
                     factlist(ir) = 1.d0
                     pointlist(ir) = iat
                     GO TO 10
                  ELSE IF (distance.LE.1.2*r_m(nt)) THEN
+                    IF( ir .GT. SIZE( factlist ) .OR. ir .GT. SIZE( pointlist ))  &
+                      CALL errore( ' make_pointlists ', ' inconsistent sizes ', 1 )
                     factlist(ir) = 1.d0 - (distance -r_m(nt))/(0.2d0*r_m(nt))
                     pointlist(ir) = iat
                     GO TO 10

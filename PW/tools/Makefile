@@ -3,22 +3,24 @@
 include ../../make.inc
 
 # location of needed modules
-MODFLAGS= $(MOD_FLAG)../../iotk/src $(MOD_FLAG)../../Modules \
-	  $(MOD_FLAG)../../FFTXlib $(MOD_FLAG)../../LAXlib $(MOD_FLAG)../src $(MOD_FLAG). 
+MODFLAGS= $(MOD_FLAG)../../iotk/src $(MOD_FLAG)../../Modules $(MOD_FLAG)../../KS_Solvers/CG $(MOD_FLAG)../../KS_Solvers/Davidson \
+	  $(MOD_FLAG)../../FFTXlib $(MOD_FLAG)../../LAXlib $(MOD_FLAG)../../UtilXlib $(MOD_FLAG)../src $(MOD_FLAG). 
 
 PWOBJS = ../src/libpw.a
-QEMODS = ../../Modules/libqemod.a ../../FFTXlib/libqefft.a ../../LAXlib/libqela.a
+QEMODS = ../../Modules/libqemod.a ../../FFTXlib/libqefft.a ../../KS_Solvers/CG/libcg.a ../../KS_Solvers/Davidson/libdavid.a \
+         ../../LAXlib/libqela.a ../../UtilXlib/libutil.a
 
-TLDEPS= bindir mods libs pw libfft libla
+TLDEPS= bindir mods libs pw libfft libla libutil
 
 LIBOBJS        = ../../clib/clib.a ../../iotk/src/libiotk.a
 
-all : tldeps dist.x ev.x kpoints.x pwi2xsf.x
+all : tldeps ev.x kpoints.x pwi2xsf.x ibrav2cell.x
 
-dist.x : dist.o $(PWOBJS) $(QEMODS) $(LIBOBJS)
+ibrav2cell.x : ibrav2cell.o $(PWOBJS) $(QEMODS) $(LIBOBJS)
 	$(LD) $(LDFLAGS) -o $@ \
-		dist.o $(PWOBJS) $(QEMODS) $(LIBOBJS) $(LIBS)
+		ibrav2cell.o $(PWOBJS) $(QEMODS) $(LIBOBJS) $(LIBS)
 	- ( cd ../../bin ; ln -fs ../PW/tools/$@ . )
+	- ( cd ../../bin ; ln -fs ../PW/tools/cell2ibrav.py cell2ibrav.x )
 
 ev.x : ev.o ev_xml.o $(PWOBJS) $(QEMODS) $(LIBOBJS)
 	$(LD) $(LDFLAGS) -o $@ \

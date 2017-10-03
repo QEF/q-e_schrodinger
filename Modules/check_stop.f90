@@ -6,20 +6,25 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 !
-! ... This module contains functions nd variables used to check if the code
-! ... should be smoothly stopped. In order to use this module, function
-! ... check_stop_init must be called (only once) at the beginning of the calc.
-! ... Function check_stop_now returns .TRUE. if either the user has created
-! ... an "exit" file, or if the elapsed wall time is larger than max_seconds,
-! ... or if these conditions have been met in a provious call of check_stop_now.
+! ... This module contains functions and variables used to check whether the 
+! ... code should be smoothly stopped. In order to use this module, function
+! ... "check_stop_init" must be called (only once) at the beginning of the 
+! ... calculation, optionally setting "max_seconds"
+! ... Function "check_stop_now" returns .TRUE. if either the user has created
+! ... an "exit" file, or if the elapsed wall time is larger than "max_seconds",
+! ... or if these conditions have been met in a previous call of check_stop_now.
 ! ... Moreover, function check_stop_now removes the exit file and sets variable
 ! ... stopped_by_user to .true..
+!
+! ... Uses routine f_wall defined in module mytime, returning time in seconds
+! ... since the Epoch ( 00:00:00 1/1/1970 ).
 !
 !------------------------------------------------------------------------------!
 MODULE check_stop
 !------------------------------------------------------------------------------!
   !
   USE kinds
+  USE mytime, ONLY: f_wall
   !
   IMPLICIT NONE
   !
@@ -28,17 +33,19 @@ MODULE check_stop
   REAL(DP) :: max_seconds = 1.E+7_DP
   REAL(DP) :: init_second
   LOGICAL :: stopped_by_user = .FALSE.
-  LOGICAL, PRIVATE :: tinit = .FALSE.
+  LOGICAL :: tinit = .FALSE.
+  !
+  PRIVATE
+  PUBLIC :: check_stop_init, check_stop_now, max_seconds, stopped_by_user
   !
   CONTAINS
      !
      ! ... internal procedures
      !
      !-----------------------------------------------------------------------
-     SUBROUTINE check_stop_init()
+     SUBROUTINE check_stop_init( max_seconds_ )
        !-----------------------------------------------------------------------
        !
-       USE input_parameters, ONLY : max_seconds_ => max_seconds
        USE io_global,        ONLY : stdout
        USE io_files,         ONLY : prefix, exit_file
 #if defined(__TRAP_SIGUSR1) || defined(__TERMINATE_GRACEFULLY)
@@ -46,20 +53,25 @@ MODULE check_stop
 #endif
        !
        IMPLICIT NONE
+       REAL(dp), INTENT(IN), OPTIONAL :: max_seconds_
        !
-       REAL(DP), EXTERNAL :: cclock
-       !
-       IF ( tinit ) &
-          WRITE( UNIT = stdout, &
+       IF ( tinit )  WRITE( UNIT = stdout, &
                  FMT = '(/,5X,"WARNING: check_stop already initialized")' )
        !
        ! ... the exit_file name is set here
        !
-       exit_file = TRIM( prefix ) // '.EXIT'
+       IF ( TRIM( prefix ) == ' ' ) THEN
+          exit_file = 'EXIT'
+       ELSE
+          exit_file = TRIM( prefix ) // '.EXIT'
+       END IF
        !
-       IF ( max_seconds_ > 0.0_DP ) max_seconds = max_seconds_
+       IF ( PRESENT(max_seconds_) ) THEN
+          max_seconds = max_seconds_
+       END IF
        !
-       init_second = cclock()
+       init_second = f_wall()
+       !
        tinit   = .TRUE.
        !
 #if defined(__TRAP_SIGUSR1) || defined(__TERMINATE_GRACEFULLY)
@@ -90,15 +102,11 @@ MODULE check_stop
        LOGICAL            :: check_stop_now, tex=.false.
        LOGICAL            :: signaled
        REAL(DP)           :: seconds
-       REAL(DP), EXTERNAL :: cclock
        !
        IF ( stopped_by_user ) THEN
           check_stop_now = .TRUE.
           RETURN
        END IF
-       !
-       ! ... cclock is a C function returning the elapsed solar
-       ! ... time in seconds since the Epoch ( 00:00:00 1/1/1970 )
        !
        IF ( .NOT. tinit ) &
           CALL errore( 'check_stop_now', 'check_stop not initialized', 1 )
@@ -135,7 +143,7 @@ MODULE check_stop
                 CLOSE( UNIT = iunexit, STATUS = 'DELETE' )
                 !
              ELSE
-                seconds = cclock() - init_second
+                seconds = f_wall() - init_second
                 check_stop_now = ( seconds  >  max_seconds )
              END IF
              !

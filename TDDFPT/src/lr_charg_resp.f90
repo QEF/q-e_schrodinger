@@ -634,7 +634,7 @@ CONTAINS
     USE lsda_mod,                 ONLY : nspin
     USE mp,                       ONLY : mp_sum
     USE mp_global,                ONLY : inter_pool_comm, intra_bgrp_comm
-    USE uspp,                     ONLY : okvan,qq,vkb
+    USE uspp,                     ONLY : okvan,qq_nt,vkb
     USE wvfct,                    ONLY : wg,nbnd,npwx
     USE uspp_param,               ONLY : upf, nh
     USE becmod,                   ONLY : becp,calbec
@@ -715,7 +715,7 @@ CONTAINS
                             !
                             !  <beta_i|beta_i> terms
                             !
-                            scal = scal + qq(ih,ih,np) *1.d0 *  becp%r(ikb,ibnd_occ) * becp1_virt(ikb,ibnd_virt)
+                            scal = scal + qq_nt(ih,ih,np) *1.d0 *  becp%r(ikb,ibnd_occ) * becp1_virt(ikb,ibnd_virt)
                             !
                             ijh = ijh + 1
                             !
@@ -725,7 +725,7 @@ CONTAINS
                                !
                                jkb = ijkb0 + jh
                                !
-                               scal = scal + qq(ih,jh,np) *1.d0  * (becp%r(ikb,ibnd_occ) * becp1_virt(jkb,ibnd_virt)+&
+                               scal = scal + qq_nt(ih,jh,np) *1.d0  * (becp%r(ikb,ibnd_occ) * becp1_virt(jkb,ibnd_virt)+&
                                     becp%r(jkb,ibnd_occ) * becp1_virt(ikb,ibnd_virt))
                                !
                                ijh = ijh + 1
@@ -780,7 +780,7 @@ CONTAINS
     USE lsda_mod,                 ONLY : nspin
     USE mp,                       ONLY : mp_sum
     USE mp_global,                ONLY : inter_pool_comm, intra_bgrp_comm
-    USE uspp,                     ONLY : okvan,qq,vkb
+    USE uspp,                     ONLY : okvan,qq_nt,vkb
     USE wvfct,                    ONLY : wg,nbnd,npwx
     USE uspp_param,               ONLY : upf, nh
     USE becmod,                   ONLY : becp,calbec
@@ -960,8 +960,8 @@ CONTAINS
                                      nproc_bgrp, intra_bgrp_comm, my_bgrp_id
 
     USE constants,            ONLY : BOHR_RADIUS_ANGS
-    USE fft_base,             ONLY : dfftp !this contains dfftp%npp (number of z planes per processor
-    ! and dfftp%ipp (offset of the first z plane of the processor
+    USE fft_base,             ONLY : dfftp !this contains dfftp%nr3p (number of z planes per processor
+    ! and dfftp%i0r3p (offset of the first z plane of the processor
 
     !
     IMPLICIT NONE
@@ -987,7 +987,7 @@ CONTAINS
     !
     six_count=0
 #if defined(__MPI)
-    ALLOCATE( rho_temp(dfftp%npp(1)+1) )
+    ALLOCATE( rho_temp(dfftp%nr3p(1)+1) )
     IF (ionode) THEN
        filename = trim(prefix) // "-" // identifier // "-pol" //trim(int_to_char(LR_polarization))// ".cube"
        WRITE(stdout,'(/5X,"Writing Cube file for response charge density")')
@@ -1056,7 +1056,7 @@ CONTAINS
     !IF (nproc_bgrp > 1) THEN
     ! DO i = 1, nproc_bgrp
     !    !
-    !    kowner( (dfftp%ipp(i)+1):(dfftp%ipp(i)+dfftp%npp(i)) ) = i - 1
+    !    kowner( (dfftp%i0r3p(i)+1):(dfftp%i0r3p(i)+dfftp%nr3p(i)) ) = i - 1
     !    !
     ! END DO
     !ELSE
@@ -1077,13 +1077,13 @@ CONTAINS
              IF( (i-1) == me_bgrp ) THEN
                 !
                 !
-                DO  i3=1, dfftp%npp(i)
+                DO  i3=1, dfftp%nr3p(i)
                    !
                    rho_temp(i3) = rho(i1+(i2-1)*dfftp%nr1x+(i3-1)*ldr)
                    !
                    !
                 ENDDO
-                !print *, "get 1=",rho_plane(1)," 2=",rho_plane(2)," ",dfftp%npp(i),"=",rho_plane(dfftp%npp(i))
+                !print *, "get 1=",rho_plane(1)," 2=",rho_plane(2)," ",dfftp%nr3p(i),"=",rho_plane(dfftp%nr3p(i))
              ENDIF
              !call mp_barrier( world_comm )
              IF ( my_bgrp_id == iopool_id ) &
@@ -1095,8 +1095,8 @@ CONTAINS
              !
              !call mp_barrier( world_comm )
              IF(ionode) THEN
-                rho_plane( (dfftp%ipp(i)+1):(dfftp%ipp(i)+dfftp%npp(i)) ) = rho_temp(1:dfftp%npp(i))
-                !print *, "get (",dfftp%ipp(i)+1,")=",rho_plane(dfftp%ipp(i)+1)," (",dfftp%ipp(i)+dfftp%npp(i),")=",rho_plane(dfftp%ipp(i)+dfftp%npp(i))
+                rho_plane( (dfftp%i0r3p(i)+1):(dfftp%i0r3p(i)+dfftp%nr3p(i)) ) = rho_temp(1:dfftp%nr3p(i))
+                !print *, "get (",dfftp%i0r3p(i)+1,")=",rho_plane(dfftp%i0r3p(i)+1)," (",dfftp%i0r3p(i)+dfftp%nr3p(i),")=",rho_plane(dfftp%i0r3p(i)+dfftp%nr3p(i))
                 !print *, "data of proc ",i," written I2=",i2,"I1=",i1
              ENDIF
           ENDDO
@@ -1210,8 +1210,8 @@ CONTAINS
                                      nproc_bgrp, intra_bgrp_comm, my_bgrp_id
 
     USE constants,            ONLY : BOHR_RADIUS_ANGS
-    USE fft_base,             ONLY : dfftp !this contains dfftp%npp (number of z planes per processor
-    ! and dfftp%ipp (offset of the first z plane of the processor
+    USE fft_base,             ONLY : dfftp !this contains dfftp%nr3p (number of z planes per processor
+    ! and dfftp%i0r3p (offset of the first z plane of the processor
     !
     IMPLICIT NONE
     !
@@ -1277,7 +1277,7 @@ CONTAINS
     IF (nproc_bgrp > 1) THEN
        DO i = 1, nproc_bgrp
           !
-          kowner( (dfftp%ipp(i)+1):(dfftp%ipp(i)+dfftp%npp(i)) ) = i - 1
+          kowner( (dfftp%i0r3p(i)+1):(dfftp%i0r3p(i)+dfftp%nr3p(i)) ) = i - 1
           !
        ENDDO
     ELSE
@@ -1294,7 +1294,7 @@ CONTAINS
           !
           kk = i3
           !
-          IF ( nproc_bgrp > 1 ) kk = i3 - dfftp%ipp(me_bgrp+1)
+          IF ( nproc_bgrp > 1 ) kk = i3 - dfftp%i0r3p(me_bgrp+1)
           !
           DO i2 = 1, dfftp%nr2
              !
@@ -1412,8 +1412,8 @@ CONTAINS
          intra_bgrp_comm, my_bgrp_id
 
     USE constants,            ONLY : BOHR_RADIUS_ANGS
-    USE fft_base,             ONLY : dfftp !this contains dfftp%npp (number of z planes per processor
-    ! and dfftp%ipp (offset of the first z plane of the processor
+    USE fft_base,             ONLY : dfftp !this contains dfftp%nr3p (number of z planes per processor
+    ! and dfftp%i0r3p (offset of the first z plane of the processor
 
 
 
@@ -1507,7 +1507,7 @@ CONTAINS
     IF (nproc_bgrp > 1) THEN
        DO i = 1, nproc_bgrp
           !
-          kowner( (dfftp%ipp(i)+1):(dfftp%ipp(i)+dfftp%npp(i)) ) = i - 1
+          kowner( (dfftp%i0r3p(i)+1):(dfftp%i0r3p(i)+dfftp%nr3p(i)) ) = i - 1
           !
        ENDDO
     ELSE
@@ -1524,7 +1524,7 @@ CONTAINS
           !
           kk = i3
           !
-          IF ( nproc_bgrp > 1 ) kk = i3 - dfftp%ipp(me_bgrp+1)
+          IF ( nproc_bgrp > 1 ) kk = i3 - dfftp%i0r3p(me_bgrp+1)
           !
           DO i2 = 1, dfftp%nr2
              !

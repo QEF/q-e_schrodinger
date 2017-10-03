@@ -296,7 +296,7 @@ SUBROUTINE dprojdepsilon_k ( spsi, ik, ipol, jpol, nb_s, nb_e, mykey, dproj )
    USE ldaU,                 ONLY : hubbard_l, is_hubbard, nwfcU, wfcU
    USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
    USE wvfct,                ONLY : nbnd, npwx, wg
-   USE uspp,                 ONLY : nkb, vkb, qq, indv_ijkb0
+   USE uspp,                 ONLY : nkb, vkb, qq_at, indv_ijkb0
    USE uspp_param,           ONLY : upf, nhm, nh
    USE wavefunctions_module, ONLY : evc
    USE becmod,               ONLY : bec_type, becp, calbec
@@ -417,7 +417,7 @@ SUBROUTINE dprojdepsilon_k ( spsi, ik, ipol, jpol, nb_s, nb_e, mykey, dproj )
                DO ibnd = nb_s,nb_e
                   DO jh = 1,nh(nt)
                      betapsi(ih,ibnd) = betapsi(ih,ibnd) + &
-                          qq(ih,jh,nt)  * dbetapsi(jh,ibnd)
+                         qq_at(ih,jh,na)  * dbetapsi(jh,ibnd)
                   END DO
                END DO
             END DO
@@ -428,7 +428,7 @@ SUBROUTINE dprojdepsilon_k ( spsi, ik, ipol, jpol, nb_s, nb_e, mykey, dproj )
                   betapsi(ih,ibnd)= (0.0_dp, 0.0_dp)
                   DO jh = 1,nh(nt)
                      betapsi(ih,ibnd) = betapsi(ih,ibnd) + &
-                          qq(ih,jh,nt) * becp%k(ijkb0+jh,ibnd)
+                         qq_at(ih,jh,na) * becp%k(ijkb0+jh,ibnd)
                   END DO
                END DO
             END DO
@@ -473,7 +473,7 @@ SUBROUTINE dprojdepsilon_gamma ( spsi, ik, ipol, jpol, nb_s, nb_e, mykey, dproj 
    USE ldaU,                 ONLY : is_hubbard, hubbard_l, nwfcU, wfcU
    USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
    USE wvfct,                ONLY : nbnd, npwx, wg
-   USE uspp,                 ONLY : nkb, vkb, qq, indv_ijkb0
+   USE uspp,                 ONLY : nkb, vkb, qq_at, indv_ijkb0
    USE uspp_param,           ONLY : upf, nhm, nh
    USE wavefunctions_module, ONLY : evc
    USE becmod,               ONLY : bec_type, becp, calbec
@@ -597,7 +597,7 @@ SUBROUTINE dprojdepsilon_gamma ( spsi, ik, ipol, jpol, nb_s, nb_e, mykey, dproj 
                DO ibnd = nb_s,nb_e
                   DO jh = 1,nh(nt)
                      betapsi(ih,ibnd) = betapsi(ih,ibnd) + &
-                          qq(ih,jh,nt)  * dbetapsi(jh,ibnd)
+                         qq_at(ih,jh,na)  * dbetapsi(jh,ibnd)
                   END DO
                END DO
             END DO
@@ -608,7 +608,7 @@ SUBROUTINE dprojdepsilon_gamma ( spsi, ik, ipol, jpol, nb_s, nb_e, mykey, dproj 
                   betapsi(ih,ibnd)= 0.0_dp
                   DO jh = 1,nh(nt)
                      betapsi(ih,ibnd) = betapsi(ih,ibnd) + &
-                          qq(ih,jh,nt) * becp%r(ijkb0+jh,ibnd)
+                         qq_at(ih,jh,na) * becp%r(ijkb0+jh,ibnd)
                   END DO
                END DO
             END DO
@@ -616,7 +616,7 @@ SUBROUTINE dprojdepsilon_gamma ( spsi, ik, ipol, jpol, nb_s, nb_e, mykey, dproj 
             ! dproj(iwf,ibnd) = \sum_ih wfatdbeta(iwf,ih)*betapsi(ih,ibnd) +
             !                           wfatbeta(iwf,ih)*dbetapsi(ih,ibnd) 
             !
-            IF ( mykey == 0 ) THEN
+            IF ( mykey == 0 .AND. nh(nt) > 0 ) THEN
                CALL DGEMM('N','N',nwfcU, nb_e-nb_s+1, nh(nt), 1.0_dp,  &
                     wfatdbeta, nwfcU, betapsi(1,nb_s), nh(nt), 1.0_dp,&
                     dproj(1,nb_s), nwfcU)

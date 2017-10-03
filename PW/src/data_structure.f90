@@ -15,11 +15,9 @@ SUBROUTINE data_structure( gamma_only )
   !
   USE kinds,      ONLY : DP
   USE mp,         ONLY : mp_max
-  USE mp_bands,   ONLY : me_bgrp, nproc_bgrp, root_bgrp, intra_bgrp_comm, &
-                         ntask_groups
+  USE mp_bands,   ONLY : nproc_bgrp, intra_bgrp_comm, nyfft, ntask_groups
   USE mp_pools,   ONLY : inter_pool_comm
-  USE fft_base,   ONLY : dfftp, dffts, dtgs, fft_base_info
-  USE fft_base,   ONLY : smap
+  USE fft_base,   ONLY : dfftp, dffts, fft_base_info, smap
   USE fft_types,  ONLY : fft_type_init
   USE cell_base,  ONLY : at, bg, tpiba
   USE klist,      ONLY : xk, nks
@@ -27,7 +25,6 @@ SUBROUTINE data_structure( gamma_only )
   USE gvecs,      ONLY : gcutms, gvecs_init
   USE gvecw,      ONLY : gcutw, gkcut
   USE io_global,  ONLY : stdout, ionode
-  USE task_groups,ONLY : task_groups_init
   !
   IMPLICIT NONE
   LOGICAL, INTENT(in) :: gamma_only
@@ -37,6 +34,8 @@ SUBROUTINE data_structure( gamma_only )
 #else
   LOGICAL :: lpara = .false.
 #endif
+  IF ( .NOT. lpara .AND. nproc_bgrp /= 1 ) CALL errore('data_structure', &
+          'parallel FFT needed: unset __'//'USE_3D_FFT, recompile', nproc_bgrp )
   !
   ! ... calculate gkcut = max |k+G|^2, in (2pi/a)^2 units
   !
@@ -63,9 +62,11 @@ SUBROUTINE data_structure( gamma_only )
   !
   ! ... set up fft descriptors, including parallel stuff: sticks, planes, etc.
   !
-  CALL fft_type_init( dffts, smap, "wave", gamma_only, lpara, intra_bgrp_comm, at, bg, gkcut, gcutms/gkcut, ntask_groups )
-  CALL fft_type_init( dfftp, smap, "rho", gamma_only, lpara, intra_bgrp_comm, at, bg,  gcutm )
-  CALL task_groups_init( dffts, dtgs, ntask_groups )
+  dffts%have_task_groups = (ntask_groups >1)
+  CALL fft_type_init( dffts, smap, "wave", gamma_only, lpara, intra_bgrp_comm,&
+          at, bg, gkcut, gcutms/gkcut, nyfft=nyfft )
+  CALL fft_type_init( dfftp, smap, "rho" , gamma_only, lpara, intra_bgrp_comm,&
+          at, bg,  gcutm , 4.d0, nyfft=nyfft )
   CALL fft_base_info( ionode, stdout )
   ngs_ = dffts%ngl( dffts%mype + 1 )
   ngm_ = dfftp%ngl( dfftp%mype + 1 )

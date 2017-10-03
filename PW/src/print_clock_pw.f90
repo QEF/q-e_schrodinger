@@ -160,9 +160,13 @@ SUBROUTINE print_clock_pw()
    WRITE( stdout, '(5X,"Parallel routines")' )
    !
    CALL print_clock( 'reduce' )
-   CALL print_clock( 'fft_scatter' )
+   CALL print_clock( 'fft_scatt_xy' )
+   CALL print_clock( 'fft_scatt_yz' )
+   CALL print_clock( 'fft_scatt_tg' )
    CALL print_clock( 'ALLTOALL' )
 #endif
+   CALL print_clock( 'localization' )
+   CALL print_clock( 'measure' )
    !
    IF ( lda_plus_U ) THEN
       WRITE( stdout, '(/,5X,"Hubbard U routines")' )
@@ -177,10 +181,10 @@ SUBROUTINE print_clock_pw()
       CALL print_clock( 'exx_grid' )
       CALL print_clock( 'exxinit' )
       CALL print_clock( 'vexx' )
-!civn 
       CALL print_clock( 'matcalc' )
       CALL print_clock( 'aceupdate' )
       CALL print_clock( 'vexxace' )
+      CALL print_clock( 'vexxloc' )
       CALL print_clock( 'aceinit' )
       CALL print_clock( 'exxenergy' )
       IF( okvan) THEN

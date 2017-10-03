@@ -42,14 +42,13 @@ SUBROUTINE lr_calc_dens( evc1, response_calc )
   USE wavefunctions_module,   ONLY : psic
   USE wvfct,                  ONLY : nbnd, et, wg, npwx
   USE control_flags,          ONLY : gamma_only
-  USE uspp,                   ONLY : vkb, nkb, okvan, qq, becsum
+  USE uspp,                   ONLY : vkb, nkb, okvan, qq_nt, becsum
   USE uspp_param,             ONLY : upf, nh
   USE io_global,              ONLY : ionode, stdout
   USE io_files,               ONLY : tmp_dir, prefix
   USE mp,                     ONLY : mp_sum
   USE mp_global,              ONLY : inter_pool_comm, intra_bgrp_comm,&
                                      inter_bgrp_comm 
-  USE realus,                 ONLY : addusdens_r
   USE charg_resp,             ONLY : w_T, lr_dump_rho_tot_cube,&
                                      & lr_dump_rho_tot_xyzd, &
                                      & lr_dump_rho_tot_xcrys,&
@@ -61,6 +60,7 @@ SUBROUTINE lr_calc_dens( evc1, response_calc )
   USE lr_exx_kernel,          ONLY : lr_exx_kernel_int, revc_int,&
                                      & revc_int_c
   USE constants,              ONLY : eps12
+  USE fft_helper_subroutines
   !
   IMPLICIT NONE
   !
@@ -125,13 +125,7 @@ SUBROUTINE lr_calc_dens( evc1, response_calc )
   ! Here we add the Ultrasoft contribution to the charge density
   ! response. 
   !
-  IF (okvan) THEN
-     IF (tqr) THEN
-        CALL addusdens_r(rho_1,.FALSE.)
-     ELSE
-        CALL addusdens(rho_1)
-     ENDIF
-  ENDIF
+  IF (okvan) CALL addusdens(rho_1)
   !
   ! The psic workspace can present a memory bottleneck
   !
@@ -330,12 +324,12 @@ CONTAINS
                                     me_bgrp, me_pool
     USE mp,                  ONLY : mp_sum
     USE realus,              ONLY : tg_psic
-    USE fft_base,            ONLY : dffts, dtgs
+    USE fft_base,            ONLY : dffts
 
     IMPLICIT NONE
     !
     INTEGER :: ibnd_start_gamma, ibnd_end_gamma
-    INTEGER :: v_siz, incr, ioff, idx
+    INTEGER :: v_siz, incr, ir3, ioff, ioff_tg, nxyp, idx
     REAL(DP), ALLOCATABLE :: tg_rho(:)
     !
     ibnd_start_gamma = ibnd_start
@@ -344,11 +338,11 @@ CONTAINS
     !
     incr = 2
     !
-    IF ( dtgs%have_task_groups ) THEN
+    IF ( dffts%have_task_groups ) THEN
        !
-       v_siz =  dtgs%tg_nnr * dtgs%nogrp
+       v_siz =  dffts%nnr_tg
        !
-       incr = 2 * dtgs%nogrp
+       incr = 2 * fftx_ntgrp(dffts)
        !
        ALLOCATE( tg_rho( v_siz ) )
        tg_rho= 0.0_DP
@@ -361,18 +355,16 @@ CONTAINS
        !
        CALL invfft_orbital_gamma(evc1(:,:,1),ibnd,nbnd)
        !
-       IF (dtgs%have_task_groups) THEN
+       IF (dffts%have_task_groups) THEN
           !
           ! Now the first proc of the group holds the first two bands
-          ! of the 2*dtgs%nogrp bands that we are processing at the same time,
+          ! of the 2*ntgrp bands that we are processing at the same time,
           ! the second proc. holds the third and fourth band
           ! and so on.
           !
           ! Compute the proper factor for each band
           !
-          DO idx = 1, dtgs%nogrp
-             IF( dtgs%nolist( idx ) == me_bgrp ) EXIT
-          ENDDO
+          idx = fftx_tgpe(dffts) + 1
           !
           ! Remember two bands are packed in a single array :
           ! proc 0 has bands ibnd   and ibnd+1
@@ -394,10 +386,10 @@ CONTAINS
              w2 = w1
           END IF
           !
-          DO ir = 1, dtgs%tg_npp( me_bgrp + 1 ) * dffts%nr1x * dffts%nr2x
+          DO ir = 1, dffts%nr1x * dffts%nr2x * dffts%my_nr3p
              tg_rho(ir) = tg_rho(ir) &
                   + 2.0d0*(w1*real(tg_revc0(ir,ibnd,1),dp)*real(tg_psic(ir),dp)&
-                  + w2*aimag(tg_revc0(ir,ibnd,1))*aimag(tg_psic(ir)))
+                  +       w2*aimag(tg_revc0(ir,ibnd,1))*aimag(tg_psic(ir)))
           ENDDO
           !
        ELSE
@@ -425,7 +417,7 @@ CONTAINS
           DO ir = 1, dffts%nnr
              rho_1(ir,1) = rho_1(ir,1) &
                   + 2.0d0*(w1*real(revc0(ir,ibnd,1),dp)*real(psic(ir),dp)&
-                  + w2*aimag(revc0(ir,ibnd,1))*aimag(psic(ir)))
+                  +       w2*aimag(revc0(ir,ibnd,1))*aimag(psic(ir)))
           ENDDO
           !
           ! OBM - psic now contains the response functions in real space.
@@ -448,23 +440,11 @@ CONTAINS
        !
     ENDDO
     !
-    IF (dtgs%have_task_groups) THEN
+    IF (dffts%have_task_groups) THEN
        !
        ! reduce the group charge
        !
-       CALL mp_sum( tg_rho, gid = dtgs%ogrp_comm )
-       !
-       ioff = 0
-       DO idx = 1, dtgs%nogrp
-          IF ( me_bgrp == dtgs%nolist( idx ) ) EXIT
-          ioff = ioff + dffts%nr1x * dffts%nr2x * dffts%npp( dtgs%nolist( idx ) + 1 )
-       END DO
-       !
-       ! copy the charge back to the processor location
-       !
-       DO ir = 1, dffts%nnr
-          rho_1(ir,1) = rho_1(ir,1) + tg_rho(ir+ioff)
-       ENDDO
+       CALL tg_reduce_rho( rho_1, tg_rho, 1, dffts )
        !
     ENDIF
     !
@@ -513,7 +493,7 @@ CONTAINS
                               2.d0 * w1 * becp%r(ikb,ibnd) *&
                               & becp_1(ikb,ibnd)
                          !
-                         scal = scal + qq(ih,ih,np) *1.d0 *&
+                         scal = scal + qq_nt(ih,ih,np) *1.d0 *&
                               &  becp%r(ikb,ibnd) * becp_1(ikb,ibnd)
                          !
                          ijh = ijh + 1
@@ -528,7 +508,7 @@ CONTAINS
                                  &becp%r(jkb,ibnd) + & 
                                  becp_1(jkb,ibnd) * becp%r(ikb,ibnd))
                             !
-                            scal = scal + qq(ih,jh,np) * 1.d0 *&
+                            scal = scal + qq_nt(ih,jh,np) * 1.d0 *&
                                  & (becp%r(ikb,ibnd) * &
                                  &becp_1(jkb, ibnd) + &
                                  &becp%r(jkb,ibnd) * becp_1(ikb,ibnd))
@@ -563,7 +543,7 @@ CONTAINS
        !
     ENDIF
     !
-    IF ( dtgs%have_task_groups ) THEN
+    IF ( dffts%have_task_groups ) THEN
        DEALLOCATE( tg_rho )
     END IF
     !   
@@ -658,7 +638,7 @@ CONTAINS
                                  &DBLE(CONJG(becp%k(ikb,ibnd)) *&
                                  & becp1_c(ikb,ibnd,ik)) 
                             !
-                            scal = scal + qq(ih,ih,np) * 1.d0 *&
+                            scal = scal + qq_nt(ih,ih,np) * 1.d0 *&
                                  &  DBLE(CONJG(becp%k(ikb,ibnd)) *&
                                  & becp1_c(ikb,ibnd,ik))
                             !
@@ -676,7 +656,7 @@ CONTAINS
                                     becp1_c(jkb,ibnd,ik) *&
                                     & CONJG(becp%k(ikb,ibnd)))
                                !
-                               scal = scal + qq(ih,jh,np) * 1.d0 * &
+                               scal = scal + qq_nt(ih,jh,np) * 1.d0 * &
                                     & DBLE(CONJG(becp%k(ikb,ibnd)) *&
                                     & becp1_c(jkb,ibnd,ik)+&
                                     & becp%k(jkb,ibnd) * &

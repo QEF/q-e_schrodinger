@@ -10,6 +10,10 @@ MODULE pw_restart_new
 !----------------------------------------------------------------------------
   !
   ! ... New PWscf I/O using xml schema and hdf5 binaries
+  ! ... Parallel execution: the xml file is written by one processor only
+  ! ... ("ionode_id"), read by all processors ;
+  ! ... the wavefunction files are written / read by one processor per pool,
+  ! ... collected on / distributed to all other processors in pool
   !
   USE qes_module
   USE qexsd_module, ONLY: qexsd_init_schema, qexsd_openschema, qexsd_closeschema,      &
@@ -18,8 +22,9 @@ MODULE pw_restart_new
                           qexsd_init_symmetries, qexsd_init_basis_set, qexsd_init_dft, &
                           qexsd_init_magnetization,qexsd_init_band_structure,          &
                           qexsd_init_dipole_info, qexsd_init_total_energy,             &
-                          qexsd_init_forces,qexsd_init_stress,                         &
-                          qexsd_init_outputElectricField, qexsd_input => qexsd_input_obj
+                          qexsd_init_forces,qexsd_init_stress, qexsd_xf,               &
+                          qexsd_init_outputElectricField,                              &
+                          qexsd_input_obj, qexsd_occ_obj, qexsd_smear_obj
   USE iotk_module
   USE io_global, ONLY : ionode, ionode_id
   USE io_files,  ONLY : iunpun, xmlpun_schema, prefix, tmp_dir
@@ -32,7 +37,7 @@ MODULE pw_restart_new
        pw_readschema_file, init_vars_from_schema, read_collected_to_evc
   !
   CONTAINS
-#if defined(__XSD)
+#if !defined(__OLDXML)
     !------------------------------------------------------------------------
     SUBROUTINE pw_write_schema( )
       !------------------------------------------------------------------------
@@ -40,7 +45,7 @@ MODULE pw_restart_new
       USE control_flags,        ONLY : istep, twfcollect, conv_ions, &
                                        lscf, gamma_only, &
                                        tqr, tq_smoothing, tbeta_smoothing, &
-                                       noinv, do_makov_payne, smallmem, &
+                                       noinv, smallmem, &
                                        llondon, lxdm, ts_vdw, scf_error, n_scf_steps
       USE constants,            ONLY : e2
       USE realus,               ONLY : real_space
@@ -48,16 +53,15 @@ MODULE pw_restart_new
       USE paw_variables,        ONLY : okpaw
       USE uspp_param,           ONLY : upf
       USE global_version,       ONLY : version_number
-      USE cell_base,            ONLY : at, bg, alat, tpiba, tpiba2, &
-                                       ibrav, celldm
+      USE cell_base,            ONLY : at, bg, alat, ibrav
       USE gvect,                ONLY : ig_l2g
-      USE ions_base,            ONLY : nsp, ityp, atm, nat, tau, if_pos
+      USE ions_base,            ONLY : nsp, ityp, atm, nat, tau
       USE noncollin_module,     ONLY : noncolin, npol
       USE io_files,             ONLY : nwordwfc, iunwfc, psfile
       USE buffers,              ONLY : get_buffer
       USE wavefunctions_module, ONLY : evc
-      USE klist,                ONLY : nks, nkstot, xk, ngk, wk, qnorm, &
-                                       lgauss, ngauss, degauss, nelec, &
+      USE klist,                ONLY : nks, nkstot, xk, ngk, wk, &
+                                       lgauss, ngauss, smearing, degauss, nelec, &
                                        two_fermi_energies, nelup, neldw, tot_charge
       USE start_k,              ONLY : nk1, nk2, nk3, k1, k2, k3, &
                                        nks_start, xk_start, wk_start
@@ -83,47 +87,41 @@ MODULE pw_restart_new
       USE noncollin_module,     ONLY : angle1, angle2, i_cons, mcons, bfield, magtot_nc, &
                                        lambda
       USE ions_base,            ONLY : amass
-      USE funct,                ONLY : get_dft_name, get_inlc, get_nonlocc_name, dft_is_nonlocc
+      USE funct,                ONLY : get_dft_short, get_inlc, get_nonlocc_name, dft_is_nonlocc
       USE kernel_table,         ONLY : vdw_table_name
       USE scf,                  ONLY : rho
       USE force_mod,            ONLY : lforce, sumfor, force, sigma, lstres
       USE extfield,             ONLY : tefield, dipfield, edir, etotefield, &
                                        emaxpos, eopreg, eamp, el_dipole, ion_dipole,&
-                                       monopole, zmon, relaxz, block, block_1,&
+                                       gate, zgate, relaxz, block, block_1,&
                                        block_2, block_height ! TB
-      USE io_rho_xml,           ONLY : write_rho
       USE mp,                   ONLY : mp_sum
-      USE mp_bands,             ONLY : nproc_bgrp, me_bgrp, root_bgrp, &
-                                       intra_bgrp_comm, nbgrp, ntask_groups
-      USE mp_diag,              ONLY : nproc_ortho
+      USE mp_bands,             ONLY : intra_bgrp_comm
       USE funct,                ONLY : get_exx_fraction, dft_is_hybrid, &
                                        get_gau_parameter, &
                                        get_screening_parameter, exx_is_active
       USE exx,                  ONLY : x_gamma_extrapolation, nq1, nq2, nq3, &
                                        exxdiv_treatment, yukawa, ecutvcut, ecutfock
-      USE cellmd,               ONLY : lmovecell, cell_factor 
-      USE martyna_tuckerman,    ONLY : do_comp_mt
-      USE esm,                  ONLY : do_comp_esm, esm_nfit, esm_efield, esm_w, &
-                                       esm_a, esm_bc
       USE london_module,        ONLY : scal6, lon_rcut, in_c6
       USE xdm_module,           ONLY : xdm_a1=>a1i, xdm_a2=>a2i
       USE tsvdw_module,         ONLY : vdw_isolated, vdw_econv_thr
       USE input_parameters,     ONLY : verbosity, calculation, ion_dynamics, starting_ns_eigenvalue, &
-                                       vdw_corr, london, input_parameters_occupations => occupations
+                                       vdw_corr, london, k_points, input_parameters_occupations => occupations
       USE bp,                   ONLY : lelfield, lberry, bp_mod_el_pol => el_pol, bp_mod_ion_pol => ion_pol
       !
       USE rap_point_group,      ONLY : elem, nelem, name_class
       USE rap_point_group_so,   ONLY : elem_so, nelem_so, name_class_so
       USE bfgs_module,          ONLY : bfgs_get_n_iter
-      USE qexsd_module,         ONLY : qexsd_dipol_obj, qexsd_bp_obj
+      USE qexsd_module,         ONLY : qexsd_dipol_obj, qexsd_bp_obj, qexsd_start_k_obj
+      USE qexsd_input,          ONLY : qexsd_init_k_points_ibz, qexsd_init_occupations, qexsd_init_smearing
       USE fcp_variables,        ONLY : lfcpopt, lfcpdyn, fcp_mu  
+      USE io_files,             ONLY : pseudo_dir
       !
       IMPLICIT NONE
       !
       CHARACTER(15)         :: subname="pw_write_schema"
       CHARACTER(LEN=20)     :: dft_name
       CHARACTER(LEN=256)    :: dirname
-      CHARACTER(LEN=80)     :: vdw_corr_
       INTEGER               :: i, ig, ngg, ipol
       INTEGER               :: npwx_g, ispin, inlc
       INTEGER,  ALLOCATABLE :: ngk_g(:)
@@ -132,7 +130,7 @@ MODULE pw_restart_new
       INTEGER                  :: iclass, isym, ielem
       CHARACTER(LEN=15)        :: symop_2_class(48)
       LOGICAL                  :: opt_conv_ispresent
-      INTEGER                  :: n_opt_steps, h_band
+      INTEGER                  :: n_opt_steps, n_scf_steps_, h_band
       REAL(DP)                 :: h_energy
       !
       TYPE(output_type) :: output
@@ -159,10 +157,9 @@ MODULE pw_restart_new
       CALL mp_sum( ngm_g, intra_bgrp_comm )
       ! 
       ! 
-      !
       ! XML descriptor
       ! 
-      dirname = TRIM( tmp_dir ) // TRIM( prefix ) // '.save'
+      dirname = TRIM( tmp_dir ) // TRIM( prefix ) // '.save/'
       !
       CALL qexsd_init_schema( iunpun )
       !
@@ -175,8 +172,10 @@ MODULE pw_restart_new
 ! ... HEADER
 !-------------------------------------------------------------------------------
          !
-         CALL qexsd_openschema(TRIM( dirname ) // '/' // TRIM( xmlpun_schema ))
+         CALL qexsd_openschema(TRIM( dirname ) // TRIM( xmlpun_schema ))
          output%tagname="output"
+         output%lwrite = .TRUE.
+         output%lread  = .TRUE.
          !
 !-------------------------------------------------------------------------------
 ! ... CONVERGENCE_INFO
@@ -189,15 +188,20 @@ MODULE pw_restart_new
                 ELSE 
                     n_opt_steps = istep 
                 END IF 
+            CASE ("nscf", "bands" )
+                opt_conv_ispresent = .FALSE.
+                n_opt_steps = 0
+                n_scf_steps_ = 1
             CASE default
                 opt_conv_ispresent = .FALSE.
                 n_opt_steps        = 0 
+                n_scf_steps_ = n_scf_steps
          END SELECT
          ! 
-         call qexsd_init_convergence_info(output%convergence_info, &
-              n_scf_steps=n_scf_steps, scf_error=scf_error, &
-              opt_conv_ispresent=lforce, &
-              n_opt_steps=n_opt_steps, grad_norm=sumfor )
+            call qexsd_init_convergence_info(output%convergence_info,   &
+                        N_SCF_STEPS = n_scf_steps_, SCF_ERROR=scf_error,&
+                        OPT_CONV_ISPRESENT = opt_conv_ispresent,        &
+                        N_OPT_STEPS = n_opt_steps, GRAD_NORM = sumfor)
          !
 !-------------------------------------------------------------------------------
 ! ... ALGORITHMIC_INFO
@@ -224,13 +228,15 @@ MODULE pw_restart_new
             CALL qexsd_init_atomic_species(output%atomic_species, nsp, atm,psfile, &
                  amass)
          END IF
+         output%atomic_species%pseudo_dir = TRIM(pseudo_dir)
+         output%atomic_species%pseudo_dir_ispresent = .TRUE.
          !
 !-------------------------------------------------------------------------------
 ! ... ATOMIC_STRUCTURE
 !-------------------------------------------------------------------------------
          !         
          CALL qexsd_init_atomic_structure(output%atomic_structure, nsp, atm, ityp, &
-              nat, tau, 'Bohr', alat, alat*at(:,1), alat*at(:,2), alat*at(:,3), ibrav)
+              nat, alat*tau, alat, alat*at(:,1), alat*at(:,2), alat*at(:,3), ibrav)
          !
 !-------------------------------------------------------------------------------
 ! ... SYMMETRIES
@@ -266,6 +272,7 @@ MODULE pw_restart_new
          CALL qexsd_init_symmetries(output%symmetries, nsym, nrot, spacegroup,&
               s, ft, sname, t_rev, nat, irt,symop_2_class(1:nrot), verbosity, &
               noncolin)
+         output%symmetries_ispresent=.TRUE. 
          !
 !-------------------------------------------------------------------------------
 ! ... BASIS SET
@@ -280,19 +287,20 @@ MODULE pw_restart_new
 ! ... DFT
 !-------------------------------------------------------------------------------
          !
-         dft_name = get_dft_name()
+         dft_name = get_dft_short()
          inlc = get_inlc()
          !
-         !
-         vdw_corr_ = vdw_corr
-         IF ( london ) vdw_corr_ = 'grimme-d2'
-         CALL qexsd_init_dft(output%dft, dft_name, .TRUE., dft_is_hybrid(), nq1, nq2, nq3, ecutfock/e2, &
-              get_exx_fraction(), get_screening_parameter(), exxdiv_treatment, x_gamma_extrapolation,   &
-              ecutvcut/e2, lda_plus_u, lda_plus_u_kind, 2*Hubbard_lmax+1, noncolin, nspin, nsp,         &
-              2*Hubbard_lmax+1, nat, atm, ityp, Hubbard_U, Hubbard_J0, Hubbard_alpha, Hubbard_beta,     &
-              Hubbard_J, starting_ns_eigenvalue, rho%ns, rho%ns_nc, U_projection, dft_is_nonlocc(),     &
-              TRIM(vdw_corr), TRIM ( get_nonlocc_name()), scal6, in_c6, lon_rcut, xdm_a1, xdm_a2,       &
-              vdw_econv_thr, vdw_isolated, is_hubbard, upf(1:nsp)%psd)
+         CALL qexsd_init_dft(output%dft, dft_name, .TRUE., dft_is_hybrid(), &
+              nq1, nq2, nq3, ecutfock/e2, get_exx_fraction(), &
+              get_screening_parameter(), exxdiv_treatment, &
+              x_gamma_extrapolation, ecutvcut/e2, &
+              dft_is_nonlocc(), TRIM(vdw_corr), TRIM ( get_nonlocc_name()), &
+              scal6, in_c6, lon_rcut, xdm_a1, xdm_a2, vdw_econv_thr, &
+              vdw_isolated,&
+              lda_plus_u, lda_plus_u_kind, 2*Hubbard_lmax+1, noncolin, nspin, &
+              nsp, nat, atm, ityp, Hubbard_U, Hubbard_J0,  &
+              Hubbard_alpha, Hubbard_beta, Hubbard_J, starting_ns_eigenvalue, &
+              U_projection, is_hubbard, upf(1:nsp)%psd, rho%ns, rho%ns_nc )
          !
 !-------------------------------------------------------------------------------
 ! ... MAGNETIZATION
@@ -318,28 +326,36 @@ MODULE pw_restart_new
             occupations_are_fixed = .FALSE. 
             h_energy  = ef 
          END IF 
-         IF (TRIM(input_parameters_occupations) == 'smearing' ) THEN
-              IF (TRIM(qexsd_input%tagname) .ne. 'input') THEN 
-                 qexsd_input%k_points_IBZ%lwrite=.FALSE.
-                 qexsd_input%bands%occupations%lwrite = .FALSE. 
-                 qexsd_input%bands%smearing%lwrite = .FALSE.
-              END IF             
-              CALL  qexsd_init_band_structure(output%band_structure,lsda,noncolin,lspinorb, &
-                   nbnd,nelec, natomwfc, occupations_are_fixed, & 
-                   h_energy,two_fermi_energies, [ef_up,ef_dw], et,wg,nkstot,xk,ngk_g,wk,    & 
-                   STARTING_KPOINTS = qexsd_input%k_points_IBZ, OCCUPATION_KIND = qexsd_input%bands%occupations, &
-                   WF_COLLECTED = twfcollect, SMEARING = qexsd_input%bands%smearing)
-         ELSE     
-              IF ( TRIM(qexsd_input%tagname) .ne. 'input') THEN
-                 qexsd_input%k_points_IBZ%lwrite = .FALSE.
-                 qexsd_input%bands%occupations%lwrite = .FALSE.
-              END IF 
-              CALL  qexsd_init_band_structure(output%band_structure,lsda,noncolin,lspinorb, &
-                   nbnd,nelec, natomwfc, occupations_are_fixed, & 
-                   h_energy,two_fermi_energies, [ef_up,ef_dw], et,wg,nkstot,xk,ngk_g,wk,    & 
-                   STARTING_KPOINTS = qexsd_input%k_points_IBZ, OCCUPATION_KIND = qexsd_input%bands%occupations, &
-                   WF_COLLECTED = twfcollect)
+         CALL qexsd_init_k_points_ibz(qexsd_start_k_obj, k_points, calculation, nk1, nk2, nk3, k1, k2, k3,&
+                                      nks_start, xk_start, wk_start, alat, at(:,1), .TRUE.)
+         qexsd_start_k_obj%tagname = 'starting_kpoints'
+         IF ( TRIM (qexsd_input_obj%tagname) == 'input') THEN 
+            qexsd_occ_obj = qexsd_input_obj%bands%occupations
+         ELSE 
+            CALL qexsd_init_occupations ( qexsd_occ_obj, input_parameters_occupations, nspin)
          END IF 
+
+         IF (TRIM(input_parameters_occupations) == 'smearing' ) THEN
+            IF (TRIM(qexsd_input_obj%tagname) == 'input') THEN 
+               qexsd_smear_obj = qexsd_input_obj%bands%smearing
+            ELSE 
+               CALL qexsd_init_smearing(qexsd_smear_obj, smearing, degauss)
+            END IF  
+            !  
+            CALL qexsd_init_band_structure(  output%band_structure,lsda,noncolin,lspinorb, nbnd, nbnd,      &
+                   nelec, natomwfc, occupations_are_fixed, h_energy,two_fermi_energies, [ef_up,ef_dw],      &
+                   et,wg,nkstot,xk,ngk_g,wk, STARTING_KPOINTS = qexsd_start_k_obj,                          &
+                   OCCUPATION_KIND = qexsd_occ_obj, WF_COLLECTED = twfcollect, SMEARING = qexsd_smear_obj )
+
+            CALL qes_reset_smearing(qexsd_smear_obj)
+         ELSE     
+            CALL  qexsd_init_band_structure(output%band_structure,lsda,noncolin,lspinorb, nbnd, nbnd, nelec,& 
+                                natomwfc, occupations_are_fixed, h_energy,two_fermi_energies, [ef_up,ef_dw],&
+                                et,wg,nkstot,xk,ngk_g,wk, STARTING_KPOINTS = qexsd_start_k_obj,             &
+                                OCCUPATION_KIND = qexsd_occ_obj, WF_COLLECTED = twfcollect)
+         END IF 
+         CALL qes_reset_k_points_ibz(qexsd_start_k_obj)
+         CALL qes_reset_occupations(qexsd_occ_obj)
          !
 !-------------------------------------------------------------------------------------------
 ! ... TOTAL ENERGY
@@ -355,7 +371,9 @@ MODULE pw_restart_new
          IF (lfcpopt .OR. lfcpdyn ) THEN 
             output%total_energy%potentiostat_contr_ispresent = .TRUE.
             output%total_energy%potentiostat_contr = ef * tot_charge/e2
+            output%FCP_tot_charge_ispresent = .TRUE.
             output%FCP_tot_charge = tot_charge
+            output%FCP_force_ispresent = .TRUE.
             output%FCP_force = fcp_mu - ef 
          END IF 
          !
@@ -407,7 +425,7 @@ MODULE pw_restart_new
 ! ... ACTUAL WRITING
 !-------------------------------------------------------------------------------
          !
-         CALL qes_write_output(iunpun,output)
+         CALL qes_write_output(qexsd_xf,output)
          CALL qes_reset_output(output) 
          !
 !-------------------------------------------------------------------------------
@@ -427,9 +445,10 @@ MODULE pw_restart_new
     SUBROUTINE pw_write_binaries( )
       !------------------------------------------------------------------------
       !
-      USE mp,                   ONLY : mp_bcast, mp_sum, mp_max
+      USE mp,                   ONLY : mp_sum, mp_max
       USE io_base,              ONLY : write_wfc
       USE io_files,             ONLY : iunwfc, nwordwfc
+      USE cell_base,            ONLY : tpiba, alat, bg
       USE control_flags,        ONLY : gamma_only, smallmem
       USE gvect,                ONLY : ig_l2g
       USE noncollin_module,     ONLY : noncolin, npol
@@ -443,11 +462,9 @@ MODULE pw_restart_new
       USE gvecs,                ONLY : ngms_g, dual
       USE wvfct,                ONLY : npwx, et, wg, nbnd
       USE lsda_mod,             ONLY : nspin, isk, lsda
-      USE mp_pools,             ONLY : nproc_pool, me_pool, root_pool, &
-                                       intra_pool_comm, inter_pool_comm
-      USE mp_bands,             ONLY : nproc_bgrp, me_bgrp, root_bgrp, &
-                                       intra_bgrp_comm, nbgrp, ntask_groups
-      USE mp_diag,              ONLY : nproc_ortho
+      USE mp_pools,             ONLY : intra_pool_comm, inter_pool_comm
+      USE mp_bands,             ONLY : my_bgrp_id, root_bgrp, intra_bgrp_comm,&
+                                       root_bgrp_id, nbgrp
 #if defined(__HDF5) 
       USE hdf5_qe,              ONLY : hdf5_type
 #endif
@@ -457,59 +474,19 @@ MODULE pw_restart_new
       INTEGER               :: i, ig, ngg, ipol, ispin
       INTEGER               :: ik, ik_g, ike, iks, npw_g, npwx_g
       INTEGER, EXTERNAL     :: global_kpoint_index
-      INTEGER,  ALLOCATABLE :: ngk_g(:)
-      INTEGER,  ALLOCATABLE :: igk_l2g(:), igk_l2g_kdip(:), mill_g(:,:)
+      INTEGER,  ALLOCATABLE :: ngk_g(:), mill_k(:,:)
+      INTEGER,  ALLOCATABLE :: igk_l2g(:), igk_l2g_kdip(:)
       CHARACTER(LEN=2), DIMENSION(2) :: updw = (/ 'up', 'dw' /)
       CHARACTER(LEN=256)    :: dirname
       CHARACTER(LEN=320)    :: filename
       CHARACTER(iotk_attlenx)  :: attr
-      LOGICAL               :: ionode_k
-#if defined(__HDF5)	
+#if defined(__HDF5)
       TYPE(hdf5_type)       :: gvecs_h5desc
 #endif
       !
+      dirname = TRIM( tmp_dir ) // TRIM( prefix ) // '.save/'
       !
-      dirname = TRIM( tmp_dir ) // TRIM( prefix ) // '.save'
-      !
-      ! ... write the G-vectors
-      ! ... find out the global number of G vectors: ngm_g
-      !
-      ngm_g = ngm
-      !
-      CALL mp_sum( ngm_g, intra_bgrp_comm )
-      !
-      ! ... collect all G-vectors across processors within the pools
-      !
-      ALLOCATE( mill_g( 3, ngm_g ) )
-      !
-      mill_g = 0
-      !
-      DO ig = 1, ngm
-         !
-         mill_g(1,ig_l2g(ig)) = mill(1,ig)
-         mill_g(2,ig_l2g(ig)) = mill(2,ig)
-         mill_g(3,ig_l2g(ig)) = mill(3,ig)
-         !
-      END DO
-      !
-      CALL mp_sum( mill_g, intra_bgrp_comm )
-      !
-      IF ( ionode ) THEN  
-#if defined (__HDF5)
-      filename =trim(dirname) //"/gvectors.hdf5"
-      CALL h5_write_gvecs(gvecs_h5desc, filename, dfftp%nr1,dfftp%nr2, dfftp%nr3,&
-             ngm_g, gamma_only, mill_g(:,:) )
-#else
-
-         !
-         filename = TRIM( dirname ) // '/gvectors.dat'
-         CALL write_gvecs( iunpun, filename, dfftp%nr1,dfftp%nr2, dfftp%nr3,&
-             ngm_g, gamma_only, mill_g(:,:) )
-         !
-#endif 
-      END IF
-      !
-      ! ... now write wavefunctions and k+G vectors
+      ! ... write wavefunctions and k+G vectors
       !
       iks = global_kpoint_index (nkstot, 1)
       ike = iks + nks - 1
@@ -527,10 +504,6 @@ MODULE pw_restart_new
       !
       npwx_g = MAXVAL( ngk_g(1:nkstot) )
       !
-      ! ... the root processor of each pool writes
-      !
-      ionode_k = (me_pool == root_pool)
-      !
       ! ... The igk_l2g array yields the correspondence between the
       ! ... local k+G index and the global G index
       !
@@ -540,6 +513,8 @@ MODULE pw_restart_new
       ! ... between the global order of k+G and the local index for k+G.
       !
       ALLOCATE ( igk_l2g_kdip( npwx_g ) )
+      !
+      ALLOCATE ( mill_k( 3, npwx ) )
       !
       k_points_loop: DO ik = 1, nks
          !
@@ -564,7 +539,11 @@ MODULE pw_restart_new
          CALL gk_l2gmap_kdip( npw_g, ngk_g(ik_g), ngk(ik), igk_l2g, &
                               igk_l2g_kdip )
          !
-         IF ( .NOT.smallmem ) CALL write_gk( iunpun, ionode_k, ik, ik_g )
+         ! ... mill_k(:,i) contains Miller indices for (k+G)_i
+         !
+         DO ig = 1, ngk (ik)
+            mill_k(:,ig) = mill(:,igk_k(ig,ik))
+         END DO
          !
          ! ... read wavefunctions - do not read if already in memory (nsk==1)
          !
@@ -576,179 +555,34 @@ MODULE pw_restart_new
             !
             ik_g = MOD ( ik_g-1, nkstot/2 ) + 1 
             ispin = isk(ik)
-            filename = TRIM(dirname) // '/wfc' // updw(ispin) // &
+            filename = TRIM(dirname) // 'wfc' // updw(ispin) // &
                  & TRIM(int_to_char(ik_g))
             !
          ELSE
             !
             ispin = 1
-            filename = TRIM(dirname) // '/wfc' // TRIM(int_to_char(ik_g))
+            filename = TRIM(dirname) // 'wfc' // TRIM(int_to_char(ik_g))
             !
          ENDIF
          !
-         CALL write_wfc( iunpun, ik_g, nkstot, ispin, nspin, &
-              evc, npw_g, gamma_only, nbnd, igk_l2g_kdip(:),   &
-              ngk(ik), filename, 1.D0, &
-              ionode_k, root_pool, intra_pool_comm )
+         ! ... Only the first band group of each pool writes
+         ! ... No warranty it works for more than one band group
+         !
+         IF ( my_bgrp_id == root_bgrp_id ) CALL write_wfc( iunpun, &
+              filename, root_bgrp, intra_bgrp_comm, ik_g, tpiba*xk(:,ik), &
+              ispin, nspin, evc, npw_g, gamma_only, nbnd, &
+              igk_l2g_kdip(:), ngk(ik), tpiba*bg(:,1), tpiba*bg(:,2), &
+              tpiba*bg(:,3), mill_k, 1.D0 )
          !
       END DO k_points_loop
       !
+      DEALLOCATE ( mill_k )
       DEALLOCATE ( igk_l2g_kdip )
       DEALLOCATE ( igk_l2g )
-      !
-!-------------------------------------------------------------------------------
-! ... END RESTART SECTIONS
-!-------------------------------------------------------------------------------
-      !
-      DEALLOCATE( mill_g )
-      DEALLOCATE( ngk_g )
+      DEALLOCATE ( ngk_g )
       !
       RETURN
       !
-      CONTAINS
-        !
-        !--------------------------------------------------------------------
-        SUBROUTINE write_gvecs( iun, filename, nr1,nr2,nr3,&
-             ngm_g, gamma_only, mill_g )
-          !--------------------------------------------------------------------
-          IMPLICIT NONE
-          !
-          INTEGER,            INTENT(IN) :: iun, nr1,nr2,nr3,ngm_g
-          INTEGER,            INTENT(IN) :: mill_g(:,:)
-          LOGICAL,            INTENT(IN) :: gamma_only
-          CHARACTER(LEN=*),   INTENT(IN) :: filename
-          !
-          CALL iotk_open_write( iun, FILE = TRIM( filename ), &
-               BINARY = .true. )
-          !
-          CALL iotk_write_begin( iun, "G-VECTORS" )
-          CALL iotk_write_attr( attr, "nr1s", nr1, FIRST = .true. )
-          CALL iotk_write_attr( attr, "nr2s", nr2 )
-          CALL iotk_write_attr( attr, "nr3s", nr3 )
-          CALL iotk_write_attr( attr, "gvect_number", ngm_g )
-          CALL iotk_write_attr( attr, "gamma_only", gamma_only )
-          CALL iotk_write_attr( attr, "units", "crystal" )
-          CALL iotk_write_empty( iun, "INFO", ATTR = attr )
-          !
-          CALL iotk_write_dat  ( iun, "g", mill_g(1:3,1:ngm_g), COLUMNS=3)
-          CALL iotk_write_end  ( iun, "G-VECTORS" )
-          !
-          CALL iotk_close_write( iun )
-          !
-        END SUBROUTINE write_gvecs
-        !
-#if defined(__HDF5) 
-        !---------------------------------------------------------------------------------
-        SUBROUTINE h5_write_gvecs(h5_desc, filename, nr1, nr2, nr3, ngm, gamma_only, mill) 
-           !------------------------------------------------------------------------------
-           USE hdf5_qe,             ONLY: write_g, prepare_for_writing_final, add_attributes_hdf5
-           IMPLICIT NONE
-           ! 
-           TYPE (hdf5_type),INTENT(INOUT)         :: h5_desc
-           CHARACTER(LEN=*),INTENT(IN)            :: filename
-           INTEGER,INTENT(IN)                     :: nr1, nr2, nr3, ngm, mill(:,:)
-           LOGICAL,INTENT(IN)                     :: gamma_only
-           !
-           INTEGER                                :: gammaonly_ = 0  
-           CALL prepare_for_writing_final(h5_desc,0,filename)
-           IF ( gamma_only) gammaonly_ =1      
-           CALL add_attributes_hdf5(h5_desc, gammaonly_, "gamma_only")
-           CALL add_attributes_hdf5(h5_desc, nr1, "nr1s")
-           CALL add_attributes_hdf5(h5_desc, nr2, "nr2s")
-           CALL add_attributes_hdf5(h5_desc, nr3, "nr3s")
-           CALL add_attributes_hdf5(h5_desc, ngm, "gvect_number")
-           CALL add_attributes_hdf5(h5_desc, "crystal", "units" )
-           ! 
-           CALL write_g(h5_desc, mill)            
-        END SUBROUTINE h5_write_gvecs 
-#endif 
-        !--------------------------------------------------------------------
-        SUBROUTINE write_gk( iun, ionode_k_, ik, ik_g )
-          !--------------------------------------------------------------------
-          !
-#if defined(__HDF5)
-          USE hdf5_qe,   ONLY :  prepare_for_writing_final, write_gkhdf5, &
-                                 h5fclose_f, hdf5_type, add_attributes_hdf5
-#endif
-          IMPLICIT NONE
-          !
-          INTEGER, INTENT(IN) :: iun, ik, ik_g
-          LOGICAL, INTENT(IN) :: ionode_k_
-          !
-          INTEGER, ALLOCATABLE :: igwk(:)
-          INTEGER, ALLOCATABLE :: itmp(:)
-          INTEGER              :: ierr, gammaonly_ = 0 
-#if defined (__HDF5)
-          TYPE (hdf5_type),ALLOCATABLE  :: h5_desc
-          !
-          ALLOCATE (h5_desc)
-#endif
-          !
-          !
-          ALLOCATE( itmp( npw_g ))
-          itmp = 0
-          DO ig = 1, ngk(ik)
-             itmp(igk_l2g(ig)) = igk_l2g(ig)
-          END DO
-          CALL mp_sum( itmp, intra_pool_comm )
-          !
-          ALLOCATE( igwk( npwx_g ) )
-          igwk(:) = 0
-          !
-          ngg = 0
-          DO ig = 1, npw_g
-             !
-             if ( itmp(ig) == ig ) THEN
-                !
-                ngg = ngg + 1
-                igwk(ngg) = ig
-                !
-             END IF
-             !
-          END DO
-          !
-          DEALLOCATE( itmp )
-          !
-          filename = TRIM(dirname) // '/gkvectors' // TRIM(int_to_char(ik_g))
-          IF ( ionode_k_ ) THEN
-             !
-#if defined(__HDF5)
-             CALL prepare_for_writing_final ( h5_desc, 0,&
-                  TRIM(filename)//'.hdf5',ik_g, ADD_GROUP = .false.)
-             CALL add_attributes_hdf5(h5_desc, ngk_g(ik_g), "number_of_gk_vectors")
-             CALL add_attributes_hdf5(h5_desc, npwx_g, "max_number_of_gk_vectors")
-             IF (gamma_only) gammaonly_ = 1 
-             CALL add_attributes_hdf5(h5_desc, gammaonly_, "gamma_only")
-             CALL add_attributes_hdf5(h5_desc, "2pi/a", "units") 
-             CALL write_gkhdf5(h5_desc,xk(:,ik),igwk(1:ngk_g(ik)), &
-                              mill_g(1:3,igwk(1:ngk_g(ik_g))),ik_g)
-             CALL h5fclose_f(h5_desc%file_id, ierr )
-             DEALLOCATE (h5_desc) 
-#else
-             !
-             CALL iotk_open_write( iun, FILE = TRIM(filename)//'.dat', &
-                  BINARY = .TRUE. )
-             !
-             CALL iotk_write_dat( iun, "NUMBER_OF_GK-VECTORS", ngk_g(ik_g) )
-             CALL iotk_write_dat( iun, "MAX_NUMBER_OF_GK-VECTORS", npwx_g )
-             CALL iotk_write_dat( iun, "GAMMA_ONLY", gamma_only )
-             !
-             CALL iotk_write_attr ( attr, "UNITS", "2 pi / a", FIRST = .TRUE. )
-             CALL iotk_write_dat( iun, "K-POINT_COORDS", xk(:,ik), ATTR = attr )
-             !
-             CALL iotk_write_dat( iun, "INDEX", igwk(1:ngk_g(ik_g)) )
-             CALL iotk_write_dat( iun, "GRID", mill_g(1:3,igwk(1:ngk_g(ik_g))),&
-                  COLUMNS = 3 )
-             !
-             CALL iotk_close_write( iun )
-#endif
-             !
-          END IF
-          !
-          DEALLOCATE( igwk )
-          !
-        END SUBROUTINE write_gk
-        !
     END SUBROUTINE pw_write_binaries
     !
     !-----------------------------------------------------------------------
@@ -839,28 +673,32 @@ MODULE pw_restart_new
     SUBROUTINE pw_readschema_file(ierr, restart_output, restart_parallel_info, restart_general_info)
       !------------------------------------------------------------------------
       USE qes_types_module,     ONLY : input_type, output_type, general_info_type, parallel_info_type    
-      USE qexsd_reader_module,  ONLY : qexsd_get_output, qexsd_get_general_info, &
-                                       qexsd_get_parallel_info
       !
       USE qes_libs_module,      ONLY : qes_write_input, qes_write_output, qes_write_parallel_info, &
                                        qes_write_general_info 
+      USE FoX_dom,              ONLY : parseFile, item, getElementsByTagname, destroy, nodeList, Node
+      USE qes_read_module,      ONLY : qes_read
       IMPLICIT NONE 
       ! 
-      INTEGER                                            :: ierr, iotk_err  
+      INTEGER                                            :: ierr, io_err  
       TYPE( output_type ),OPTIONAL,        INTENT(OUT)   :: restart_output
       TYPE(parallel_info_type),OPTIONAL,   INTENT(OUT)   :: restart_parallel_info
       TYPE(general_info_type ),OPTIONAL,   INTENT(OUT)   :: restart_general_info
       ! 
-      LOGICAL               :: found
-      CHARACTER(LEN=80)     :: errmsg = ' '
-      CHARACTER(LEN=320)    :: filename
+      TYPE(Node), POINTER     :: root, nodePointer
+      TYPE(nodeList),POINTER  :: listPointer
+      LOGICAL                 :: found
+      CHARACTER(LEN=80)       :: errmsg = ' '
+      CHARACTER(LEN=320)      :: filename
+      INTEGER,EXTERNAL        :: find_free_unit
       !  
       ! 
       ierr = 0 
+      io_err = 0 
       ! 
-      CALL iotk_free_unit( iunpun, iotk_err )
-      CALL errore( 'pw_readschema_file', &
-                   'no free units to read xsd output', iotk_err )
+      iunpun = find_free_unit()
+      IF (iunpun .LT. 0 ) &
+            CALL errore ("pw_readschema_file", "could not find a free unit to open data-file-schema.xml", 1)
       CALL qexsd_init_schema( iunpun )
       !
       filename = TRIM( tmp_dir ) // TRIM( prefix ) // '.save' &
@@ -872,11 +710,11 @@ MODULE pw_restart_new
          GOTO 100
       END IF
       !
-      CALL iotk_open_read( iunpun, TRIM(filename) )
+      root => parseFile(filename)
       !
       IF ( PRESENT ( restart_general_info ) ) THEN 
-         CALL qexsd_get_general_info ( iunpun, restart_general_info , found)
-         IF (.NOT. found ) ierr = ierr + 1
+         nodePointer => item ( getElementsByTagname(root, "general_info"),0)
+         CALL qes_read( nodePointer, restart_general_info, ierr)
          IF ( ierr /=0 ) THEN
             errmsg='error header of xml data file'
             GOTO 100
@@ -885,19 +723,20 @@ MODULE pw_restart_new
       END IF 
       ! 
       IF ( PRESENT ( restart_parallel_info ) ) THEN 
-         CALL qexsd_get_parallel_info ( iunpun, restart_parallel_info, found ) 
-         IF ( .NOT. found ) THEN 
-            ierr = ierr + 1  
+         nodePointer => item ( getElementsByTagname(root,"parallel_info"),0)
+         CALL qes_read(nodePointer, restart_parallel_info, ierr)
+         !
+         IF ( ierr /=0) THEN  
             errmsg='error parallel_info  of xsd data file' 
             GOTO 100
          END IF
          ! CALL qes_write_parallel_info ( 82, restart_parallel_info )
       END IF  
       ! 
-      IF ( PRESENT ( restart_output ) )THEN 
-         CALL qexsd_get_output ( iunpun, restart_output, found ) 
-         IF ( .NOT. found ) THEN 
-            ierr = ierr + 1 
+      IF ( PRESENT ( restart_output ) ) THEN
+         nodePointer => item ( getElementsByTagname(root, "output"),0)
+         CALL qes_read ( nodePointer, restart_output, ierr ) 
+         IF ( ierr /= 0 ) THEN  
             errmsg = 'error output of xsd data file' 
             GOTO 100 
          END IF 
@@ -906,8 +745,7 @@ MODULE pw_restart_new
       END IF 
       !
       ! 
-      
-      CALL iotk_close_read (iunpun)
+      CALL destroy(root)       
 
  100  CALL errore('pw_readschemafile',TRIM(errmsg),ierr)
       !
@@ -918,10 +756,9 @@ MODULE pw_restart_new
       !------------------------------------------------------------------------
       !
       USE control_flags,        ONLY : twfcollect
-      USE io_rho_xml,           ONLY : read_rho
+      USE io_rho_xml,           ONLY : read_scf
       USE scf,                  ONLY : rho
       USE lsda_mod,             ONLY : nspin
-      USE mp,                   ONLY : mp_sum, mp_barrier
       USE qes_types_module,     ONLY : input_type, output_type, &
                                        general_info_type, parallel_info_type    
       !
@@ -945,7 +782,7 @@ MODULE pw_restart_new
       !    
       !
       ierr = 0 
-      dirname = TRIM( tmp_dir ) // TRIM( prefix ) // '.save'
+      dirname = TRIM( tmp_dir ) // TRIM( prefix ) // '.save/'
       !
       !
       !
@@ -967,7 +804,7 @@ MODULE pw_restart_new
       lef     = .FALSE.
       lexx    = .FALSE.
       lesm    = .FALSE.
-      lheader = .FALSE. 
+      lheader = .FALSE.
       !
      
          
@@ -1117,7 +954,7 @@ MODULE pw_restart_new
          ! ... to read the charge-density we use the routine from io_rho_xml 
          ! ... it also reads ns for ldaU and becsum for PAW
          !
-         CALL read_rho( rho, nspin )
+         CALL read_scf( rho, nspin )
          !
       END IF
       IF ( lef ) THEN
@@ -1231,21 +1068,20 @@ MODULE pw_restart_new
     noncolin = band_structure%noncolin
     nelec =    band_structure%nelec
     nkstot =   band_structure%nks  
-    IF ( lsda ) nkstot = nkstot * 2 
     nbnd = band_structure%nbnd 
+    IF ( lsda ) THEN
+       nkstot = nkstot * 2 
+       nbnd   = nbnd / 2
+    END IF
     END SUBROUTINE readschema_dim
     !
     !-----------------------------------------------------------------------
     SUBROUTINE readschema_cell(atomic_structure )
     !-----------------------------------------------------------------------
     !
-    USE constants,         ONLY : pi
-    USE run_info,          ONLY : title
+    USE constants,         ONLY : pi,tpi
     USE cell_base,         ONLY : ibrav, alat, at, bg, celldm
     USE cell_base,         ONLY : tpiba, tpiba2, omega
-    USE cellmd,            ONLY : lmovecell, cell_factor
-    USE control_flags,     ONLY : do_makov_payne
-    USE martyna_tuckerman, ONLY : do_comp_mt
     USE qes_types_module,  ONLY : atomic_structure_type
     !
     IMPLICIT NONE 
@@ -1258,89 +1094,20 @@ MODULE pw_restart_new
     ELSE 
        ibrav = 0
     END IF
-    celldm = 0.d0
-    at(:,1) = atomic_structure%cell%a1
-    at(:,2) = atomic_structure%cell%a2
-    at(:,3) = atomic_structure%cell%a3
-    SELECT CASE  (ibrav ) 
-       CASE (1:3) 
-          celldm(1) = alat
-          celldm(2:6) = 0.d0
-       CASE (4) 
-          celldm(1) = alat
-          celldm(2) = 0.d0
-          celldm(3) = SQRT( DOT_PRODUCT(at(:,3),at(:,3)))/alat
-          celldm(4:6) = 0.d0
-       CASE (5) 
-          celldm(1)= alat
-          celldm(2:3) = 0.d0
-          celldm(4) = DOT_PRODUCT(at(:,1),at(:,2))/(alat**2)
-          celldm(5:6) = 0.d0
-       CASE (6) 
-          celldm(1)= alat 
-          celldm(3)= SQRT( DOT_PRODUCT(at(:,2),at(:,2)))/alat
-          celldm(2)= 1.d0
-          celldm(4:6) = 0.d0
-       CASE (7) 
-          celldm(1) = alat
-          celldm(3) = at(3,3) 
-          celldm(2)=0.d0
-          celldm(4:6) = 0.d0
-       CASE (8)
-          celldm(1) = alat
-          celldm(2) = SQRT( DOT_PRODUCT (at(:,2),at(:,2)))/alat
-          celldm(3) = SQRT( DOT_PRODUCT (at(:,3),at(:,3)))/alat 
-          celldm(4:6) = 0.d0
-       CASE (9) 
-          celldm(1) = alat
-          celldm(2) = ABS ( at(2,1)/at(1,1))
-          celldm(3) = ABS ( at(3,3)/2.d0/at(1,1))
-          celldm(4:6) = 0.d0 
-       CASE (10) 
-          celldm(1) = alat
-          celldm(2) = ABS ( at(2,2)/at(2,1))
-          celldm(3) = ABS ( at(3,1)/at(1,1))
-          celldm(4:6) = 0.d0
-       CASE (11) 
-          celldm(1) = alat
-          celldm(2) = ABS(at(2,1)/at(1,1))
-          celldm(3) = ABS(at(3,1)/at(1,1))
-          celldm(4:6) = 0.d0
-       CASE (12) 
-          celldm(1) = alat 
-          celldm(2) = SQRT( DOT_PRODUCT(at(:,2),at(:,2))/DOT_PRODUCT(at(:,1),at(:,1)))
-          celldm(3) = SQRT( DOT_PRODUCT(at(:,3),at(:,3))/DOT_PRODUCT(at(:,1),at(:,1)))
-          celldm(4) = DOT_PRODUCT(at(:,1),at(:,2))/&
-                      SQRT(DOT_PRODUCT(at(:,1),at(:,1))*DOT_PRODUCT(at(:,2),at(:,2)))
-          celldm(5) =  DOT_PRODUCT(at(:,1),at(:,3))/&
-                   SQRT(DOT_PRODUCT(at(:,1),at(:,1))*DOT_PRODUCT(at(:,3),at(:,3)))
-          celldm(6) = 0.d0
-       CASE (13) 
-          celldm(1) = alat
-          celldm(2) = SQRT( DOT_PRODUCT(at(:,2),at(:,2)))/(2.d0*at(1,1))
-          celldm(3) = ABS (at(3,3)/at(1,3))
-          celldm(4) = ATAN(at(2,2)/at(1,2))
-          celldm(5:6) = 0.d0
-       CASE (14) 
-          celldm(1) = alat 
-          celldm(2) = SQRT( DOT_PRODUCT(at(:,2),at(:,2))/DOT_PRODUCT(at(:,1),at(:,1)))
-          celldm(3) = SQRT( DOT_PRODUCT(at(:,3),at(:,3))/DOT_PRODUCT(at(:,1),at(:,1)))
-          celldm(4) = DOT_PRODUCT(at(:,3),at(:,2))/SQRT(DOT_PRODUCT(at(:,2),at(:,2))*&
-                                                   DOT_PRODUCT(at(:,3),at(:,3)))
-          celldm(5) = DOT_PRODUCT(at(:,3),at(:,1))/SQRT(DOT_PRODUCT(at(:,1),at(:,1))*&
-                                                   DOT_PRODUCT(at(:,3),at(:,3)))
-          celldm(6) = DOT_PRODUCT(at(:,1),at(:,2))/SQRT(DOT_PRODUCT(at(:,2),at(:,2))*&
-                                                   DOT_PRODUCT(at(:,1),at(:,1)))
-       CASE  default  
-          celldm(1) = 1.d0
-          IF (alat .GT. 0.d0 ) celldm(1) = alat
-          celldm (2:6) = 0.d0
-    END SELECT 
-    tpiba = 2.d0*PI/alat
+    at(:,1) =  atomic_structure%cell%a1
+    at(:,2) =  atomic_structure%cell%a2
+    at(:,3) =  atomic_structure%cell%a3
+    !
+    !! if ibrav is present, cell parameters were computed by subroutine
+    !! "latgen" using ibrav and celldm parameters: recalculate celldm
+    !
+    CALL lat2celldm (ibrav,alat,at(:,1),at(:,2),at(:,3),celldm)
+    !
+    tpiba = tpi/alat
     tpiba2= tpiba**2
-    omega = ABS (at(1,1)*at(2,2)*at(3,3)+at(1,2)*at(2,3)*at(3,1)+at(1,3)*at(2,1)*at(3,2)-&
-                 at(3,1)*at(2,2)*at(1,3)-at(3,2)*at(2,3)*at(1,1)-at(3,3)*at(2,1)*at(1,2))
-    at=at / alat
+    !! crystal axis are brought into "alat" units
+    at = at / alat
+    CALL volume (alat,at(:,1),at(:,2),at(:,3),omega)
     CALL recips( at(1,1), at(1,2), at(1,3), bg(1,1), bg(1,2), bg(1,3) )
 
     END SUBROUTINE readschema_cell
@@ -1349,7 +1116,7 @@ MODULE pw_restart_new
     SUBROUTINE readschema_ions( atomic_structure, atomic_species, dirname ) 
     !------------------------------------------------------------------------
     ! 
-    USE ions_base, ONLY : nat, nsp, ityp, amass, atm, tau, if_pos
+    USE ions_base, ONLY : nat, nsp, ityp, amass, atm, tau
     USE cell_base, ONLY : alat
     USE io_files,  ONLY : psfile, pseudo_dir, pseudo_dir_cur
     USE qes_types_module, ONLY: atomic_structure_type, atomic_species_type, input_type 
@@ -1385,10 +1152,16 @@ MODULE pw_restart_new
        END  DO loop_on_species
     END DO loop_on_atoms
     
+    DEALLOCATE ( symbols ) 
     IF ( atomic_structure%alat_ispresent ) alat = atomic_structure%alat 
+    tau(:,1:nat) = tau(:,1:nat)/alat  
     ! 
-    !pseudo_dir = TRIM(restart_obj%control_variables%pseudo_dir)//'/'
-    pseudo_dir_cur = TRIM ( dirname)//'/'  
+    IF ( atomic_species%pseudo_dir_ispresent) THEN 
+       pseudo_dir = TRIM(atomic_species%pseudo_dir)
+    ELSE 
+       pseudo_dir = TRIM (dirname)
+    END IF
+      pseudo_dir_cur = TRIM(pseudo_dir)
     ! 
     END SUBROUTINE readschema_ions
     !  
@@ -1415,7 +1188,7 @@ MODULE pw_restart_new
       !  
       invsym = .FALSE. 
       DO isym = 1, nrot
-        s(:,:,isym) = symms_obj%symmetry(isym)%rotation%mat 
+        s(:,:,isym) = reshape(symms_obj%symmetry(isym)%rotation%matrix, [3,3]) 
         sname(isym) = TRIM ( symms_obj%symmetry(isym)%info%name )  
         IF ( (TRIM(sname(isym)) == "inversion") .AND. (isym .LE. nsym) ) invsym = .TRUE.
         IF ( symms_obj%symmetry(isym)%fractional_translation_ispresent .AND. (isym .LE. nsym) ) THEN
@@ -1432,7 +1205,7 @@ MODULE pw_restart_new
            END IF 
         END IF
         IF ( symms_obj%symmetry(isym)%equivalent_atoms_ispresent .AND. (isym .LE. nsym) )   &
-             irt(isym,:) = symms_obj%symmetry(isym)%equivalent_atoms%index_list(:)
+             irt(isym,:) = symms_obj%symmetry(isym)%equivalent_atoms%equivalent_atoms(:)
       END DO
       CALL inverse_s()
       CALL s_axis_to_cart() 
@@ -1624,7 +1397,7 @@ MODULE pw_restart_new
                             Hubbard_J0, Hubbard_beta, U_projection
       USE kernel_table,     ONLY : vdw_table_name
       USE control_flags,    ONLY : llondon, lxdm, ts_vdw
-      USE london_module,    ONLY : scal6, lon_rcut
+      USE london_module,    ONLY : scal6, lon_rcut, in_C6
       USE tsvdw_module,     ONLY : vdw_isolated
       USE qes_types_module, ONLY : atomic_species_type, dft_type
       ! 
@@ -1775,7 +1548,19 @@ MODULE pw_restart_new
           END IF 
           IF ( dft_obj%vdW%london_rcut_ispresent ) THEN 
              lon_rcut = dft_obj%vdW%london_rcut
-          END IF 
+          END IF
+          IF ( dft_obj%vdW%london_c6_ispresent ) THEN
+             loop_on_londonC6:DO ihub =1, dft_obj%vdW%ndim_london_c6
+                symbol = TRIM(dft_obj%vdW%london_c6(ihub)%specie)
+                loop_on_speciesC6:DO isp = 1, nsp_
+                   IF ( TRIM(symbol) == TRIM ( atomic_specs%species(isp)%name) ) THEN 
+                      in_C6(isp) = dft_obj%vdW%london_c6(ihub)%HubbardCommon
+                      EXIT loop_on_speciesC6
+                   END IF
+                END DO loop_on_speciesC6
+             END DO loop_on_londonC6
+          END IF
+          !
           IF (dft_obj%vdW%ts_vdW_isolated_ispresent ) THEN 
              vdW_isolated = dft_obj%vdW%ts_vdW_isolated
           END IF 
@@ -1811,7 +1596,7 @@ MODULE pw_restart_new
     !-----------------------------------------------------------------------------------------------------
        !
        USE lsda_mod, ONLY : lsda, isk
-       USE klist,    ONLY : nkstot, xk, wk, qnorm
+       USE klist,    ONLY : nkstot, xk, wk
        USE start_k,  ONLY : nks_start, xk_start, wk_start, &
                               nk1, nk2, nk3, k1, k2, k3
        USE symm_base,ONLY : nrot, s, sname
@@ -1850,18 +1635,25 @@ MODULE pw_restart_new
            k1 = band_structure%starting_k_points%monkhorst_pack%k1
            k2 = band_structure%starting_k_points%monkhorst_pack%k2
            k3 = band_structure%starting_k_points%monkhorst_pack%k3
-       ELSE IF (band_structure%starting_k_points%nk_ispresent .AND. &
-                band_structure%starting_k_points%k_point_ispresent ) THEN 
+       ELSE IF (band_structure%starting_k_points%nk_ispresent ) THEN 
            nks_start = band_structure%starting_k_points%nk
-           ALLOCATE (xk_start(3,nks_start), wk_start(nks_start))
-           DO ik =1, nks_start
-               xk_start(:,ik) = band_structure%starting_k_points%k_point(ik)%k_point(:) 
-               IF ( band_structure%starting_k_points%k_point(ik)%weight_ispresent) THEN 
-                  wk_start(ik) = band_structure%starting_k_points%k_point(ik)%weight 
-               ELSE 
-                  wk_start(ik) = 0.d0
-               END IF 
-           END DO
+           IF ( nks_start > 0 ) THEN 
+              ALLOCATE (xk_start(3,nks_start), wk_start(nks_start))
+              IF ( nks_start == size( band_structure%starting_k_points%k_point ) ) THEN 
+                 DO ik =1, nks_start
+                    xk_start(:,ik) = band_structure%starting_k_points%k_point(ik)%k_point(:) 
+                    IF ( band_structure%starting_k_points%k_point(ik)%weight_ispresent) THEN 
+                        wk_start(ik) = band_structure%starting_k_points%k_point(ik)%weight 
+                    ELSE 
+                        wk_start(ik) = 0.d0
+                    END IF 
+                 END DO
+              ELSE
+                 CALL infomsg ( "pw_readschema: ", &
+                                "actual number of start kpoint not equal to nks_start, set nks_start=0")  
+                 nks_start = 0 
+              END IF
+           END IF
        ELSE 
            CALL errore ("pw_readschema: ", &
                         " no information found for initializing brillouin zone information", 1)
@@ -1869,7 +1661,7 @@ MODULE pw_restart_new
        ! 
        nrot = symmetries_obj%nrot
        DO isym =1, symmetries_obj%ndim_symmetry
-          s(:,:,isym)     = symmetries_obj%symmetry(isym)%rotation%mat
+          s(:,:,isym)     = reshape(symmetries_obj%symmetry(isym)%rotation%matrix, [3,3])
           sname(isym) = TRIM ( symmetries_obj%symmetry(isym)%info%name) 
        END DO 
        !
@@ -1897,7 +1689,8 @@ MODULE pw_restart_new
       IF ( band_struct_obj%nbnd_up_ispresent ) nupdwn(1) = band_struct_obj%nbnd_up
       IF ( band_struct_obj%nbnd_dw_ispresent ) nupdwn(2) = band_struct_obj%nbnd_dw 
       IF ( lsda )  THEN 
-         nspin = 2  
+         nspin = 2
+         nbnd = nbnd / 2
       ELSE IF ( band_struct_obj%noncolin) THEN 
          nspin = 4 
       ELSE 
@@ -1971,17 +1764,18 @@ MODULE pw_restart_new
       ! 
       lkpoint_dir = .FALSE.
       lsda = band_struct_obj%lsda
+      nbnd  = band_struct_obj%nbnd 
       nkstot = band_struct_obj%nks 
       IF ( lsda) THEN 
-        nkstot = nkstot * 2 
-        isk(1:nkstot/2) = 1
-        isk(nkstot/2+1:nkstot) = 2 
+         nbnd  = nbnd / 2
+         nkstot = nkstot * 2 
+         isk(1:nkstot/2) = 1
+         isk(nkstot/2+1:nkstot) = 2 
       ELSE 
-        isk(1:nkstot)   = 1 
+         isk(1:nkstot)   = 1 
       END IF 
       ! 
       nelec = band_struct_obj%nelec
-      nbnd  = band_struct_obj%nbnd 
       natomwfc = band_struct_obj%num_of_atomic_wfc
       IF ( band_struct_obj%fermi_energy_ispresent) THEN 
          ef = band_struct_obj%fermi_energy*e2 
@@ -2001,27 +1795,27 @@ MODULE pw_restart_new
                nbnd_dw_ = band_struct_obj%nbnd_dw 
             ELSE IF ( band_struct_obj%nbnd_up_ispresent ) THEN 
                nbnd_up_ = band_struct_obj%nbnd_up
-               nbnd_dw_ = band_struct_obj%ks_energies(ik)%ndim_eigenvalues - nbnd_up_
+               nbnd_dw_ = band_struct_obj%ks_energies(ik)%eigenvalues%size - nbnd_up_
             ELSE IF ( band_struct_obj%nbnd_dw_ispresent ) THEN 
                nbnd_dw_ = band_struct_obj%nbnd_dw
-               nbnd_up_ = band_struct_obj%ks_energies(ik)%ndim_eigenvalues - nbnd_dw_ 
+               nbnd_up_ = band_struct_obj%ks_energies(ik)%eigenvalues%size - nbnd_dw_ 
             ELSE 
-               nbnd_up_ = band_struct_obj%ks_energies(ik)%ndim_eigenvalues/2  
-               nbnd_dw_ = band_struct_obj%ks_energies(ik)%ndim_eigenvalues/2
+               nbnd_up_ = band_struct_obj%ks_energies(ik)%eigenvalues%size/2  
+               nbnd_dw_ = band_struct_obj%ks_energies(ik)%eigenvalues%size/2
             END IF
             wk(ik) = band_struct_obj%ks_energies(ik)%k_point%weight
             wk( ik + band_struct_obj%ndim_ks_energies ) = wk(ik) 
-            et(1:nbnd_up_,ik) = band_struct_obj%ks_energies(ik)%eigenvalues(1:nbnd_up_)*e2
+            et(1:nbnd_up_,ik) = band_struct_obj%ks_energies(ik)%eigenvalues%vector(1:nbnd_up_)*e2
             et(1:nbnd_dw_,ik+band_struct_obj%ndim_ks_energies) =  &
-                             band_struct_obj%ks_energies(ik)%eigenvalues(nbnd_up_+1:nbnd_up_+nbnd_dw_)*e2
-            wg(1:nbnd_up_,ik) = band_struct_obj%ks_energies(ik)%occupations(1:nbnd_up_)*wk(ik)
+                             band_struct_obj%ks_energies(ik)%eigenvalues%vector(nbnd_up_+1:nbnd_up_+nbnd_dw_)*e2
+            wg(1:nbnd_up_,ik) = band_struct_obj%ks_energies(ik)%occupations%vector(1:nbnd_up_)*wk(ik)
             wg(1:nbnd_dw_,ik+band_struct_obj%ndim_ks_energies) =  &
-                             band_struct_obj%ks_energies(ik)%occupations(nbnd_up_+1:nbnd_up_+nbnd_dw_)*wk(ik)
+                             band_struct_obj%ks_energies(ik)%occupations%vector(nbnd_up_+1:nbnd_up_+nbnd_dw_)*wk(ik)
          ELSE 
             wk(ik) = band_struct_obj%ks_energies(ik)%k_point%weight
-            nbnd_ = band_struct_obj%ks_energies(ik)%ndim_eigenvalues
-            et (1:nbnd_,ik) = band_struct_obj%ks_energies(ik)%eigenvalues(1:nbnd_)*e2
-            wg (1:nbnd_,ik) = band_struct_obj%ks_energies(ik)%occupations(1:nbnd_)*wk(ik)
+            nbnd_ = band_struct_obj%ks_energies(ik)%eigenvalues%size
+            et (1:nbnd_,ik) = band_struct_obj%ks_energies(ik)%eigenvalues%vector(1:nbnd_)*e2
+            wg (1:nbnd_,ik) = band_struct_obj%ks_energies(ik)%occupations%vector(1:nbnd_)*wk(ik)
          END IF  
       END DO 
     END SUBROUTINE readschema_band_structure 
@@ -2033,20 +1827,19 @@ MODULE pw_restart_new
       ! ... This routines reads wavefunctions from the new file format and
       ! ... writes them into the old format
       !
-      USE control_flags,        ONLY : twfcollect
+      USE control_flags,        ONLY : twfcollect, gamma_only
       USE lsda_mod,             ONLY : nspin, isk
       USE klist,                ONLY : nkstot, wk, nks, xk, ngk, igk_k
-      USE wvfct,                ONLY : npw, npwx, g2kin, et, wg, nbnd
+      USE wvfct,                ONLY : npwx, g2kin, et, wg, nbnd
       USE wavefunctions_module, ONLY : evc
       USE io_files,             ONLY : nwordwfc, iunwfc
       USE buffers,              ONLY : save_buffer
       USE gvect,                ONLY : ig_l2g
       USE noncollin_module,     ONLY : noncolin, npol
-      USE mp_pools,             ONLY : nproc_pool, me_pool, root_pool, &
+      USE mp_bands,             ONLY : nbgrp, root_bgrp, intra_bgrp_comm
+      USE mp_pools,             ONLY : me_pool, root_pool, &
                                        intra_pool_comm, inter_pool_comm
-      USE mp_bands,             ONLY : me_bgrp, nbgrp, root_bgrp, &
-                                       intra_bgrp_comm
-      USE mp,                   ONLY : mp_bcast, mp_sum, mp_max
+      USE mp,                   ONLY : mp_sum, mp_max
       USE io_base,              ONLY : read_wfc
       !
       IMPLICIT NONE
@@ -2056,13 +1849,13 @@ MODULE pw_restart_new
       CHARACTER(LEN=2), DIMENSION(2) :: updw = (/ 'up', 'dw' /)
       CHARACTER(LEN=320)   :: filename
       INTEGER              :: i, ik, ik_g, ig, ipol, ik_s
-      INTEGER              :: nspin_, npwx_g
+      INTEGER              :: npol_, npwx_g
       INTEGER              :: nupdwn(2), ike, iks, npw_g, ispin
       INTEGER, EXTERNAL    :: global_kpoint_index
-      INTEGER, ALLOCATABLE :: ngk_g(:)
+      INTEGER, ALLOCATABLE :: ngk_g(:), mill_k(:,:)
       INTEGER, ALLOCATABLE :: igk_l2g(:), igk_l2g_kdip(:)
       LOGICAL              :: opnd, ionode_k
-      REAL(DP)             :: scalef
+      REAL(DP)             :: scalef, xk_(3), b1(3), b2(3), b3(3)
 
       !
       IF ( .NOT. twfcollect ) RETURN 
@@ -2096,6 +1889,8 @@ MODULE pw_restart_new
       !
       ALLOCATE ( igk_l2g_kdip( npwx_g ) )
       !
+      ALLOCATE( mill_k ( 3,npwx ) )
+      !
       k_points_loop: DO ik = 1, nks
          !
          ! index of k-point ik in the global list
@@ -2127,27 +1922,27 @@ MODULE pw_restart_new
             !
             ik_g = MOD ( ik_g-1, nkstot/2 ) + 1 
             ispin = isk(ik)
-            filename = TRIM(dirname) // '/wfc' // updw(ispin) // &
+            filename = TRIM(dirname) // 'wfc' // updw(ispin) // &
                  & TRIM(int_to_char(ik_g))
             !
          ELSE
             !
-            filename = TRIM(dirname) // '/wfc' // TRIM(int_to_char(ik_g))
+            filename = TRIM(dirname) // 'wfc' // TRIM(int_to_char(ik_g))
             !
          ENDIF
          !
-         CALL read_wfc( iunpun, ik_g, nkstot, ispin, nspin_,      &
-                        evc, npw_g, nbnd, igk_l2g_kdip(:),   &
-                        ngk(ik), filename, scalef, &
-                        ionode_k, root_pool, intra_pool_comm )
+         CALL read_wfc( iunpun, filename, root_bgrp, intra_bgrp_comm, &
+              ik_g, xk_, ispin, npol_, evc, npw_g, gamma_only, nbnd, &
+              igk_l2g_kdip(:), ngk(ik), b1, b2, b3, mill_k, scalef )
          !
          ! ... here one should check for consistency between what is read
-         ! ... and what is expected for ik_g, ispin, nspin         !
+         ! ... and what is expected
          !
          CALL save_buffer ( evc, nwordwfc, iunwfc, ik )
          !
       END DO k_points_loop
       !
+      DEALLOCATE ( mill_k )
       DEALLOCATE ( igk_l2g )
       DEALLOCATE ( igk_l2g_kdip )
       !
@@ -2197,7 +1992,8 @@ MODULE pw_restart_new
       nq2 = hybrid_obj%qpoint_grid%nqx2
       nq3 = hybrid_obj%qpoint_grid%nqx3
       CALL set_exx_fraction( hybrid_obj%exx_fraction) 
-      CALL set_screening_parameter ( hybrid_obj%screening_parameter) 
+      CALL set_screening_parameter ( hybrid_obj%screening_parameter)
+      exxdiv_treatment = hybrid_obj%exxdiv_treatment 
       ecutvcut = hybrid_obj%ecutvcut*e2
       ecutfock = hybrid_obj%ecutfock*e2
       CALL start_exx() 
