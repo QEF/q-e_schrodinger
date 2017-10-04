@@ -1157,16 +1157,11 @@ q2qstar.o : phcom.o
 q2qstar_ph.o : ../../Modules/kind.o
 q2qstar_ph.o : io_dyn_mat.o
 q2qstar_ph.o : phcom.o
-q2r.o : ../../FFTXlib/fft_scalar.o
 q2r.o : ../../Modules/environment.o
 q2r.o : ../../Modules/io_global.o
-q2r.o : ../../Modules/kind.o
 q2r.o : ../../Modules/mp_global.o
-q2r.o : ../../Modules/mp_images.o
 q2r.o : ../../Modules/mp_world.o
 q2r.o : ../../UtilXlib/mp.o
-q2r.o : io_dyn_mat.o
-q2r.o : io_dyn_mat_old.o
 q2trans.o : ../../FFTXlib/fft_scalar.o
 q2trans.o : ../../Modules/constants.o
 q2trans.o : ../../Modules/environment.o
