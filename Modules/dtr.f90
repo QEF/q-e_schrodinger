@@ -32,17 +32,21 @@ MODULE dtr
     !------------------------------------------------------------------------
     SUBROUTINE dtr_init_writer()
       USE ISO_C_BINDING, ONLY: C_ASSOCIATED
-      USE io_global, ONLY : ionode, stdout
+      USE io_global, ONLY : meta_ionode, stdout
       USE io_files,   ONLY : prefix, tmp_dir
       USE ions_base,       ONLY: nat
-      USE xml_io_base, ONLY : create_directory
+      USE wrappers,  ONLY : f_mkdir_safe
       IMPLICIT NONE
       CHARACTER(256) :: dirname
+      INTEGER        :: ierr
       !
-      dirname = TRIM(TRIM(tmp_dir)//TRIM(prefix)//'_trj')
-      CALL create_directory(dirname)
-      dtr_handle = fopen_file_write(dirname, nat)
-      IF (ionode) THEN
+      IF (meta_ionode) THEN
+        dirname = TRIM(TRIM(tmp_dir)//TRIM(prefix)//'_trj')
+        ierr = f_mkdir_safe(dirname)
+        CALL errore( 'create_directory', &
+           'unable to create directory ' // TRIM( dirname ), ierr )
+
+        dtr_handle = fopen_file_write(dirname, nat)
         WRITE(stdout, *) "  DTR module: initializing..."
         WRITE(stdout, *) dirname
         IF (.not. C_ASSOCIATED(dtr_handle)) THEN
@@ -54,7 +58,7 @@ MODULE dtr
     SUBROUTINE dtr_add_step(istep)
       USE cell_base,       ONLY : at, alat
       USE ions_base,       ONLY: nat, tau
-      USE io_global, ONLY : ionode, ionode_id, stdout
+      USE io_global, ONLY : meta_ionode, stdout
       USE constants, ONLY: BOHR_RADIUS_ANGS
       USE mp,                  ONLY: mp_barrier
       USE mp_world,            ONLY: world_comm
@@ -69,14 +73,11 @@ MODULE dtr
       box = REAL(RESHAPE(at, (/9/)) * alat * BOHR_RADIUS_ANGS)
       time = REAL(istep, kind=DP)
 
-      CALL mp_barrier(world_comm)
-
-      IF (ionode) THEN
+      IF (meta_ionode) THEN
         ret = fwrite_timestep_from_data(dtr_handle, pos, box, time)
         WRITE(stdout, '("  DTR module: write status = ", i3)') ret
       ENDIF
 
-      CALL mp_barrier(world_comm)
     END SUBROUTINE dtr_add_step
     !
     FUNCTION fopen_file_write(fpath, fnatoms)
@@ -108,7 +109,7 @@ MODULE dtr
   END FUNCTION fopen_file_write
   !
   SUBROUTINE dtr_close_writer()
-    USE io_global, ONLY : ionode
+    USE io_global, ONLY : meta_ionode
     IMPLICIT NONE
     !
     INTERFACE
@@ -119,7 +120,7 @@ MODULE dtr
     END SUBROUTINE cclose_file_write
     END INTERFACE
     !
-    IF (ionode) CALL cclose_file_write(dtr_handle)
+    IF (meta_ionode) CALL cclose_file_write(dtr_handle)
   END SUBROUTINE dtr_close_writer
   !
   FUNCTION fwrite_timestep_from_data(fhandle, fcoords, fbox, ftime)
@@ -137,7 +138,7 @@ MODULE dtr
       INTEGER(c_int) :: cwrite_timestep_from_data
       TYPE(c_ptr), VALUE :: chandle
       TYPE(c_ptr), VALUE :: ccoords, cbox
-      REAL(c_double), VALUE :: ctime
+      REAL(c_double) :: ctime
     END FUNCTION cwrite_timestep_from_data
     END INTERFACE
     !

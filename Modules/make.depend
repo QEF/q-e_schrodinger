@@ -68,7 +68,7 @@ dtr.o : io_global.o
 dtr.o : ions_base.o
 dtr.o : kind.o
 dtr.o : mp_world.o
-dtr.o : xml_io_base.o
+dtr.o : wrappers.o
 dylmr2.o : kind.o
 electrons_base.o : constants.o
 electrons_base.o : io_global.o

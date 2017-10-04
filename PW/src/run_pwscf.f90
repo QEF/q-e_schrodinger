@@ -193,10 +193,10 @@ SUBROUTINE run_pwscf ( exit_status )
      !
      ! ... exit condition (ionic convergence) is checked here
      !
-     CALL add_qexsd_step(idone)
 #if defined (__DTR)
      IF ( lmd ) CALL dtr_add_step(idone)
 #endif
+     !
      IF ( conv_ions ) EXIT main_loop
      !
      ! ... receive new positions from MM code in QM/MM run
