@@ -20,6 +20,8 @@ program dynmat
 !
 !  Input data (namelist "input")
 !
+!  prefix  character prepended to the input (fildyn) filename
+!                    (default: prefix=' ')
 !  fildyn  character input file containing the dynamical matrix
 !                    (default: fildyn='matdyn')
 !  q(3)      real    calculate LO modes (add nonanalytic terms) along
@@ -68,6 +70,12 @@ program dynmat
 !                    (default: filmol='dynmat.mold')
 !  filxsf  character as above, in axsf format suitable for xcrysden
 !                    (default: filxsf='dynmat.axsf')
+!  filspm character output file containing phonon frequencies and intensities
+!                    in Maestro spm format
+!                    (default: filspm=' ')
+!  filvib character output file containing phonon frequencies and vibrations
+!                    in Maestro vib format
+!                    (default: filvib=' ')
 !
   USE kinds, ONLY: DP
   USE mp,         ONLY : mp_bcast
@@ -82,7 +90,8 @@ program dynmat
   !
   implicit none
   integer, parameter :: ntypx = 10
-  character(len=256):: fildyn, filout, filmol, filxsf, fileig
+  character(len=256):: fildyn, prefix, filout, filmol, filxsf, fileig, filspm
+  character(len=256):: filvib
   character(len=3) :: atm(ntypx)
   character(len=10) :: asr
   logical :: lread, gamma
@@ -96,8 +105,8 @@ program dynmat
   logical, external :: has_xml
   integer :: ibrav, nqs
   integer, allocatable :: itau(:)
-  namelist /input/ amass, asr, axis, fildyn, filout, filmol, filxsf, &
-                   fileig, lperm, lplasma, q
+  namelist /input/ amass, asr, axis, prefix, fildyn, filout, filmol, &
+                   filxsf, fileig, filspm, filvib, lperm, lplasma, q
   !
   ! code is parallel-compatible but not parallel
   !
@@ -113,6 +122,9 @@ program dynmat
   filmol='dynmat.mold'
   filxsf='dynmat.axsf'
   fileig=' '
+  filspm=' '
+  filvib=' '
+  prefix=' '
   amass(:)=0.0d0
   q(:)=0.0d0
   lperm=.false.
@@ -126,11 +138,18 @@ program dynmat
   CALL mp_bcast(axis,ionode_id, world_comm)
   CALL mp_bcast(amass,ionode_id, world_comm)
   CALL mp_bcast(fildyn,ionode_id, world_comm)
+  CALL mp_bcast(prefix,ionode_id, world_comm)
   CALL mp_bcast(filout,ionode_id, world_comm)
   CALL mp_bcast(filmol,ionode_id, world_comm)
   CALL mp_bcast(fileig,ionode_id, world_comm)
   CALL mp_bcast(filxsf,ionode_id, world_comm)
+  CALL mp_bcast(filspm,ionode_id, world_comm)
+  CALL mp_bcast(filvib,ionode_id, world_comm)
   CALL mp_bcast(q,ionode_id, world_comm)
+  !
+  IF ( trim( prefix ) /= ' ' ) THEN
+     fildyn = trim(prefix) // '.save/' //trim(fildyn)
+  END IF
   !
   IF (ionode) inquire(file=fildyn,exist=lread)
   CALL mp_bcast(lread, ionode_id, world_comm)
@@ -206,6 +225,16 @@ program dynmat
        OPEN (unit=15,file=TRIM(fileig),status='unknown',form='formatted')
        CALL write_eigenvectors (nat,ntyp,amass,ityp,q_,w2,z,15)
        CLOSE (unit=15)
+     ENDIF
+     IF (filspm .ne. ' ') THEN
+       OPEN (unit=16,file=TRIM(filspm),status='unknown',form='formatted')
+       CALL writespm (nat, w2, z, zstar, 16)
+       CLOSE (unit=16)
+     ENDIF
+     IF (filvib .ne. ' ') THEN
+       OPEN (unit=17,file=TRIM(filvib),status='unknown',form='formatted')
+       CALL writevib (nat, ntyp, amass, ityp, q_, w2, z, zstar, 17)
+       CLOSE (unit=17)
      ENDIF
      CALL writemolden (filmol, gamma, nat, atm, a0, tau, ityp, w2, z)
      CALL writexsf (filxsf, gamma, nat, atm, a0, at, tau, ityp, z)

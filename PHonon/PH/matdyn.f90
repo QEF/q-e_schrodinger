@@ -159,6 +159,7 @@ PROGRAM matdyn
   REAL(DP), PARAMETER :: eps=1.0d-6
   INTEGER :: nr1, nr2, nr3, nsc, nk1, nk2, nk3, ibrav
   CHARACTER(LEN=256) :: flfrc, flfrq, flvec, fltau, fldos, filename, fldyn, fleig
+  CHARACTER(LEN=256) :: fildyn, fildyn_prefix
   CHARACTER(LEN=10)  :: asr
   LOGICAL :: dos, has_zstar, q_in_cryst_coord, eigen_similarity
   COMPLEX(DP), ALLOCATABLE :: dyn(:,:,:,:), dyn_blk(:,:,:,:), frc_ifc(:,:,:,:)
@@ -200,7 +201,7 @@ PROGRAM matdyn
   CHARACTER(LEN=6) :: int_to_char
   LOGICAL, ALLOCATABLE :: mask(:)
   INTEGER            :: npk_label, nch
-  CHARACTER(LEN=3), ALLOCATABLE :: letter(:)
+  CHARACTER(LEN=100), ALLOCATABLE :: letter(:)
   INTEGER, ALLOCATABLE :: label_list(:)
   LOGICAL :: tend, terr
   CHARACTER(LEN=256) :: input_line, buffer
@@ -210,7 +211,8 @@ PROGRAM matdyn
   NAMELIST /input/ flfrc, amass, asr, flfrq, flvec, fleig, at, dos,  &
        &           fldos, nk1, nk2, nk3, l1, l2, l3, ntyp, readtau, fltau, &
        &           la2F, ndos, DeltaE, q_in_band_form, q_in_cryst_coord, &
-       &           eigen_similarity, fldyn, na_ifc, fd, point_label_type, nosym
+       &           eigen_similarity, fldyn, na_ifc, fd, point_label_type, &
+       &           nosym, fildyn, fildyn_prefix
   !
   CALL mp_startup()
   CALL environment_start('MATDYN')
@@ -251,6 +253,8 @@ PROGRAM matdyn
      fd=.FALSE.
      point_label_type='SC'
      nosym = .false.
+     fildyn = ' '
+     fildyn_prefix = ' '
      !
      !
      IF (ionode) READ (5,input,IOSTAT=ios)
@@ -280,16 +284,27 @@ PROGRAM matdyn
      CALL mp_bcast(l3,ionode_id, world_comm)
      CALL mp_bcast(na_ifc,ionode_id, world_comm)
      CALL mp_bcast(fd,ionode_id, world_comm)
-     CALL mp_bcast(la2f,ionode_id, world_comm)
+     CALL mp_bcast(la2F,ionode_id, world_comm)
      CALL mp_bcast(q_in_band_form,ionode_id, world_comm)
      CALL mp_bcast(eigen_similarity,ionode_id, world_comm)
      CALL mp_bcast(q_in_cryst_coord,ionode_id, world_comm)
      CALL mp_bcast(point_label_type,ionode_id, world_comm)
+     CALL mp_bcast(fildyn,ionode_id, world_comm)
+     CALL mp_bcast(fildyn_prefix,ionode_id, world_comm)
 
      !
      ! read force constants
      !
      ntyp_blk = ntypx ! avoids fake out-of-bound error
+     !
+     IF ( trim( fildyn ) /= ' ' ) THEN
+        IF (ionode) THEN
+           WRITE(stdout, *)
+           WRITE(stdout, '(4x,a)') ' fildyn has been provided, running q2r...'
+        END IF
+        CALL do_q2r(fildyn, flfrc, fildyn_prefix, asr, la2F)
+     END IF
+     !
      xmlifc=has_xml(flfrc)
      IF (xmlifc) THEN
         CALL read_dyn_mat_param(flfrc,ntyp_blk,nat_blk)
@@ -404,8 +419,10 @@ PROGRAM matdyn
         CALL mp_bcast(nq, ionode_id, world_comm)
         ALLOCATE ( q(3,nq) )
         IF (.NOT.q_in_band_form) THEN
+           ALLOCATE( letter(nq) )
+           letter(:) = '*'
            DO n = 1,nq
-              IF (ionode) READ (5,*) (q(i,n),i=1,3)
+              IF (ionode) READ (5,*) (q(i,n),i=1,3), letter(n)
            END DO
            CALL mp_bcast(q, ionode_id, world_comm)
            !
@@ -669,13 +686,13 @@ PROGRAM matdyn
 
         OPEN (unit=2,file=trim(flfrq)//'.gp' ,status='unknown',form='formatted')
         pathL = 0._dp
-        WRITE(2, '(f10.6,3x,999f10.4)')  pathL,  (freq(i,1), i=1,3*nat)
+        WRITE(2, '(f10.6,3x,a,3x,999f10.4)')  pathL, letter(1), (freq(i,1), i=1,3*nat)
         DO n=2, nq
            pathL=pathL+(SQRT(SUM(  (q(:,n)-q(:,n-1))**2 )))
-           WRITE(2, '(f10.6,3x,999f10.4)')  pathL,  (freq(i,n), i=1,3*nat)
+           WRITE(2, '(f10.6,3x,a,3x,999f10.4)')  pathL, letter(n), (freq(i,n), i=1,3*nat)
         END DO
         CLOSE(unit=2)
-
+        DEALLOCATE(letter)
      END IF
      !
      !  If the force constants are in the xml format we write also

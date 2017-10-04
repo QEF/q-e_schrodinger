@@ -89,10 +89,10 @@ subroutine readmat2 ( fildyn, asr, axis, nat, ntyp, atm, &
   !
   if (.not.qfinito) then
      ios=0
-     read(1,*,iostat=ios)
-     read(1,'(a)',iostat=ios) line
+     read(1,*,iostat=ios, end=30, err=30)
+     read(1,'(a)',iostat=ios, end=30, err=30) line
      if (ios .ne. 0 .or. line(1:23).ne.'     Dielectric Tensor:') then
-        write(6,'(5x,a)') '...epsilon and Z* not read (not found on file)'
+30      write(6,'(5x,a)') '...epsilon and Z* not read (not found on file)'
         do na=1,nat
            do j=1,3
               do i=1,3
@@ -107,14 +107,14 @@ subroutine readmat2 ( fildyn, asr, axis, nat, ntyp, atm, &
            eps0(j,j)=1.0d0
         end do
      else
-        read(1,*)
-        read(1,*) ((eps0(i,j), j=1,3), i=1,3)
-        read(1,*)
-        read(1,*)
-        read(1,*)
+        read(1,*, end=30, err=30)
+        read(1,*, end=30, err=30) ((eps0(i,j), j=1,3), i=1,3)
+        read(1,*, end=30, err=30)
+        read(1,*, end=30, err=30)
+        read(1,*, end=30, err=30)
         do na = 1,nat
-           read(1,*)
-           read(1,*) ((zstar(i,j,na), j=1,3),i=1,3)
+           read(1,*, end=30, err=30)
+           read(1,*, end=30, err=30) ((zstar(i,j,na), j=1,3),i=1,3)
         end do
         write(6,'(5x,a)') '...epsilon and Z* read'
  20    read(1,'(a)',end=10,err=10) line

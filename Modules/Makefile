@@ -25,6 +25,7 @@ constraints_module.o \
 control_flags.o \
 coulomb_vcut.o \
 dist.o \
+dtr.o \
 electrons_base.o \
 environment.o \
 fcp_variables.o \

@@ -51,6 +51,7 @@ dfile_autoname.o \
 dfile_star.o \
 dielec.o \
 do_phonon.o \
+do_q2r.o \
 drho.o \
 drhodv.o \
 drhodvloc.o \
@@ -205,12 +206,12 @@ dynmat.x : dynmat.o libphaux.a  libph.a $(PWOBJS) $(LRMODS) $(MODULES) $(LIBOBJS
 	- ( cd ../../bin ; ln -fs ../PHonon/PH/$@ . )
 
 matdyn.x : matdyn.o libphaux.a libph.a $(PWOBJS) $(LRMODS) $(MODULES) $(LIBOBJS)
-	$(LD) $(LDFLAGS) -o $@ matdyn.o libphaux.a libph.a \
+	$(LD) $(LDFLAGS) -o $@ do_q2r.o matdyn.o libphaux.a libph.a \
 		 $(PWOBJS) $(LRMODS) $(QEMODS) $(LIBOBJS) $(LIBS)
 	- ( cd ../../bin ; ln -fs ../PHonon/PH/$@ . )
 
 q2r.x : q2r.o libphaux.a libph.a $(PWOBJS) $(LRMODS) $(MODULES) $(LIBOBJS)
-	$(LD) $(LDFLAGS) -o $@ q2r.o libphaux.a libph.a \
+	$(LD) $(LDFLAGS) -o $@ do_q2r.o q2r.o libphaux.a libph.a \
 		 $(PWOBJS) $(LRMODS) $(QEMODS) $(LIBOBJS) $(LIBS)
 	- ( cd ../../bin ; ln -fs ../PHonon/PH/$@ . )
 
