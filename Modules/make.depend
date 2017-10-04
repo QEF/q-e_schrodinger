@@ -60,6 +60,15 @@ dist.o : constants.o
 dist.o : io_global.o
 dist.o : ions_base.o
 dist.o : kind.o
+dtr.o : ../UtilXlib/mp.o
+dtr.o : cell_base.o
+dtr.o : constants.o
+dtr.o : io_files.o
+dtr.o : io_global.o
+dtr.o : ions_base.o
+dtr.o : kind.o
+dtr.o : mp_world.o
+dtr.o : xml_io_base.o
 dylmr2.o : kind.o
 electrons_base.o : constants.o
 electrons_base.o : io_global.o
