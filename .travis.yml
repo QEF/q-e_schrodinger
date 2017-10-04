@@ -14,7 +14,7 @@ env:
      - PARA=no
 install:
      - ./configure --enable-parallel=$PARA --with-netlib
-     - make pw pp ph neb
+     - make pw pp ph neb vdw_kernels
 script:
     - make travis
 git:
