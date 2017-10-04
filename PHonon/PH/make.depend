@@ -380,6 +380,16 @@ do_phonon.o : elph_scdft_mod.o
 do_phonon.o : elph_tetra_mod.o
 do_phonon.o : phcom.o
 do_phonon.o : yambo.o
+do_q2r.o : ../../FFTXlib/fft_scalar.o
+do_q2r.o : ../../Modules/environment.o
+do_q2r.o : ../../Modules/io_global.o
+do_q2r.o : ../../Modules/kind.o
+do_q2r.o : ../../Modules/mp_global.o
+do_q2r.o : ../../Modules/mp_images.o
+do_q2r.o : ../../Modules/mp_world.o
+do_q2r.o : ../../UtilXlib/mp.o
+do_q2r.o : io_dyn_mat.o
+do_q2r.o : io_dyn_mat_old.o
 drho.o : ../../LR_Modules/lrcom.o
 drho.o : ../../Modules/becmod.o
 drho.o : ../../Modules/cell_base.o
