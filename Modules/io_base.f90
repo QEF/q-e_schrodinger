@@ -338,7 +338,7 @@ MODULE io_base
 #if defined __HDF5
                
                CALL qeh5_set_file_hyperslab (h5dset_wfc, OFFSET = [0,j-1], COUNT = [2*npol*igwx_,1] )
-               CALL qeh5_read_dataset (wtmp, h5dset_wfc )  
+               CALL qeh5_read_dataset (wtmp, h5dset_wfc )
 #else
                READ (iuni) wtmp(1:npol*igwx_) 
 #endif
@@ -431,7 +431,7 @@ MODULE io_base
 #if defined __HDF5
       TYPE (qeh5_file)          ::  h5file
       TYPE (qeh5_dataset)       ::  h5dset_mill, h5dset_rho_g
-      CHARACTER(LEN=10)          :: bool_char = ".FALSE.", datasets(2) = ['rhotot_g  ','rhodiff_g ']
+      CHARACTER(LEN=10)          :: bool_char = ".FALSE.", datasets(4)        
       !
 #endif
       me_in_group     = mp_rank( intra_group_comm )
@@ -441,6 +441,13 @@ MODULE io_base
       IF (ngm /= SIZE (mill, 2) .OR. ngm /= SIZE (ig_l2g, 1) ) &
          CALL errore('write_rhog', 'inconsistent input dimensions', 1)
       nspin= SIZE (rho, 2)
+#if defined(__HDF5) 
+      IF ( nspin <=2) THEN 
+         datasets(1:2) = ["rhotot_g  ", "rhodiff_g "]
+      ELSE 
+         datasets = ["n_11", "n_21", "n_12", "n_22"]
+      END IF  
+#endif
       iun  = 4
       !
       ! ... find out the global number of G vectors: ngm_g
@@ -553,7 +560,8 @@ MODULE io_base
          IF ( ionode_in_group ) THEN
 #if defined(__HDF5)
          CALL qeh5_set_space ( h5dset_rho_g, rho_g(1), RANK = 1 , DIMENSIONS = [ngm_g] ) 
-         CALL qeh5_open_dataset( h5file, h5dset_rho_g, NAME = datasets(ns) , ACTION = 'write', ERROR = ierr )
+         CALL qeh5_open_dataset( h5file, h5dset_rho_g, NAME = TRIM(datasets(ns)) , ACTION = 'write', ERROR = ierr )
+         if (ierr /= 0 ) CALL infomsg('write_rho:', 'error while opening h5 dataset in charge_density.hdf5') 
          CALL qeh5_write_dataset(rho_g, h5dset_rho_g) 
          CALL qeh5_close( h5dset_rho_g)     
 #else
@@ -581,7 +589,7 @@ MODULE io_base
     !
     !------------------------------------------------------------------------
     SUBROUTINE read_rhog ( dirname, root_in_group, intra_group_comm, &
-         ig_l2g, nspin, rho )
+         ig_l2g, nspin, rho, gamma_only )
       !------------------------------------------------------------------------
       !! Read and distribute rho(G) from file  'charge-density.*' 
       !! (* = dat if fortran binary, * = hdf5 if HDF5)
@@ -608,6 +616,8 @@ MODULE io_base
       INTEGER,          INTENT(IN) :: nspin
       !! read up to nspin components
       COMPLEX(dp),  INTENT(INOUT) :: rho(:,:)
+      !! temporary check while waiting for more definitive solutions
+      LOGICAL, OPTIONAL, INTENT(IN) :: gamma_only
       !
       COMPLEX(dp), ALLOCATABLE :: rho_g(:)
       COMPLEX(dp), ALLOCATABLE :: rhoaux(:)
@@ -616,14 +626,19 @@ MODULE io_base
       INTEGER                  :: ngm, nspin_, ngm_g, isup, isdw
       INTEGER                  :: iun, mill_dum, ns, ig, ierr
       INTEGER                  :: me_in_group, nproc_in_group
-      LOGICAL                  :: ionode_in_group, gamma_only
+      LOGICAL                  :: ionode_in_group, gamma_only_
       CHARACTER(LEN=320)       :: filename
       !
 #if defined __HDF5
       TYPE ( qeh5_file)       :: h5file
       TYPE ( qeh5_dataset)    :: h5dset_mill, h5dset_rho_g
-      CHARACTER(LEN=10)       :: tempchar, datasets(2) = ['rhotot_g  ', 'rhodiff_g ']
+      CHARACTER(LEN=10)       :: tempchar, datasets(4)
       !
+      IF (nspin <= 2) THEN 
+        datasets(1:2) =["rhotot_g  ", "rhodiff_g "]
+      ELSE
+        datasets =["n_11", "n_21", "n_12", "n_22"]
+      END IF 
       filename = TRIM( dirname ) // 'charge-density.hdf5'
 #else 
       filename = TRIM( dirname ) // 'charge-density.dat'
@@ -648,9 +663,9 @@ MODULE io_base
          CALL qeh5_read_attribute (h5file%id, "nspin", nspin_)  
          SELECT CASE (TRIM(tempchar) )  
             CASE ('.true.', '.TRUE.' ) 
-                gamma_only = .TRUE.
+                gamma_only_ = .TRUE.
             CASE DEFAULT
-                gamma_only = .FALSE.
+                gamma_only_ = .FALSE.
          END SELECT    
 #else
          OPEN ( UNIT = iun, FILE = TRIM( filename ), &
@@ -659,7 +674,7 @@ MODULE io_base
             ierr = 1
             GO TO 10
          END IF
-         READ (iun, iostat=ierr) gamma_only, ngm_g, nspin_
+         READ (iun, iostat=ierr) gamma_only_, ngm_g, nspin_
          IF ( ierr /= 0 ) THEN
             ierr = 2
             GO TO 10
@@ -676,10 +691,20 @@ MODULE io_base
       CALL mp_bcast( ngm_g, root_in_group, intra_group_comm )
       CALL mp_bcast( nspin_, root_in_group, intra_group_comm )
       !
+      IF ( PRESENT(gamma_only) ) THEN
+         CALL mp_bcast( gamma_only_, root_in_group, intra_group_comm )
+         IF ( gamma_only .NEQV. gamma_only_ ) THEN
+            WRITE(6,'(/," *** read rho(G) for half G-sphere,", &
+                   & " complete rho(G) required: unsupported case")')
+           WRITE(6,'(" *** Do not use Gamma tricks to generate rho(G),", &
+                   &" or, use the old file format")')
+            CALL errore ( 'read_rhog','See above, case not yet implemented', 1)
+         END IF
+      END IF
       IF ( nspin > nspin_ ) &
          CALL infomsg('read_rhog', 'some spin components not found')
       IF ( ngm_g < MAXVAL (ig_l2g(:)) ) &
-           CALL errore('read_rhog', 'some G-vectors are missing', 1)
+           CALL infomsg('read_rhog', 'some G-vectors are missing' )
       !
       ! ... skip record containing G-vector indices
       !
@@ -706,7 +731,7 @@ MODULE io_base
          !
          IF ( ionode_in_group ) THEN
 #if defined(__HDF5)
-            CALL qeh5_open_dataset( h5file, h5dset_rho_g, NAME = datasets(ns), ACTION = 'read', ERROR = ierr) 
+            CALL qeh5_open_dataset( h5file, h5dset_rho_g, NAME = TRIM(datasets(ns)), ACTION = 'read', ERROR = ierr) 
             CALL qeh5_read_dataset ( rho_g , h5dset_rho_g )
             CALL qeh5_close ( h5dset_rho_g )  
 #else 
@@ -737,7 +762,11 @@ MODULE io_base
          END IF
       END DO
       !
+#if defined(__HDF5)
+      IF ( ionode_in_group ) CALL qeh5_close( h5file)
+#else
       IF ( ionode_in_group ) CLOSE (UNIT = iun, status ='keep' )
+#endif
       !
       DEALLOCATE( rhoaux )
       DEALLOCATE( rho_g )

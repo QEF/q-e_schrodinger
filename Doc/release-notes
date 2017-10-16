@@ -1,6 +1,8 @@
 Known problems in 6.2 version:
 
   * New XML format does not work with Intel v.12 compiler
+  * New format for charge density no longer allows to perform a non-scf
+    calculation with k-points starting from a scf calculation at Gamma
 
 New in 6.2 version:
 
@@ -16,6 +18,11 @@ New in 6.2 version:
     Per Hyldgaard and Jeff Neaton
 
 Fixed in 6.2 version
+
+  * Bug in DFPT with a constrained magnetization for insulators 
+
+  * virtual.x was linking a duplicate obsolete "pseudo" module, leading 
+    to an "unrecognized dft" error (fix provided by Stefano Dal Forno)
 
   * NEB + EXX works again (r13851)
 
