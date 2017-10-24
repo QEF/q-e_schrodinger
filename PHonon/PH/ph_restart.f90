@@ -1048,7 +1048,7 @@ MODULE ph_restart
                      TRIM(int_to_char(iq)) // '.' 
 
            DO irr=0,irr_iq(iq)
-              IF (comp_irr_iq(irr,iq).OR..NOT.low_directory_check) THEN
+              IF (comp_irr_iq(irr,iq).AND..NOT.low_directory_check) THEN
                  filename1=TRIM(filename) // TRIM(int_to_char(irr)) // '.xml'
                  INQUIRE(FILE=TRIM(filename1), EXIST=exst)
                  IF (.NOT.exst) CYCLE
@@ -1154,7 +1154,11 @@ MODULE ph_restart
            tmp_dir=tmp_dir_ph
         ENDIF
         !
+#if defined (__OLDXML)
         filename=TRIM(dirname) // '/data-file.xml'
+#else
+        filename=TRIM(dirname) // '/data-file-schema.xml'
+#endif
         !
         IF (ionode) inquire (file =TRIM(filename), exist = exst)
         !
@@ -1299,9 +1303,12 @@ MODULE ph_restart
       !
       ! ... create the main restart directory
       !
-      IF (ionode) inquire (file =TRIM(dirname)//'/data-file.xml', &
-                           exist = exst)
-      !
+      IF (ionode) inquire (file = & 
+#if defined (__OLDXML)
+        & TRIM(dirname) // '/data-file.xml',        exist = exst)
+#else
+        & TRIM(dirname) // '/data-file-schema.xml', exist = exst)
+#endif
       CALL mp_bcast( exst, ionode_id, intra_image_comm )
       !
       IF (.NOT. exst) CALL create_directory( dirname )

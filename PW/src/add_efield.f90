@@ -47,8 +47,8 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   USE kinds,         ONLY : DP
   USE constants,     ONLY : fpi, eps8, e2, au_debye
   USE ions_base,     ONLY : nat, ityp, zv
-  USE cell_base,     ONLY : alat, at, omega, bg, saw
-  USE extfield,      ONLY : tefield, dipfield, edir, eamp, emaxpos, &
+  USE cell_base,     ONLY : alat, at, omega, bg
+  USE extfield,      ONLY : tefield, dipfield, edir, eamp, emaxpos, saw, &
                             eopreg, forcefield, el_dipole, ion_dipole, tot_dipole
   USE force_mod,     ONLY : lforce
   USE io_global,     ONLY : stdout,ionode
@@ -71,7 +71,7 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   !
   ! local variables
   !
-  INTEGER :: idx0, idx,  i, j, k
+  INTEGER :: idx,  i, j, k, j0, k0
   INTEGER :: ir, na, ipol
   REAL(DP) :: length, vamp, value, sawarg, bmod
 
@@ -223,19 +223,18 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
 
   !
   ! Loop in the charge array
-  ! idx0 = starting index of real-space FFT arrays for this processor
-  !
-  idx0 = dfftp%nr1x*dfftp%nr2x*dfftp%ipp(me_bgrp+1)
-  !
-  DO ir = 1, dfftp%nr1x*dfftp%nr2x*dfftp%npl
+  j0 = dfftp%my_i0r2p ; k0 = dfftp%my_i0r3p
+  DO ir = 1, dfftp%nr1x*dfftp%my_nr2p*dfftp%my_nr3p
      !
      ! ... three dimensional indexes
      !
-     idx = idx0 + ir - 1
-     k   = idx / (dfftp%nr1x*dfftp%nr2x)
-     idx = idx - (dfftp%nr1x*dfftp%nr2x)*k
+     idx = ir -1
+     k   = idx / (dfftp%nr1x*dfftp%my_nr2p)
+     idx = idx - (dfftp%nr1x*dfftp%my_nr2p)*k
+     k   = k + k0
      j   = idx / dfftp%nr1x
-     idx = idx - dfftp%nr1x*j
+     idx = idx - dfftp%nr1x * j
+     j   = j + j0
      i   = idx
 
      ! ... do not include points outside the physical range

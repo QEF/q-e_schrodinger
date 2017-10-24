@@ -7,7 +7,7 @@
 !
 !----------------------------------------------------------------------------
 ! TB
-! included monopole related energy
+! included gate related energy
 !----------------------------------------------------------------------------
 !
 !----------------------------------------------------------------------------
@@ -40,8 +40,8 @@ SUBROUTINE electrons()
   USE noncollin_module,     ONLY : noncolin, magtot_nc, i_cons,  bfield, &
                                    lambda, report
   USE uspp,                 ONLY : okvan
-  USE exx,                  ONLY : exxinit, exxenergy2, exxenergy, exxbuff, &
-                                   fock0, fock1, fock2, dexx, use_ace
+  USE exx,                  ONLY : aceinit,exxinit, exxenergy2, exxenergy, exxbuff, &
+                                   fock0, fock1, fock2, dexx, use_ace, local_thr
   USE funct,                ONLY : dft_is_hybrid, exx_is_active
   USE control_flags,        ONLY : adapt_thr, tr2_init, tr2_multi, gamma_only
   !
@@ -49,6 +49,7 @@ SUBROUTINE electrons()
   USE paw_onecenter,        ONLY : PAW_potential
   USE paw_symmetry,         ONLY : PAW_symmetrize_ddd
   USE ions_base,            ONLY : nat
+  USE loc_scdm,             ONLY : use_scdm, localize_orbitals
   !
   !
   IMPLICIT NONE
@@ -70,8 +71,10 @@ SUBROUTINE electrons()
                     ! when using adaptive thresholds.
   LOGICAL :: first, exst
   REAL(DP) :: etot_cmp_paw(nat,2,2)
+  LOGICAL :: DoLoc
   !
   !
+  DoLoc = local_thr.gt.0.0d0
   exxen = 0.0d0
   iter = 0
   first = .true.
@@ -103,7 +106,7 @@ SUBROUTINE electrons()
         ELSE IF ( iter < 0 .OR. iter > niter ) THEN
            iter = 0
         ELSE 
-           READ (iunres, *) fock0, fock1, fock2
+           READ (iunres, *) exxen, fock0, fock1, fock2
            ! FIXME: et and wg should be read from xml file
            READ (iunres, *) (wg(1:nbnd,ik),ik=1,nks)
            READ (iunres, *) (et(1:nbnd,ik),ik=1,nks)
@@ -111,11 +114,13 @@ SUBROUTINE electrons()
            ! ... if restarting here, exx was already active
            ! ... initialize stuff for exx
            first = .false.
-           CALL exxinit()
+           CALL exxinit(DoLoc)
+           IF( DoLoc ) CALL localize_orbitals( )
            ! FIXME: ugly hack, overwrites exxbuffer from exxinit
            CALL seqopn (iunres, 'restart_exx', 'unformatted', exst)
            IF (exst) READ (iunres, iostat=ios) exxbuff
            IF (ios /= 0) WRITE(stdout,'(5x,"Error in EXX restart!")')
+           IF (use_ace) CALL aceinit ( )
            !
            CALL v_of_rho( rho, rho_core, rhog_core, &
                ehart, etxc, vtxc, eth, etotefield, charge, v)
@@ -150,7 +155,7 @@ SUBROUTINE electrons()
                         & i6)') iter
            CALL seqopn (iunres, 'restart_e', 'formatted', exst)
            WRITE (iunres, *) iter-1, tr2, dexx
-           WRITE (iunres, *) fock0, fock1, fock2
+           WRITE (iunres, *) exxen, fock0, fock1, fock2
            WRITE (iunres, *) (wg(1:nbnd,ik),ik=1,nks)
            WRITE (iunres, *) (et(1:nbnd,ik),ik=1,nks)
            CLOSE (unit=iunres, status='keep')
@@ -172,8 +177,10 @@ SUBROUTINE electrons()
         ! Activate exact exchange, set orbitals used in its calculation,
         ! then calculate exchange energy (will be useful at next step)
         !
-        CALL exxinit()
-        IF ( use_ace) THEN
+        CALL exxinit(DoLoc)
+        IF( DoLoc ) CALL localize_orbitals( )
+        IF (use_ace) THEN
+           CALL aceinit ( ) 
            fock2 = exxenergyace()
         ELSE
            fock2 = exxenergy2()
@@ -197,7 +204,7 @@ SUBROUTINE electrons()
         ! fock1 is the exchange energy calculated for orbitals at step n,
         !       using orbitals at step n-1 in the expression of exchange
         !
-        IF ( use_ace) THEN
+        IF (use_ace) THEN
            fock1 = exxenergyace()
         ELSE
            fock1 = exxenergy2()
@@ -205,14 +212,16 @@ SUBROUTINE electrons()
         !
         ! Set new orbitals for the calculation of the exchange term
         !
-        CALL exxinit()
+        CALL exxinit(DoLoc)
+        IF( DoLoc ) CALL localize_orbitals( )
+        IF (use_ace) CALL aceinit ( )
         !
         ! fock2 is the exchange energy calculated for orbitals at step n,
         !       using orbitals at step n in the expression of exchange 
         ! fock0 is fock2 at previous step
         !
         fock0 = fock2
-        IF ( use_ace) THEN
+        IF (use_ace) THEN
            fock2 = exxenergyace()
         ELSE
            fock2 = exxenergy2()
@@ -223,13 +232,16 @@ SUBROUTINE electrons()
         ! the treatment of the divergence in exact exchange has failed. 
         !
         dexx = fock1 - 0.5D0*(fock0+fock2)
-        IF ( dexx < 0d0 ) THEN
-!           WRITE(stdout,'(5x,a,1e12.3)') "BEWARE: negative dexx:", dexx
-!           dexx = ABS(dexx)
-          WRITE( stdout, * ) "dexx:", dexx
-          CALL errore( 'electrons', 'dexx is negative! &
-           & Check that exxdiv_treatment is appropriate for the system,&
-           & or ecutfock may be too low', 1 )
+        !
+        IF ( dexx < 0.0_dp ) THEN
+           IF( Doloc ) THEN
+              WRITE(stdout,'(5x,a,1e12.3)') "BEWARE: negative dexx:", dexx
+              dexx = ABS ( dexx )
+           ELSE
+              CALL errore( 'electrons', 'dexx is negative! &
+                   & Check that exxdiv_treatment is appropriate for the system,&
+                   & or ecutfock may be too low', 1 )
+           ENDIF
         ENDIF
         !
         !   remove the estimate exchange energy exxen used in the inner SCF
@@ -243,14 +255,18 @@ SUBROUTINE electrons()
         ELSE
            WRITE( stdout, 9066 ) '  ', etot, hwf_energy
         END IF
-        IF(dexx>1.d-8)THEN
+        IF ( dexx>1.d-8 ) THEN
           WRITE( stdout, 9067 ) dexx
         ELSE
           WRITE( stdout, 9068 ) dexx
         ENDIF
         
         WRITE( stdout, 9062 ) - fock1
-        WRITE( stdout, 9064 ) 0.5D0*fock2
+        IF (use_ace) THEN
+           WRITE( stdout, 9063 ) 0.5D0*fock2
+        ELSE
+           WRITE( stdout, 9064 ) 0.5D0*fock2
+        ENDIF
         !
         IF ( dexx < tr2_final ) THEN
            IF ( do_makov_payne ) CALL makov_payne( etot )
@@ -272,7 +288,7 @@ SUBROUTINE electrons()
         conv_elec=.FALSE.
         CALL seqopn (iunres, 'restart_e', 'formatted', exst)
         WRITE (iunres, *) iter, tr2, dexx
-        WRITE (iunres, *) fock0, fock1, fock2
+        WRITE (iunres, *) exxen, fock0, fock1, fock2
         ! FIXME: et and wg are written to xml file
         WRITE (iunres, *) (wg(1:nbnd,ik),ik=1,nks)
         WRITE (iunres, *) (et(1:nbnd,ik),ik=1,nks)
@@ -290,7 +306,8 @@ SUBROUTINE electrons()
   ! ... formats
   !
 9062 FORMAT( '     - averaged Fock potential =',0PF17.8,' Ry' )
-9064 FORMAT( '     + Fock energy             =',0PF17.8,' Ry' )
+9063 FORMAT( '     + Fock energy (ACE)       =',0PF17.8,' Ry' )
+9064 FORMAT( '     + Fock energy (full)      =',0PF17.8,' Ry' )
 9066 FORMAT(/,A2,'   total energy              =',0PF17.8,' Ry' &
             /'     Harris-Foulkes estimate   =',0PF17.8,' Ry' )
 9067 FORMAT('     est. exchange err (dexx)  =',0PF17.8,' Ry' )
@@ -348,11 +365,11 @@ SUBROUTINE electrons_scf ( printout, exxen )
                                    iunres, iunefield, seqopn
   USE ldaU,                 ONLY : eth, Hubbard_U, Hubbard_lmax, &
                                    niter_with_fixed_ns, lda_plus_u
-  USE extfield,             ONLY : tefield, etotefield, monopole, etotmonofield !TB
+  USE extfield,             ONLY : tefield, etotefield, gate, etotgatefield !TB
   USE noncollin_module,     ONLY : noncolin, magtot_nc, i_cons,  bfield, &
                                    lambda, report
   USE spin_orb,             ONLY : domag
-  USE io_rho_xml,           ONLY : write_rho
+  USE io_rho_xml,           ONLY : write_scf
   USE uspp,                 ONLY : okvan
   USE mp_bands,             ONLY : intra_bgrp_comm
   USE mp_pools,             ONLY : root_pool, my_pool_id, inter_pool_comm
@@ -368,7 +385,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
   USE dfunct,               ONLY : newd
   USE esm,                  ONLY : do_comp_esm, esm_printpot, esm_ewald
   USE fcp_variables,        ONLY : lfcpopt, lfcpdyn
-  USE iso_c_binding,        ONLY : c_int
+  USE wrappers,             ONLY : memstat
   !
   USE plugin_variables,     ONLY : plugin_etot
   !
@@ -388,8 +405,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
       i,            &! counter on polarization
       idum,         &! dummy counter on iterations
       iter,         &! counter on iterations
-      ios
-  INTEGER(kind=c_int) :: kilobytes
+      ios, kilobytes
   REAL(DP) :: &
       tr2_min,     &! estimated error on energy coming from diagonalization
       descf,       &! correction for variational energy
@@ -407,6 +423,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
   !
   REAL(DP), EXTERNAL :: ewald, get_clock
   REAL(DP) :: etot_cmp_paw(nat,2,2)
+  !
   !
   iter = 0
   dr2  = 0.0_dp
@@ -768,10 +785,10 @@ SUBROUTINE electrons_scf ( printout, exxen )
         etot = etot + etotefield
         hwf_energy = hwf_energy + etotefield
      END IF
-     ! TB monopole energy
-     IF ( monopole) THEN
-        etot = etot + etotmonofield
-        hwf_energy = hwf_energy + etotmonofield
+     ! TB gate energy
+     IF ( gate) THEN
+        etot = etot + etotgatefield
+        hwf_energy = hwf_energy + etotgatefield
      END IF
      !
      IF ( lfcpopt .or. lfcpdyn ) THEN
@@ -794,7 +811,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
         !
         ! ... print out ESM potentials if desired
         !
-        IF ( do_comp_esm ) CALL esm_printpot()
+        IF ( do_comp_esm ) CALL esm_printpot( rho%of_g )
         !
         WRITE( stdout, 9110 ) iter
         !
@@ -825,7 +842,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
   ! ... exiting: write (unless disabled) the charge density to file
   ! ... (also write ldaU ns coefficients and PAW becsum)
   !
-  IF ( io_level > -1 ) CALL write_rho( rho, nspin )
+  IF ( io_level > -1 ) CALL write_scf( rho, nspin )
   !
   ! ... delete mixing info if converged, keep it if not
   !
@@ -846,7 +863,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
 9000 FORMAT(/'     total cpu time spent up to now is ',F10.1,' secs' )
 9001 FORMAT(/'     per-process dynamical memory: ',f7.1,' Mb' )
 9002 FORMAT(/'     Self-consistent Calculation' )
-9010 FORMAT(/'     iteration #',I3,'     ecut=', F9.2,' Ry',5X,'beta=',F4.2 )
+9010 FORMAT(/'     iteration #',I3,'     ecut=', F9.2,' Ry',5X,'beta=',F5.2 )
 9050 FORMAT(/'     WARNING: integrated charge=',F15.8,', expected=',F15.8 )
 9101 FORMAT(/'     End of self-consistent calculation' )
 9110 FORMAT(/'     convergence has been achieved in ',i3,' iterations' )
@@ -1118,7 +1135,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
           IF ( ts_vdw )  WRITE ( stdout , 9076 ) 2.0d0*EtsvdW
           IF ( textfor)  WRITE ( stdout , 9077 ) eext
           IF ( tefield )            WRITE( stdout, 9061 ) etotefield
-          IF ( monopole )           WRITE( stdout, 9062 ) etotmonofield ! TB
+          IF ( gate )               WRITE( stdout, 9062 ) etotgatefield ! TB
           IF ( lda_plus_u )         WRITE( stdout, 9065 ) eth
           IF ( ABS (descf) > eps8 ) WRITE( stdout, 9069 ) descf
           IF ( okpaw ) THEN
@@ -1188,7 +1205,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
             /'     xc contribution           =',F17.8,' Ry' &
             /'     ewald contribution        =',F17.8,' Ry' )
 9061 FORMAT( '     electric field correction =',F17.8,' Ry' )
-9062 FORMAT( '     monopole field correction =',F17.8,' Ry' ) ! TB
+9062 FORMAT( '     gate field correction     =',F17.8,' Ry' ) ! TB
 9065 FORMAT( '     Hubbard energy            =',F17.8,' Ry' )
 9067 FORMAT( '     one-center paw contrib.   =',F17.8,' Ry' )
 9068 FORMAT( '      -> PAW hartree energy AE =',F17.8,' Ry' &
@@ -1233,7 +1250,7 @@ FUNCTION exxenergyace ( )
   USE kinds,    ONLY : DP
   USE buffers,  ONLY : get_buffer
   USE exx,      ONLY : vexxace_gamma, vexxace_k, domat
-  USE klist,    ONLY : nks, ngk, igk_k
+  USE klist,    ONLY : nks, ngk
   USE wvfct,    ONLY : nbnd, npwx, current_k
   USE lsda_mod, ONLY : lsda, isk, current_spin
   USE io_files, ONLY : iunwfc, nwordwfc

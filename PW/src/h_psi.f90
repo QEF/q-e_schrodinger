@@ -38,7 +38,7 @@ SUBROUTINE h_psi( lda, n, m, psi, hpsi )
   !
   INTEGER     :: m_start, m_end
   !
-  CALL start_clock( 'h_psi_bgrp' )
+  CALL start_clock( 'h_psi_bgrp' ); !write (*,*) 'start h_psi_bgrp'; FLUSH(6)
 
   ! band parallelization with non-distributed bands is performed if
   ! 1. enabled (variable use_bgrp_in_hpsi must be set to .T.)
@@ -81,7 +81,6 @@ SUBROUTINE h_psi_( lda, n, m, psi, hpsi )
   ! ...    hpsi  H*psi
   !
   USE kinds,    ONLY : DP
-  USE wavefunctions_module, ONLY : psic
   USE bp,       ONLY : lelfield,l3dstring,gdir, efield, efield_cry
   USE becmod,   ONLY : bec_type, becp, calbec
   USE lsda_mod, ONLY : current_spin
@@ -97,9 +96,10 @@ SUBROUTINE h_psi_( lda, n, m, psi, hpsi )
                        invfft_orbital_gamma, fwfft_orbital_gamma, calbec_rs_gamma, add_vuspsir_gamma, & 
                        invfft_orbital_k, fwfft_orbital_k, calbec_rs_k, add_vuspsir_k, & 
                        v_loc_psir_inplace
-  USE fft_base, ONLY : dffts, dtgs
+  USE fft_base, ONLY : dffts
   USE exx,      ONLY : use_ace, vexx, vexxace_gamma, vexxace_k
   USE funct,    ONLY : exx_is_active
+  USE fft_helper_subroutines
   !
   IMPLICIT NONE
   !
@@ -110,14 +110,13 @@ SUBROUTINE h_psi_( lda, n, m, psi, hpsi )
   INTEGER     :: ipol, ibnd, incr
   REAL(dp)    :: ee
   !
-  CALL start_clock( 'h_psi' )
+  CALL start_clock( 'h_psi' ); !write (*,*) 'start h_psi';FLUSH(6)
 
   hpsi (:, 1:m) = (0.0_dp, 0.0_dp)
 
-  CALL start_clock( 'h_psi:pot' )
+  CALL start_clock( 'h_psi:pot' ); !write (*,*) 'start h_pot';FLUSH(6)
   !
-  ! ... the local potential V_Loc psi
-  !
+  ! ... Here the product with the local potential V_loc psi
   !
   IF ( gamma_only ) THEN
      ! 
@@ -126,8 +125,8 @@ SUBROUTINE h_psi_( lda, n, m, psi, hpsi )
         ! ... real-space algorithm
         ! ... fixme: real_space without beta functions does not make sense
         !
-        IF ( dtgs%have_task_groups ) then 
-           incr = 2 * dtgs%nogrp
+        IF ( dffts%have_task_groups ) then 
+           incr = 2 * fftx_ntgrp(dffts)
         ELSE
            incr = 2
         ENDIF
@@ -135,7 +134,7 @@ SUBROUTINE h_psi_( lda, n, m, psi, hpsi )
            ! ... transform psi to real space -> psic 
            CALL invfft_orbital_gamma(psi,ibnd,m) 
            ! ... compute becp%r = < beta|psi> from psic in real space
-     CALL start_clock( 'h_psi:calbec' )
+     CALL start_clock( 'h_psi:calbec' ) 
            CALL calbec_rs_gamma(ibnd,m,becp%r) 
      CALL stop_clock( 'h_psi:calbec' )
            ! ... psic -> vrs * psic (psic overwritten will become hpsi)
@@ -163,8 +162,8 @@ SUBROUTINE h_psi_( lda, n, m, psi, hpsi )
         ! ... real-space algorithm
         ! ... fixme: real_space without beta functions does not make sense
         !
-        IF ( dtgs%have_task_groups ) then 
-           incr = dtgs%nogrp
+        IF ( dffts%have_task_groups ) then 
+           incr = fftx_ntgrp(dffts)
         ELSE
            incr = 1
         ENDIF
@@ -190,7 +189,10 @@ SUBROUTINE h_psi_( lda, n, m, psi, hpsi )
      END IF  
      !
   END IF  
-
+  !
+  ! ... Here the product with the non local potential V_NL psi
+  ! ... (not in the real-space case: it is done together with V_loc)
+  !
   IF ( nkb > 0 .AND. .NOT. real_space) THEN
      !
      CALL start_clock( 'h_psi:calbec' )
@@ -225,9 +227,7 @@ SUBROUTINE h_psi_( lda, n, m, psi, hpsi )
      !
   ENDIF
   !
-  !
-  ! ... Here the product with the non local potential V_NL psi
-  ! ... (not in the real-space case: it is done together with V_loc)
+  ! ... Here the exact-exchange term Vxx psi
   !
   IF ( exx_is_active() ) THEN
      IF ( use_ace) THEN
@@ -255,7 +255,8 @@ SUBROUTINE h_psi_( lda, n, m, psi, hpsi )
      !
   END IF
   !
-  ! ... Gamma-only trick: set to zero the imaginary part of hpsi at G=0
+  ! ... With Gamma-only trick, Im(H*psi)(G=0) = 0 by definition,
+  ! ... but it is convenient to explicitly set it to 0 to prevent trouble
   !
   IF ( gamma_only .AND. gstart == 2 ) &
       hpsi(1,1:m) = CMPLX( DBLE( hpsi(1,1:m) ), 0.D0 ,kind=DP)

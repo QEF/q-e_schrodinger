@@ -22,7 +22,8 @@ SUBROUTINE phq_readin()
   USE mp,            ONLY : mp_bcast
   USE mp_world,      ONLY : world_comm
   USE ions_base,     ONLY : amass, atm
-  USE input_parameters, ONLY : max_seconds, nk1, nk2, nk3, k1, k2, k3
+  USE check_stop,    ONLY : max_seconds
+  USE input_parameters, ONLY : nk1, nk2, nk3, k1, k2, k3
   USE start_k,       ONLY : reset_grid
   USE klist,         ONLY : xk, nks, nkstot, lgauss, two_fermi_energies, ltetra
   USE control_flags, ONLY : gamma_only, tqr, restart, lkpoint_dir, io_level, &
@@ -77,7 +78,7 @@ SUBROUTINE phq_readin()
   ! YAMBO >
   USE YAMBO,         ONLY : elph_yambo,dvscf_yambo
   ! YAMBO <
-  USE elph_tetra_mod,ONLY : elph_tetra, lshift_q
+  USE elph_tetra_mod,ONLY : elph_tetra, lshift_q, in_alpha2f
   USE ktetra,        ONLY : tetra_type
   !
   IMPLICIT NONE
@@ -589,7 +590,11 @@ SUBROUTINE phq_readin()
         IF (.NOT.ext_recover.AND..NOT.ext_restart) tmp_dir_phq=tmp_dir_ph
      ENDIF
      !
+#if defined (__OLDXML)
      filename=TRIM(tmp_dir_phq)//TRIM(prefix)//'.save/data-file.xml'
+#else
+     filename=TRIM(tmp_dir_phq)//TRIM(prefix)//'.save/data-file-schema.xml'
+#endif
      IF (ionode) inquire (file =TRIM(filename), exist = exst)
      !
      CALL mp_bcast( exst, ionode_id, intra_image_comm )
@@ -684,15 +689,15 @@ SUBROUTINE phq_readin()
 
   IF (reduce_io) io_level=0
 
-  IF (nproc_image /= nproc_image_file .and. .not. twfcollect)  &
+  IF (nproc_image /= nproc_image_file .and. .not. twfcollect  .AND. .NOT. in_alpha2f)  &
      CALL errore('phq_readin',&
      'pw.x run with a different number of processors. Use wf_collect=.true.',1)
 
-  IF (nproc_pool /= nproc_pool_file .and. .not. twfcollect)  &
+  IF (nproc_pool /= nproc_pool_file .and. .not. twfcollect .AND. .NOT. in_alpha2f)  &
      CALL errore('phq_readin',&
      'pw.x run with a different number of pools. Use wf_collect=.true.',1)
   !
-  IF (nproc_bgrp_file /= nproc_bgrp .AND. .NOT. twfcollect) &
+  IF (nproc_bgrp_file /= nproc_bgrp .AND. .NOT. twfcollect .AND. .NOT. in_alpha2f) &
      CALL errore('phq_readin','pw.x run with different band parallelization',1)
   
   if(elph_mat.and.fildvscf.eq.' ') call errore('phq_readin',&

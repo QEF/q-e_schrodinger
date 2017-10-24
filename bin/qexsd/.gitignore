@@ -1,7 +1,0 @@
-*.pyc
-*.pyo
-*.f90
-*~
-*.swp
-.idea/
-forgen.py

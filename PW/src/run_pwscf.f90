@@ -1,5 +1,5 @@
 !
-! Copyright (C) 2013 Quantum ESPRESSO group
+! Copyright (C) 2013-2017 Quantum ESPRESSO group
 ! This file is distributed under the terms of the
 ! GNU General Public License. See the file `License'
 ! in the root directory of the present distribution,
@@ -9,28 +9,36 @@
 SUBROUTINE run_pwscf ( exit_status ) 
   !----------------------------------------------------------------------------
   !
-  ! ... Run an instance of the Plane Wave Self-Consistent Field code 
-  ! ... MPI initialization and input data reading is performed in the 
-  ! ... calling code - returns in exit_status the exit code for pw.x, 
-  ! ... returned in the shell. Values are:
-  ! ... * 0: completed successfully
-  ! ... * 1: an error has occurred (value returned by the errore() routine)
-  ! ... * 2-127: convergence error
-  ! ...   * 2: scf convergence error
-  ! ...   * 3: ion convergence error
-  ! ... * 128-255: code exited due to specific trigger
-  !       * 255: exit due to user request, or signal trapped,
-  !              or time > max_seconds
-  ! ...     (note: in the future, check_stop_now could also return a value
-  ! ...     to specify the reason of exiting, and the value could be used
-  ! ..      to return a different value for different reasons)
-  ! ... Will be eventually merged with NEB
+  !! author: Paolo Giannozzi
+  !! license: GNU 
+  !! summary: Run an instance of the Plane Wave Self-Consistent Field code
+  !!
+  !! Run an instance of the Plane Wave Self-Consistent Field code 
+  !! MPI initialization and input data reading is performed in the 
+  !! calling code - returns in exit_status the exit code for pw.x, 
+  !! returned in the shell. Values are:
+  !! * 0: completed successfully
+  !! * 1: an error has occurred (value returned by the errore() routine)
+  !! * 2-127: convergence error
+  !!   * 2: scf convergence error
+  !!   * 3: ion convergence error
+  !! * 128-255: code exited due to specific trigger
+  !!   * 255: exit due to user request, or signal trapped,
+  !!          or time > max_seconds
+  !!     (note: in the future, check_stop_now could also return a value
+  !!     to specify the reason of exiting, and the value could be used
+  !!     to return a different value for different reasons)
+  !! @Note
+  !! 10/01/17 Samuel Ponce: Add Ford documentation
+  !! @endnote
+  !!
   !
   USE io_global,        ONLY : stdout, ionode, ionode_id
   USE parameters,       ONLY : ntypx, npk, lmaxx
   USE cell_base,        ONLY : fix_volume, fix_area
   USE control_flags,    ONLY : conv_elec, gamma_only, ethr, lscf, twfcollect
   USE control_flags,    ONLY : conv_ions, istep, nstep, restart, lmd, lbfgs
+  USE command_line_options, ONLY : command_line
   USE force_mod,        ONLY : lforce, lstres, sigma, force
   USE check_stop,       ONLY : check_stop_init, check_stop_now
   USE mp_images,        ONLY : intra_image_comm
@@ -45,12 +53,13 @@ SUBROUTINE run_pwscf ( exit_status )
   USE dtr,              ONLY: dtr_init_writer, dtr_close_writer, dtr_add_step
 #endif
   !
-
   IMPLICIT NONE
   INTEGER, INTENT(OUT) :: exit_status
+  !! Gives the exit status at the end
+  LOGICAL, external :: matches
+  !! checks if first string is contained in the second
   INTEGER :: idone 
   ! counter of electronic + ionic steps done in this run
-  !
   !
   exit_status = 0
   IF ( ionode ) WRITE( unit = stdout, FMT = 9010 ) ntypx, npk, lmaxx
@@ -66,6 +75,14 @@ SUBROUTINE run_pwscf ( exit_status )
   ! ... convert to internal variables
   !
   CALL iosys()
+  !
+  ! ... If executable names is "dist.x", compute atomic distances, angles,
+  ! ... nearest neighbors, write them to file "dist.out", exit
+  !
+  IF ( matches('dist.x',command_line) ) THEN
+     IF (ionode) CALL run_dist ( exit_status )
+     RETURN
+  END IF
   !
   IF ( gamma_only ) WRITE( UNIT = stdout, &
      & FMT = '(/,5X,"gamma-point specific algorithms are used")' )
@@ -123,7 +140,7 @@ SUBROUTINE run_pwscf ( exit_status )
      !
      ! ... ionic section starts here
      !
-     CALL start_clock( 'ions' )
+     CALL start_clock( 'ions' ); !write(*,*)' start ions' ; FLUSH(6)
      conv_ions = .TRUE.
      !
      ! ... recover from a previous run, if appropriate
@@ -170,16 +187,17 @@ SUBROUTINE run_pwscf ( exit_status )
         !
      END IF
      !
-     CALL stop_clock( 'ions' )
+     CALL stop_clock( 'ions' ); !write(*,*)' stop ions' ; FLUSH(6)
      !
      CALL qmmm_update_forces( force, rho%of_r, nspin, dfftp)
      !
      ! ... exit condition (ionic convergence) is checked here
      !
-     CALL add_qexsd_step(idone)
 #if defined (__DTR)
      IF ( lmd ) CALL dtr_add_step(idone)
 #endif
+     !
+     IF ( lmd .OR. lbfgs ) CALL add_qexsd_step(idone)
      IF ( conv_ions ) EXIT main_loop
      !
      ! ... receive new positions from MM code in QM/MM run

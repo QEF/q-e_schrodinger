@@ -1,5 +1,5 @@
 !
-! Copyright (C) 2001-2016 Quantum ESPRESSO group
+! Copyright (C) 2001-2017 Quantum ESPRESSO group
 ! This file is distributed under the terms of the
 ! GNU General Public License. See the file `License'
 ! in the root directory of the present distribution,
@@ -23,7 +23,7 @@ SUBROUTINE lr_readin
                                   & do_makov_payne
   USE scf,                 ONLY : vltot, v, vrs, vnew, &
                                   & destroy_scf_type, rho
-  USE fft_base,            ONLY : dfftp, dffts, dtgs
+  USE fft_base,            ONLY : dfftp, dffts
   USE gvecs,               ONLY : doublegrid
   USE wvfct,               ONLY : nbnd, et, wg, current_k
   USE lsda_mod,            ONLY : isk
@@ -31,8 +31,8 @@ SUBROUTINE lr_readin
   USE io_global,           ONLY : ionode, ionode_id, stdout
   USE klist,               ONLY : nks, wk, nelec, lgauss, ltetra
   USE fixed_occ,           ONLY : tfixed_occ
-  USE input_parameters,    ONLY : degauss, nosym, wfcdir, outdir,&
-                                  & max_seconds
+  USE input_parameters,    ONLY : degauss, nosym, wfcdir, outdir
+  USE check_stop,          ONLY : max_seconds
   USE realus,              ONLY : real_space, real_space_debug,&
                                   & init_realspace_vars, qpointlist,&
                                   & betapointlist
@@ -53,7 +53,7 @@ SUBROUTINE lr_readin
   USE esm,                 ONLY : do_comp_esm
   USE qpoint,              ONLY : xq
   USE xml_io_base,         ONLY : create_directory
-  USE io_rho_xml,          ONLY : write_rho
+  USE io_rho_xml,          ONLY : write_scf
   USE noncollin_module,    ONLY : noncolin
   USE mp_bands,            ONLY : ntask_groups
   USE constants,           ONLY : eps4
@@ -69,7 +69,6 @@ SUBROUTINE lr_readin
                                   environ_clean, environ_initbase,         &
                                   environ_initions_allocate
   USE environ_main,        ONLY : calc_venviron
-  USE mp_bands,            ONLY : me_bgrp
   USE plugin_flags,        ONLY : use_environ
 #endif
   
@@ -391,14 +390,14 @@ SUBROUTINE lr_readin
   !
   IF (eels) THEN
      !
-     ! Specify the temporary derictory.
+     ! Specify the temporary directory.
      !
      tmp_dir = tmp_dir_lr
      !
      ! Copy the scf-charge-density to the tmp_dir (PH/check_initial_status.f90).
      ! Needed for the nscf calculation.
      !
-     IF (.NOT.restart) CALL write_rho( rho, nspin )
+     IF (.NOT.restart) CALL write_scf( rho, nspin )
      !
      ! If a band structure calculation needs to be done, do not open a file
      ! for k point (PH/phq_readin.f90)
@@ -443,7 +442,7 @@ SUBROUTINE lr_readin
      !
      ! Taken from PW/src/init_run.f90
      !
-     ir_end = MIN(dfftp%nnr,dfftp%nr1x*dfftp%nr2x*dfftp%npp(me_bgrp+1))
+     ir_end = MIN(dfftp%nnr,dfftp%nr1x*dfftp%my_nr2p*dfftp%my_nr3p)
      CALL environ_initbase( dfftp%nnr )
      !
      ! Taken from PW/src/electrons.f90
@@ -610,15 +609,17 @@ CONTAINS
     !
     ! No taskgroups and EXX.
     !
-    IF (dtgs%have_task_groups .AND. dft_is_hybrid()) &
+    IF (dffts%have_task_groups .AND. dft_is_hybrid()) &
          & CALL errore( 'lr_readin', ' Linear response calculation ' // &
          & 'not implemented for EXX+Task groups', 1 )
     !
     ! Experimental task groups warning.
     !
-    IF (dtgs%have_task_groups) &
+    IF (dffts%have_task_groups) &
          & CALL infomsg( 'lr_readin','Usage of task &
-         &groups with TDDFPT is still experimental. Use at your own risk.' )
+         & groups with TDDFPT is still experimental. Use at your own risk.' )
+    !      & CALL errore( 'lr_readin', ' Linear response calculation ' // &
+    !      & 'not implemented for task groups', 1 )
     !
     ! No PAW support.
     !

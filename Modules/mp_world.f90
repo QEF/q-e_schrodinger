@@ -9,7 +9,10 @@
 MODULE mp_world
   !----------------------------------------------------------------------------
   !
-  USE mp, ONLY : mp_barrier, mp_start, mp_end, mp_stop
+  USE mp, ONLY : mp_barrier, mp_start, mp_end, mp_stop 
+#if !defined(__GFORTRAN__) || ((__GNUC__>4) || ((__GNUC__==4) && (__GNUC_MINOR__>=8)))
+  USE mp, ONLY : mp_count_nodes
+#endif
   USE io_global, ONLY : meta_ionode_id, meta_ionode
   !
   USE parallel_include
@@ -20,6 +23,7 @@ MODULE mp_world
   ! ... World group - all QE routines using mp_world_start to start MPI
   ! ... will work in the communicator passed as input to mp_world_start
   !
+  INTEGER :: nnode = 1 ! number of nodes
   INTEGER :: nproc = 1  ! number of processors
   INTEGER :: mpime = 0  ! processor index (starts from 0 to nproc-1)
   INTEGER :: root  = 0  ! index of the root processor
@@ -34,7 +38,7 @@ MODULE mp_world
 #endif
   !
   PRIVATE
-  PUBLIC ::nproc, mpime, root, world_comm, mp_world_start, mp_world_end
+  PUBLIC :: nnode, nproc, mpime, root, world_comm, mp_world_start, mp_world_end
   !
 CONTAINS
   !
@@ -47,7 +51,7 @@ CONTAINS
 #if defined(__MPI)
     INTEGER :: ierr
 #endif
-#if defined(__OPENMP) 	 
+#if defined(__OPENMP)
     INTEGER :: PROVIDED
 #endif
     !
@@ -59,9 +63,9 @@ CONTAINS
     CALL MPI_Initialized ( library_mode, ierr)
     IF (ierr/=0) CALL mp_stop( 8000 )
     IF (.NOT. library_mode ) THEN
-#if defined(__OPENMP) 	 
+#if defined(__OPENMP)
        CALL MPI_Init_thread(MPI_THREAD_FUNNELED, PROVIDED, ierr)
-#else 	 
+#else
        CALL MPI_Init(ierr)
 #endif
        IF (ierr/=0) CALL mp_stop( 8001 )
@@ -69,6 +73,9 @@ CONTAINS
 #endif
     !
     CALL mp_start( nproc, mpime, world_comm )
+#if !defined(__GFORTRAN__) || ((__GNUC__>4) || ((__GNUC__==4) && (__GNUC_MINOR__>=8)))
+    CALL mp_count_nodes ( nnode, world_comm )
+#endif
     !
     ! ... meta_ionode is true if this processor is the root processor
     ! ... of the world group - "ionode_world" would be a better name

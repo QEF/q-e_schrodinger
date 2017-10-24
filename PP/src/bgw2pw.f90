@@ -137,8 +137,8 @@ PROGRAM bgw2pw
   CALL openfil_pp ( )
 
   IF ( wfng_flag ) THEN
-    input_file_name = TRIM ( tmp_dir ) // '/' // TRIM ( wfng_file )
-    output_dir_name = TRIM ( tmp_dir ) // '/' // TRIM ( prefix ) // '.save'
+    input_file_name = TRIM ( tmp_dir ) // TRIM ( wfng_file )
+    output_dir_name = TRIM ( tmp_dir ) // TRIM ( prefix ) // '.save'
     IF ( ionode ) WRITE ( 6, '(5x,"call write_evc")' )
     CALL start_clock ( 'write_evc' )
     CALL write_evc ( input_file_name, real_or_complex, wfng_nband, &
@@ -148,8 +148,8 @@ PROGRAM bgw2pw
   ENDIF
 
   IF ( rhog_flag ) THEN
-    input_file_name = TRIM ( tmp_dir ) // '/' // TRIM ( rhog_file )
-    output_dir_name = TRIM ( tmp_dir ) // '/' // TRIM ( prefix ) // '.save'
+    input_file_name = TRIM ( tmp_dir ) // TRIM ( rhog_file )
+    output_dir_name = TRIM ( tmp_dir ) // TRIM ( prefix ) // '.save'
     IF ( ionode ) WRITE ( 6, '(5x,"call write_cd")' )
     CALL start_clock ( 'write_cd' )
     CALL write_cd ( input_file_name, real_or_complex, output_dir_name )
@@ -194,7 +194,7 @@ SUBROUTINE write_evc ( input_file_name, real_or_complex, &
   USE mp_pools, ONLY : kunit, npool, my_pool_id, intra_pool_comm
   USE symm_base, ONLY : s, nsym
   USE xml_io_base, ONLY : create_directory
-#if ! defined (__XSD)
+#if defined (__OLDXML)
   USE qexml_module, ONLY : qexml_kpoint_dirname, qexml_wfc_filename
 #endif
 #if defined(__MPI)
@@ -515,7 +515,7 @@ SUBROUTINE write_evc ( input_file_name, real_or_complex, &
   CALL mp_max ( npw_g, world_comm )
 
   CALL create_directory ( output_dir_name )
-#if ! defined (__XSD)
+#if defined (__OLDXML)
   DO ik = 1, nk
     CALL create_directory (qexml_kpoint_dirname( output_dir_name, ik ) )
   ENDDO
@@ -542,7 +542,7 @@ SUBROUTINE write_evc ( input_file_name, real_or_complex, &
 
   DO ik = 1, nk
 
-#if ! defined (__XSD)
+#if defined (__OLDXML)
     filename = TRIM ( qexml_wfc_filename ( output_dir_name, 'gkvectors', ik ) )
 #endif
     IF ( ionode ) THEN
@@ -571,7 +571,7 @@ SUBROUTINE write_evc ( input_file_name, real_or_complex, &
     ENDIF
 
     DO is = 1, ns
-#if ! defined (__XSD)
+#if defined (__OLDXML)
       IF ( ns .GT. 1 ) THEN
         filename = TRIM ( qexml_wfc_filename ( output_dir_name, 'eigenval', ik, is, EXTENSION = 'xml' ) )
       ELSE
@@ -590,7 +590,7 @@ SUBROUTINE write_evc ( input_file_name, real_or_complex, &
         CALL iotk_write_dat ( iu, "OCCUPATIONS", oc ( :, ik, is ) )
         CALL iotk_close_write ( iu )
       ENDIF
-#if ! defined (__XSD)
+#if defined (__OLDXML)
       IF ( ns .GT. 1 ) THEN
         filename = TRIM ( qexml_wfc_filename ( output_dir_name, 'evc', ik, is ) )
       ELSE
@@ -658,7 +658,7 @@ SUBROUTINE write_cd ( input_file_name, real_or_complex, output_dir_name )
   USE gvect, ONLY : ngm, ngm_g, ig_l2g, nl, mill
   USE io_global, ONLY : ionode, ionode_id
   USE ions_base, ONLY : nat
-  USE io_rho_xml, ONLY : write_rho
+  USE xml_io_base, ONLY : write_rho
   USE iotk_module, ONLY : iotk_attlenx, iotk_free_unit, iotk_open_write, &
     iotk_write_begin, iotk_write_attr, iotk_write_empty, iotk_write_dat, &
     iotk_write_end, iotk_close_write
@@ -893,7 +893,7 @@ SUBROUTINE write_cd ( input_file_name, real_or_complex, output_dir_name )
 
   DEALLOCATE ( gvec )
 
-  CALL write_rho ( rho%of_r, nspin )
+  CALL write_rho ( output_dir_name, rho%of_r, nspin )
 
   RETURN
 

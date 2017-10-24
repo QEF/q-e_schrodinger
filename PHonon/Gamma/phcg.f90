@@ -13,12 +13,8 @@ PROGRAM phcg
   USE ions_base,     ONLY: nat, tau
   USE io_global,     ONLY: ionode
   USE io_files,      ONLY: seqopn
-  USE check_stop,    ONLY: check_stop_init
   USE mp_global,     ONLY: mp_startup, mp_global_end
   USE environment,   ONLY: environment_start
-  ! The following instruction is just to make it clear that all modules
-  ! from PWscf are needed sooner or later
-  USE pwcom          
   USE cgcom
 
   IMPLICIT NONE
@@ -28,8 +24,6 @@ PROGRAM phcg
   CHARACTER(len=9) :: cdate, ctime, code = 'PHCG'
   LOGICAL :: exst
   INTEGER :: i
-  !
-  CALL check_stop_init ()
   !
   ! Initialize MPI, clocks, print initial messages
   !
@@ -491,7 +485,7 @@ SUBROUTINE newscf
   USE wvfct, ONLY: nbnd, nbndx
   USE noncollin_module, ONLY: report
   USE symm_base,     ONLY : nsym
-  USE io_files,      ONLY : iunwfc, input_drho, output_drho
+  USE io_files,      ONLY : iunwfc, input_drho, output_drho, prefix, tmp_dir
   USE ldaU,          ONLY : lda_plus_u
   USE control_flags, ONLY : restart, io_level, lscf, iprint, &
                             david, max_cg_iter, &
@@ -499,6 +493,7 @@ SUBROUTINE newscf
   USE extrapolation, ONLY : extrapolate_charge
   !
   IMPLICIT NONE
+  CHARACTER(LEN=256) :: dirname
   INTEGER :: iter
   !
   CALL start_clock('PWSCF')
@@ -540,7 +535,8 @@ SUBROUTINE newscf
   !
   CALL openfil
   !
-  CALL extrapolate_charge( 1 )
+  dirname = TRIM(tmp_dir) //TRIM(prefix) // '.save/'
+  CALL extrapolate_charge( dirname, 1 )
   CALL hinit1
   CALL electrons ( )
   !

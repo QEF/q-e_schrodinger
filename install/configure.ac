@@ -28,7 +28,7 @@ X_AC_QE_ARCH()
 try_dflags=""
 
 # "-I../include" is required by IOTK ...
-try_iflags="-I\$(TOPDIR)/include -I../include/"
+try_iflags="-I\$(TOPDIR)/include -I\$(TOPDIR)/FoX/finclude -I../include/"
 
 # Checking archiver...
 X_AC_QE_AR()
@@ -45,9 +45,6 @@ X_AC_QE_ENVIRON()
 # Checking CC...
 X_AC_QE_CC()
 
-# Checking FFTW pointers...
-X_AC_QE_FFTW_POINTER()
-
 # Checking F77...
 X_AC_QE_F77()
 
@@ -62,9 +59,6 @@ X_AC_QE_LD()
 
 # Checking F90 rule...
 X_AC_QE_F90RULE()
-
-# find Fortran to C wrappers
-X_AC_QE_WRAPPERS()
 
 AC_LANG_PUSH(Fortran 77)
 F77=$f90 # use Fortran 90 actually
@@ -129,7 +123,6 @@ AC_SUBST(topdir)
 AC_SUBST(extlib_flags)
 
 AC_CONFIG_HEADERS([include/c_defs.h:include/c_defs.h.in])
-AC_CONFIG_FILES([include/fft_defs.h:include/fft_defs.h.in])
 AC_CONFIG_FILES([include/configure.h:include/configure.h.in])
 
 #AC_CONFIG_FILES(Makefile.cpu)

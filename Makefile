@@ -6,8 +6,6 @@
 # of the License. See the file `License' in the root directory
 # of the present distribution.
 
-# QE Bundle v2.0, custom for Schrödinger 
-
 include make.inc
 
 default :
@@ -17,21 +15,44 @@ default :
 	@echo ' '
 	@echo 'where target identifies one or multiple CORE PACKAGES:'
 	@echo '  pw           basic code for scf, structure optimization, MD'
-	@echo '  vdw_kernels  kernels for vdW functionals'
 	@echo '  ph           phonon code, Gamma-only and third-order derivatives'
 	@echo '  pwcond       ballistic conductance'
 	@echo '  neb          code for Nudged Elastic Band method'
 	@echo '  pp           postprocessing programs'
-	@echo '  pwall        same as "make pw pp pwcond neb"'
+	@echo '  pwall        same as "make pw ph pp pwcond neb"'
+	@echo '  cp           CP code: CP MD with ultrasoft pseudopotentials'
 	@echo '  tddfpt       time dependent dft code'
+	@echo '  gwl          GW with Lanczos chains'
 	@echo '  ld1          utilities for pseudopotential generation'
 	@echo '  upf          utilities for pseudopotential conversion'
-	@echo '  all          same as "make pwall ld1 upf"'
+	@echo '  xspectra     X-ray core-hole spectroscopy calculations'
+	@echo '  couple       Library interface for coupling to external codes'
+	@echo '  epw          Electron-Phonon Coupling with wannier functions'
+	@echo '  vdw_kernels  kernels for vdW functionals'
+	@echo '  gui          Graphical User Interface'
+	@echo '  examples     fetch from web examples for all core packages'
+	@echo '  test-suite   run semi-automated test-suite for regression testing'
+	@echo '  all          same as "make pwall cp ld1 upf tddfpt"'
+	@echo ' '
+	@echo 'where target identifies one or multiple THIRD-PARTIES PACKAGES:'
+	@echo '  gipaw        NMR and EPR spectra'
+	@echo '  w90          Maximally localised Wannier Functions'
+	@echo '  want         Quantum Transport with Wannier functions'
+	@echo '  west         Many-body perturbation corrections Without Empty STates'
+#	@echo '  SaX          Standard GW-BSE with plane waves'
+	@echo '  yambo        electronic excitations with plane waves'
+	@echo '  yambo-devel  yambo devel version'
+	@echo '  SternheimerGW calculate GW using Sternheimer equations'
+	@echo '  plumed       Metadynamics plugin for pw or cp'
+	@echo '  d3q          general third-order code and thermal transport codes'
 	@echo ' '
 	@echo 'where target is one of the following suite operation:'
 	@echo '  doc          build documentation'
 	@echo '  links        create links to all executables in bin/'
 	@echo '  tar          create a tarball of the source tree'
+	@if test -d GUI/; then \
+		echo '  tar-gui      create a standalone PWgui tarball from the GUI sources'; \
+		echo '  tar-qe-modes create a tarball for QE-modes (Emacs major modes for Quantum ESPRESSO)'; fi
 	@echo '  clean        remove executables and objects'
 	@echo '  veryclean    remove files produced by "configure" as well'
 	@echo '  distclean    revert distribution to the original status'
@@ -45,72 +66,61 @@ default :
 # If "|| exit 1" is not present, the error code from make in subdirectories
 # is not returned and make goes on even if compilation has failed
 
-pw : bindir libfft libla mods liblapack libs libiotk 
+pw : bindir libfft libdavid libcg libla libutil mods liblapack libs libiotk 
 	if test -d PW ; then \
 	( cd PW ; $(MAKE) TLDEPS= all || exit 1) ; fi
 
-pw-lib : bindir libfft libla mods liblapack libs libiotk
+pw-lib : bindir libdavid libcg libfft libla libutil mods liblapack libs libiotk
 	if test -d PW ; then \
 	( cd PW ; $(MAKE) TLDEPS= pw-lib || exit 1) ; fi
 
-### This target is not supported in this version
-#cp : bindir libfft libla mods liblapack libs libiotk
-#	if test -d CPV ; then \
-#	( cd CPV ; $(MAKE) TLDEPS= all || exit 1) ; fi
+cp : bindir libdavid libcg libfft libla libutil mods liblapack libs libiotk libfox
+	if test -d CPV ; then \
+	( cd CPV ; $(MAKE) TLDEPS= all || exit 1) ; fi
 
-### This target is not supported in this version
-ph : bindir libfft libla mods libs pw lrmods
+ph : bindir libfft libla libutil mods libs pw lrmods
 	if test -d PHonon; then \
 	(cd PHonon; $(MAKE) all || exit 1) ; fi
 
-neb : bindir libfft libla mods libs pw
+neb : bindir libfft libla libutil mods libs pw
 	if test -d NEB; then \
   (cd NEB; $(MAKE) all || exit 1) ; fi
 
-### This target is not supported in this version
-tddfpt : bindir libfft libla mods libs pw
+tddfpt : bindir libfft libla libutil mods libs pw
 	if test -d TDDFPT; then \
 	(cd TDDFPT; $(MAKE) all || exit 1) ; fi
 
-pp : bindir libfft libla mods libs pw
+pp : bindir libfft libla libutil mods libs pw
 	if test -d PP ; then \
 	( cd PP ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
 
-pwcond : bindir libfft libla mods libs pw pp
+pwcond : bindir libfft libla libutil mods libs pw pp
 	if test -d PWCOND ; then \
 	( cd PWCOND ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
 
-vdw_kernels : pw
-	bin/generate_vdW_kernel_table.x
-	bin/generate_rVV10_kernel_table.x
-
-### This target is not supported in this version
-#acfdt : bindir libfft libla mods libs pw ph
-#	if test -d ACFDT ; then \
-#	( cd ACFDT ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
+acfdt : bindir libfft libla libutil mods libs pw ph
+	if test -d ACFDT ; then \
+	( cd ACFDT ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
 
 # target still present for backward compatibility
 gww:
 	@echo '"make gww" is obsolete, use "make gwl" instead '
 
-### This target is not supported in this version
-#gwl : ph
-#	if test -d GWW ; then \
+gwl : ph
+	if test -d GWW ; then \
 	( cd GWW ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
 
-### This target is not supported in this version
-#gipaw : pw
-#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+gipaw : pw
+	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
-### This target is not supported in this version
-#d3q : pw ph
-#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+d3q : pw ph
+	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
-ld1 : bindir liblapack libfft libla mods libs
+ld1 : bindir liblapack libfft libla libutil mods libs
 	if test -d atomic ; then \
 	( cd atomic ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
 
-upf : libfft libla mods libs liblapack 
+upf : libfft libla libutil mods libs liblapack
 	if test -d upftools ; then \
 	( cd upftools ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
 
@@ -118,53 +128,69 @@ pw_export : libiotk bindir libfft mods libs pw
 	if test -d PP ; then \
 	( cd PP ; $(MAKE) TLDEPS= pw_export.x || exit 1 ) ; fi
 
-### This target is not supported in this version
-#xspectra : bindir libfft mods libs pw
-#	if test -d XSpectra ; then \
-#	( cd XSpectra ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
+xspectra : bindir libfft mods libs pw
+	if test -d XSpectra ; then \
+	( cd XSpectra ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
 
-### This target is not supported in this version
-#couple : pw cp
-#	if test -d COUPLE ; then \
-#	( cd COUPLE ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
+couple : pw cp
+	if test -d COUPLE ; then \
+	( cd COUPLE ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
 
-### This target is not supported in this version
 # EPW needs to invoke make twice due to a Wannier90 workaround
-#epw: pw ph ld1
-#	if test -d EPW ; then \
-#	( cd EPW ; $(MAKE) all ; $(MAKE) all || exit 1; \
-#		cd ../bin; ln -fs ../EPW/bin/epw.x . ); fi
+epw: pw ph ld1
+	if test -d EPW ; then \
+	( cd EPW ; $(MAKE) all || exit 1; \
+		cd ../bin; ln -fs ../EPW/bin/epw.x . ); fi
 
-### This target is not supported in this version
-#gui :
-#	@echo 'Check "PWgui-6.0/README" how to access the Graphical User Interface'
+vdw_kernels : pw
+	bin/generate_vdW_kernel_table.x
+	bin/generate_rVV10_kernel_table.x
 
-### This target is not supported in this version
-#examples : touch-dummy
-#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+travis : pwall epw
+	if test -d test-suite ; then \
+	( cd test-suite ; make run-travis || exit 1 ) ; fi
 
-pwall : pw neb ph pp pwcond
+gui :
+	@echo 'Check "GUI/README" how to access the Graphical User Interface'
+#@echo 'Check "PWgui-X.Y/README" how to access the Graphical User Interface'
 
-all   : pwall ld1 upf tddfpt
+examples : touch-dummy
+	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+
+pwall : pw neb ph pp pwcond acfdt
+
+all   : pwall cp ld1 upf tddfpt xspectra gwl 
 
 ###########################################################
 # Auxiliary targets used by main targets:
 # compile modules, libraries, directory for binaries, etc
 ###########################################################
 
-libla : touch-dummy liblapack
+libdavid_rci : touch-dummy libla clib libutil
+	( cd KS_Solvers/Davidson_RCI ; $(MAKE) TLDEPS= all || exit 1 )
+
+libdavid : touch-dummy libla clib libutil
+	( cd KS_Solvers/Davidson ; $(MAKE) TLDEPS= all || exit 1 )
+
+libcg : touch-dummy libla clib libutil
+	( cd KS_Solvers/CG ; $(MAKE) TLDEPS= all || exit 1 )
+
+libla : touch-dummy liblapack libutil
 	( cd LAXlib ; $(MAKE) TLDEPS= all || exit 1 )
 
 libfft : touch-dummy
 	( cd FFTXlib ; $(MAKE) TLDEPS= all || exit 1 )
 
-mods : libiotk libla libfft
+libutil : touch-dummy 
+	( cd UtilXlib ; $(MAKE) TLDEPS= all || exit 1 )
+
+mods : libiotk libfox libla libfft libutil
 	( cd Modules ; $(MAKE) TLDEPS= all || exit 1 )
 
 libs : mods
 	( cd clib ; $(MAKE) TLDEPS= all || exit 1 )
 
-lrmods : libs libla libfft 
+lrmods : libs libla libfft  libutil
 	( cd LR_Modules ; $(MAKE) TLDEPS= all || exit 1 )
 
 bindir :
@@ -182,62 +208,46 @@ liblapack: touch-dummy
 
 libiotk: touch-dummy
 	cd install ; $(MAKE) -f extlibs_makefile $@
+libfox: touch-dummy
+	cd install ; $(MAKE) -f extlibs_makefile $@
 
 # In case of trouble with iotk and compilers, add
 # FFLAGS="$(FFLAGS_NOOPT)" after $(MFLAGS)
-
 
 #########################################################
 # plugins
 #########################################################
 
-### This target is not supported in this version
-#w90: bindir liblapack
-#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+w90: bindir liblapack
+	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
-### This target is not supported in this version
-#want : touch-dummy
-#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+want : touch-dummy
+	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
-### This target is not supported in this version
-#SaX : touch-dummy
-#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+SaX : touch-dummy
+	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
-### This target is not supported in this version
-#yambo: touch-dummy
-#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+yambo: touch-dummy
+	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
-### This target is not supported in this version
-#yambo-devel: touch-dummy
-#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+yambo-devel: touch-dummy
+	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
-### This target is not supported in this version
-#plumed: touch-dummy
-#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+plumed: touch-dummy
+	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
-### This target is not supported in this version
-#west: pw touch-dummy
-#	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+west: pw touch-dummy
+	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+
+SternheimerGW: pw lrmods touch-dummy
+	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
 touch-dummy :
 	$(dummy-variable)
 
 #########################################################
 # "make links" produces links to all executables in bin/
-# while "make inst" INSTALLDIR=/some/place" links all
-# available executables to /some/place/ (must exist and
-# be writable), prepending "qe_" to all executables (e.g.:
-# /some/place/qe_pw.x). This allows installation of QE
-# into system directories with no danger of name conflicts
 #########################################################
-
-inst : 
-	( for exe in */*/*.x */bin/* ; do \
-	   file=`basename $$exe`; if test "$(INSTALLDIR)" != ""; then \
-		if test ! -L $(PWD)/$$exe; then \
-			ln -fs $(PWD)/$$exe $(INSTALLDIR)/qe_$$file ; fi ; \
-		fi ; \
-	done )
 
 # Contains workaround for name conflicts (dos.x and bands.x) with WANT
 links : bindir
@@ -263,7 +273,7 @@ links : bindir
 
 install : touch-dummy
 	@if test -d bin ; then mkdir -p $(PREFIX)/bin ; \
-	for x in `find . -path ./test-suite -prune -o -name *.x -type f` ; do \
+	for x in `find * ! -path "test-suite/*" -name *.x -type f` ; do \
 		cp $$x $(PREFIX)/bin/ ; done ; \
 	fi
 	@echo 'Quantum ESPRESSO binaries installed in $(PREFIX)/bin'
@@ -274,8 +284,7 @@ install : touch-dummy
 #     already computed once (usualy during release)
 #########################################################
 
-### This target is not supported in this version
-test-suite: pw touch-dummy
+test-suite: pw cp touch-dummy
 	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
 #########################################################
@@ -286,10 +295,11 @@ test-suite: pw touch-dummy
 clean : 
 	touch make.inc 
 	for dir in \
-		LAXlib FFTXlib Modules PP PW \
-		NEB PWCOND \
+		CPV LAXlib FFTXlib UtilXlib Modules PP PW EPW \
+                KS_Solvers/CG KS_Solvers/Davidson KS_Solvers/Davidson_RCI \
+		NEB ACFDT COUPLE GWW XSpectra PWCOND \
 		atomic clib LR_Modules pwtools upftools \
-		dev-tools extlibs TDDFPT PHonon \
+		dev-tools extlibs Environ TDDFPT PHonon GWW \
 	; do \
 	    if test -d $$dir ; then \
 		( cd $$dir ; \
@@ -298,7 +308,7 @@ clean :
 	done
 	- @(cd install ; $(MAKE) -f plugins_makefile clean)
 	- @(cd install ; $(MAKE) -f extlibs_makefile clean)
-	- /bin/rm -rf bin/*.x tmp
+	- /bin/rm -rf bin/*.x tempdir
 	- /bin/rm -f vdW_kernel_table
 	- /bin/rm -f rVV10_kernel_table
 
@@ -314,10 +324,10 @@ veryclean : clean
 	- cd pseudo; ./clean_ps ; cd -
 	- cd install; ./clean.sh ; cd -
 	- cd include; ./clean.sh ; cd -
-	- rm -f espresso.tar.gz
-	- rm -rf make.inc
-
-# remove everything not in the original distribution 
+	- rm -f espresso.tar.gz -
+	- rm -rf make.inc -
+	- rm -rf FoX
+# remove everything not in the original distribution
 distclean : veryclean
 	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
@@ -380,4 +390,3 @@ depend: libiotk version
 
 version:
 	- ( cd Modules; make version )
-

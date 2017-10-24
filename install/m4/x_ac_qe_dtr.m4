@@ -11,7 +11,7 @@ AC_ARG_ENABLE(dtr,
       use_dtr=0
    fi],
    [use_dtr=0])
-   
+
 # preprocessing flag for DTR
 if test "$use_dtr" -eq 1 ; then
     try_dflags="$try_dflags -D__DTR"

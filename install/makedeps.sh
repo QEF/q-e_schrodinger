@@ -11,7 +11,8 @@ TOPDIR=`pwd`
 
 if test $# = 0
 then
-    dirs=" LAXlib FFTXlib Modules clib LR_Modules upftools \
+    dirs=" LAXlib FFTXlib UtilXlib Modules clib LR_Modules upftools \
+           KS_Solvers/Davidson KS_Solvers/Davidson_RCI KS_Solvers/CG \
            PW/src CPV/src PW/tools upftools PP/src PWCOND/src \
            PHonon/Gamma PHonon/PH PHonon/FD atomic/src \
            XSpectra/src ACFDT/src NEB/src TDDFPT/src \
@@ -51,20 +52,27 @@ for dir in $dirs; do
     # default
     DEPENDS="$LEVEL1/include" 
     # for convenience, used later
-    DEPEND1="$LEVEL1/include $LEVEL1/iotk/src $LEVEL1/FFTXlib $LEVEL1/LAXlib"
-    DEPEND2="$LEVEL2/include $LEVEL2/iotk/src $LEVEL2/FFTXlib $LEVEL2/LAXlib \
+    DEPEND1="$LEVEL1/include $LEVEL1/iotk/src $LEVEL1/FFTXlib $LEVEL1/LAXlib $LEVEL1/UtilXlib"
+    DEPEND2="$LEVEL2/include $LEVEL2/iotk/src $LEVEL2/FFTXlib $LEVEL2/LAXlib $LEVEL2/UtilXlib \
              $LEVEL2/Modules"
+    DEPEND3="$LEVEL2/include $LEVEL2/FFTXlib $LEVEL2/LAXlib $LEVEL2/UtilXlib"
     case $DIR in 
         Modules )
-             DEPENDS="$DEPEND1" ;;
+             DEPENDS="$DEPEND1 $LEVEL1/UtilXlib" ;;
+        LAXlib )
+             DEPENDS="$LEVEL1/UtilXlib " ;;
         upftools )
              DEPENDS="$DEPEND1 $LEVEL1/Modules" ;;
         LR_Modules )
              DEPENDS="$DEPEND1 $LEVEL1/Modules $LEVEL1/PW/src" ;;
 	ACFDT/src ) 
              DEPENDS="$DEPEND2 $LEVEL2/PW/src $LEVEL2/PHonon/PH $LEVEL2/LR_Modules" ;;
-	PW/src | CPV/src | atomic/src | GWW/gww )
+	atomic/src | GWW/gww )
 	     DEPENDS="$DEPEND2" ;;
+	PW/src | CPV/src )
+	     DEPENDS="$DEPEND2 ../../KS_Solvers/Davidson ../../KS_Solvers/CG" ;;
+	KS_Solvers/Davidson | KS_Solvers/Davidson_RCI | KS_Solvers/CG )
+	     DEPENDS="$DEPEND3" ;;
 	PW/tools | PP/src | PWCOND/src | GWW/pw4gww | NEB/src )
 	     DEPENDS="$DEPEND2 $LEVEL2/PW/src" ;;
 	PHonon/FD | PHonon/PH | PHonon/Gamma | XSpectra/src  | GIPAW/src )
@@ -90,6 +98,8 @@ for dir in $dirs; do
         # handle special cases: modules for C-fortran binding, hdf5, MPI
         sed '/@iso_c_binding@/d' make.depend > make.depend.tmp
         sed '/@hdf5@/d;/@mpi@/d' make.depend.tmp > make.depend
+        sed '/@fox_wxml@/d'      make.depend > make.depend.tmp 
+        sed '/@fox_dom@/d'       make.depend.tmp > make.depend
 
         if test "$DIR" = "FFTXlib"
         then
@@ -103,6 +113,32 @@ for dir in $dirs; do
             cp make.depend.tmp make.depend
         fi
 
+        if test "$DIR" = "UtilXlib"
+        then
+            sed '/@elpa1@/d' make.depend > make.depend.tmp
+            sed '/@ifcore@/d' make.depend.tmp > make.depend
+        fi
+
+        if test "$DIR" = "KS_Solvers/Davidson"
+        then
+
+            sed '/@elpa1@/d' make.depend > make.depend.tmp
+            sed '/@ifcore@/d' make.depend.tmp > make.depend
+        fi
+
+        if test "$DIR" = "KS_Solvers/Davidson_RCI"
+        then
+            sed '/@elpa1@/d' make.depend > make.depend.tmp
+            sed '/@ifcore@/d' make.depend.tmp > make.depend
+        fi
+
+        if test "$DIR" = "KS_Solvers/CG"
+        then
+
+            sed '/@elpa1@/d' make.depend > make.depend.tmp
+            sed '/@ifcore@/d' make.depend.tmp > make.depend
+        fi
+
         if test "$DIR" = "Modules"
         then
 
@@ -113,7 +149,7 @@ for dir in $dirs; do
         if test "$DIR" = "PW/src" || test "$DIR" = "TDDFPT/src"
         then
             sed '/@environ_/d;/@solvent_tddfpt@/d' make.depend > make.depend.tmp
-            sed '/fft_defs.h@/d' make.depend.tmp > make.depend
+            cp make.depend.tmp make.depend
         fi
 
         if test "$DIR" = "CPV/src"

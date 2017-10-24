@@ -2,15 +2,18 @@
 
 include ../make.inc
 
-MODFLAGS= $(MOD_FLAG)../ELPA/src
+MODFLAGS= $(MOD_FLAG)../UtilXlib $(MOD_FLAG)../ELPA/src  $(MOD_FLAG) .
 
 LAX = la_types.o \
 la_error.o \
+cdiaghg.o \
+rdiaghg.o \
 dspev_drv.o \
 ptoolkit.o \
 transto.o \
 distools.o \
 zhpev_drv.o \
+mp_diag.o \
 la_param.o
 
 

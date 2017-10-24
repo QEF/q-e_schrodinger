@@ -5,12 +5,6 @@
 ! in the root directory of the present distribution,
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
-!------------------------------------------------------------------------
-! TB
-! included monopole potential similar to the saw function of the sawtooth
-! electric field, search 'TB'
-!------------------------------------------------------------------------
-
 !------------------------------------------------------------------------------!
   MODULE cell_base
 !------------------------------------------------------------------------------!
@@ -206,38 +200,14 @@
      CALL volume( alat, at(1,1), at(1,2), at(1,3), omega )
      !
   ELSE
-  ! ... crystal lattice via celldm or crystallographica parameters
-  !
+     !
+     ! ... crystal lattice vectors via ibrav + celldm parameters
+     !
      IF ( celldm(1) == 0.D0 .and. a /= 0.D0 ) THEN
         !
-        celldm(1) = a / bohr_radius_angs
-        celldm(2) = b / a
-        celldm(3) = c / a
-        IF ( (ABS(cosab) > 1.0_dp) .OR. (ABS(cosac) > 1.0_dp) .OR. &
-             (ABS(cosbc) > 1.0_dp) ) CALL errore ('cell_base_init',&
-                         'incorrect values for cosab, cosac, cosbc',1)
+        ! ... convert crystallographic parameters into celldm parameters
         !
-        IF ( ibrav == 14 ) THEN
-           !
-           ! ... triclinic lattice
-           !
-           celldm(4) = cosbc
-           celldm(5) = cosac
-           celldm(6) = cosab
-           !
-        ELSE IF ( ibrav ==-12 ) THEN
-           !
-           ! ... monoclinic P lattice, unique axis b
-           !
-           celldm(5) = cosac
-           !
-        ELSE
-           !
-           ! ... trigonal and monoclinic lattices, unique axis c
-           !
-           celldm(4) = cosab
-           !
-        ENDIF
+        CALL abc2celldm ( ibrav, a,b,c,cosab,cosac,cosbc, celldm )
         !
      ELSE IF ( celldm(1) /= 0.D0 .and. a /= 0.D0 ) THEN
         !
@@ -540,80 +510,6 @@
           rout = rout + matmul(box%hmat(:,:),s)
         END IF
       END FUNCTION pbc
-
-!
-!------------------------------------------------------------------------------!
-!
-      FUNCTION saw(emaxpos,eopreg,x) RESULT (sawout)
-        IMPLICIT NONE
-        REAL(DP) :: emaxpos,eopreg,x
-        REAL(DP) :: y, sawout, z
-        
-        z = x - emaxpos 
-        y = z - floor(z)
-        
-        if (y.le.eopreg) then
-        
-            sawout = (0.5_DP - y/eopreg) * (1._DP-eopreg)
-        
-        else 
-!
-! I would use:   sawout = y - 0.5_DP * ( 1.0_DP + eopreg )
-!
-            sawout = (-0.5_DP + (y-eopreg)/(1._DP-eopreg)) * (1._DP-eopreg)
-        
-        end if
-        
-      END FUNCTION saw
-
-!TB - start
-!------------------------------------------------------------------------------!
-!mopopla - add a potential of a monopole plane (kflag = .true.)
-!          or the compensating background charge (kflag = .false.)
-!          I split those in order to plot both independently
-! cite PRB 89, 245406 (2014)
-!
-      FUNCTION mopopla(zmon,x,kflag) RESULT (mopoplaout)
-        IMPLICIT NONE
-        REAL(DP) :: zmon,x
-        REAL(DP) :: mopoplaout, z
-        LOGICAL  :: kflag
-
-        DO ! is x within the cell?
-          IF (x>1.0) x=x-1.0
-          IF (x<0.0) x=x+1.0
-          IF (x<=1.0.and.x>=0.0) EXIT
-        ENDDO
-
-        z = (x - zmon)
-
-        !Monopole-plane
-        ! if z < 0, we are below the plane
-        !    z > 0, above
-        !    z < -0.5, the potential is again the same as for z > 0
-        !              in order to make it periodic
-        !    z > 0.5, the same as for z < 0
-        !
-        IF (z<=-0.5) z=z+1
-        IF (z>=0.5) z=z-1
-        IF (z.LE.0) THEN
-           IF (kflag) THEN
-              mopoplaout = ( 1.0_DP*z )
-           ELSE
-              mopoplaout = ( z**2 )
-           ENDIF
-        ELSE
-           IF (kflag) THEN
-              mopoplaout = ( -1.0_DP*z )
-           ELSE
-              mopoplaout = ( z**2 )
-           ENDIF
-        ENDIF
-
-      END FUNCTION mopopla
-
-!TB - end
-
 !
 !------------------------------------------------------------------------------!
 !

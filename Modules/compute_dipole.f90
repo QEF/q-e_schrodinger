@@ -36,7 +36,7 @@ SUBROUTINE compute_dipole( nnr, nspin, rho, r0, dipole, quadrupole )
   ! ... Local variables
   !
   REAL(DP) :: r(3), rhoir
-  INTEGER  :: i, j, k, ip, ir, ir_end, index0
+  INTEGER  :: i, j, k, ip, ir, ir_end, idx, j0, k0
   REAL(DP) :: inv_nr1, inv_nr2, inv_nr3
   !
   ! ... Initialization
@@ -49,22 +49,28 @@ SUBROUTINE compute_dipole( nnr, nspin, rho, r0, dipole, quadrupole )
   quadrupole(:) = 0.D0
   !
 #if defined (__MPI)
-  index0 = dfftp%nr1x*dfftp%nr2x*SUM(dfftp%npp(1:me_bgrp))
-  ir_end = MIN(nnr,dfftp%nr1x*dfftp%nr2x*dfftp%npp(me_bgrp+1))
+  j0 = dfftp%my_i0r2p ; k0 = dfftp%my_i0r3p
+  ir_end = MIN(nnr,dfftp%nr1x*dfftp%my_nr2p*dfftp%my_nr3p)
 #else
-  index0 = 0
+  j0 = 0 ; k0 = 0
   ir_end = nnr
 #endif
   !
-  DO ir = 1, ir_end 
+  DO ir = 1, ir_end
      !
      ! ... three dimensional indexes
      !
-     i = index0 + ir - 1
-     k = i / (dfftp%nr1x*dfftp%nr2x)
-     i = i - (dfftp%nr1x*dfftp%nr2x)*k
-     j = i / dfftp%nr1x
-     i = i - dfftp%nr1x*j
+     idx = ir -1
+     k   = idx / (dfftp%nr1x*dfftp%my_nr2p)
+     idx = idx - (dfftp%nr1x*dfftp%my_nr2p)*k
+     k   = k + k0
+     IF ( k .GE. dfftp%nr3 ) CYCLE
+     j   = idx / dfftp%nr1x
+     idx = idx - dfftp%nr1x * j
+     j   = j + j0
+     IF ( j .GE. dfftp%nr2 ) CYCLE
+     i   = idx
+     IF ( i .GE. dfftp%nr1 ) CYCLE
      !
      DO ip = 1, 3
         r(ip) = DBLE( i )*inv_nr1*at(ip,1) + &
@@ -82,7 +88,7 @@ SUBROUTINE compute_dipole( nnr, nspin, rho, r0, dipole, quadrupole )
      !
      CALL cryst_to_cart( 1, r, at, 1 )
      !
-     rhoir = rho( ir, 1 ) 
+     rhoir = rho( ir, 1 )
      !
      IF ( nspin == 2 ) rhoir = rhoir + rho(ir,2)
      !

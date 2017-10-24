@@ -1,5 +1,5 @@
 \documentclass[12pt,a4paper]{article}
-\def\version{6.1}
+\def\version{6.2}
 \def\qe{{\sc Quantum ESPRESSO}}
 
 \usepackage{html}
@@ -35,6 +35,7 @@
   \includegraphics[width=5cm]{\qeImage} \\
   % title
   \Huge User's Guide for \\ \qe\ (v.\version)
+  \\ \Large (only partially updated)
 }
 
 \maketitle
@@ -46,6 +47,9 @@
 This guide gives a general overview of the contents and of the installation
 of \qe\ (opEn-Source Package for Research in Electronic Structure, Simulation,
 and Optimization), version \version.
+
+{\em Important notice: due to the lack of time and of manpower, this
+manual is only partially updated and may contain outdated information.}
 
 The \qe\ distribution contains the core packages \PWscf\ (Plane-Wave
 Self-Consistent Field) and \CP\ (Car-Parrinello) for the calculation
@@ -109,7 +113,7 @@ data is available for most packages in files \texttt{INPUT\_*.txt} and
 
 The \qe\ codes work on many different types of Unix machines,
 including parallel machines using both OpenMP and MPI
-(Message Passing Interface) and GPU-accelerated machines.
+(Message Passing Interface).
 \qe\ also runs on Mac OS X and MS-Windows machines:
 see section \ref{Sec:Installation}.
 
@@ -185,14 +189,15 @@ bugs, helped in porting to new architectures, wrote some code,
 contributed in some way or another at some stage, follows:
 \begin{quote}
   {\AA}ke Sandgren, Audrius Alkauskas, Alain Allouche, Francesco Antoniella,
-  Uli Aschauer,  Francesca Baletto, Gerardo Ballabio, Mauro Boero, Pietro
-  Bonf\`a, Claudia Bungaro, Paolo Cazzato, Gabriele Cipriani, Jiayu Dai,
-  Cesar Da Silva, Alberto Debernardi, Gernot Deinzer, Alin Marin Elena,
+  Uli Aschauer,  Francesca Baletto, Gerardo Ballabio, Mauro Boero,
+  Scott Brozell, Claudia Bungaro, Paolo Cazzato, Gabriele Cipriani,
+  Jiayu Dai, Stefano Dal Forno, Cesar Da Silva, Alberto Debernardi,
+  Gernot Deinzer, Alin Marin Elena, Francesco Filipponi, Prasenjit Ghosh,
   Marco Govoni, Thomas Gruber, Martin Hilgeman, Yosuke Kanai, Konstantin Kudin,
-  Nicolas Lacorne, Stephane Lefranc, Sergey Lisenkov, Kurt Maeder,
+  Nicolas Lacorne, Hyungjun Lee, Stephane Lefranc, Sergey Lisenkov, Kurt Maeder,
   Andrea Marini, Giuseppe Mattioli, Nicolas Mounet, William Parker,
-  Pasquale Pavone, Samuel Ponc\'e, Mickael Profeta, Kurt Stokbro,
-  David Strubbe, Sylvie Stucki, Paul Tangney,  Pascal Thibaudeau,
+  Pasquale Pavone, Samuel Ponc\'e, Mickael Profeta, Chung-Yuan Ren,
+  Kurt Stokbro, David Strubbe, Sylvie Stucki, Paul Tangney, Pascal Thibaudeau,
   Davide Tiana, Antonio Tilocca, Jaro Tobik, Malgorzata Wierzbowska,
   Vittorio Zecca, Silviu Zilberman, Federico Zipoli,
 \end{quote}
@@ -222,10 +227,6 @@ automatically deleted with no further processing (sorry, too
 much spam). In case of trouble, carefully check that your return
 e-mail is the correct one (i.e. the one you used to subscribe).
 
-The same \texttt{pw\_forum@pwscf.org} mailing-list is used to address
-specific inquiries related to QE-GPU. In this case please tag your message
-subject with ``[QE-GPU]'' to better identify your email.
-
 If you need to contact the developers for {\em specific} questions
 about coding, proposals, offers of help, etc., please send a message
 to the developers' mailing list: \texttt{q-e-developers@qe-forge.org}.
@@ -251,7 +252,7 @@ complies with the following guidelines:
   it will confuse the ordering of messages into threads that most mailers
   can do. In particular, do not use "reply" to a Digest!!!
 \item Be short: no need to send 128 copies of the same error message just
-  because you this is what came out of your 128-processor run. No need to
+  because this is what came out of your 128-processor run. No need to
   send the entire compilation log for a single error appearing at the end.
 \item Do not post large attachments: point a linker to a place where the
   attachment(s) can be downloaded from, such as e.g. DropBox, Google Docs, 
@@ -278,32 +279,10 @@ GNU General Public License. See
 \texttt{http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt},
 or the file License in the distribution).
 
-We shall greatly appreciate if scientific work done using \qe\ distribution will
-contain an explicit acknowledgment and the following reference:
-\begin{quote}
-P. Giannozzi, S. Baroni, N. Bonini, M. Calandra, R. Car, C. Cavazzoni,
-D. Ceresoli, G. L. Chiarotti, M. Cococcioni, I. Dabo, A. Dal Corso,
-S. Fabris, G. Fratesi, S. de Gironcoli, R. Gebauer, U. Gerstmann,
-C. Gougoussis, A. Kokalj, M. Lazzeri, L. Martin-Samos, N. Marzari,
-F. Mauri, R. Mazzarello, S. Paolini, A. Pasquarello, L. Paulatto,
-C. Sbraccia, S. Scandolo, G. Sclauzero, A. P. Seitsonen, A. Smogunov,
-P. Umari, R. M. Wentzcovitch, J.Phys.:Condens.Matter 21, 395502 (2009),
-http://arxiv.org/abs/0906.2569
-\end{quote}
-Note the form \qe\ for textual citations of the code.
-Please also see package-specific documentation for
-further recommended citations.
-Pseudopotentials should be cited as (for instance)
-\begin{quote}
-[ ] We used the pseudopotentials C.pbe-rrjkus.UPF
-and O.pbe-vbc.UPF from\\
-\texttt{http://www.quantum-espresso.org}.
-\end{quote}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input quote.tex
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Installation}
-
-For machines with GPU acceleration, download the QE-GPU-\version.0.tar.gz and read
-the file \texttt{README.GPU} for information how to install the package.
 
 \subsection{Download}
 \label{SubSec:Download}
@@ -441,8 +420,7 @@ will (try to) detect compilers and libraries available on
 your machine, and set up things accordingly. Presently it is expected
 to work on most Linux 32- and 64-bit PCs (all Intel and AMD CPUs) and
 PC clusters, SGI Altix, IBM SP and BlueGene machines, NEC SX, Cray XT
-machines, Mac OS X, MS-Windows PCs, and (for experts!) on several
-GPU-accelerated hardware. Detailed installation instructions for some
+machines, Mac OS X, MS-Windows PCs. Detailed installation instructions for some
 specific HPC machines can be found in files \texttt{install/README.}{\em sys},
 where {\em sys} is the machine name.
 
@@ -963,8 +941,6 @@ for tests [...] I do have to unload some modules to make QE running
 properly. On another CRAY [...] there is also Intel compiler as option
 and the system is slightly different compared to the other.
 So my recipe should work, 99\% of the cases.
-I strongly suggest you to use PGI, also for a performance point of view.''
-(Info by Filippo Spiga, Sept. 2012)
 
 For Cray XT machines, use \texttt{./configure ARCH=crayxt4} or else
 \configure\ will not recognize the Cray-specific software environment.

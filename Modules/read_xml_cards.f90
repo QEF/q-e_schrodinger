@@ -84,6 +84,7 @@ CONTAINS
        hubbard_j0 = 0.0_DP
        hubbard_alpha = 0.0_DP
        hubbard_beta = 0.0_DP
+       starting_charge = 0.0_DP
        starting_magnetization = sm_not_set
        starting_ns_eigenvalue = -1.0_DP
        angle1 = 0.0_DP
@@ -181,6 +182,7 @@ CONTAINS
        CALL mp_bcast( hubbard_j0, ionode_id, intra_image_comm )
        CALL mp_bcast( hubbard_alpha, ionode_id, intra_image_comm )
        CALL mp_bcast( hubbard_beta, ionode_id, intra_image_comm )
+       CALL mp_bcast( starting_charge, ionode_id, intra_image_comm )
        CALL mp_bcast( starting_magnetization, ionode_id, intra_image_comm )
        CALL mp_bcast( starting_ns_eigenvalue, ionode_id, intra_image_comm )
        CALL mp_bcast( angle1, ionode_id, intra_image_comm )
@@ -198,7 +200,7 @@ CONTAINS
        IF (.not.ionode) THEN
           CALL allocate_input_ions( ntyp, nat )
        END IF
-       CALL mp_bcast( if_pos, ionode_id, intra_image_comm )
+       CALL mp_bcast( rd_if_pos, ionode_id, intra_image_comm )
        CALL mp_bcast( na_inp, ionode_id, intra_image_comm )
        CALL mp_bcast( sp_pos, ionode_id, intra_image_comm )
        CALL mp_bcast( rd_pos, ionode_id, intra_image_comm )
@@ -469,6 +471,12 @@ CONTAINS
   !              </string>                                                  !
   !           </property>                                                   !
   ![ optional                                                               !
+  !           <property name="starting_charge">                             !
+  !              <real>                                                     !
+  !                 starting_charge(i)                                      !
+  !              </real>                                                    !
+  !           </property>                                                   !
+  !                                                                         !
   !           <property name="starting_magnetization">                      !
   !              <real>                                                     !
   !                 starting_magnetization(i)                               !
@@ -675,6 +683,10 @@ CONTAINS
          psfile = clean_str( psfile )
          psfile_found = .true.
          !
+      CASE ( 'starting_charge' )
+         CALL iotk_scan_dat_inside( xmlinputunit, starting_charge( is ),&
+              ierr = ierr)
+         !
       CASE ( 'starting_magnetization' )
          CALL iotk_scan_dat_inside( xmlinputunit, starting_magnetization( is ),&
               ierr = ierr)
@@ -841,7 +853,7 @@ CONTAINS
     ! ... allocation of needed arrays
     CALL allocate_input_ions( ntyp, nat )
     !
-    if_pos = 1
+    rd_if_pos = 1
     sp_pos = 0
     rd_pos = 0.0_DP
     sp_vel = 0
@@ -945,15 +957,15 @@ CONTAINS
        !
        IF ( image  == 1 ) THEN
           !
-          CALL iotk_scan_attr( attr, 'ifx', if_pos(1,ia), default = 1, ierr=ierr )
+          CALL iotk_scan_attr( attr, 'ifx', rd_if_pos(1,ia), default = 1, ierr=ierr )
           IF ( ierr /= 0) CALL errore( 'read_image', &
                'error reading ifx attribute of atom node', image )
           !
-          CALL iotk_scan_attr( attr, 'ify', if_pos(2,ia), default = 1, ierr = ierr )
+          CALL iotk_scan_attr( attr, 'ify', rd_if_pos(2,ia), default = 1, ierr = ierr )
           IF ( ierr /= 0) CALL errore( 'read_image', &
                'error reading ify attribute of atom node', image )
           !
-          CALL iotk_scan_attr( attr, 'ifz', if_pos(3,ia), default = 1, ierr = ierr )
+          CALL iotk_scan_attr( attr, 'ifz', rd_if_pos(3,ia), default = 1, ierr = ierr )
           IF ( ierr /= 0) CALL errore( 'read_image', &
                'error reading ifz attribute of atom node', image )
           !

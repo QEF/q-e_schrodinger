@@ -29,10 +29,10 @@ SUBROUTINE wfcinit()
   USE wavefunctions_module, ONLY : evc
   USE wvfct,                ONLY : nbnd, npwx, current_k
   USE wannier_new,          ONLY : use_wannier
-#if defined (__XSD)
-  USE pw_restart_new,       ONLY : pw_readschema_file, read_collected_to_evc 
-#else
+#if defined (__OLDXML)
   USE pw_restart,           ONLY : pw_readfile
+#else
+  USE pw_restart_new,       ONLY : pw_readschema_file, read_collected_to_evc 
 #endif
   USE mp_bands,             ONLY : nbgrp, root_bgrp,inter_bgrp_comm
   USE mp,                   ONLY : mp_bcast
@@ -43,9 +43,9 @@ SUBROUTINE wfcinit()
   !
   INTEGER :: ik, ierr
   LOGICAL :: exst, exst_mem, exst_file, opnd_file, twfcollect_file = .FALSE.
-  CHARACTER (256 )                        :: dirname
-#if defined (__XSD) 
-  TYPE ( output_type ) :: output_obj
+  CHARACTER (LEN=256)                     :: dirname
+#if !defined (__OLDXML) 
+  TYPE ( output_type )                    :: output_obj
 #endif 
   !
   !
@@ -72,16 +72,16 @@ SUBROUTINE wfcinit()
      ! ... rewrite them (in pw_readfile) using the internal format
      !
      ierr = 1
-#if defined(__XSD)
+#if defined(__OLDXML)
+     CALL pw_readfile( 'wave', ierr )
+#else
      CALL pw_readschema_file(IERR = ierr, RESTART_OUTPUT = output_obj )
      IF ( ierr == 0 ) THEN 
         twfcollect_file = output_obj%band_structure%wf_collected   
-        dirname = TRIM( tmp_dir ) // TRIM( prefix ) // '.save' 
+        dirname = TRIM( tmp_dir ) // TRIM( prefix ) // '.save/' 
         IF ( twfcollect_file ) CALL read_collected_to_evc(dirname )
      END IF 
      CALL qes_reset_output ( output_obj ) 
-#else
-     CALL pw_readfile( 'wave', ierr )
 #endif
      IF ( ierr > 0 ) THEN
         WRITE( stdout, '(5X,"Cannot read wfc : file not found")' )
@@ -245,9 +245,9 @@ SUBROUTINE init_wfc ( ik )
   !
   IF ( starting_wfc(1:6) == 'atomic' ) THEN
      !
-     CALL start_clock( 'wfcinit:atomic' )
+     CALL start_clock( 'wfcinit:atomic' ); !write(*,*) 'start wfcinit:atomic' ; FLUSH(6)
      CALL atomic_wfc( ik, wfcatom )
-     CALL stop_clock( 'wfcinit:atomic' )
+     CALL stop_clock( 'wfcinit:atomic' ); !write(*,*) 'stop wfcinit:atomic' ; FLUSH(6)
      !
      IF ( starting_wfc == 'atomic+random' .AND. &
          n_starting_wfc == n_starting_atomic_wfc ) THEN
@@ -326,10 +326,9 @@ SUBROUTINE init_wfc ( ik )
   !
   ! ... subspace diagonalization (calls Hpsi)
   !
-  CALL start_clock( 'wfcinit:wfcrot' )
-  CALL rotate_wfc ( npwx, ngk(ik), n_starting_wfc, gstart, &
-                    nbnd, wfcatom, npol, okvan, evc, etatom )
-  CALL stop_clock( 'wfcinit:wfcrot' )
+  CALL start_clock( 'wfcinit:wfcrot' ); !write(*,*) 'start wfcinit:wfcrot' ; FLUSH(6)
+  CALL rotate_wfc ( npwx, ngk(ik), n_starting_wfc, gstart, nbnd, wfcatom, npol, okvan, evc, etatom )
+  CALL stop_clock( 'wfcinit:wfcrot' ); !write(*,*) 'stop wfcinit:wfcrot' ; FLUSH(6)
   !
   lelfield = lelfield_save
   !

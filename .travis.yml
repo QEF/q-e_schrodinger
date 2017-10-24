@@ -13,9 +13,10 @@ addons:
 env:
      - PARA=no
 install:
-     - ./configure --enable-parallel=$PARA --with-netlib --enable-xml --enable-dtr
+     - ./configure --enable-parallel=$PARA --with-netlib --enable-dtr
+     - make pw pp ph neb vdw_kernels
 script:
-     - make all vdw_kernels
+    - make travis
 git:
   depth: 3
 

@@ -228,7 +228,15 @@ CONTAINS
       ! ... convergence is checked here
       !
       energy_error = ABS( energy_p - energy )
+      !
+      ! ... obscure PGI bug as of v.17.4
+      !
+#if defined (__PGI)
+      grad_in = MATMUL( TRANSPOSE(hinv_block), grad(1:n-9) )
+      grad_error = MAXVAL( ABS( grad_in ) )
+#else
       grad_error = MAXVAL( ABS( MATMUL( TRANSPOSE(hinv_block), grad(1:n-9)) ) )
+#endif
       conv_bfgs = energy_error < energy_thr
       conv_bfgs = conv_bfgs .AND. ( grad_error < grad_thr )
       !
@@ -502,6 +510,10 @@ CONTAINS
          overlap( :, k_m) = 1.0_DP
          overlap(k_m, : ) = 1.0_DP
          overlap(k_m,k_m) = 0.0_DP
+         !
+         ! make sure the overlap matrix is not singular 
+         !
+         FORALL( i = 1:k ) overlap(i,i) = overlap(i,i) * ( 1.0_DP + eps8 ) ; overlap(k_m,k_m) = eps8
          !
          ! ... overlap is inverted via Bunch-Kaufman diagonal pivoting method
          !

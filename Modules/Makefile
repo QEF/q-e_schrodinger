@@ -3,7 +3,8 @@
 include ../make.inc
 
 # location of needed modules
-MODFLAGS= $(MOD_FLAG)../iotk/src $(MOD_FLAG)../ELPA/src $(MOD_FLAG)../FFTXlib $(MOD_FLAG)../LAXlib $(IFLAGS) $(MOD_FLAG).
+MODFLAGS= $(MOD_FLAG)../iotk/src $(MOD_FLAG)../ELPA/src $(MOD_FLAG)../FFTXlib $(MOD_FLAG)../LAXlib $(MOD_FLAG)../UtilXlib \
+          $(MOD_FLAG)../KS_Solvers/CG $(IFLAGS) $(MOD_FLAG).
 
 # list of modules
 
@@ -17,21 +18,21 @@ bspline.o \
 bz_form.o \
 cell_base.o  \
 check_stop.o  \
-clocks.o \
 command_line_options.o \
 compute_dipole.o \
 constants.o \
 constraints_module.o \
 control_flags.o \
 coulomb_vcut.o \
+dist.o \
 dtr.o \
 electrons_base.o \
 environment.o \
-error_handler.o \
 fcp_variables.o \
 fd_gradient.o \
 fft_base.o \
 fft_custom.o \
+fft_rho.o \
 fsockets.o \
 funct.o \
 generate_function.o \
@@ -46,11 +47,9 @@ kernel_table.o \
 kind.o \
 libxc.o \
 libxc_funcs.o \
+mdiis.o \
 mm_dispersion.o \
-mp.o \
 mp_bands.o \
-mp_base.o \
-mp_diag.o \
 mp_exx.o \
 mp_global.o \
 mp_images.o \
@@ -59,7 +58,6 @@ mp_wave.o \
 mp_world.o \
 noncol.o \
 open_close_input_file.o \
-parallel_include.o \
 parameters.o \
 parser.o \
 paw_variables.o \
@@ -111,11 +109,13 @@ io_base.o \
 qes_module.o  \
 qes_types.o \
 qes_libs.o  \
+qes_read_module.o \
 qexsd.o   \
 qexsd_input.o \
-qexsd_reader_module.o \
 hdf5_qe.o\
+qeh5_module.o\
 xsf.o \
+wyckoff.o \
 wypos.o \
 zdotc_wrapper.o  \
 zvscal.o 
@@ -128,7 +128,6 @@ capital.o \
 cryst_to_car.o \
 erf.o \
 expint.o \
-find_free_unit.o \
 functionals.o \
 generate_k_along_lines.o \
 lsda_functionals.o \
@@ -194,7 +193,7 @@ tldeps :
 
 
 clean :
-	- /bin/rm -f *.o *.a *.d *.i *~ *_tmp.f90 *.mod *.L version.f90
+	- /bin/rm -f *.o *.a *.d *.i *~ *_tmp.f90 *.mod *.L
 
 # .PHONY forces execution of a rule irrespective of the presence of an
 # updated file with the same name of the rule. In this way, the script 

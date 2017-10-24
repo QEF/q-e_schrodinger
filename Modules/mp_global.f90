@@ -17,7 +17,7 @@ MODULE mp_global
   ! ... belonging to each of the various parallelization levels:
   ! ... use the specific modules instead
   !
-  USE mp_world, ONLY: mp_world_start, mp_world_end
+  USE mp_world, ONLY: world_comm, mp_world_start, mp_world_end
   USE mp_images
   USE mp_pools
   USE mp_bands
@@ -37,6 +37,7 @@ MODULE mp_global
   INTEGER :: nproc_ortho_file = 1
   INTEGER :: nproc_bgrp_file  = 1
   INTEGER :: ntask_groups_file= 1
+  INTEGER :: nyfft_file= 1
   !
 CONTAINS
   !
@@ -51,7 +52,7 @@ CONTAINS
     ! ... groups and parallelization levels
     !
     USE command_line_options, ONLY : get_command_line, &
-        nimage_, npool_, ndiag_, nband_, ntg_
+        nimage_, npool_, ndiag_, nband_, ntg_, nyfft_
     USE parallel_include
     !
     IMPLICIT NONE
@@ -61,8 +62,9 @@ CONTAINS
     INTEGER, INTENT(IN), OPTIONAL :: what_band_group
     LOGICAL :: do_images
     LOGICAL :: do_diag_in_band
-    INTEGER :: my_comm, num_groups, group_id
+    INTEGER :: my_comm
     INTEGER :: what_band_group_
+    LOGICAL :: do_distr_diag_inside_bgrp
     !
     my_comm = MPI_COMM_WORLD
     IF ( PRESENT(my_world_comm) ) my_comm = my_world_comm
@@ -86,35 +88,26 @@ CONTAINS
     CALL mp_start_pools ( npool_, intra_image_comm )
     ! Init orthopools is done during EXX bootstrap but, if they become more used, do it here:
     ! CALL mp_start_orthopools ( intra_image_comm )
-    IF( what_band_group_ == 0 ) THEN
-       CALL mp_start_bands ( nband_, ntg_, intra_pool_comm )
-    ELSE
-       CALL mp_start_bands ( 1, ntg_, intra_pool_comm )
-       CALL mp_start_exx ( nband_, ntg_, intra_pool_comm )
-    END IF
+    CALL mp_start_bands ( nband_, ntg_, nyfft_, intra_pool_comm )
+    CALL mp_start_exx ( nband_, ntg_, intra_pool_comm )
     !
     do_diag_in_band = .FALSE.
     IF ( PRESENT(diag_in_band_group) ) do_diag_in_band = diag_in_band_group
     !
-    IF( negrp.gt.1 ) THEN
-       ! if using exx groups from mp_exx, revert to the old diag method
-       num_groups = npool_*nimage_
-       group_id = my_pool_id + my_image_id * npool_
+    IF( negrp.gt.1 .or. do_diag_in_band ) THEN
+       ! used to be the default : one diag group per bgrp ! with strict hierarchy: POOL > BAND > DIAG
+       ! if using exx groups from mp_exx still use this diag method
        my_comm = intra_bgrp_comm
-    ELSE IF( do_diag_in_band ) THEN
-       ! used to be one diag group per bgrp
-       ! with strict hierarchy: POOL > BAND > DIAG
-       num_groups = npool_* nimage_ * nband_
-       group_id   = my_bgrp_id + (my_pool_id + my_image_id * npool_ ) * nband_
-       my_comm    = intra_bgrp_comm
     ELSE
-       ! one diag group per pool ( individual k-point level )
+       ! new default: one diag group per pool ( individual k-point level )
        ! with band group and diag group both being children of POOL comm
-       num_groups = npool_* nimage_ 
-       group_id   = my_pool_id + my_image_id * npool_ 
-       my_comm    = intra_pool_comm
+       my_comm = intra_pool_comm
     END IF
-    CALL mp_start_diag  ( ndiag_, my_comm, num_groups , group_id )
+    do_distr_diag_inside_bgrp = (negrp.gt.1) .or. do_diag_in_band
+    CALL mp_start_diag ( ndiag_, my_comm, do_distr_diag_inside_bgrp )
+    !
+    call set_mpi_comm_4_cg( intra_pool_comm, intra_bgrp_comm, inter_bgrp_comm )
+    call set_mpi_comm_4_davidson( intra_pool_comm, intra_bgrp_comm, inter_bgrp_comm )
     !
     RETURN
     !
@@ -126,11 +119,14 @@ CONTAINS
     !
     USE mp, ONLY : mp_comm_free
     !
-    CALL clean_ortho_group ( )
+!    CALL clean_ortho_group ( )
+    CALL unset_mpi_comm_4_cg()
+    CALL unset_mpi_comm_4_davidson()
     CALL mp_comm_free ( intra_bgrp_comm )
     CALL mp_comm_free ( inter_bgrp_comm )
     CALL mp_comm_free ( intra_pool_comm )
     CALL mp_comm_free ( inter_pool_comm )
+    CALL mp_stop_orthopools( ) ! cleans orthopools if used in exx
     CALL mp_world_end( )
     !
     RETURN

@@ -27,7 +27,7 @@ SUBROUTINE lr_dvpsi_eels (ik, dvpsi1, dvpsi2)
   !
   USE kinds,                 ONLY : DP
   USE wvfct,                 ONLY : npwx, nbnd
-  USE fft_base,              ONLY : dffts, dtgs
+  USE fft_base,              ONLY : dffts
   USE gvecw,                 ONLY : gcutw
   USE qpoint,                ONLY : ikks, ikqs, nksq 
   USE eqv,                   ONLY : evq, dpsi 
@@ -40,6 +40,7 @@ SUBROUTINE lr_dvpsi_eels (ik, dvpsi1, dvpsi2)
   use uspp,                  only : vkb, okvan
   USE mp_bands,              ONLY : ntask_groups
   USE buffers,               ONLY : get_buffer
+  USE fft_helper_subroutines
  
   IMPLICIT NONE
   !
@@ -64,13 +65,13 @@ SUBROUTINE lr_dvpsi_eels (ik, dvpsi1, dvpsi2)
   !
   incr = 1
   !
-  IF ( dtgs%have_task_groups ) THEN
+  IF ( dffts%have_task_groups ) THEN
      !
-     v_siz =  dtgs%tg_nnr * dtgs%nogrp
+     v_siz =  dffts%nnr_tg
      !
      ALLOCATE( tg_psic(v_siz,npol) )
      !
-     incr = dtgs%nogrp
+     incr = fftx_ntgrp(dffts)
      !
   ENDIF 
   !
@@ -90,7 +91,7 @@ SUBROUTINE lr_dvpsi_eels (ik, dvpsi1, dvpsi2)
   !
   DO ibnd = 1, nbnd_occ(ikk), incr
      !
-     IF ( dtgs%have_task_groups ) THEN
+     IF ( dffts%have_task_groups ) THEN
         !
         ! FFT to R-space
         CALL cft_wave_tg(ik, evc, tg_psic, 1, v_siz, ibnd, nbnd_occ(ikk) )
@@ -146,7 +147,7 @@ SUBROUTINE lr_dvpsi_eels (ik, dvpsi1, dvpsi2)
   !
   DEALLOCATE (revc)
   !
-  IF ( dtgs%have_task_groups ) THEN
+  IF ( dffts%have_task_groups ) THEN
      DEALLOCATE( tg_psic )
   ENDIF
   !

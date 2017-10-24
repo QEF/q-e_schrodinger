@@ -343,7 +343,7 @@ SUBROUTINE dprojdtau_k (spsi, alpha, ijkb0, ipol, ik, nb_s, nb_e, mykey, dproj)
    USE klist,                ONLY : nks, xk, ngk, igk_k
    USE ldaU,                 ONLY : is_hubbard, Hubbard_l, nwfcU, wfcU, offsetU
    USE wvfct,                ONLY : nbnd, npwx, wg
-   USE uspp,                 ONLY : nkb, vkb, qq
+   USE uspp,                 ONLY : nkb, vkb, qq_at
    USE uspp_param,           ONLY : nh
    USE wavefunctions_module, ONLY : evc
    USE becmod,               ONLY : bec_type, becp, calbec
@@ -443,7 +443,7 @@ SUBROUTINE dprojdtau_k (spsi, alpha, ijkb0, ipol, ik, nb_s, nb_e, mykey, dproj)
       DO ibnd=nb_s, nb_e
          DO jh=1,nh(nt)
             betapsi(ih,ibnd) = betapsi(ih,ibnd) + &
-                               qq(ih,jh,nt) * dbetapsi(jh,ibnd)
+                               qq_at(ih,jh,alpha) * dbetapsi(jh,ibnd)
          END DO
       END DO
    END DO
@@ -456,7 +456,7 @@ SUBROUTINE dprojdtau_k (spsi, alpha, ijkb0, ipol, ik, nb_s, nb_e, mykey, dproj)
       DO ibnd=nb_s, nb_e
          DO jh=1,nh(nt)
             betapsi(ih,ibnd) = betapsi(ih,ibnd) + &
-                               qq(ih,jh,nt) * becp%k(ijkb0+jh,ibnd)
+                               qq_at(ih,jh,alpha) * becp%k(ijkb0+jh,ibnd)
          END DO
       END DO
    END DO
@@ -500,7 +500,7 @@ SUBROUTINE dprojdtau_gamma (spsi, alpha, ijkb0, ipol, ik, nb_s, nb_e, mykey, dpr
    USE klist,                ONLY : nks, xk, ngk, igk_k
    USE ldaU,                 ONLY : is_hubbard, Hubbard_l, nwfcU, wfcU, offsetU
    USE wvfct,                ONLY : nbnd, npwx,  wg
-   USE uspp,                 ONLY : nkb, vkb, qq
+   USE uspp,                 ONLY : nkb, vkb, qq_at
    USE uspp_param,           ONLY : nh
    USE wavefunctions_module, ONLY : evc
    USE becmod,               ONLY : bec_type, becp, calbec
@@ -599,7 +599,7 @@ SUBROUTINE dprojdtau_gamma (spsi, alpha, ijkb0, ipol, ik, nb_s, nb_e, mykey, dpr
       DO ibnd=nb_s,nb_e
          DO jh=1,nh(nt)
             betapsi(ih,ibnd) = betapsi(ih,ibnd) + &
-                               qq(ih,jh,nt) * dbetapsi(jh,ibnd)
+                               qq_at(ih,jh,alpha) * dbetapsi(jh,ibnd)
          END DO
       END DO
    END DO
@@ -612,7 +612,7 @@ SUBROUTINE dprojdtau_gamma (spsi, alpha, ijkb0, ipol, ik, nb_s, nb_e, mykey, dpr
       DO ibnd=nb_s,nb_e
          DO jh=1,nh(nt)
             betapsi(ih,ibnd) = betapsi(ih,ibnd) + &
-                               qq(ih,jh,nt) * becp%r(ijkb0+jh,ibnd)
+                               qq_at(ih,jh,alpha) * becp%r(ijkb0+jh,ibnd)
          END DO
       END DO
    END DO
@@ -621,7 +621,7 @@ SUBROUTINE dprojdtau_gamma (spsi, alpha, ijkb0, ipol, ik, nb_s, nb_e, mykey, dpr
    ! dproj(iwf,ibnd) = \sum_ih wfatdbeta(iwf,ih)*betapsi(ih,ibnd) +
    !                           wfatbeta(iwf,ih)*dbetapsi(ih,ibnd) 
    !
-   IF ( mykey == 0 ) THEN
+   IF ( mykey == 0 .AND. nh(nt) > 0 ) THEN
       CALL DGEMM('N','N',nwfcU, nb_e-nb_s+1, nh(nt), 1.0_dp,  &
            wfatdbeta, nwfcU, betapsi(1,nb_s), nh(nt), 1.0_dp,&
            dproj(1,nb_s), nwfcU)

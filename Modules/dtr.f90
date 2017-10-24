@@ -12,7 +12,7 @@ MODULE dtr
   !
   ! ... The variables needed to describe the atoms and related quantities
   !
-  USE ISO_C_BINDING, ONLY: c_ptr, c_float
+  USE ISO_C_BINDING, ONLY: c_ptr, c_float, C_NULL_ptr
   USE kinds,         ONLY : DP
   USE ions_base,        ONLY: nat
   IMPLICIT NONE
@@ -21,9 +21,7 @@ MODULE dtr
   !
   PRIVATE
   !
-  SAVE
-  !
-  TYPE(c_ptr) :: dtr_handle
+  TYPE(c_ptr), SAVE :: dtr_handle = C_NULL_ptr
   !
   PRIVATE fopen_file_write, fwrite_timestep_from_data
   !
@@ -32,17 +30,21 @@ MODULE dtr
     !------------------------------------------------------------------------
     SUBROUTINE dtr_init_writer()
       USE ISO_C_BINDING, ONLY: C_ASSOCIATED
-      USE io_global, ONLY : ionode, stdout
+      USE io_global, ONLY : meta_ionode, stdout
       USE io_files,   ONLY : prefix, tmp_dir
       USE ions_base,       ONLY: nat
-      USE xml_io_base, ONLY : create_directory
+      USE wrappers,  ONLY : f_mkdir_safe
       IMPLICIT NONE
       CHARACTER(256) :: dirname
+      INTEGER        :: ierr
       !
-      dirname = TRIM(TRIM(tmp_dir)//TRIM(prefix)//'_trj')
-      CALL create_directory(dirname)
-      dtr_handle = fopen_file_write(dirname, nat)
-      IF (ionode) THEN
+      IF (meta_ionode) THEN
+        dirname = TRIM(TRIM(tmp_dir)//TRIM(prefix)//'_trj')
+        ierr = f_mkdir_safe(dirname)
+        CALL errore( 'create_directory', &
+           'unable to create directory ' // TRIM( dirname ), ierr )
+
+        dtr_handle = fopen_file_write(dirname, nat)
         WRITE(stdout, *) "  DTR module: initializing..."
         WRITE(stdout, *) dirname
         IF (.not. C_ASSOCIATED(dtr_handle)) THEN
@@ -54,9 +56,8 @@ MODULE dtr
     SUBROUTINE dtr_add_step(istep)
       USE cell_base,       ONLY : at, alat
       USE ions_base,       ONLY: nat, tau
-      USE io_global, ONLY : ionode, ionode_id, stdout
+      USE io_global, ONLY : meta_ionode, stdout
       USE constants, ONLY: BOHR_RADIUS_ANGS
-      USE mp,                  ONLY: mp_barrier
       USE mp_world,            ONLY: world_comm
       IMPLICIT NONE
       !
@@ -65,50 +66,46 @@ MODULE dtr
       REAL :: pos(3 * nat), box(9)
       REAL(DP) :: time
       !
-      pos = REAL(RESHAPE(tau, (/3 * nat/) ) * alat * BOHR_RADIUS_ANGS)
-      box = REAL(RESHAPE(at, (/9/)) * alat * BOHR_RADIUS_ANGS)
-      time = REAL(istep, kind=DP)
-
-      CALL mp_barrier(world_comm)
-
-      IF (ionode) THEN
-        ret = fwrite_timestep_from_data(dtr_handle, pos, box, time)
+      call mp_synchronize(world_comm)
+      IF (meta_ionode) THEN
+        pos = REAL(RESHAPE(tau, (/3 * nat/) ) * alat * BOHR_RADIUS_ANGS)
+        box = REAL(RESHAPE(at, (/9/)) * alat * BOHR_RADIUS_ANGS)
+        time = REAL(istep, kind=DP)
+        ret = fwrite_timestep_from_data(pos, box, time)
         WRITE(stdout, '("  DTR module: write status = ", i3)') ret
       ENDIF
+      call mp_synchronize(world_comm)
 
-      CALL mp_barrier(world_comm)
     END SUBROUTINE dtr_add_step
     !
-    FUNCTION fopen_file_write(fpath, fnatoms)
+    FUNCTION fopen_file_write(fpath, fnatoms) RESULT(this)
     USE ISO_C_BINDING, ONLY: c_ptr, c_char, c_int, C_NULL_CHAR
     IMPLICIT NONE
-    TYPE(c_ptr) :: fopen_file_write
+    TYPE(c_ptr) :: this
     CHARACTER(*), INTENT(in) :: fpath
-    INTEGER, INTENT(in) :: fnatoms
+    INTEGER(c_int), INTENT(in) :: fnatoms
     !
     INTERFACE
-    FUNCTION copen_file_write(cpath, ctype, cnatoms) BIND(C, name="open_file_write")
+    FUNCTION copen_file_write(cpath, ctype, cnatoms) RESULT(this) BIND(C, name="open_file_write")
     !  void *open_file_write(const char *path, const char *type, int natoms)
       USE ISO_C_BINDING, ONLY: c_char, c_int, c_ptr
-      TYPE(c_ptr) :: copen_file_write
+      TYPE(c_ptr) :: this
       CHARACTER(kind=c_char) :: cpath(*)
       CHARACTER(kind=c_char) :: ctype(*)
-      INTEGER(kind=c_int), VALUE    :: cnatoms
+      INTEGER(kind=c_int), VALUE :: cnatoms
     END FUNCTION copen_file_write
     END INTERFACE
     !
     CHARACTER(len=len_trim(fpath)+1,kind=c_char) :: cpath!(*)
     CHARACTER(len=len_trim("dtr")+1,kind=c_char) :: ctype!(*)
-    INTEGER(kind=c_int)    :: cnatoms
     !
     cpath = TRIM(fpath)//C_NULL_CHAR
     ctype = TRIM("dtr")//C_NULL_CHAR
-    cnatoms = INT(fnatoms, kind=c_int)
-    fopen_file_write = copen_file_write(cpath, ctype, cnatoms)
+    this = copen_file_write(cpath, ctype, fnatoms)
   END FUNCTION fopen_file_write
   !
   SUBROUTINE dtr_close_writer()
-    USE io_global, ONLY : ionode
+    USE io_global, ONLY : meta_ionode
     IMPLICIT NONE
     !
     INTERFACE
@@ -119,37 +116,34 @@ MODULE dtr
     END SUBROUTINE cclose_file_write
     END INTERFACE
     !
-    IF (ionode) CALL cclose_file_write(dtr_handle)
+    IF (meta_ionode) CALL cclose_file_write(dtr_handle)
   END SUBROUTINE dtr_close_writer
   !
-  FUNCTION fwrite_timestep_from_data(fhandle, fcoords, fbox, ftime)
-    USE ISO_C_BINDING, ONLY: c_ptr, c_float, c_double, c_int, C_LOC
+  FUNCTION fwrite_timestep_from_data(fcoords, fbox, ftime)
+    USE ISO_C_BINDING, ONLY: c_ptr, c_float, c_double, c_int, C_ASSOCIATED
+    USE io_global, ONLY : stdout
     IMPLICIT NONE
     INTEGER :: fwrite_timestep_from_data
-    TYPE(c_ptr) :: fhandle
-    REAL, INTENT(in) :: fcoords(nat * 3), fbox(9)
-    REAL(DP), INTENT(in) :: ftime
+    REAL(c_float), INTENT(in) :: fcoords(nat * 3), fbox(9)
+    REAL(c_double), INTENT(in) :: ftime
     !
     INTERFACE
     FUNCTION cwrite_timestep_from_data(chandle, ccoords, cbox, ctime) BIND(C, name="write_timestep_from_data")
     !  int write_timestep_from_data(void *v, float *coords, float *box, double time)
-      USE ISO_C_BINDING, ONLY: c_int, c_ptr, c_double
+      USE ISO_C_BINDING, ONLY: c_int, c_ptr, c_double, c_float
       INTEGER(c_int) :: cwrite_timestep_from_data
       TYPE(c_ptr), VALUE :: chandle
-      TYPE(c_ptr), VALUE :: ccoords, cbox
+      REAL(c_float) :: ccoords(*), cbox(*)
       REAL(c_double), VALUE :: ctime
     END FUNCTION cwrite_timestep_from_data
     END INTERFACE
     !
-    REAL(kind=c_float), TARGET :: ccoords(nat * 3), cbox(9)
-    INTEGER(kind=c_int) :: tmp
-    REAL(kind=c_double) :: ctime
+    IF (C_ASSOCIATED(dtr_handle)) THEN
+          WRITE(stdout, *) "  DTR module: dtr_handle still associated."
+    ENDIF
     !
-    ccoords = REAL(fcoords, kind=c_float)
-    cbox = REAL(fbox, kind=c_float)
-    ctime = REAL(ftime, kind=c_double)
-    tmp = cwrite_timestep_from_data(dtr_handle, C_LOC(ccoords), C_LOC(cbox), ctime)
-    fwrite_timestep_from_data = INT(tmp)
+    fwrite_timestep_from_data = cwrite_timestep_from_data(&
+        dtr_handle, fcoords, fbox, ftime)
   END FUNCTION fwrite_timestep_from_data
 !
 #endif

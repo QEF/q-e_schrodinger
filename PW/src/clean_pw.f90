@@ -6,7 +6,7 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 ! TB
-! included deallocation of forcefield of monopole 'forcemono'
+! included deallocation of forcefield of gate 'forcegate'
 !
 !----------------------------------------------------------------------
 SUBROUTINE clean_pw( lflag )
@@ -44,7 +44,7 @@ SUBROUTINE clean_pw( lflag )
   USE uspp_param,           ONLY : upf
   USE m_gth,                ONLY : deallocate_gth
   USE ldaU,                 ONLY : deallocate_ldaU
-  USE extfield,             ONLY : forcefield, forcemono
+  USE extfield,             ONLY : forcefield, forcegate
   USE fft_base,             ONLY : dfftp, dffts  
   USE fft_base,             ONLY : pstickdealloc
   USE fft_types,            ONLY : fft_type_deallocate
@@ -90,20 +90,19 @@ SUBROUTINE clean_pw( lflag )
      !
      IF ( ALLOCATED( force ) )      DEALLOCATE( force )
      IF ( ALLOCATED( forcefield ) ) DEALLOCATE( forcefield )
-     IF ( ALLOCATED( forcemono ) )  DEALLOCATE( forcemono )
+     IF ( ALLOCATED( forcegate ) )  DEALLOCATE( forcegate )
      IF ( ALLOCATED( irt ) )        DEALLOCATE( irt )
      !
      CALL dealloca_london()
      CALL cleanup_xdm()
      CALL deallocate_constraint()
+     CALL deallocate_tetra ( )
      !
   END IF
   !
   CALL deallocate_bp_efield()
   !
   CALL deallocate_ldaU ( lflag )
-  !
-  CALL deallocate_tetra ( )
   !
   IF ( ALLOCATED( f_inp ) .and. lflag )      DEALLOCATE( f_inp )
   !

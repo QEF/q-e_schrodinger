@@ -1,163 +1,79 @@
 #!/bin/sh -x
 
-#tempdir=$HOME/Downloads
-tempdir=/tmp
-version=6.1
-revision=13369
+version=6.2
+revision=13949
+user=giannozz
+tempdir=$HOME/tempdir
 
-# make sure there is no locale setting creating unneeded differences.
-#LC_ALL=C
-#export LC_ALL
+# Make sure there is no locale setting creating unneeded differences.
+LC_ALL=C
+export LC_ALL
 
-# get the svn copy via tag
-svn checkout http://qeforge.qe-forge.org/svn/q-e/tags/QE-$version/espresso qe-$version
+# work in $tempdir/qe-$version
+cd $tempdir
 
+# Get the svn copy via tag (or branch)
+svn checkout svn+ssh://qeforge.qe-forge.org/svnroot/q-e/branches/QE-$version qe-$version
 # -OR- get the svn copy via revision checkout
-svn checkout -r$revision svn+ssh://<...>@qeforge.qe-forge.org/svnroot/q-e/trunk/espresso qe-$version
-
+#svn checkout -r$revision svn+ssh://$user@qeforge.qe-forge.org/svnroot/q-e/trunk/espresso qe-$version
 cd qe-$version
 
-# *** manual edit Makefile  ***
-# - Update PWgui
-# - disable Doc distclean target
-
-# *** manual edit install/plugins_makefile  ***
-# - uncomment 'examples' target
-# - uncomment 'uncompress-examples' target
-# - uncomment 'examples_veryclean' target
-
-# Manual edit "userconfig.tmp" and "ENVIRONMENT"
-# - change 'SVN' to $revision
-# - change 'REFERENCE_VERSION' to $revision
-
-# generate version.f90 (requires svn files)
-# save version.f90 (make veryclean removes it)
+# Following operations require make.inc and svn files
 touch make.inc
-cd Modules
-make version.f90
-mv version.f90 ..
+
+# Generate version.f90
+cd Modules/
+make version
+/bin/rm version.f90.in
 cd ..
-cat version.f90
 
-# remove all .svn directories, clean
-find . -type d -name .svn -exec /bin/rm -rf {} \;
-make veryclean
-rm archive/plumed-1.3-qe.tar.gz archive/PLUMED-latest.tar.gz
-
-# restore version.f90
-mv version.f90 Modules/
-cp Modules/version.f90 Modules/version.f90.in
-chmod -x install/update_version
-
-# generate documentation - NOTA BENE:
+# Generate documentation - NOTA BENE:
 # in order to build the .html and .txt documentation in Doc,
 # "tcl", "tcllib", "xsltproc" are needed
 # in order to build the .pdf files in Doc, "pdflatex" is needed
 # in order to build html files for user guide and developer manual,
 # "latex2html" and "convert" (from Image-Magick) are needed
-touch make.inc
+
 make doc VERSION=$version
 
-# generate PWGUI
+# Generate PWGUI
 make tar-gui PWGUI_VERSION=$version
-tar -xzvf PWgui-$version.tgz
-/bin/rm PWgui-$version.tgz
+mv PWgui-$version.tgz ../qe-$version-PWgui.tar.gz
 
-# generate QE-modes (requires tcllib, emacs, texlive-upquote)
+# Generate QE-modes (requires tcllib, emacs, texlive-upquote)
 make tar-qe-modes VERSION=$version
 mv QE-modes-$version.tar.gz ../qe-$version-emacs_modes.tar.gz
 
-# Updating reference outputs on test-suite
-cd test-suite
-find . -name benchmark.out* > list-SVN.txt
-sed 's/SVN/'$version'/g' list-SVN.txt | grep -v svn  > list-$version.txt
-paste -d " " list-SVN.txt list-$version.txt > ./STUFF-TO-RENAME.txt
-IFS=$'\n'
-for x in `cat ./STUFF-TO-RENAME.txt `
-do
-file_src=`echo $x | awk '{ print $1}'`
-file_dst=`echo $x | awk '{ print $2}'`
-mv ${file_src} ${file_dst}
+# Move out svn directories, unneeded files, packages not to be packaged
+/bin/rm .??* TODO archive/plumed-1.3-qe.tar.gz
+/bin/rm -rf .svn/ QHA/ PlotPhon/ West/ GIPAW/ GUI/
+
+# Update reference outputs on test-suite
+cd test-suite/
+for file in */benchmark.out*; do
+    file2=`echo $file | sed 's/SVN/$version'`
+    mv $file $file2
 done
-rm ./STUFF-TO-RENAME.txt ./list-SVN.txt ./list-$version.txt
 cd ..
+
+# Package test-suite
 cp License test-suite/
-
-make distclean
-
-# packacking test-suite
-mv test-suite test-suite
 tar -czvf ../qe-$version-test-suite.tar.gz test-suite
+/bin/rm -rf test-suite
 
-# Grouping Examples in the same directory and packacking them
-mkdir Examples
-cd  Examples
-mkdir CPV PHonon NEB COUPLE PP PW XSpectra GWW EPW atomic PWCOND TDDFPT PWgui-$version
-mkdir PP/simple_transport
-mv ../TDDFPT/Examples/* TDDFPT/
-mv ../PWgui-$version/examples/* PWgui-$version/
-mv ../atomic/examples/* atomic/
-mv ../EPW/examples/* EPW/
-mv ../GWW/examples/* GWW/
-mv ../XSpectra/examples/* XSpectra/
-mv ../PW/examples/* PW/
-mv ../PP/examples/* PP/
-mv ../PP/simple_transport/examples/* PP/simple_transport/
-mv ../COUPLE/examples/* COUPLE/
-mv ../NEB/examples/* NEB/
-mv ../CPV/examples/* CPV/
-mv ../PWCOND/examples/* PWCOND/
-mv ../PHonon/examples/* PHonon/
-rm -rf ../TDDFPT/Examples ../CPV/examples ../PHonon/examples ../NEB/examples ../COUPLE/examples ../PP/examples ../PP/simple_transport/examples ../PW/examples ../PWgui-6.0/examples ../XSpectra/examples ../GWW/examples ../EPW/examples ../atomic/examples ../PWCOND/examples
+# Package example
+tar -czvf ../qe-$version-examples.tar.gz License */Examples */examples */*/examples
+/bin/rm -rf */Examples */examples */*/examples
+
+# Package sources (in directory qe-$version)
 cd ..
-cp License Examples/
-
-# Grouping Examples in the same directory and packacking them
-tar -czvf ../qe-$version-examples.tar.gz Examples
-
-cd ../
-
-# core espresso
-tar -czvf qe-$version.tar.gz \
-qe-$version/COUPLE \
-qe-$version/CPV \
-qe-$version/Doc \
-qe-$version/EPW \
-qe-$version/FFTXlib \
-qe-$version/GWW \
-qe-$version/LAXlib \
-qe-$version/LR_Modules \
-qe-$version/License \
-qe-$version/Makefile \
-qe-$version/Modules \
-qe-$version/NEB \
-qe-$version/PHonon \
-qe-$version/PP \
-qe-$version/PW \
-qe-$version/PWCOND \
-qe-$version/README \
-qe-$version/TDDFPT \
-qe-$version/XSpectra \
-qe-$version/archive \
-qe-$version/atomic \
-qe-$version/clib \
-qe-$version/configure \
-qe-$version/dev-tools \
-qe-$version/environment_variables \
-qe-$version/include \
-qe-$version/install \
-qe-$version/pseudo \
-qe-$version/upftools \
-qe-$version/PWgui-$version
-
+tar -czvf qe-$version.tar.gz qe-$version
 cd qe-$version
 
-# Preparing documentation for upload
-cd Doc
-rm *.xml *.txt *.html
-
-for x in CPV PHonon NEB PP PW PWCOND TDDFPT atomic; \
-  do cp ../$x/Doc/*.xml .; cp ../$x/Doc/*.html .; cp ../$x/Doc/*.txt .; done
+# Prepare documentation for upload
+cd Doc/
+/bin/rm *.xml *.txt *.html
+cp ../*/Doc/*.html ../*/Doc/*.txt .
 
 cp ../PW/Doc/user_guide.pdf ./pw_user_guide.pdf
 cp ../CPV/Doc/user_guide.pdf ./cp_user_guide.pdf
@@ -173,7 +89,6 @@ cp -R ../PHonon/Doc/user_guide ./ph_user_guide
 cp -R ../NEB/Doc/user_guide ./neb_user_guide
 cp -R ../atomic/Doc/pseudo-gen ./pseudo-gen
 
-# Copy "Docs" to QE website
-scp -R Doc <...>@<...>/wp-content/uploads/Doc-$version
-
-# Connect to the website and create/update symbolic link to "Doc-$version"
+echo Now copy "Docs" to QE website
+echo scp -R Doc user@site/wp-content/uploads/Doc-$version
+echo connect to the website and create/update symbolic link to "Doc-$version"

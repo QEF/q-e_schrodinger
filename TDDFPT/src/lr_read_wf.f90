@@ -16,6 +16,7 @@ SUBROUTINE lr_read_wf()
   ! Modified by Xiaochuan Ge (2013) to fix some bugs of virt_read and include Davidson
   !
   USE kinds,                ONLY : dp
+  USE cell_base,            ONLY : at
   USE io_global,            ONLY : stdout
   USE klist,                ONLY : nks, xk, ngk, igk_k
   USE gvect,                ONLY : ngm, g
@@ -29,7 +30,7 @@ SUBROUTINE lr_read_wf()
   USE wvfct,                ONLY : nbnd, npwx
   USE control_flags,        ONLY : gamma_only,io_level
   USE gvecs,                ONLY : nls, nlsm
-  USE fft_base,             ONLY : dffts, dtgs
+  USE fft_base,             ONLY : dffts
   USE fft_interfaces,       ONLY : invfft
   USE uspp,                 ONLY : vkb, nkb, okvan
   USE becmod,               ONLY : bec_type, becp, calbec
@@ -38,13 +39,14 @@ SUBROUTINE lr_read_wf()
                                  & fwfft_orbital_gamma, calbec_rs_gamma,&
                                  & add_vuspsir_gamma, v_loc_psir,&
                                  & s_psir_gamma, real_space_debug
-  USE exx,                  ONLY : exx_grid_init, exx_div_check, exx_restart
+  USE exx,                  ONLY : exx_grid_reinit, exx_div_check, exx_restart
   USE funct,                ONLY : dft_is_hybrid
   USE lr_exx_kernel,        ONLY : lr_exx_revc0_init, lr_exx_alloc
   USE wavefunctions_module, ONLY : evc
   USE buffers,              ONLY : open_buffer
   USE qpoint,               ONLY : nksq
   USE noncollin_module,     ONLY : npol
+  USE fft_helper_subroutines
   !
   IMPLICIT NONE
   !
@@ -71,9 +73,13 @@ SUBROUTINE lr_read_wf()
   IF ( dft_is_hybrid() ) THEN
      !
      CALL open_buffer ( iunwfc, 'wfc', nwordwfc, io_level, exst ) 
-     CALL exx_grid_init()
+     !
+     CALL exx_grid_reinit(at)
      CALL exx_div_check()
-     CALL exx_restart(.true.)
+     !
+     ! set_ace=.false. disables Lin Lin's ACE for TD-DFPT 
+     !
+     CALL exx_restart( set_ace=.false.)
      !
      IF (.NOT. no_hxc) THEN
         !
@@ -215,10 +221,10 @@ SUBROUTINE normal_read()
   ! Calculation of the unperturbed wavefunctions in R-space revc0.
   ! Inverse Fourier transform of evc0.
   !
-  IF ( dtgs%have_task_groups ) THEN
+  IF ( dffts%have_task_groups ) THEN
        !
-       v_siz =  dtgs%tg_nnr * dtgs%nogrp
-       incr = 2 * dtgs%nogrp
+       v_siz =  dffts%nnr_tg
+       incr = 2 * fftx_ntgrp(dffts)
        tg_revc0 = (0.0d0,0.0d0)
        !
   ELSE
@@ -233,9 +239,9 @@ SUBROUTINE normal_read()
         !
         CALL invfft_orbital_gamma ( evc0(:,:,1), ibnd, nbnd)
         !
-        IF (dtgs%have_task_groups) THEN               
+        IF (dffts%have_task_groups) THEN               
            !
-           DO j = 1, dffts%nr1x*dffts%nr2x*dtgs%tg_npp( me_bgrp + 1 )
+           DO j = 1, dffts%nr1x*dffts%nr2x*dffts%my_nr3p
                !
                tg_revc0(j,ibnd,1) = tg_psic(j)
                !  
@@ -297,7 +303,7 @@ SUBROUTINE virt_read()
   !
   WRITE( stdout, '(/5x,"Virt read")' )
   !  
-  IF (dtgs%have_task_groups) CALL errore ( 'virt_read', 'Task &
+  IF (dffts%have_task_groups) CALL errore ( 'virt_read', 'Task &
      & groups not supported when there are virtual states in the &
      & input.', 1 )
   !
