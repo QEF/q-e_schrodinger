@@ -5,8 +5,7 @@ include ../../make.inc
 # location of needed modules and included files (if any)
 MODFLAGS= $(MOD_FLAG)../../iotk/src $(MOD_FLAG)../../Modules \
           $(MOD_FLAG)../../FFTXlib $(MOD_FLAG)../../LAXlib $(MOD_FLAG)../../UtilXlib \
-          $(MOD_FLAG)../../KS_Solvers/Davidson $(MOD_FLAG)../../KS_Solvers/CG \
-          $(MOD_FLAG)../../dft-d3/
+          $(MOD_FLAG)../../KS_Solvers/Davidson $(MOD_FLAG)../../KS_Solvers/CG
 
 PWOBJS = \
 pwscf.o 
@@ -245,9 +244,9 @@ wannier_occ.o \
 wannier_enrg.o
 
 QEMODS=../../Modules/libqemod.a ../../KS_Solvers/Davidson/libdavid.a ../../KS_Solvers/CG/libcg.a \
-       ../../FFTXlib/libqefft.a ../../LAXlib/libqela.a ../../UtilXlib/libutil.a ../../dft-d3/libdftd3qe.a
+       ../../FFTXlib/libqefft.a ../../LAXlib/libqela.a ../../UtilXlib/libutil.a 
 
-TLDEPS=bindir mods libs liblapack libblas dftd3
+TLDEPS=bindir mods libs liblapack libblas
 
 all : tldeps pw.x generate_vdW_kernel_table.x generate_rVV10_kernel_table.x
 
