@@ -684,15 +684,17 @@ PROGRAM matdyn
         END DO
         CLOSE(unit=2)
 
-        OPEN (unit=2,file=trim(flfrq)//'.gp' ,status='unknown',form='formatted')
-        pathL = 0._dp
-        WRITE(2, '(f10.6,3x,a,3x,999f10.4)')  pathL, letter(1), (freq(i,1), i=1,3*nat)
-        DO n=2, nq
-           pathL=pathL+(SQRT(SUM(  (q(:,n)-q(:,n-1))**2 )))
-           WRITE(2, '(f10.6,3x,a,3x,999f10.4)')  pathL, letter(n), (freq(i,n), i=1,3*nat)
-        END DO
-        CLOSE(unit=2)
-        DEALLOCATE(letter)
+        IF(.NOT.dos) THEN
+          OPEN (unit=2,file=trim(flfrq)//'.gp' ,status='unknown',form='formatted')
+          pathL = 0._dp
+          WRITE(2, '(f10.6,3x,a,3x,999f10.4)')  pathL, letter(1), (freq(i,1), i=1,3*nat)
+          DO n=2, nq
+            pathL=pathL+(SQRT(SUM(  (q(:,n)-q(:,n-1))**2 )))
+            WRITE(2, '(f10.6,3x,a,3x,999f10.4)')  pathL, letter(n), (freq(i,n), i=1,3*nat)
+          END DO
+          CLOSE(unit=2)
+          DEALLOCATE(letter)
+        END IF
      END IF
      !
      !  If the force constants are in the xml format we write also
