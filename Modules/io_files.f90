@@ -333,9 +333,7 @@ end subroutine seqopn
 subroutine distribute_file (file_path)
   !-----------------------------------------------------------------------
   !
-  !     this routine opens a file named "prefix"."extension"
-  !     in tmp_dir for sequential I/O access
-  !     If appropriate, the node number is added to the file name
+  !     this routine distributes file from file_path to all the procs
   !
   USE mp_world,     ONLY: world_comm, mpime, nproc
   USE io_global,    ONLY: meta_ionode, meta_ionode_id
@@ -350,12 +348,6 @@ subroutine distribute_file (file_path)
   INTEGER :: ios, iunps, fsize, proc_i
   !
   iunps = 4
-
-  INQUIRE(file = file_path, EXIST = exst)
-  IF (exst) ios = 0
-  CALL mp_sum (ios, world_comm)
-  ! All CPUs have access to the file, nothing to be done
-  IF ( ios .eq. 0 ) RETURN
 
   IF (meta_ionode) THEN
     INQUIRE ( file = file_path, EXIST = exst, SIZE = fsize)
@@ -397,6 +389,8 @@ subroutine distribute_file (file_path)
   END IF
 
   DEALLOCATE(file_data)
+
+  CALL mp_barrier(world_comm)
   return
   !-----------------------------------------------------------------------
 end subroutine distribute_file

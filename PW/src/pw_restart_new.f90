@@ -673,9 +673,9 @@ MODULE pw_restart_new
       USE FoX_dom,              ONLY : parseFile, item, getElementsByTagname, destroy, nodeList, Node
       USE qes_read_module,      ONLY : qes_read
       USE io_files,             ONLY : distribute_file
-      USE wrappers,      ONLY : f_mkdir_safe
-      USE mp,           ONLY: mp_bcast, mp_barrier, mp_get
-      USE mp_world,     ONLY: world_comm, mpime, nproc
+      USE wrappers,             ONLY : f_mkdir_safe
+      USE mp,                   ONLY : mp_bcast, mp_barrier
+      USE mp_world,             ONLY : world_comm
       IMPLICIT NONE 
       ! 
       INTEGER                                            :: ierr, io_err  
