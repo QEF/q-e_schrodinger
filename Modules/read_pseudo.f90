@@ -39,9 +39,12 @@ SUBROUTINE readpp ( input_dft, printout, ecutwfc_pp, ecutrho_pp )
   ! Optionally returns cutoffs read from PP files into ecutwfc_pp, ecutrho_pp
   !
   USE kinds,        ONLY: DP
-  USE mp,           ONLY: mp_bcast, mp_sum
+  USE mp,           ONLY: mp_bcast, mp_sum, mp_barrier, mp_get
   USE mp_images,    ONLY: intra_image_comm
-  USE io_global,    ONLY: stdout, ionode
+  USE mp_pools, ONLY: me_pool, intra_pool_comm
+  USE mp_world,     ONLY: world_comm, mpime, nproc
+  USE io_global,    ONLY: stdout, ionode, meta_ionode, meta_ionode_id, ionode_id
+  USE io_files,     ONLY: distribute_file
   USE pseudo_types, ONLY: pseudo_upf, nullify_pseudo_upf, deallocate_pseudo_upf
   USE funct,        ONLY: enforce_input_dft, &
                           get_iexch, get_icorr, get_igcx, get_igcc, get_inlc
@@ -60,9 +63,10 @@ SUBROUTINE readpp ( input_dft, printout, ecutwfc_pp, ecutrho_pp )
   !
   REAL(DP), parameter :: rcut = 10.d0
   CHARACTER(len=256) :: file_pseudo ! file name complete with path
-  LOGICAL :: printout_ = .FALSE.
-  INTEGER :: iunps, isupf, nt, nb, ir, ios
-  INTEGER :: iexch_, icorr_, igcx_, igcc_, inlc_
+  LOGICAL :: printout_ = .FALSE., exst
+  INTEGER :: iunps, isupf, nt, nb, ir, ios, meta_ionode_ios, pp_fsize
+  INTEGER :: iexch_, icorr_, igcx_, igcc_, inlc_, proc_i
+  CHARACTER(:), ALLOCATABLE :: pp_file
   !
   ! ... initialization: allocate radial grids etc
   !
@@ -137,11 +141,51 @@ SUBROUTINE readpp ( input_dft, printout, ecutwfc_pp, ecutrho_pp )
      ! (it should already contain a slash at the end)
      !
      IF ( ios /= 0 ) THEN
+        ! Propagate PP file to slave nodes, if not present
         file_pseudo = TRIM (pseudo_dir) // TRIM (psfile(nt))
-        OPEN  (unit = iunps, file = file_pseudo, status = 'old', &
-               form = 'formatted', action='read', iostat = ios)
-        CALL mp_sum (ios,intra_image_comm)
-        CALL errore('readpp', 'file '//TRIM(file_pseudo)//' not found',ABS(ios))
+        CALL distribute_file(file_pseudo)
+!        IF (meta_ionode) THEN
+!           INQUIRE ( file = file_pseudo, EXIST = exst, SIZE = pp_fsize)
+!           IF (.not.exst) &
+!              CALL errore('readpp', 'file '//TRIM(file_pseudo)//' not found', 1)
+!           ALLOCATE(character(pp_fsize) :: pp_file, STAT=ios)
+!           CALL errore('readpp', 'could not allocate pp_file on ionode', ABS(ios))
+!
+!           OPEN  (unit = iunps, file = file_pseudo, status = 'old', &
+!               form = 'unformatted', action='read', access='stream', iostat = ios)
+!           READ(iunps, pos=1) pp_file
+!           CLOSE(iunps)
+!        END IF
+!
+!        CALL mp_bcast(pp_fsize, meta_ionode_id, world_comm)
+!
+!        IF (.NOT.ALLOCATED(pp_file)) THEN
+!           ALLOCATE(character(pp_fsize) :: pp_file, STAT=ios)
+!           CALL errore('readpp', 'could not allocate pp_file', ABS(ios))
+!        END IF
+!
+!        do proc_i = 1, nproc - 1
+!             IF (.NOT.ALLOCATED(pp_file)) &
+!                CALL errore('readpp', 'should never happen', 1)
+!
+!             CALL mp_get(pp_file, pp_file, mpime, proc_i, 0, 5555, world_comm)
+!        END DO
+!
+!        ! Ensure that every node got pp_file
+!        CALL mp_barrier(world_comm)
+!
+!        OPEN (unit = iunps, file = file_pseudo, form = 'unformatted', &
+!              action='write', access='stream', iostat = ios)
+!        IF (ios .eq. 0) THEN
+!          ! This happens only for nodes that don't have access to PP file
+!           WRITE(iunps) pp_file(1:pp_fsize)
+!           CLOSE(iunps)
+!        END IF
+!
+!        DEALLOCATE(pp_file)
+
+        OPEN (unit = iunps, file = file_pseudo, status = 'old', &
+              form = 'formatted', action='read', iostat = ios)
      END IF
      !
      upf(nt)%grid => rgrid(nt)

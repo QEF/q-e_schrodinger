@@ -51,7 +51,7 @@
 
       INTERFACE mp_get
         MODULE PROCEDURE mp_get_r1, mp_get_rv, mp_get_cv, mp_get_i1, mp_get_iv, &
-          mp_get_rm, mp_get_cm
+          mp_get_rm, mp_get_cm, mp_get_z
       END INTERFACE
 
       INTERFACE mp_put
@@ -736,6 +736,54 @@
 #endif
         RETURN
       END SUBROUTINE mp_get_iv
+
+!------------------------------------------------------------------------------!
+!
+! Sasha Fonari
+!
+      SUBROUTINE mp_get_z(msg_dest, msg_sour, mpime, dest, sour, ip, gid)
+        CHARACTER(len=*) :: msg_dest, msg_sour
+        INTEGER, INTENT(IN) :: dest, sour, ip, mpime
+        INTEGER, INTENT(IN) :: gid
+        INTEGER :: group
+#if defined(__MPI)
+        INTEGER :: istatus(MPI_STATUS_SIZE)
+#endif
+        INTEGER :: ierr, nrcv
+        INTEGER :: msglen
+
+#if defined(__MPI)
+        group = gid
+#endif
+
+        ! processors not taking part in the communication have 0 length message
+
+        msglen = 0
+
+        IF(sour .NE. dest) THEN
+#if defined(__MPI)
+           IF(mpime .EQ. sour) THEN
+             msglen = len(msg_sour)
+             CALL MPI_SEND( msg_sour, len(msg_sour), MPI_CHAR, dest, ip, group, ierr)
+             IF (ierr/=0) CALL mp_stop( 8023 )
+           ELSE IF(mpime .EQ. dest) THEN
+             CALL MPI_RECV( msg_dest, len(msg_dest), MPI_CHAR, sour, ip, group, istatus, IERR )
+             IF (ierr/=0) CALL mp_stop( 8024 )
+             CALL MPI_GET_COUNT(istatus, MPI_CHAR, nrcv, ierr)
+             IF (ierr/=0) CALL mp_stop( 8025 )
+             msglen = nrcv
+           END IF
+#endif
+        ELSEIF(mpime .EQ. sour)THEN
+          msg_dest(1:len(msg_sour)) = msg_sour(:)
+          msglen = len(msg_sour)
+        END IF
+#if defined(__MPI)
+        CALL MPI_BARRIER(group, IERR)
+        IF (ierr/=0) CALL mp_stop( 8026 )
+#endif
+        RETURN
+      END SUBROUTINE mp_get_z
 
 !------------------------------------------------------------------------------!
 

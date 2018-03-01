@@ -329,6 +329,73 @@ subroutine seqopn (unit, extension, formatt, exst, tmp_dir_)
 end subroutine seqopn
 !-----------------------------------------------------------------------
 !
+!-----------------------------------------------------------------------
+subroutine distribute_file (file_path)
+  !-----------------------------------------------------------------------
+  !
+  !     this routine opens a file named "prefix"."extension"
+  !     in tmp_dir for sequential I/O access
+  !     If appropriate, the node number is added to the file name
+  !
+  USE mp_world,     ONLY: world_comm, mpime, nproc
+  USE io_global,    ONLY: meta_ionode, meta_ionode_id
+  USE mp,           ONLY: mp_bcast, mp_barrier, mp_get
+  !
+  implicit none
+  !
+  CHARACTER(len=*), INTENT(IN) :: file_path
+  !
+  CHARACTER(:), ALLOCATABLE :: file_data
+  LOGICAL :: exst
+  INTEGER :: ios, iunps, pp_fsize, proc_i
+  !
+  iunps = 4
+
+  IF (meta_ionode) THEN
+    INQUIRE ( file = file_path, EXIST = exst, SIZE = pp_fsize)
+    IF (.not.exst) &
+      CALL errore('distribute_file', 'file '//TRIM(file_path)//' not found', 1)
+
+    ALLOCATE(character(pp_fsize) :: file_data, STAT=ios)
+    CALL errore('distribute_file', 'could not allocate file on ionode', ABS(ios))
+
+    OPEN  (unit = iunps, file = file_path, status = 'old', &
+         form = 'unformatted', action='read', access='stream', iostat = ios)
+    READ(iunps, pos=1) file_data
+    CLOSE(iunps)
+  END IF
+
+  CALL mp_bcast(pp_fsize, meta_ionode_id, world_comm)
+
+  IF (.NOT.ALLOCATED(file_data)) THEN
+    ALLOCATE(character(pp_fsize) :: file_data, STAT=ios)
+    CALL errore('distribute_file', 'could not allocate file', ABS(ios))
+  END IF
+
+  DO proc_i = 1, nproc - 1
+    IF (.NOT.ALLOCATED(file_data)) &
+        CALL errore('distribute_file', 'should never happen', 1)
+
+    CALL mp_get(file_data, file_data, mpime, proc_i, 0, 5555, world_comm)
+  END DO
+
+  ! Ensure that every node got pp_file
+  CALL mp_barrier(world_comm)
+
+  OPEN (unit = iunps, file = file_path, form = 'unformatted', &
+        action='write', access='stream', iostat = ios)
+  IF (ios .eq. 0) THEN
+    ! This happens only for nodes that don't have access to file
+    WRITE(iunps) file_data(1:pp_fsize)
+    CLOSE(iunps)
+  END IF
+
+  DEALLOCATE(file_data)
+  return
+  !-----------------------------------------------------------------------
+end subroutine distribute_file
+!-----------------------------------------------------------------------
+!
 !=----------------------------------------------------------------------------=!
 END MODULE io_files
 !=----------------------------------------------------------------------------=!
@@ -391,4 +458,6 @@ SUBROUTINE davcio( vect, nword, unit, nrec, io )
   RETURN
   !
 END SUBROUTINE davcio
+
+
 

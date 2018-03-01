@@ -672,6 +672,8 @@ MODULE pw_restart_new
                                        qes_write_general_info 
       USE FoX_dom,              ONLY : parseFile, item, getElementsByTagname, destroy, nodeList, Node
       USE qes_read_module,      ONLY : qes_read
+      USE io_files,             ONLY : distribute_file
+      USE wrappers,      ONLY : f_mkdir_safe
       IMPLICIT NONE 
       ! 
       INTEGER                                            :: ierr, io_err  
@@ -697,6 +699,16 @@ MODULE pw_restart_new
       !
       filename = TRIM( tmp_dir ) // TRIM( prefix ) // '.save' &
                & // '/' // TRIM( xmlpun_schema )
+      INQUIRE ( file=filename, exist=found )
+      IF (.NOT. found ) THEN
+        ierr = f_mkdir_safe(TRIM( tmp_dir ) // TRIM( prefix ) // '.save')
+        IF ( ierr /=0 ) THEN
+          errmsg='cannot create .save dir'
+          GOTO 100
+        END IF
+        CALL distribute_file(filename)
+      END IF
+
       INQUIRE ( file=filename, exist=found )
       IF (.NOT. found ) ierr = ierr + 1
       IF ( ierr /=0 ) THEN
