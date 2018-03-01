@@ -339,7 +339,7 @@ subroutine distribute_file (file_path)
   !
   USE mp_world,     ONLY: world_comm, mpime, nproc
   USE io_global,    ONLY: meta_ionode, meta_ionode_id
-  USE mp,           ONLY: mp_bcast, mp_barrier, mp_get
+  USE mp,           ONLY: mp_bcast, mp_barrier, mp_get, mp_sum
   !
   implicit none
   !
@@ -347,16 +347,22 @@ subroutine distribute_file (file_path)
   !
   CHARACTER(:), ALLOCATABLE :: file_data
   LOGICAL :: exst
-  INTEGER :: ios, iunps, pp_fsize, proc_i
+  INTEGER :: ios, iunps, fsize, proc_i
   !
   iunps = 4
 
+  INQUIRE(file = file_path, EXIST = exst)
+  IF (exst) ios = 0
+  CALL mp_sum (ios, world_comm)
+  ! All CPUs have access to the file, nothing to be done
+  IF ( ios .eq. 0 ) RETURN
+
   IF (meta_ionode) THEN
-    INQUIRE ( file = file_path, EXIST = exst, SIZE = pp_fsize)
+    INQUIRE ( file = file_path, EXIST = exst, SIZE = fsize)
     IF (.not.exst) &
       CALL errore('distribute_file', 'file '//TRIM(file_path)//' not found', 1)
 
-    ALLOCATE(character(pp_fsize) :: file_data, STAT=ios)
+    ALLOCATE(character(fsize) :: file_data, STAT=ios)
     CALL errore('distribute_file', 'could not allocate file on ionode', ABS(ios))
 
     OPEN  (unit = iunps, file = file_path, status = 'old', &
@@ -365,10 +371,10 @@ subroutine distribute_file (file_path)
     CLOSE(iunps)
   END IF
 
-  CALL mp_bcast(pp_fsize, meta_ionode_id, world_comm)
+  CALL mp_bcast(fsize, meta_ionode_id, world_comm)
 
   IF (.NOT.ALLOCATED(file_data)) THEN
-    ALLOCATE(character(pp_fsize) :: file_data, STAT=ios)
+    ALLOCATE(character(fsize) :: file_data, STAT=ios)
     CALL errore('distribute_file', 'could not allocate file', ABS(ios))
   END IF
 
@@ -379,14 +385,14 @@ subroutine distribute_file (file_path)
     CALL mp_get(file_data, file_data, mpime, proc_i, 0, 5555, world_comm)
   END DO
 
-  ! Ensure that every node got pp_file
+  ! Ensure that every node got the file
   CALL mp_barrier(world_comm)
 
   OPEN (unit = iunps, file = file_path, form = 'unformatted', &
         action='write', access='stream', iostat = ios)
   IF (ios .eq. 0) THEN
-    ! This happens only for nodes that don't have access to file
-    WRITE(iunps) file_data(1:pp_fsize)
+    ! This happens only for nodes that don't have access to the file
+    WRITE(iunps) file_data(1:fsize)
     CLOSE(iunps)
   END IF
 
@@ -458,6 +464,3 @@ SUBROUTINE davcio( vect, nword, unit, nrec, io )
   RETURN
   !
 END SUBROUTINE davcio
-
-
-

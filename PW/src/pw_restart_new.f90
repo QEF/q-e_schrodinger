@@ -674,6 +674,8 @@ MODULE pw_restart_new
       USE qes_read_module,      ONLY : qes_read
       USE io_files,             ONLY : distribute_file
       USE wrappers,      ONLY : f_mkdir_safe
+      USE mp,           ONLY: mp_bcast, mp_barrier, mp_get
+      USE mp_world,     ONLY: world_comm, mpime, nproc
       IMPLICIT NONE 
       ! 
       INTEGER                                            :: ierr, io_err  
@@ -699,15 +701,15 @@ MODULE pw_restart_new
       !
       filename = TRIM( tmp_dir ) // TRIM( prefix ) // '.save' &
                & // '/' // TRIM( xmlpun_schema )
-      INQUIRE ( file=filename, exist=found )
-      IF (.NOT. found ) THEN
-        ierr = f_mkdir_safe(TRIM( tmp_dir ) // TRIM( prefix ) // '.save')
-        IF ( ierr /=0 ) THEN
-          errmsg='cannot create .save dir'
-          GOTO 100
-        END IF
-        CALL distribute_file(filename)
+
+      ! Distribute schema restart file
+      ierr = f_mkdir_safe(TRIM( tmp_dir ) // TRIM( prefix ) // '.save')
+      call mp_barrier(world_comm)
+      IF ( ierr == 1 ) THEN
+         CALL errore('pw_readschemafile','cannot create dir',ierr)
       END IF
+      CALL distribute_file(filename)
+      ! End distribute schema restart file
 
       INQUIRE ( file=filename, exist=found )
       IF (.NOT. found ) ierr = ierr + 1
