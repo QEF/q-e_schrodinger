@@ -711,6 +711,7 @@ MODULE pw_restart_new
       CALL distribute_file(filename)
       ! End distribute schema restart file
 
+      ierr = 0
       INQUIRE ( file=filename, exist=found )
       IF (.NOT. found ) ierr = ierr + 1
       IF ( ierr /=0 ) THEN

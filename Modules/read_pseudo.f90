@@ -150,6 +150,7 @@ SUBROUTINE readpp ( input_dft, printout, ecutwfc_pp, ecutrho_pp )
 
         OPEN  (unit = iunps, file = file_pseudo, status = 'old', &
                form = 'formatted', action='read', iostat = ios)
+        CALL mp_sum (ios,intra_image_comm)
         CALL errore('readpp', 'file '//TRIM(file_pseudo)//' not found',ABS(ios))
      END IF
      !

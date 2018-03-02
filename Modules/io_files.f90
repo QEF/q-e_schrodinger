@@ -364,6 +364,7 @@ subroutine distribute_file (file_path)
   END IF
 
   CALL mp_bcast(fsize, meta_ionode_id, world_comm)
+  CALL mp_barrier(world_comm)
 
   IF (.NOT.ALLOCATED(file_data)) THEN
     ALLOCATE(character(fsize) :: file_data, STAT=ios)
@@ -458,3 +459,4 @@ SUBROUTINE davcio( vect, nword, unit, nrec, io )
   RETURN
   !
 END SUBROUTINE davcio
+
