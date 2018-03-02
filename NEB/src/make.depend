@@ -60,6 +60,7 @@ input.o : path_variables.o
 neb.o : ../../Modules/check_stop.o
 neb.o : ../../Modules/command_line_options.o
 neb.o : ../../Modules/environment.o
+neb.o : ../../Modules/io_files.o
 neb.o : ../../Modules/io_global.o
 neb.o : ../../Modules/mp_global.o
 neb.o : ../../Modules/mp_world.o

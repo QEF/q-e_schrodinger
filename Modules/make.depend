@@ -60,7 +60,6 @@ dist.o : constants.o
 dist.o : io_global.o
 dist.o : ions_base.o
 dist.o : kind.o
-dtr.o : ../UtilXlib/mp.o
 dtr.o : cell_base.o
 dtr.o : constants.o
 dtr.o : io_files.o
@@ -145,8 +144,10 @@ io_base.o : ../UtilXlib/mp.o
 io_base.o : kind.o
 io_base.o : mp_wave.o
 io_base.o : qeh5_module.o
+io_files.o : ../UtilXlib/mp.o
 io_files.o : io_global.o
 io_files.o : kind.o
+io_files.o : mp_world.o
 io_files.o : parameters.o
 ions_base.o : cell_base.o
 ions_base.o : constants.o
@@ -325,6 +326,7 @@ read_pseudo.o : io_global.o
 read_pseudo.o : ions_base.o
 read_pseudo.o : kind.o
 read_pseudo.o : mp_images.o
+read_pseudo.o : mp_world.o
 read_pseudo.o : pseudo_types.o
 read_pseudo.o : radial_grids.o
 read_pseudo.o : read_uspp.o

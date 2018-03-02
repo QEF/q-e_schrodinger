@@ -1505,7 +1505,6 @@ pw_restart_new.o : ../../Modules/fcp_variables.o
 pw_restart_new.o : ../../Modules/fft_base.o
 pw_restart_new.o : ../../Modules/funct.o
 pw_restart_new.o : ../../Modules/gvecw.o
-pw_restart_new.o : ../../Modules/hdf5_qe.o
 pw_restart_new.o : ../../Modules/input_parameters.o
 pw_restart_new.o : ../../Modules/io_base.o
 pw_restart_new.o : ../../Modules/io_files.o
@@ -1516,6 +1515,7 @@ pw_restart_new.o : ../../Modules/mm_dispersion.o
 pw_restart_new.o : ../../Modules/mp_bands.o
 pw_restart_new.o : ../../Modules/mp_global.o
 pw_restart_new.o : ../../Modules/mp_pools.o
+pw_restart_new.o : ../../Modules/mp_world.o
 pw_restart_new.o : ../../Modules/noncol.o
 pw_restart_new.o : ../../Modules/paw_variables.o
 pw_restart_new.o : ../../Modules/qes_libs.o
@@ -1529,6 +1529,7 @@ pw_restart_new.o : ../../Modules/tsvdw.o
 pw_restart_new.o : ../../Modules/uspp.o
 pw_restart_new.o : ../../Modules/version.o
 pw_restart_new.o : ../../Modules/wavefunctions.o
+pw_restart_new.o : ../../Modules/wrappers.o
 pw_restart_new.o : ../../UtilXlib/mp.o
 pw_restart_new.o : ../../iotk/src/iotk_module.o
 pw_restart_new.o : atomic_wfc_mod.o

@@ -12,6 +12,7 @@ PROGRAM neb
   ! ... Nudged Elastic Band / Strings Method algorithm
   !
   USE io_global,         ONLY : meta_ionode, meta_ionode_id
+  USE io_files,          ONLY : distribute_file
   USE environment,       ONLY : environment_start, environment_end
   USE check_stop,        ONLY : check_stop_init
   USE mp,                ONLY : mp_bcast
@@ -53,6 +54,7 @@ PROGRAM neb
   !
   IF ( input_file_ /= ' ') THEN
      WRITE(iunpath,'(/,5X,"parsing_file_name: ",A)') trim(input_file_)
+     CALL distribute_file(input_file_)
      CALL path_gen_inputs ( trim(input_file_), engine_prefix, &
                             input_images, root, world_comm )
   ELSE
@@ -77,6 +79,7 @@ PROGRAM neb
     IF ( i > 1 ) CALL clean_pw(.true.)
     parsing_file_name = trim(engine_prefix)//trim(int_to_char(i))//".in"
     !
+    CALL distribute_file(parsing_file_name)
     CALL read_input_file ( 'PW', parsing_file_name )
     CALL iosys()
     !
