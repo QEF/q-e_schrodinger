@@ -346,8 +346,9 @@ subroutine distribute_file (file_path)
   CHARACTER(:), ALLOCATABLE :: file_data
   LOGICAL :: exst
   INTEGER :: ios, iunps, fsize, proc_i
+  INTEGER, EXTERNAL :: find_free_unit
   !
-  iunps = 4
+  fsize = 0
 
   IF (meta_ionode) THEN
     INQUIRE ( file = file_path, EXIST = exst, SIZE = fsize)
@@ -357,6 +358,7 @@ subroutine distribute_file (file_path)
     ALLOCATE(character(fsize) :: file_data, STAT=ios)
     CALL errore('distribute_file', 'could not allocate file on ionode', ABS(ios))
 
+    iunps = find_free_unit()
     OPEN  (unit = iunps, file = file_path, status = 'old', &
          form = 'unformatted', action='read', access='stream', iostat = ios)
     READ(iunps, pos=1) file_data
@@ -364,7 +366,6 @@ subroutine distribute_file (file_path)
   END IF
 
   CALL mp_bcast(fsize, meta_ionode_id, world_comm)
-  CALL mp_barrier(world_comm)
 
   IF (.NOT.ALLOCATED(file_data)) THEN
     ALLOCATE(character(fsize) :: file_data, STAT=ios)
@@ -381,6 +382,7 @@ subroutine distribute_file (file_path)
   ! Ensure that every node got the file
   CALL mp_barrier(world_comm)
 
+  iunps = find_free_unit()
   OPEN (unit = iunps, file = file_path, form = 'unformatted', &
         action='write', access='stream', iostat = ios)
   IF (ios .eq. 0) THEN
