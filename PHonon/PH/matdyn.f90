@@ -110,6 +110,7 @@ PROGRAM matdyn
   !                constants if finite displacement method is used (as in Wang et al.
   !                Phys. Rev. B 85, 224303 (2012)) [to be used in conjunction with fd.x]
   !     nosym      if .true., no symmetry and no time reversal are imposed
+  !     loto_2d    set to .true. to activate two-dimensional treatment of LO-TO splitting.
   !
   !  if (readtau) atom types and positions in the supercell follow:
   !     (tau(i,na),i=1,3), ityp(na)
@@ -143,7 +144,7 @@ PROGRAM matdyn
   USE rap_point_group,  ONLY : code_group
   USE bz_form,    ONLY : transform_label_coord
   USE parser,     ONLY : read_line
-  USE ktetra,     ONLY : tetra_dos_t
+  USE rigid,       ONLY: dyndiag, nonanal, nonanal_ifc
 
   USE ifconstants, ONLY : frc, atm, zeu, tau_blk, ityp_blk, m_loc
   !
@@ -158,13 +159,13 @@ PROGRAM matdyn
   INTEGER, PARAMETER:: ntypx=10, nrwsx=200
   REAL(DP), PARAMETER :: eps=1.0d-6
   INTEGER :: nr1, nr2, nr3, nsc, nk1, nk2, nk3, ibrav
-  CHARACTER(LEN=256) :: flfrc, flfrq, flvec, fltau, fldos, filename, fldyn, fleig
-  CHARACTER(LEN=256) :: fildyn, fildyn_prefix
+  CHARACTER(LEN=256) :: flfrc, flfrq, flvec, fltau, fldos, filename, fldyn, &
+                        fleig, fildyn, fildyn_prefix
   CHARACTER(LEN=10)  :: asr
   LOGICAL :: dos, has_zstar, q_in_cryst_coord, eigen_similarity
   COMPLEX(DP), ALLOCATABLE :: dyn(:,:,:,:), dyn_blk(:,:,:,:), frc_ifc(:,:,:,:)
   COMPLEX(DP), ALLOCATABLE :: z(:,:)
-  REAL(DP), ALLOCATABLE:: tau(:,:), q(:,:), w2(:,:), freq(:,:), wq(:)
+  REAL(DP), ALLOCATABLE:: tau(:,:), q(:,:), w2(:,:), freq(:,:), wq(:), dynq(:,:,:), DOSofE(:)
   INTEGER, ALLOCATABLE:: ityp(:), itau_blk(:)
   REAL(DP) ::     omega,alat, &! cell parameters and volume
                   at_blk(3,3), bg_blk(3,3),  &! original cell
@@ -182,9 +183,9 @@ PROGRAM matdyn
 
   INTEGER :: nspin_mag, nqs, ios
   !
-  LOGICAL :: readtau, la2F, xmlifc, lo_to_split, na_ifc, fd, nosym
+  LOGICAL :: readtau, la2F, xmlifc, lo_to_split, na_ifc, fd, nosym,  loto_2d 
   !
-  REAL(DP) :: qhat(3), qh, DeltaE, Emin=0._dp, Emax, E, DOSofE(2), qq
+  REAL(DP) :: qhat(3), qh, DeltaE, Emin=0._dp, Emax, E, qq
   REAL(DP) :: delta, pathL
   REAL(DP), ALLOCATABLE :: xqaux(:,:)
   INTEGER, ALLOCATABLE :: nqb(:)
@@ -201,18 +202,20 @@ PROGRAM matdyn
   CHARACTER(LEN=6) :: int_to_char
   LOGICAL, ALLOCATABLE :: mask(:)
   INTEGER            :: npk_label, nch
-  CHARACTER(LEN=100), ALLOCATABLE :: letter(:)
+  CHARACTER(LEN=3), ALLOCATABLE :: letter(:)
   INTEGER, ALLOCATABLE :: label_list(:)
   LOGICAL :: tend, terr
   CHARACTER(LEN=256) :: input_line, buffer
   CHARACTER(LEN=10) :: point_label_type
   CHARACTER(len=80) :: k_points = 'tpiba'
   !
+  REAL(DP), external       :: dos_gam
+  !
   NAMELIST /input/ flfrc, amass, asr, flfrq, flvec, fleig, at, dos,  &
        &           fldos, nk1, nk2, nk3, l1, l2, l3, ntyp, readtau, fltau, &
        &           la2F, ndos, DeltaE, q_in_band_form, q_in_cryst_coord, &
        &           eigen_similarity, fldyn, na_ifc, fd, point_label_type, &
-       &           nosym, fildyn, fildyn_prefix
+       &           nosym, loto_2d, fildyn, fildyn_prefix
   !
   CALL mp_startup()
   CALL environment_start('MATDYN')
@@ -238,6 +241,8 @@ PROGRAM matdyn
      fleig=' '
      fldyn=' '
      fltau=' '
+     fildyn = ' '
+     fildyn_prefix = ' '
      amass(:) =0.d0
      amass_blk(:) =0.d0
      at(:,:) = 0.d0
@@ -253,12 +258,11 @@ PROGRAM matdyn
      fd=.FALSE.
      point_label_type='SC'
      nosym = .false.
-     fildyn = ' '
-     fildyn_prefix = ' '
+     loto_2d=.false.
      !
      !
      IF (ionode) READ (5,input,IOSTAT=ios)
-     CALL mp_bcast(ios, ionode_id, world_comm) 
+     CALL mp_bcast(ios, ionode_id, world_comm)
      CALL errore('matdyn', 'reading input namelist', ABS(ios))
      CALL mp_bcast(dos,ionode_id, world_comm)
      CALL mp_bcast(deltae,ionode_id, world_comm)
@@ -275,6 +279,8 @@ PROGRAM matdyn
      CALL mp_bcast(fleig,ionode_id, world_comm)
      CALL mp_bcast(fldyn,ionode_id, world_comm)
      CALL mp_bcast(fltau,ionode_id, world_comm)
+     CALL mp_bcast(fildyn,ionode_id, world_comm)
+     CALL mp_bcast(fildyn_prefix,ionode_id, world_comm)
      CALL mp_bcast(amass,ionode_id, world_comm)
      CALL mp_bcast(amass_blk,ionode_id, world_comm)
      CALL mp_bcast(at,ionode_id, world_comm)
@@ -289,22 +295,20 @@ PROGRAM matdyn
      CALL mp_bcast(eigen_similarity,ionode_id, world_comm)
      CALL mp_bcast(q_in_cryst_coord,ionode_id, world_comm)
      CALL mp_bcast(point_label_type,ionode_id, world_comm)
-     CALL mp_bcast(fildyn,ionode_id, world_comm)
-     CALL mp_bcast(fildyn_prefix,ionode_id, world_comm)
+     CALL mp_bcast(loto_2d,ionode_id, world_comm) 
 
      !
      ! read force constants
-     !
-     ntyp_blk = ntypx ! avoids fake out-of-bound error
      !
      IF ( trim( fildyn ) /= ' ' ) THEN
         IF (ionode) THEN
            WRITE(stdout, *)
            WRITE(stdout, '(4x,a)') ' fildyn has been provided, running q2r...'
         END IF
-        CALL do_q2r(fildyn, flfrc, fildyn_prefix, asr, la2F)
+        CALL do_q2r(fildyn, flfrc, fildyn_prefix, asr, la2F, loto_2d)
      END IF
      !
+     ntyp_blk = ntypx ! avoids fake out-of-bound error
      xmlifc=has_xml(flfrc)
      IF (xmlifc) THEN
         CALL read_dyn_mat_param(flfrc,ntyp_blk,nat_blk)
@@ -419,10 +423,9 @@ PROGRAM matdyn
         CALL mp_bcast(nq, ionode_id, world_comm)
         ALLOCATE ( q(3,nq) )
         IF (.NOT.q_in_band_form) THEN
-           ALLOCATE( letter(nq) )
-           letter(:) = '*'
+           ALLOCATE(wq(nq))
            DO n = 1,nq
-              IF (ionode) READ (5,*) (q(i,n),i=1,3), letter(n)
+              IF (ionode) READ (5,*) (q(i,n),i=1,3)
            END DO
            CALL mp_bcast(q, ionode_id, world_comm)
            !
@@ -529,7 +532,8 @@ PROGRAM matdyn
      END IF
 
      ALLOCATE ( dyn(3,3,nat,nat), dyn_blk(3,3,nat_blk,nat_blk) )
-     ALLOCATE ( z(3*nat,3*nat), w2(3*nat,nq), f_of_q(3,3,nat,nat) )
+     ALLOCATE ( z(3*nat,3*nat), w2(3*nat,nq), f_of_q(3,3,nat,nat), &
+     &          dynq(3*nat,nq,nat), DosofE(nat) )
      ALLOCATE ( tmp_w2(3*nat), abs_similarity(3*nat,3*nat), mask(3*nat) )
 
      if(la2F.and.ionode) open(unit=300,file='dyna2F',status='unknown')
@@ -560,8 +564,9 @@ PROGRAM matdyn
 
         CALL setupmat (q(1,n), dyn, nat, at, bg, tau, itau_blk, nsc, alat, &
              dyn_blk, nat_blk, at_blk, bg_blk, tau_blk, omega_blk,  &
+                   loto_2d, &
              epsil, zeu, frc, nr1,nr2,nr3, has_zstar, rws, nrws, na_ifc,f_of_q,fd)
-
+        IF (.not.loto_2d) THEN 
         qhat(1) = q(1,n)*at(1,1)+q(2,n)*at(2,1)+q(3,n)*at(3,1)
         qhat(2) = q(1,n)*at(1,2)+q(2,n)*at(2,2)+q(3,n)*at(3,2)
         qhat(3) = q(1,n)*at(1,3)+q(2,n)*at(2,3)+q(3,n)*at(3,3)
@@ -607,11 +612,20 @@ PROGRAM matdyn
            !
         END IF
         !
-        
+        END IF 
+
         if(iout_dyn.ne.0) call write_dyn_on_file(q(1,n),dyn,nat, iout_dyn)
         
 
         CALL dyndiag(nat,ntyp,amass,ityp,dyn,w2(1,n),z)
+        ! Atom projection of dynamical matrix
+        DO i = 1, 3*nat
+           DO na = 1, nat
+              dynq(i, n, na) = DOT_PRODUCT(z(3*(na-1)+1:3*na, i), &
+              &                            z(3*(na-1)+1:3*na, i)  ) &
+              &              * amu_ry * amass(ityp(na))
+           END DO
+        END DO
         IF (ionode.and.iout_eig.ne.0) &
          & CALL write_eigenvectors(nat,ntyp,amass,ityp,q(1,n),w2(1,n),z,iout_eig)
         !
@@ -684,17 +698,15 @@ PROGRAM matdyn
         END DO
         CLOSE(unit=2)
 
-        IF(.NOT.dos) THEN
-          OPEN (unit=2,file=trim(flfrq)//'.gp' ,status='unknown',form='formatted')
-          pathL = 0._dp
-          WRITE(2, '(f10.6,3x,a,3x,999f10.4)')  pathL, letter(1), (freq(i,1), i=1,3*nat)
-          DO n=2, nq
-            pathL=pathL+(SQRT(SUM(  (q(:,n)-q(:,n-1))**2 )))
-            WRITE(2, '(f10.6,3x,a,3x,999f10.4)')  pathL, letter(n), (freq(i,n), i=1,3*nat)
-          END DO
-          CLOSE(unit=2)
-          DEALLOCATE(letter)
-        END IF
+        OPEN (unit=2,file=trim(flfrq)//'.gp' ,status='unknown',form='formatted')
+        pathL = 0._dp
+        WRITE(2, '(f10.6,3x,999f10.4)')  pathL,  (freq(i,1), i=1,3*nat)
+        DO n=2, nq
+           pathL=pathL+(SQRT(SUM(  (q(:,n)-q(:,n-1))**2 )))
+           WRITE(2, '(f10.6,3x,999f10.4)')  pathL,  (freq(i,n), i=1,3*nat)
+        END DO
+        CLOSE(unit=2)
+
      END IF
      !
      !  If the force constants are in the xml format we write also
@@ -727,16 +739,26 @@ PROGRAM matdyn
            ndos = NINT ( (Emax - Emin) / DeltaE + 1.51d0 )
         end if
         IF (ionode) OPEN (unit=2,file=fldos,status='unknown',form='formatted')
+        IF (ionode) WRITE (2, *) "# Frequency[cm^-1] DOS PDOS"
+        DO na = 1, nat
+           dynq(1:3*nat,1:nq,na) = dynq(1:3*nat,1:nq,na) * freq(1:3*nat,1:nq)
+        END DO
         DO n= 1, ndos
            E = Emin + (n - 1) * DeltaE
-           CALL tetra_dos_t(freq, 1, 3*nat, nq, E, DOSofE)
+           DO na = 1, nat
+              DOSofE(na) = 0d0
+              DO i = 1, 3*nat
+                 DOSofE(na) = DOSofE(na) &
+                 & + dos_gam(3*nat, nq, i, dynq(1:3*nat,1:nq,na), freq, E)
+              END DO
+           END DO
            !
            ! The factor 0.5 corrects for the factor 2 in dos_t,
            ! that accounts for the spin in the electron DOS.
            !
            !WRITE (2, '(F15.10,F15.2,F15.6,F20.5)') &
            !     E, E*RY_TO_CMM1, E*RY_TO_THZ, 0.5d0*DOSofE(1)
-           IF (ionode) WRITE (2, '(ES12.4,ES12.4)') E, 0.5d0*DOSofE(1)
+           IF (ionode) WRITE (2, '(ES12.4,1000ES12.4)') E, SUM(DOSofE(1:nat)), DOSofE(1:nat)
         END DO
         IF (ionode) CLOSE(unit=2)
      END IF  !dos
@@ -1028,12 +1050,15 @@ END SUBROUTINE frc_blk
 !-----------------------------------------------------------------------
 SUBROUTINE setupmat (q,dyn,nat,at,bg,tau,itau_blk,nsc,alat, &
      &         dyn_blk,nat_blk,at_blk,bg_blk,tau_blk,omega_blk, &
-     &                 epsil,zeu,frc,nr1,nr2,nr3,has_zstar,rws,nrws,na_ifc,f_of_q,fd)
+     &         loto_2d, & 
+     &         epsil,zeu,frc,nr1,nr2,nr3,has_zstar,rws,nrws,na_ifc,f_of_q,fd)
   !-----------------------------------------------------------------------
   ! compute the dynamical matrix (the analytic part only)
   !
   USE kinds,      ONLY : DP
   USE constants,  ONLY : tpi
+  USE cell_base,  ONLY : celldm
+  USE rigid,      ONLY : rgd_blk
   !
   IMPLICIT NONE
   !
@@ -1046,7 +1071,7 @@ SUBROUTINE setupmat (q,dyn,nat,at,bg,tau,itau_blk,nsc,alat, &
   REAL(DP) :: tau_blk(3,nat_blk), at_blk(3,3), bg_blk(3,3), omega_blk
   COMPLEX(DP) dyn_blk(3,3,nat_blk,nat_blk), f_of_q(3,3,nat,nat)
   COMPLEX(DP) ::  dyn(3,3,nat,nat)
-  LOGICAL :: has_zstar, na_ifc, fd
+  LOGICAL :: has_zstar, na_ifc, fd, loto_2d 
   !
   ! local variables
   !
@@ -1069,7 +1094,8 @@ SUBROUTINE setupmat (q,dyn,nat,at,bg,tau,itau_blk,nsc,alat, &
           &              nr1,nr2,nr3,frc,at_blk,bg_blk,rws,nrws,f_of_q,fd)
       IF (has_zstar .and. .not.na_ifc) &
            CALL rgd_blk(nr1,nr2,nr3,nat_blk,dyn_blk,qp,tau_blk,   &
-                        epsil,zeu,bg_blk,omega_blk,+1.d0)
+                         epsil,zeu,bg_blk,omega_blk,celldm(1), loto_2d,+1.d0)
+           ! LOTO 2D added celldm(1)=alat to passed arguments
      !
      DO na=1,nat
         na_blk = itau_blk(na)
@@ -2039,7 +2065,6 @@ SUBROUTINE a2Fdos &
   USE mp_images,   ONLY : intra_image_comm
   USE ifconstants, ONLY : zeu, tau_blk
   USE constants,  ONLY : pi, RY_TO_THZ
-  USE ktetra,     ONLY : tetra_init
   USE constants, ONLY : K_BOLTZMANN_RY
   !
   IMPLICIT NONE
@@ -2193,8 +2218,7 @@ SUBROUTINE a2Fdos &
               !
            enddo
            lambda = lambda + 2.d0 * dos_tot/E * DeltaE
-           write (ifn, '(3X,2F12.6)') E, dos_tot
-           write (ifn, '(6F16.8)') (dos_a2F(j),j=1,nmodes)
+           write (ifn, '(3X,1000E16.6)') E, dos_tot, dos_a2F(1:nmodes)
         enddo  !ndos
         write(ifn,*) " lambda =",lambda,'   Delta = ',DeltaE
         close (ifn)

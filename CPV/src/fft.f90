@@ -10,67 +10,6 @@
 !  ----------------------------------------------
 
 !-----------------------------------------------------------------------
-    SUBROUTINE c2psi( psi, nnr, c, ca, ng, iflg )
-!-----------------------------------------------------------------------
-       !
-       use gvecs, only: nlsm, nls
-       use kinds, only: DP
-
-       implicit none
-
-       complex(DP) :: psi(*), c(*), ca(*)
-       integer, intent(in) :: nnr, ng, iflg
-
-       complex(DP), parameter :: ci=(0.0d0,1.0d0)
-       integer :: ig
-       
-         psi( 1 : nnr ) = 0.0d0
-
-         !
-         !  iflg "cases"
-         !
-         !  0   Do not use gamma symmetry
-         !
-         !  1   set psi using a wf with Gamma symmetry
-         
-         !  2   set psi combining two wf with Gamma symmetry
-         !
-
-         SELECT CASE ( iflg )
-           !
-           !  Case 0, 1 and 2  SMOOTH MESH
-           !
-           CASE ( 0 )
-             !
-             do ig = 1, ng
-               psi( nls( ig ) ) = c( ig )
-             end do
-             !
-           CASE ( 1 )
-             !
-             do ig = 1, ng
-               psi( nlsm( ig ) ) = CONJG( c( ig ) )
-               psi( nls( ig ) ) = c( ig )
-             end do
-             !
-           CASE ( 2 )
-             !
-             do ig = 1, ng
-               psi( nlsm( ig ) ) = CONJG( c( ig ) ) + ci * conjg( ca( ig ) )
-               psi( nls( ig ) ) = c( ig ) + ci * ca( ig )
-             end do
-
-           CASE DEFAULT
-             !
-             CALL errore(" c2psi "," wrong value for iflg ", ABS( iflg ) )
-
-         END SELECT
-
-        return
-     END SUBROUTINE c2psi
-
-
-!-----------------------------------------------------------------------
       SUBROUTINE box2grid(irb,nfft,qv,vr)
 !-----------------------------------------------------------------------
 !

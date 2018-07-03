@@ -14,9 +14,9 @@ subroutine addnlcc (imode0, drhoscf, npe)
   USE kinds, only : DP
   USE ions_base, ONLY : nat
   use funct, only : dft_is_gradient, dft_is_nonlocc
-  USE cell_base, ONLY : omega, alat
+  USE cell_base, ONLY : omega
   use scf, only : rho, rho_core
-  USE gvect, ONLY : g, ngm, nl
+  USE gvect, ONLY : g, ngm
   USE fft_base, ONLY : dfftp
   USE noncollin_module, ONLY : nspin_lsda, nspin_gga, nspin_mag
   USE dynmat, ONLY : dyn, dyn_rec
@@ -99,9 +99,8 @@ subroutine addnlcc (imode0, drhoscf, npe)
      ! its contribution. grho contains already the core charge
      !
      if ( dft_is_gradient() ) &
-       call dgradcorr (rho%of_r, grho, dvxc_rr, dvxc_sr, dvxc_ss, dvxc_s, xq, &
-          drhoscf (1, 1, ipert), dfftp%nnr, nspin_mag, nspin_gga, nl, ngm, g, alat,&
-          dvaux)
+          call dgradcorr (dfftp, rho%of_r, grho, dvxc_rr, dvxc_sr, dvxc_ss, &
+          dvxc_s, xq, drhoscf (1, 1, ipert), nspin_mag, nspin_gga, g, dvaux)
      if (dft_is_nonlocc()) &
        call dnonloccorr(rho%of_r, drhoscf (1, 1, ipert), xq, dvaux)
 

@@ -3,10 +3,10 @@
 include ../../make.inc
 
 # location of needed modules and included files (if any)
-MODFLAGS= $(MOD_FLAG)../../iotk/src $(MOD_FLAG)../../Modules \
-          $(MOD_FLAG)../../FFTXlib $(MOD_FLAG)../../LAXlib $(MOD_FLAG)../../UtilXlib \
-          $(MOD_FLAG)../../KS_Solvers/Davidson $(MOD_FLAG)../../KS_Solvers/CG
-
+MODFLAGS= $(BASEMOD_FLAGS) \
+          $(MOD_FLAG)../../KS_Solvers/Davidson \
+          $(MOD_FLAG)../../KS_Solvers/CG \
+          $(MOD_FLAG)../../dft-d3/
 PWOBJS = \
 pwscf.o 
 
@@ -51,12 +51,12 @@ compute_qdipol.o \
 compute_qdipol_so.o \
 compute_ux.o \
 coset.o \
+Coul_cut_2D.o \
 d_matrix.o \
 data_structure.o \
 deriv_drhoc.o \
 divide_class.o \
 divide_class_so.o \
-divide.o \
 divide_et_impera.o \
 dqvan2.o \
 drhoc.o \
@@ -72,6 +72,8 @@ esm.o \
 ewald.o \
 ewald_dipole.o \
 extfield.o \
+exx_base.o \
+exx_band.o \
 exx.o \
 fcp.o \
 find_group.o \
@@ -111,7 +113,6 @@ init_us_2.o \
 init_at_1.o \
 init_vloc.o \
 input.o \
-interpolate.o \
 io_rho_xml.o \
 irrek.o \
 iweights.o \
@@ -205,6 +206,7 @@ stres_knl.o \
 stres_loc.o \
 stres_us.o \
 stres_nonloc_dft.o \
+stres_mgga.o \
 stress.o \
 struct_fact.o \
 sum_band.o \
@@ -244,9 +246,9 @@ wannier_occ.o \
 wannier_enrg.o
 
 QEMODS=../../Modules/libqemod.a ../../KS_Solvers/Davidson/libdavid.a ../../KS_Solvers/CG/libcg.a \
-       ../../FFTXlib/libqefft.a ../../LAXlib/libqela.a ../../UtilXlib/libutil.a 
+       ../../FFTXlib/libqefft.a ../../LAXlib/libqela.a ../../UtilXlib/libutil.a ../../dft-d3/libdftd3qe.a
 
-TLDEPS=bindir mods libs liblapack libblas
+TLDEPS=bindir mods libs liblapack libblas dftd3
 
 all : tldeps pw.x generate_vdW_kernel_table.x generate_rVV10_kernel_table.x
 

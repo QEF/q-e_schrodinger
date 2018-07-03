@@ -29,7 +29,6 @@ SUBROUTINE lr_read_wf()
                                  & lr_verbosity, lr_exx, davidson, eels
   USE wvfct,                ONLY : nbnd, npwx
   USE control_flags,        ONLY : gamma_only,io_level
-  USE gvecs,                ONLY : nls, nlsm
   USE fft_base,             ONLY : dffts
   USE fft_interfaces,       ONLY : invfft
   USE uspp,                 ONLY : vkb, nkb, okvan
@@ -39,9 +38,9 @@ SUBROUTINE lr_read_wf()
                                  & fwfft_orbital_gamma, calbec_rs_gamma,&
                                  & add_vuspsir_gamma, v_loc_psir,&
                                  & s_psir_gamma, real_space_debug
-  USE exx,                  ONLY : exx_grid_reinit, exx_div_check, exx_restart
   USE funct,                ONLY : dft_is_hybrid
-  USE lr_exx_kernel,        ONLY : lr_exx_revc0_init, lr_exx_alloc
+  USE lr_exx_kernel,        ONLY : lr_exx_revc0_init, lr_exx_alloc, &
+                                   lr_exx_restart
   USE wavefunctions_module, ONLY : evc
   USE buffers,              ONLY : open_buffer
   USE qpoint,               ONLY : nksq
@@ -74,12 +73,9 @@ SUBROUTINE lr_read_wf()
      !
      CALL open_buffer ( iunwfc, 'wfc', nwordwfc, io_level, exst ) 
      !
-     CALL exx_grid_reinit(at)
-     CALL exx_div_check()
-     !
      ! set_ace=.false. disables Lin Lin's ACE for TD-DFPT 
      !
-     CALL exx_restart( set_ace=.false.)
+     CALL lr_exx_restart( set_ace=.false.)
      !
      IF (.NOT. no_hxc) THEN
         !
@@ -221,7 +217,7 @@ SUBROUTINE normal_read()
   ! Calculation of the unperturbed wavefunctions in R-space revc0.
   ! Inverse Fourier transform of evc0.
   !
-  IF ( dffts%have_task_groups ) THEN
+  IF ( dffts%has_task_groups ) THEN
        !
        v_siz =  dffts%nnr_tg
        incr = 2 * fftx_ntgrp(dffts)
@@ -239,7 +235,7 @@ SUBROUTINE normal_read()
         !
         CALL invfft_orbital_gamma ( evc0(:,:,1), ibnd, nbnd)
         !
-        IF (dffts%have_task_groups) THEN               
+        IF (dffts%has_task_groups) THEN               
            !
            DO j = 1, dffts%nr1x*dffts%nr2x*dffts%my_nr3p
                !
@@ -264,7 +260,7 @@ SUBROUTINE normal_read()
         DO ibnd = 1, nbnd
            DO ig = 1, ngk(ik)
                !
-               revc0(nls(igk_k(ig,ik)),ibnd,ik) = evc0(ig,ibnd,ik)
+               revc0(dffts%nl(igk_k(ig,ik)),ibnd,ik) = evc0(ig,ibnd,ik)
                !
            ENDDO
            !
@@ -303,7 +299,7 @@ SUBROUTINE virt_read()
   !
   WRITE( stdout, '(/5x,"Virt read")' )
   !  
-  IF (dffts%have_task_groups) CALL errore ( 'virt_read', 'Task &
+  IF (dffts%has_task_groups) CALL errore ( 'virt_read', 'Task &
      & groups not supported when there are virtual states in the &
      & input.', 1 )
   !
@@ -451,9 +447,9 @@ SUBROUTINE virt_read()
         IF (ibnd<nbnd) THEN
            DO ig=1,ngk(1)
               !
-              revc_all(nls(igk_k(ig,1)),ibnd,1) = evc_all(ig,ibnd,1)&
+              revc_all(dffts%nl(igk_k(ig,1)),ibnd,1) = evc_all(ig,ibnd,1)&
                                     &+(0.0d0,1.0d0)*evc_all(ig,ibnd+1,1)
-              revc_all(nlsm(igk_k(ig,1)),ibnd,1) = &
+              revc_all(dffts%nlm(igk_k(ig,1)),ibnd,1) = &
                                     &CONJG(evc_all(ig,ibnd,1)&
                                     &-(0.0d0,1.0d0)*evc_all(ig,ibnd+1,1))
               !
@@ -461,8 +457,8 @@ SUBROUTINE virt_read()
         ELSE
            DO ig=1,ngk(1)
               !
-              revc_all(nls(igk_k(ig,1)),ibnd,1) = evc_all(ig,ibnd,1)
-              revc_all(nlsm(igk_k(ig,1)),ibnd,1) = CONJG(evc_all(ig,ibnd,1))
+              revc_all(dffts%nl(igk_k(ig,1)),ibnd,1) = evc_all(ig,ibnd,1)
+              revc_all(dffts%nlm(igk_k(ig,1)),ibnd,1) = CONJG(evc_all(ig,ibnd,1))
               !
            ENDDO
         ENDIF
@@ -479,7 +475,7 @@ SUBROUTINE virt_read()
         DO ibnd=1,nbnd
            DO ig=1,ngk(ik)
               !
-              revc_all(nls(igk_k(ig,ik)),ibnd,ik) = evc_all(ig,ibnd,ik)
+              revc_all(dffts%nl(igk_k(ig,ik)),ibnd,ik) = evc_all(ig,ibnd,ik)
               !
            ENDDO
            !

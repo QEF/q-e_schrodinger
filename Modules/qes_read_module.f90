@@ -71,6 +71,7 @@ MODULE qes_read_module
     MODULE PROCEDURE qes_read_ekin_functional
     MODULE PROCEDURE qes_read_spin_constraints
     MODULE PROCEDURE qes_read_electric_field
+    MODULE PROCEDURE qes_read_gate_settings
     MODULE PROCEDURE qes_read_atomic_constraints
     MODULE PROCEDURE qes_read_atomic_constraint
     MODULE PROCEDURE qes_read_inputOccupations
@@ -82,6 +83,7 @@ MODULE qes_read_module
     MODULE PROCEDURE qes_read_ionicPolarization
     MODULE PROCEDURE qes_read_electronicPolarization
     MODULE PROCEDURE qes_read_phase
+    MODULE PROCEDURE qes_read_gateInfo
     MODULE PROCEDURE qes_read_convergence_info
     MODULE PROCEDURE qes_read_scf_conv
     MODULE PROCEDURE qes_read_opt_conv
@@ -90,6 +92,7 @@ MODULE qes_read_module
     MODULE PROCEDURE qes_read_symmetry
     MODULE PROCEDURE qes_read_equivalent_atoms
     MODULE PROCEDURE qes_read_info
+    MODULE PROCEDURE qes_read_outputPBC
     MODULE PROCEDURE qes_read_magnetization
     MODULE PROCEDURE qes_read_total_energy
     MODULE PROCEDURE qes_read_band_structure
@@ -116,8 +119,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -212,8 +213,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -380,8 +379,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -761,8 +758,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     IF (hasAttribute(xml_node, "n_step")) THEN
@@ -939,8 +934,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     !
@@ -1060,6 +1053,26 @@ MODULE qes_read_module
     tmp_node => item(tmp_node_list, 0)
     IF (ASSOCIATED(tmp_node))&
        CALL qes_read_dft(tmp_node, obj%dft, ierr )
+    !
+    tmp_node_list => getElementsByTagname(xml_node, "boundary_conditions")
+    tmp_node_list_size = getLength(tmp_node_list)
+    !
+    IF (tmp_node_list_size > 1) THEN
+        IF (PRESENT(ierr) ) THEN 
+           CALL infomsg("qes_read:outputType","boundary_conditions: too many occurrences")
+           ierr = ierr + 1 
+        ELSE 
+           CALL errore("qes_read:outputType","boundary_conditions: too many occurrences",10)
+        END IF
+    END IF
+    !
+    IF (tmp_node_list_size>0) THEN
+      obj%boundary_conditions_ispresent = .TRUE.
+      tmp_node => item(tmp_node_list, 0)
+      CALL qes_read_outputPBC(tmp_node, obj%boundary_conditions, ierr )
+    ELSE
+       obj%boundary_conditions_ispresent = .FALSE.
+    END IF
     !
     tmp_node_list => getElementsByTagname(xml_node, "magnetization")
     tmp_node_list_size = getLength(tmp_node_list)
@@ -1242,8 +1255,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -1679,8 +1690,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     IF (hasAttribute(xml_node, "NAME")) THEN
@@ -1731,8 +1740,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -1785,8 +1792,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     IF (hasAttribute(xml_node, "DATE")) THEN
@@ -1837,8 +1842,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -1901,8 +1904,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -2076,8 +2077,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     IF (hasAttribute(xml_node, "nat")) THEN
@@ -2150,6 +2149,26 @@ MODULE qes_read_module
        obj%wyckoff_positions_ispresent = .FALSE.
     END IF
     !
+    tmp_node_list => getElementsByTagname(xml_node, "crystal_positions")
+    tmp_node_list_size = getLength(tmp_node_list)
+    !
+    IF (tmp_node_list_size > 1) THEN
+        IF (PRESENT(ierr) ) THEN 
+           CALL infomsg("qes_read:atomic_structureType","crystal_positions: too many occurrences")
+           ierr = ierr + 1 
+        ELSE 
+           CALL errore("qes_read:atomic_structureType","crystal_positions: too many occurrences",10)
+        END IF
+    END IF
+    !
+    IF (tmp_node_list_size>0) THEN
+      obj%crystal_positions_ispresent = .TRUE.
+      tmp_node => item(tmp_node_list, 0)
+      CALL qes_read_atomic_positions(tmp_node, obj%crystal_positions, ierr )
+    ELSE
+       obj%crystal_positions_ispresent = .FALSE.
+    END IF
+    !
     tmp_node_list => getElementsByTagname(xml_node, "cell")
     tmp_node_list_size = getLength(tmp_node_list)
     !
@@ -2183,8 +2202,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -2226,8 +2243,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -2280,8 +2295,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -2344,8 +2357,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -2440,8 +2451,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -2548,8 +2557,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -2733,8 +2740,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     IF (hasAttribute(xml_node, "nqx1")) THEN
@@ -2798,8 +2803,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -2991,8 +2994,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     IF (hasAttribute(xml_node, "specie")) THEN
@@ -3044,8 +3045,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     IF (hasAttribute(xml_node, "specie")) THEN
@@ -3096,8 +3095,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -3170,8 +3167,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     INTEGER :: i, length
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -3272,8 +3267,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -3533,8 +3526,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     !
@@ -3628,8 +3619,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -3797,8 +3786,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     IF (hasAttribute(xml_node, "degauss")) THEN
@@ -3837,8 +3824,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     IF (hasAttribute(xml_node, "spin")) THEN
@@ -3870,8 +3855,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -4034,8 +4017,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -4287,8 +4268,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     IF (hasAttribute(xml_node, "nr1")) THEN
@@ -4352,8 +4331,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -4448,8 +4425,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -4793,8 +4768,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     !
@@ -4880,8 +4853,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -4986,8 +4957,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     IF (hasAttribute(xml_node, "weight")) THEN
@@ -5026,8 +4995,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -5199,8 +5166,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     !
@@ -5366,8 +5331,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -5582,8 +5545,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -5815,8 +5776,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     !
@@ -5983,8 +5942,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     !
@@ -6107,8 +6064,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     !
@@ -6227,8 +6182,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     !
@@ -6322,8 +6275,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -6423,8 +6374,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     !
@@ -6479,6 +6428,26 @@ MODULE qes_read_module
       END IF
     ELSE
        obj%dipole_correction_ispresent = .FALSE.
+    END IF
+    !
+    tmp_node_list => getElementsByTagname(xml_node, "gate_settings")
+    tmp_node_list_size = getLength(tmp_node_list)
+    !
+    IF (tmp_node_list_size > 1) THEN
+        IF (PRESENT(ierr) ) THEN 
+           CALL infomsg("qes_read:electric_fieldType","gate_settings: too many occurrences")
+           ierr = ierr + 1 
+        ELSE 
+           CALL errore("qes_read:electric_fieldType","gate_settings: too many occurrences",10)
+        END IF
+    END IF
+    !
+    IF (tmp_node_list_size>0) THEN
+      obj%gate_settings_ispresent = .TRUE.
+      tmp_node => item(tmp_node_list, 0)
+      CALL qes_read_gate_settings(tmp_node, obj%gate_settings, ierr )
+    ELSE
+       obj%gate_settings_ispresent = .FALSE.
     END IF
     !
     tmp_node_list => getElementsByTagname(xml_node, "electric_field_direction")
@@ -6683,6 +6652,220 @@ MODULE qes_read_module
   END SUBROUTINE qes_read_electric_field
   !
   !
+  SUBROUTINE qes_read_gate_settings(xml_node, obj, ierr )
+    !
+    IMPLICIT NONE
+    !
+    TYPE(Node), INTENT(IN), POINTER                 :: xml_node
+    TYPE(gate_settings_type), INTENT(OUT) :: obj
+    INTEGER, OPTIONAL, INTENT(OUT)                  :: ierr 
+    ! 
+    TYPE(Node), POINTER :: tmp_node
+    TYPE(NodeList), POINTER :: tmp_node_list
+    INTEGER :: tmp_node_list_size, index, iostat_
+    !
+    obj%tagname = getTagName(xml_node)
+    !
+    !
+    !
+    tmp_node_list => getElementsByTagname(xml_node, "use_gate")
+    tmp_node_list_size = getLength(tmp_node_list)
+    !
+    IF (tmp_node_list_size /= 1) THEN
+        IF (PRESENT(ierr) ) THEN 
+           CALL infomsg("qes_read:gate_settingsType","use_gate: wrong number of occurrences")
+           ierr = ierr + 1 
+        ELSE 
+           CALL errore("qes_read:gate_settingsType","use_gate: wrong number of occurrences",10)
+        END IF
+    END IF
+    !
+    tmp_node => item(tmp_node_list, 0)
+    IF (ASSOCIATED(tmp_node))&
+       CALL extractDataContent(tmp_node, obj%use_gate, IOSTAT = iostat_ )
+    IF ( iostat_ /= 0 ) THEN
+       IF ( PRESENT (ierr ) ) THEN 
+          CALL infomsg("qes_read:gate_settingsType","error reading use_gate")
+          ierr = ierr + 1
+       ELSE 
+          CALL errore ("qes_read:gate_settingsType","error reading use_gate",10)
+       END IF
+    END IF
+    !
+    tmp_node_list => getElementsByTagname(xml_node, "zgate")
+    tmp_node_list_size = getLength(tmp_node_list)
+    !
+    IF (tmp_node_list_size > 1) THEN
+        IF (PRESENT(ierr) ) THEN 
+           CALL infomsg("qes_read:gate_settingsType","zgate: too many occurrences")
+           ierr = ierr + 1 
+        ELSE 
+           CALL errore("qes_read:gate_settingsType","zgate: too many occurrences",10)
+        END IF
+    END IF
+    !
+    IF (tmp_node_list_size>0) THEN
+      obj%zgate_ispresent = .TRUE.
+      tmp_node => item(tmp_node_list, 0)
+      CALL extractDataContent(tmp_node, obj%zgate , IOSTAT = iostat_)
+      IF ( iostat_ /= 0 ) THEN
+         IF ( PRESENT (ierr ) ) THEN 
+            CALL infomsg("qes_read:gate_settingsType","error reading zgate")
+            ierr = ierr + 1
+         ELSE 
+            CALL errore ("qes_read:gate_settingsType","error reading zgate",10)
+         END IF
+      END IF
+    ELSE
+       obj%zgate_ispresent = .FALSE.
+    END IF
+    !
+    tmp_node_list => getElementsByTagname(xml_node, "relaxz")
+    tmp_node_list_size = getLength(tmp_node_list)
+    !
+    IF (tmp_node_list_size > 1) THEN
+        IF (PRESENT(ierr) ) THEN 
+           CALL infomsg("qes_read:gate_settingsType","relaxz: too many occurrences")
+           ierr = ierr + 1 
+        ELSE 
+           CALL errore("qes_read:gate_settingsType","relaxz: too many occurrences",10)
+        END IF
+    END IF
+    !
+    IF (tmp_node_list_size>0) THEN
+      obj%relaxz_ispresent = .TRUE.
+      tmp_node => item(tmp_node_list, 0)
+      CALL extractDataContent(tmp_node, obj%relaxz , IOSTAT = iostat_)
+      IF ( iostat_ /= 0 ) THEN
+         IF ( PRESENT (ierr ) ) THEN 
+            CALL infomsg("qes_read:gate_settingsType","error reading relaxz")
+            ierr = ierr + 1
+         ELSE 
+            CALL errore ("qes_read:gate_settingsType","error reading relaxz",10)
+         END IF
+      END IF
+    ELSE
+       obj%relaxz_ispresent = .FALSE.
+    END IF
+    !
+    tmp_node_list => getElementsByTagname(xml_node, "block")
+    tmp_node_list_size = getLength(tmp_node_list)
+    !
+    IF (tmp_node_list_size > 1) THEN
+        IF (PRESENT(ierr) ) THEN 
+           CALL infomsg("qes_read:gate_settingsType","block: too many occurrences")
+           ierr = ierr + 1 
+        ELSE 
+           CALL errore("qes_read:gate_settingsType","block: too many occurrences",10)
+        END IF
+    END IF
+    !
+    IF (tmp_node_list_size>0) THEN
+      obj%block_ispresent = .TRUE.
+      tmp_node => item(tmp_node_list, 0)
+      CALL extractDataContent(tmp_node, obj%block , IOSTAT = iostat_)
+      IF ( iostat_ /= 0 ) THEN
+         IF ( PRESENT (ierr ) ) THEN 
+            CALL infomsg("qes_read:gate_settingsType","error reading block")
+            ierr = ierr + 1
+         ELSE 
+            CALL errore ("qes_read:gate_settingsType","error reading block",10)
+         END IF
+      END IF
+    ELSE
+       obj%block_ispresent = .FALSE.
+    END IF
+    !
+    tmp_node_list => getElementsByTagname(xml_node, "block_1")
+    tmp_node_list_size = getLength(tmp_node_list)
+    !
+    IF (tmp_node_list_size > 1) THEN
+        IF (PRESENT(ierr) ) THEN 
+           CALL infomsg("qes_read:gate_settingsType","block_1: too many occurrences")
+           ierr = ierr + 1 
+        ELSE 
+           CALL errore("qes_read:gate_settingsType","block_1: too many occurrences",10)
+        END IF
+    END IF
+    !
+    IF (tmp_node_list_size>0) THEN
+      obj%block_1_ispresent = .TRUE.
+      tmp_node => item(tmp_node_list, 0)
+      CALL extractDataContent(tmp_node, obj%block_1 , IOSTAT = iostat_)
+      IF ( iostat_ /= 0 ) THEN
+         IF ( PRESENT (ierr ) ) THEN 
+            CALL infomsg("qes_read:gate_settingsType","error reading block_1")
+            ierr = ierr + 1
+         ELSE 
+            CALL errore ("qes_read:gate_settingsType","error reading block_1",10)
+         END IF
+      END IF
+    ELSE
+       obj%block_1_ispresent = .FALSE.
+    END IF
+    !
+    tmp_node_list => getElementsByTagname(xml_node, "block_2")
+    tmp_node_list_size = getLength(tmp_node_list)
+    !
+    IF (tmp_node_list_size > 1) THEN
+        IF (PRESENT(ierr) ) THEN 
+           CALL infomsg("qes_read:gate_settingsType","block_2: too many occurrences")
+           ierr = ierr + 1 
+        ELSE 
+           CALL errore("qes_read:gate_settingsType","block_2: too many occurrences",10)
+        END IF
+    END IF
+    !
+    IF (tmp_node_list_size>0) THEN
+      obj%block_2_ispresent = .TRUE.
+      tmp_node => item(tmp_node_list, 0)
+      CALL extractDataContent(tmp_node, obj%block_2 , IOSTAT = iostat_)
+      IF ( iostat_ /= 0 ) THEN
+         IF ( PRESENT (ierr ) ) THEN 
+            CALL infomsg("qes_read:gate_settingsType","error reading block_2")
+            ierr = ierr + 1
+         ELSE 
+            CALL errore ("qes_read:gate_settingsType","error reading block_2",10)
+         END IF
+      END IF
+    ELSE
+       obj%block_2_ispresent = .FALSE.
+    END IF
+    !
+    tmp_node_list => getElementsByTagname(xml_node, "block_height")
+    tmp_node_list_size = getLength(tmp_node_list)
+    !
+    IF (tmp_node_list_size > 1) THEN
+        IF (PRESENT(ierr) ) THEN 
+           CALL infomsg("qes_read:gate_settingsType","block_height: too many occurrences")
+           ierr = ierr + 1 
+        ELSE 
+           CALL errore("qes_read:gate_settingsType","block_height: too many occurrences",10)
+        END IF
+    END IF
+    !
+    IF (tmp_node_list_size>0) THEN
+      obj%block_height_ispresent = .TRUE.
+      tmp_node => item(tmp_node_list, 0)
+      CALL extractDataContent(tmp_node, obj%block_height , IOSTAT = iostat_)
+      IF ( iostat_ /= 0 ) THEN
+         IF ( PRESENT (ierr ) ) THEN 
+            CALL infomsg("qes_read:gate_settingsType","error reading block_height")
+            ierr = ierr + 1
+         ELSE 
+            CALL errore ("qes_read:gate_settingsType","error reading block_height",10)
+         END IF
+      END IF
+    ELSE
+       obj%block_height_ispresent = .FALSE.
+    END IF
+    !
+    !
+    obj%lwrite = .TRUE.
+    !
+  END SUBROUTINE qes_read_gate_settings
+  !
+  !
   SUBROUTINE qes_read_atomic_constraints(xml_node, obj, ierr )
     !
     IMPLICIT NONE
@@ -6694,8 +6877,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -6785,8 +6966,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -6882,8 +7061,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     IF (hasAttribute(xml_node, "ispin")) THEN
@@ -6941,8 +7118,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -7008,6 +7183,26 @@ MODULE qes_read_module
        obj%dipoleInfo_ispresent = .FALSE.
     END IF
     !
+    tmp_node_list => getElementsByTagname(xml_node, "gateInfo")
+    tmp_node_list_size = getLength(tmp_node_list)
+    !
+    IF (tmp_node_list_size > 1) THEN
+        IF (PRESENT(ierr) ) THEN 
+           CALL infomsg("qes_read:outputElectricFieldType","gateInfo: too many occurrences")
+           ierr = ierr + 1 
+        ELSE 
+           CALL errore("qes_read:outputElectricFieldType","gateInfo: too many occurrences",10)
+        END IF
+    END IF
+    !
+    IF (tmp_node_list_size>0) THEN
+      obj%gateInfo_ispresent = .TRUE.
+      tmp_node => item(tmp_node_list, 0)
+      CALL qes_read_gateInfo(tmp_node, obj%gateInfo, ierr )
+    ELSE
+       obj%gateInfo_ispresent = .FALSE.
+    END IF
+    !
     !
     obj%lwrite = .TRUE.
     !
@@ -7025,8 +7220,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -7119,8 +7312,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -7264,8 +7455,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     !
@@ -7335,8 +7524,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -7424,8 +7611,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     !
@@ -7503,8 +7688,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -7588,8 +7771,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     IF (hasAttribute(xml_node, "ionic")) THEN
@@ -7624,6 +7805,124 @@ MODULE qes_read_module
   END SUBROUTINE qes_read_phase
   !
   !
+  SUBROUTINE qes_read_gateInfo(xml_node, obj, ierr )
+    !
+    IMPLICIT NONE
+    !
+    TYPE(Node), INTENT(IN), POINTER                 :: xml_node
+    TYPE(gateInfo_type), INTENT(OUT) :: obj
+    INTEGER, OPTIONAL, INTENT(OUT)                  :: ierr 
+    ! 
+    TYPE(Node), POINTER :: tmp_node
+    TYPE(NodeList), POINTER :: tmp_node_list
+    INTEGER :: tmp_node_list_size, index, iostat_
+    !
+    obj%tagname = getTagName(xml_node)
+    !
+    !
+    !
+    tmp_node_list => getElementsByTagname(xml_node, "pot_prefactor")
+    tmp_node_list_size = getLength(tmp_node_list)
+    !
+    IF (tmp_node_list_size /= 1) THEN
+        IF (PRESENT(ierr) ) THEN 
+           CALL infomsg("qes_read:gateInfoType","pot_prefactor: wrong number of occurrences")
+           ierr = ierr + 1 
+        ELSE 
+           CALL errore("qes_read:gateInfoType","pot_prefactor: wrong number of occurrences",10)
+        END IF
+    END IF
+    !
+    tmp_node => item(tmp_node_list, 0)
+    IF (ASSOCIATED(tmp_node))&
+       CALL extractDataContent(tmp_node, obj%pot_prefactor, IOSTAT = iostat_ )
+    IF ( iostat_ /= 0 ) THEN
+       IF ( PRESENT (ierr ) ) THEN 
+          CALL infomsg("qes_read:gateInfoType","error reading pot_prefactor")
+          ierr = ierr + 1
+       ELSE 
+          CALL errore ("qes_read:gateInfoType","error reading pot_prefactor",10)
+       END IF
+    END IF
+    !
+    tmp_node_list => getElementsByTagname(xml_node, "gate_zpos")
+    tmp_node_list_size = getLength(tmp_node_list)
+    !
+    IF (tmp_node_list_size /= 1) THEN
+        IF (PRESENT(ierr) ) THEN 
+           CALL infomsg("qes_read:gateInfoType","gate_zpos: wrong number of occurrences")
+           ierr = ierr + 1 
+        ELSE 
+           CALL errore("qes_read:gateInfoType","gate_zpos: wrong number of occurrences",10)
+        END IF
+    END IF
+    !
+    tmp_node => item(tmp_node_list, 0)
+    IF (ASSOCIATED(tmp_node))&
+       CALL extractDataContent(tmp_node, obj%gate_zpos, IOSTAT = iostat_ )
+    IF ( iostat_ /= 0 ) THEN
+       IF ( PRESENT (ierr ) ) THEN 
+          CALL infomsg("qes_read:gateInfoType","error reading gate_zpos")
+          ierr = ierr + 1
+       ELSE 
+          CALL errore ("qes_read:gateInfoType","error reading gate_zpos",10)
+       END IF
+    END IF
+    !
+    tmp_node_list => getElementsByTagname(xml_node, "gate_gate_term")
+    tmp_node_list_size = getLength(tmp_node_list)
+    !
+    IF (tmp_node_list_size /= 1) THEN
+        IF (PRESENT(ierr) ) THEN 
+           CALL infomsg("qes_read:gateInfoType","gate_gate_term: wrong number of occurrences")
+           ierr = ierr + 1 
+        ELSE 
+           CALL errore("qes_read:gateInfoType","gate_gate_term: wrong number of occurrences",10)
+        END IF
+    END IF
+    !
+    tmp_node => item(tmp_node_list, 0)
+    IF (ASSOCIATED(tmp_node))&
+       CALL extractDataContent(tmp_node, obj%gate_gate_term, IOSTAT = iostat_ )
+    IF ( iostat_ /= 0 ) THEN
+       IF ( PRESENT (ierr ) ) THEN 
+          CALL infomsg("qes_read:gateInfoType","error reading gate_gate_term")
+          ierr = ierr + 1
+       ELSE 
+          CALL errore ("qes_read:gateInfoType","error reading gate_gate_term",10)
+       END IF
+    END IF
+    !
+    tmp_node_list => getElementsByTagname(xml_node, "gatefieldEnergy")
+    tmp_node_list_size = getLength(tmp_node_list)
+    !
+    IF (tmp_node_list_size /= 1) THEN
+        IF (PRESENT(ierr) ) THEN 
+           CALL infomsg("qes_read:gateInfoType","gatefieldEnergy: wrong number of occurrences")
+           ierr = ierr + 1 
+        ELSE 
+           CALL errore("qes_read:gateInfoType","gatefieldEnergy: wrong number of occurrences",10)
+        END IF
+    END IF
+    !
+    tmp_node => item(tmp_node_list, 0)
+    IF (ASSOCIATED(tmp_node))&
+       CALL extractDataContent(tmp_node, obj%gatefieldEnergy, IOSTAT = iostat_ )
+    IF ( iostat_ /= 0 ) THEN
+       IF ( PRESENT (ierr ) ) THEN 
+          CALL infomsg("qes_read:gateInfoType","error reading gatefieldEnergy")
+          ierr = ierr + 1
+       ELSE 
+          CALL errore ("qes_read:gateInfoType","error reading gatefieldEnergy",10)
+       END IF
+    END IF
+    !
+    !
+    obj%lwrite = .TRUE.
+    !
+  END SUBROUTINE qes_read_gateInfo
+  !
+  !
   SUBROUTINE qes_read_convergence_info(xml_node, obj, ierr )
     !
     IMPLICIT NONE
@@ -7635,8 +7934,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -7695,8 +7992,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -7768,8 +8063,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     !
@@ -7839,8 +8132,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -7935,8 +8226,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -8059,8 +8348,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     !
@@ -8163,8 +8450,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     IF (hasAttribute(xml_node, "nat")) THEN
@@ -8210,8 +8495,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     IF (hasAttribute(xml_node, "name")) THEN
@@ -8246,6 +8529,52 @@ MODULE qes_read_module
   END SUBROUTINE qes_read_info
   !
   !
+  SUBROUTINE qes_read_outputPBC(xml_node, obj, ierr )
+    !
+    IMPLICIT NONE
+    !
+    TYPE(Node), INTENT(IN), POINTER                 :: xml_node
+    TYPE(outputPBC_type), INTENT(OUT) :: obj
+    INTEGER, OPTIONAL, INTENT(OUT)                  :: ierr 
+    ! 
+    TYPE(Node), POINTER :: tmp_node
+    TYPE(NodeList), POINTER :: tmp_node_list
+    INTEGER :: tmp_node_list_size, index, iostat_
+    !
+    obj%tagname = getTagName(xml_node)
+    !
+    !
+    !
+    tmp_node_list => getElementsByTagname(xml_node, "assume_isolated")
+    tmp_node_list_size = getLength(tmp_node_list)
+    !
+    IF (tmp_node_list_size /= 1) THEN
+        IF (PRESENT(ierr) ) THEN 
+           CALL infomsg("qes_read:outputPBCType","assume_isolated: wrong number of occurrences")
+           ierr = ierr + 1 
+        ELSE 
+           CALL errore("qes_read:outputPBCType","assume_isolated: wrong number of occurrences",10)
+        END IF
+    END IF
+    !
+    tmp_node => item(tmp_node_list, 0)
+    IF (ASSOCIATED(tmp_node))&
+       CALL extractDataContent(tmp_node, obj%assume_isolated, IOSTAT = iostat_ )
+    IF ( iostat_ /= 0 ) THEN
+       IF ( PRESENT (ierr ) ) THEN 
+          CALL infomsg("qes_read:outputPBCType","error reading assume_isolated")
+          ierr = ierr + 1
+       ELSE 
+          CALL errore ("qes_read:outputPBCType","error reading assume_isolated",10)
+       END IF
+    END IF
+    !
+    !
+    obj%lwrite = .TRUE.
+    !
+  END SUBROUTINE qes_read_outputPBC
+  !
+  !
   SUBROUTINE qes_read_magnetization(xml_node, obj, ierr )
     !
     IMPLICIT NONE
@@ -8257,8 +8586,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -8425,8 +8752,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -8680,6 +9005,34 @@ MODULE qes_read_module
        obj%potentiostat_contr_ispresent = .FALSE.
     END IF
     !
+    tmp_node_list => getElementsByTagname(xml_node, "gatefield_contr")
+    tmp_node_list_size = getLength(tmp_node_list)
+    !
+    IF (tmp_node_list_size > 1) THEN
+        IF (PRESENT(ierr) ) THEN 
+           CALL infomsg("qes_read:total_energyType","gatefield_contr: too many occurrences")
+           ierr = ierr + 1 
+        ELSE 
+           CALL errore("qes_read:total_energyType","gatefield_contr: too many occurrences",10)
+        END IF
+    END IF
+    !
+    IF (tmp_node_list_size>0) THEN
+      obj%gatefield_contr_ispresent = .TRUE.
+      tmp_node => item(tmp_node_list, 0)
+      CALL extractDataContent(tmp_node, obj%gatefield_contr , IOSTAT = iostat_)
+      IF ( iostat_ /= 0 ) THEN
+         IF ( PRESENT (ierr ) ) THEN 
+            CALL infomsg("qes_read:total_energyType","error reading gatefield_contr")
+            ierr = ierr + 1
+         ELSE 
+            CALL errore ("qes_read:total_energyType","error reading gatefield_contr",10)
+         END IF
+      END IF
+    ELSE
+       obj%gatefield_contr_ispresent = .FALSE.
+    END IF
+    !
     !
     obj%lwrite = .TRUE.
     !
@@ -8697,8 +9050,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -9129,8 +9480,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     !
@@ -9225,8 +9574,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     IF (hasAttribute(xml_node, "DATE")) THEN
@@ -9278,8 +9625,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     IF (hasAttribute(xml_node, "size"))  THEN
@@ -9311,8 +9656,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -9346,8 +9689,6 @@ MODULE qes_read_module
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
     INTEGER :: i, length
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !
@@ -9397,8 +9738,6 @@ MODULE qes_read_module
     INTEGER :: tmp_node_list_size, index, iostat_
     INTEGER :: i, length
     !
-     
-    !
     obj%tagname = getTagName(xml_node)
     !
     IF (hasAttribute(xml_node, "rank"))  THEN
@@ -9445,8 +9784,6 @@ MODULE qes_read_module
     TYPE(Node), POINTER :: tmp_node
     TYPE(NodeList), POINTER :: tmp_node_list
     INTEGER :: tmp_node_list_size, index, iostat_
-    !
-     
     !
     obj%tagname = getTagName(xml_node)
     !

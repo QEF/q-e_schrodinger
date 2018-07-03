@@ -19,14 +19,14 @@
 
       PUBLIC :: mp_start, mp_abort, mp_stop, mp_end, &
         mp_bcast, mp_sum, mp_max, mp_min, mp_rank, mp_size, &
-        mp_gather, mp_alltoall, mp_get, mp_put, mp_barrier, mp_report, mp_group_free, &
+        mp_gather, mp_alltoall, mp_get, mp_put, &
+        mp_barrier, mp_report, mp_group_free, &
         mp_root_sum, mp_comm_free, mp_comm_create, mp_comm_group, &
         mp_group_create, mp_comm_split, mp_set_displs, &
         mp_circular_shift_left, &
-        mp_get_comm_null, mp_get_comm_self 
-#if !defined(__GFORTRAN__) || ((__GNUC__>4) || ((__GNUC__==4) && (__GNUC_MINOR__>=8)))
-      PUBLIC :: mp_count_nodes
-#endif
+        mp_get_comm_null, mp_get_comm_self, mp_count_nodes, &
+        mp_type_create_column_section, mp_type_free, &
+        mp_allgather
 
 !
       INTERFACE mp_bcast
@@ -62,22 +62,35 @@
       INTERFACE mp_max
         MODULE PROCEDURE mp_max_i, mp_max_r, mp_max_rv, mp_max_iv
       END INTERFACE
+
       INTERFACE mp_min
         MODULE PROCEDURE mp_min_i, mp_min_r, mp_min_rv, mp_min_iv
       END INTERFACE
+
       INTERFACE mp_gather
         MODULE PROCEDURE mp_gather_i1, mp_gather_iv, mp_gatherv_rv, mp_gatherv_iv, &
-          mp_gatherv_rm, mp_gatherv_im, mp_gatherv_cv
+          mp_gatherv_rm, mp_gatherv_im, mp_gatherv_cv, &
+          mp_gatherv_inplace_cplx_array
       END INTERFACE
+
+      INTERFACE mp_allgather
+        MODULE PROCEDURE mp_allgatherv_inplace_cplx_array
+      END INTERFACE
+
       INTERFACE mp_alltoall
         MODULE PROCEDURE mp_alltoall_c3d, mp_alltoall_i3d
       END INTERFACE
+
       INTERFACE mp_circular_shift_left
         MODULE PROCEDURE mp_circular_shift_left_i0, &
           mp_circular_shift_left_i1, &
           mp_circular_shift_left_i2, &
           mp_circular_shift_left_r2d, &
           mp_circular_shift_left_c2d
+      END INTERFACE
+
+      INTERFACE mp_type_create_column_section
+        MODULE PROCEDURE mp_type_create_cplx_column_section
       END INTERFACE
 
 !------------------------------------------------------------------------------!
@@ -1966,6 +1979,65 @@
 
 
 !------------------------------------------------------------------------------!
+!..mp_gatherv_inplace_cplx_array
+!..Ye Luo
+
+      SUBROUTINE mp_gatherv_inplace_cplx_array(alldata, my_column_type, recvcount, displs, root, gid)
+        IMPLICIT NONE
+        COMPLEX(DP) :: alldata(:,:)
+        INTEGER, INTENT(IN) :: my_column_type
+        INTEGER, INTENT(IN) :: recvcount(:), displs(:)
+        INTEGER, INTENT(IN) :: root, gid
+        INTEGER :: ierr, npe, myid
+
+#if defined (__MPI)
+        CALL mpi_comm_size( gid, npe, ierr )
+        IF (ierr/=0) CALL mp_stop( 8069 )
+        CALL mpi_comm_rank( gid, myid, ierr )
+        IF (ierr/=0) CALL mp_stop( 8070 )
+        !
+        IF ( SIZE( recvcount ) < npe .OR. SIZE( displs ) < npe ) CALL mp_stop( 8071 )
+        !
+        IF (myid==root) THEN
+           CALL MPI_GATHERV( MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, &
+                             alldata, recvcount, displs, my_column_type, root, gid, ierr )
+        ELSE
+           CALL MPI_GATHERV( alldata(1,displs(myid+1)+1), recvcount(myid+1), my_column_type, &
+                             MPI_IN_PLACE, recvcount, displs, MPI_DATATYPE_NULL, root, gid, ierr )
+        ENDIF
+        IF (ierr/=0) CALL mp_stop( 8074 )
+#endif
+        RETURN
+      END SUBROUTINE mp_gatherv_inplace_cplx_array
+
+!------------------------------------------------------------------------------!
+!..mp_allgatherv_inplace_cplx_array
+!..Ye Luo
+
+      SUBROUTINE mp_allgatherv_inplace_cplx_array(alldata, my_element_type, recvcount, displs, gid)
+        IMPLICIT NONE
+        COMPLEX(DP) :: alldata(:,:)
+        INTEGER, INTENT(IN) :: my_element_type
+        INTEGER, INTENT(IN) :: recvcount(:), displs(:)
+        INTEGER, INTENT(IN) :: gid
+        INTEGER :: ierr, npe, myid
+
+#if defined (__MPI)
+        CALL mpi_comm_size( gid, npe, ierr )
+        IF (ierr/=0) CALL mp_stop( 8069 )
+        CALL mpi_comm_rank( gid, myid, ierr )
+        IF (ierr/=0) CALL mp_stop( 8070 )
+        !
+        IF ( SIZE( recvcount ) < npe .OR. SIZE( displs ) < npe ) CALL mp_stop( 8071 )
+        !
+        CALL MPI_ALLGATHERV( MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, &
+                             alldata, recvcount, displs, my_element_type, gid, ierr )
+        IF (ierr/=0) CALL mp_stop( 8074 )
+#endif
+        RETURN
+      END SUBROUTINE mp_allgatherv_inplace_cplx_array
+
+!------------------------------------------------------------------------------!
 
       SUBROUTINE mp_set_displs( recvcount, displs, ntot, nproc )
         !  Given the number of elements on each processor (recvcount), this subroutine
@@ -2237,96 +2309,120 @@ SUBROUTINE mp_circular_shift_left_c2d( buf, itag, gid )
    RETURN
 END SUBROUTINE mp_circular_shift_left_c2d
 !
-
-#if !defined(__GFORTRAN__) ||  ((__GNUC__>4) || ((__GNUC__==4) && (__GNUC_MINOR__>=8)))
+!
 !------------------------------------------------------------------------------!
 !..mp_count_nodes
-SUBROUTINE mp_count_nodes(num_nodes, group)
-
-! ...
+SUBROUTINE mp_count_nodes(num_nodes, color, key, group)
+  !
+  ! ... This routine counts the number of nodes using
+  ! ...  MPI_GET_PROCESSOR_NAME in the group specified by `group`.
+  ! ...  It returns colors and keys to be used in MPI_COMM_SPLIT.
+  ! ...  When running in parallel, the evaluation of color and key
+  ! ...  is done by all processors.
+  ! ...
+  ! ...
+  ! ... input:
+  ! ...    group      Communicator used to count nodes.
+  !
+  ! ... output:
+  ! ...    num_nodes  Number of unique nodes in the communicator
+  ! ...    color      Integer (positive), same for all processes residing on a node.
+  ! ...    key        Integer, unique number identifying each process on the same node.
+  ! ...
   IMPLICIT NONE
   INTEGER, INTENT (OUT) :: num_nodes
+  INTEGER, INTENT (OUT) :: color
+  INTEGER, INTENT (OUT) :: key
   INTEGER, INTENT (IN)  :: group
 #if defined (__MPI)
-  CHARACTER(len=MPI_MAX_PROCESSOR_NAME) :: nodename
+  CHARACTER(len=MPI_MAX_PROCESSOR_NAME) :: hostname
+  CHARACTER(len=MPI_MAX_PROCESSOR_NAME), ALLOCATABLE :: host_list(:)
 #endif
-  CHARACTER(len=:), ALLOCATABLE :: all_node_names
-  CHARACTER(len=:), ALLOCATABLE :: current_name
-  INTEGER, ALLOCATABLE   :: node_counter(:)
+  
+  LOGICAL, ALLOCATABLE   :: found_list(:)
+  INTEGER, ALLOCATABLE   :: color_list(:)
+  INTEGER, ALLOCATABLE   :: key_list(:)
   !
-  INTEGER :: nodename_len, max_nodename_len, numtask, ierr
+  INTEGER :: hostname_len, max_hostname_len, numtask, me, ierr
+  !
   ! Loops variables
-  INTEGER :: i, j, e, s
+  INTEGER :: i, j, e, s, c, k
   ! ...
   ierr      = 0
   num_nodes = 1
+  color     = 1
+  key       = 0
   !
 #if defined(__MPI)
-  ! fill with * to allow comparison of names with different length
-  nodename  = REPEAT('*',MPI_MAX_PROCESSOR_NAME)
-  ! get node id (the name is misleading)
-  CALL MPI_GET_PROCESSOR_NAME(nodename,nodename_len,ierr)
+  !
+  CALL MPI_GET_PROCESSOR_NAME(hostname, hostname_len, ierr)
   IF (ierr/=0)  CALL mp_stop( 8103 )
-  ! find the longest node name in the communicator
-  CALL MPI_ALLREDUCE(nodename_len, max_nodename_len, 1, &
-                      MPI_INTEGER, MPI_MAX, group, ierr)
+
+  ! find total number of ranks and my rank in communicator
+  CALL MPI_COMM_SIZE(group, numtask, ierr)
   IF (ierr/=0) CALL mp_stop( 8104 )
-  ! find total number of ranks in communicator
-  CALL mpi_comm_size(group,numtask,ierr)
+  !
+  CALL MPI_COMM_RANK(group, me, ierr)
   IF (ierr/=0) CALL mp_stop( 8105 )
   !
-  ! Sanity check to avoid accidental insane allocations, should never happen
-  IF (max_nodename_len > MPI_MAX_PROCESSOR_NAME) CALL mp_stop( 8106 )
+  ALLOCATE(host_list(0:numtask-1))
   !
-  ! Allocate data and store all names in a single variable
-  ! with a collective MPI communication on all nodes.
-  ALLOCATE(character(len=numtask*max_nodename_len) :: all_node_names)
-  CALL MPI_ALLGATHER(nodename, max_nodename_len, MPI_CHARACTER, &
-                      all_node_names, max_nodename_len, MPI_CHARACTER, &
-                      group, ierr)
-  IF (ierr/=0) CALL mp_stop( 8107 )
+  host_list(me) = hostname(1:hostname_len)
   !
-  ! Simple algorithm to count unique entries:
-  ! node_counter is a list of numtask integers set to 1.
-  ! Starting from the first entry in all_node_names,
-  ! we loop on the following elements and check if the same
-  ! value is found. If it has already been found the value is already 
-  ! set to 0 and nothing is done, otherwise the corresponding value in 
-  ! node_counter is set to 0.
-  ALLOCATE(character(len=max_nodename_len) :: current_name)
-  ALLOCATE(node_counter(numtask))
-  node_counter(:)=1
+  ! Each process broadcast its name to the others
   DO i=0,numtask-1
-    ! if node_counter == 0, this element has already been found,
+    CALL MPI_BCAST(host_list(i), MPI_MAX_PROCESSOR_NAME, MPI_CHARACTER,&
+                     i, group, ierr)
+    IF (ierr/=0) CALL mp_stop( 8106 )
+  END DO
+  !
+  ! Simple algorithm to count unique entries.
+  !
+  ALLOCATE(found_list(0:numtask-1),color_list(0:numtask-1))
+  ALLOCATE(key_list(0:numtask-1))
+  found_list(:) = .false.
+  color_list(:) = -1
+  key_list(:)   = -1
+  !
+  ! c is the counter for colors
+  ! k is the counter for keys
+  !
+  c = 0
+  DO i=0,numtask-1
+    ! if node_counter == .true., this element has already been found,
     ! so skip it.
-    IF (node_counter(i+1) == 0) CYCLE
+    IF (found_list(i)) CYCLE
+    ! else increment color counter and reset key counter
+    c = c + 1; k = 0
+    color_list(i) = c
+    key_list(i)   = k
     !
-    ! store current name in 'current_name' from 'all_node_names'
-    s = max_nodename_len*i+1
-    e = max_nodename_len*(i+1)
-    current_name = all_node_names(s:e)
-    ! this second loop always start from the element following
-    ! the one considered in the above loop.
-    DO j=(i+1),numtask-1
-      ! j is still zero based so 's' and 'e' select the 2nd element
-      ! if i=0.
-      s = max_nodename_len*j+1
-      e = max_nodename_len*(j+1)
-      IF (current_name .eq. all_node_names(s:e)) THEN
-        ! if j == 1 we are actually considering the second element
-        ! (the j+1 element in general) so set it to zero.
-        IF (node_counter(j+1) == 1) node_counter(j+1) = 0
+    DO j=i+1,numtask-1
+      !
+      IF ( LLE(host_list(i),host_list(j)) .and. &
+           LGE(host_list(i),host_list(j))        ) THEN
+        ! increment the key, key=0 is the one we are comparing to
+        k = k + 1
+        ! element should not be already found
+        IF ( found_list(j) ) CALL mp_stop( 8107 )
+        found_list(j) = .true.
+        color_list(j) = c
+        key_list(j)   = k
       END IF
     END DO
   END DO
+  ! Sanity checks
+  IF ( MINVAL(color_list) < 0 ) CALL mp_stop( 8108 )
+  IF ( MINVAL(key_list)   < 0 ) CALL mp_stop( 8109 )
   !
-  num_nodes = SUM(node_counter)
-  DEALLOCATE(current_name,all_node_names,node_counter)
+  color     = color_list(me)
+  key       = key_list(me)
+  num_nodes = MAXVAL(color_list)
+  DEALLOCATE(host_list,found_list,color_list,key_list)
 !
 #endif
   RETURN
 END SUBROUTINE mp_count_nodes
-#endif 
 !
 FUNCTION mp_get_comm_null( )
   IMPLICIT NONE
@@ -2340,6 +2436,39 @@ FUNCTION mp_get_comm_self( )
   mp_get_comm_self = MPI_COMM_SELF
 END FUNCTION mp_get_comm_self
 
+SUBROUTINE mp_type_create_cplx_column_section(dummy, start, length, stride, mytype)
+  IMPLICIT NONE
+  !
+  COMPLEX (DP), INTENT(IN) :: dummy
+  INTEGER, INTENT(IN) :: start, length, stride
+  INTEGER, INTENT(OUT) :: mytype
+  !
+#if defined(__MPI)
+  INTEGER :: ierr
+  !
+  CALL MPI_TYPE_CREATE_SUBARRAY(1, stride, length, start, MPI_ORDER_FORTRAN,&
+                                MPI_DOUBLE_COMPLEX, mytype, ierr)
+  IF (ierr/=0) CALL mp_stop( 8081 )
+  CALL MPI_Type_commit(mytype, ierr)
+  IF (ierr/=0) CALL mp_stop( 8082 )
+#else
+  mytype = 0;
+#endif
+  !
+  RETURN
+END SUBROUTINE mp_type_create_cplx_column_section
+
+SUBROUTINE mp_type_free(mytype)
+  IMPLICIT NONE
+  INTEGER :: mytype, ierr
+  !
+#if defined(__MPI)
+  CALL MPI_TYPE_FREE(mytype, ierr)
+  IF (ierr/=0) CALL mp_stop( 8083 )
+#endif
+  !
+  RETURN
+END SUBROUTINE mp_type_free
 !------------------------------------------------------------------------------!
     END MODULE mp
 !------------------------------------------------------------------------------!

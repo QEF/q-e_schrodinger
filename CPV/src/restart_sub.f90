@@ -12,7 +12,8 @@ SUBROUTINE from_restart( )
    USE control_flags,         ONLY : tbeg, taurdr, tfor, tsdp, iverbosity, &
                                      tsde, tzeroe, tzerop, nbeg, tranp, amprp,&
                                      thdyn, tzeroc, force_pairing, trhor, &
-                                     ampre, trane, tpre, dt_old
+                                     ampre, trane, tpre, dt_old, tv0rd, &
+                                     trescalee
    USE wavefunctions_module,  ONLY : c0_bgrp, cm_bgrp
    USE electrons_module,      ONLY : occn_info
    USE electrons_base,        ONLY : nspin, iupdwn, nupdwn, f, nbsp, nbsp_bgrp
@@ -21,11 +22,10 @@ SUBROUTINE from_restart( )
                                      velh, at, alat
    USE ions_base,             ONLY : na, nsp, iforce, vel_srt, nat, randpos
    USE time_step,             ONLY : tps, delt
-   USE ions_positions,        ONLY : taus, tau0, tausm, taum, vels, fion, fionm, set_velocities
+   USE ions_positions,        ONLY : taus, tau0, tausm, taum, vels, fion, fionm, set_velocities, velsm
    USE ions_nose,             ONLY : xnhp0, xnhpm
    USE gvect,    ONLY : mill, eigts1, eigts2, eigts3 
    USE printout_base,         ONLY : printout_pos
-   USE gvecs,                 ONLY : ngms
    USE gvecw,                 ONLY : ngw
    USE cp_interfaces,         ONLY : phfacs, strucf, prefor, calbec_bgrp, caldbec_bgrp
    USE energies,              ONLY : eself, dft_energy_type
@@ -36,7 +36,7 @@ SUBROUTINE from_restart( )
    USE cp_main_variables,     ONLY : ht0, htm, lambdap, lambda, lambdam, eigr, &
                                      sfac, taub, irb, eigrb, edft, bec_bgrp, dbec, descla
    USE time_step,             ONLY : delt
-   USE fft_base,              ONLY : dfftp
+   USE fft_base,              ONLY : dfftp, dffts
    USE matrix_inversion
    !
    IMPLICIT NONE
@@ -60,6 +60,21 @@ SUBROUTINE from_restart( )
       ! ... in readfile, only scaled positions are read
       !
       CALL r_to_s( tau0, taus, na, nsp, ainv )
+      !
+   END IF
+   !
+   ! MCA
+   IF ( tv0rd .AND. tfor ) THEN
+      !
+      ! ... vel_srt=starting velocities, read from input, are brough to
+      ! ... scaled axis and copied into array vels. Since velocites are
+      ! ... not actually used by the Verlet algorithm, we set tau(t-dt)
+      ! ... to tausm=tau(t)-v*delta t so that the Verlet algorithm will 
+      ! ... start with the correct velocity
+      !
+      CALL r_to_s( vel_srt, vels, na, nsp, ainv )
+      tausm(:,:) =  taus(:,:) - vels(:,:)*delt
+      velsm(:,:) =  vels(:,:)
       !
    END IF
    !
@@ -114,6 +129,14 @@ SUBROUTINE from_restart( )
       !
       WRITE( stdout, '(" Electronic velocities set to zero")' )
       !
+   ELSE IF (trescalee) THEN
+      IF (dt_old > 0.0d0 ) THEN
+         lambdam = lambda - (lambda-lambdam)*delt/dt_old
+         cm_bgrp = c0_bgrp - (c0_bgrp-cm_bgrp)*delt/dt_old
+         WRITE (stdout, '(" Electron velocities rescaled with tolp")')
+      ELSE
+         WRITE (stdout, '(" Cannot rescale electron velocities without tolp!")')
+      END IF
    END IF
    !
    ! ... computes form factors and initializes nl-pseudop. according
@@ -126,7 +149,7 @@ SUBROUTINE from_restart( )
    !
    CALL phfacs( eigts1, eigts2, eigts3, eigr, mill, taus, dfftp%nr1, dfftp%nr2, dfftp%nr3, nat )
    !
-   CALL strucf( sfac, eigts1, eigts2, eigts3, mill, ngms )
+   CALL strucf( sfac, eigts1, eigts2, eigts3, mill, dffts%ngm )
    !
    CALL prefor( eigr, vkb )
    !
@@ -136,7 +159,12 @@ SUBROUTINE from_restart( )
       !
       WRITE( stdout, 515 ) ampre
       !
-515   FORMAT(   3X,'Initial random displacement of el. coordinates',/ &
+515   FORMAT(   3X,'',/ &
+                3X,'!======================================!',/ &
+                3X,'!======RANDOMIZING WAVE FUNCTIONS======!',/ &
+                3X,'!======================================!',/ &
+                3X,'',/ &
+                3X,'Initial random displacement of el. coordinates',/ &
                 3X,'Amplitude = ',F10.6 )
       !
       CALL rande_base( c0_bgrp, ampre )

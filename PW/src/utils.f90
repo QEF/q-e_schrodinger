@@ -36,15 +36,16 @@ SUBROUTINE matcalc (label, DoE, PrtMat, ninner, n, m, U, V, mat, ee)
   mat = 0.0_dp
   CALL calbec(ninner, U, V, mat, m)
 
+  IF( PrtMat .ge.2 ) CALL matprt(string//label,n,m,mat)
+
   IF(DoE) THEN
      IF(n/=m) CALL errore('matcalc','no trace for rectangular matrix.',1)
-     IF( PrtMat > 1 ) CALL matprt(string//label,n,m,mat)
      string = 'E-'
      ee = 0.0_dp
      DO i = 1,n
         ee = ee + wg(i,current_k)*mat(i,i)
      ENDDO
-     IF ( PrtMat > 0 ) WRITE(stdout,'(A,f16.8,A)') string//label, ee, ' Ry'
+     IF ( PrtMat .ge. 1 ) WRITE(stdout,'(A,f16.8,A)') string//label, ee, ' Ry'
   ENDIF
 
   CALL stop_clock('matcalc')
@@ -100,7 +101,7 @@ SUBROUTINE matcalc_k (label, DoE, PrtMat, ik, ninner, n, m, U, V, mat, ee)
 
 END SUBROUTINE matcalc_k
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE matprt(label,n,m,A)
+SUBROUTINE MatPrt(label,n,m,A)
   USE kinds, ONLY : dp
   USE io_global,ONLY : stdout
   IMPLICIT NONE
@@ -143,6 +144,60 @@ SUBROUTINE matprt_k(label,n,m,A)
      WRITE(stdout,frmt) aimag(A(i,:))
   ENDDO
 END SUBROUTINE matprt_k
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE MatInv(MShape,n,A)
+  USE kinds, ONLY : dp
+  IMPLICIT NONE
+!
+! given a real square matrix A, returns the inverse in A
+! in the same shape as the input matrix, as indicated by MShape
+!    MShape = 'L' ... A is Lower Triangular (allocated in square shape)
+!             'U' ... A is Upper Triangular (allocated in square shape)
+!             'G' ... A is a general matrix
+!
+  INTEGER, INTENT(IN) :: n
+  REAL(dp), INTENT(INOUT):: A(n,n)
+  CHARACTER (LEN=1) :: MShape
+  INTEGER :: INFO, LWORK
+  INTEGER, ALLOCATABLE :: IPIV(:)
+  REAL(DP), ALLOCATABLE :: WORK(:)
+
+  IF(MShape.eq.'L'.or.MShape.eq.'U') then 
+    INFO = -1
+    CALL DTRTRI( MShape, 'N', n, A, n, INFO )
+    CALL errinfo('DTRTRI','inversion failed in MatInv.',INFO)
+  ELSEIF(MShape.eq.'G') then 
+    LWORK = 3*n
+    ALLOCATE( IPIV(n), WORK(LWORK) ) 
+    INFO = -1
+    CALL DGETRF( n, n, A, n, IPIV, INFO )
+    CALL errinfo('DGETRF','LU decomposition failed in MatInv.',INFO)
+    INFO = -1
+    CALL DGETRI( n, A, n, IPIV, WORK, LWORK, INFO )
+    CALL errinfo('DGETRI','inversion failed in MatInv.',INFO)
+    DEALLOCATE( IPIV, WORK ) 
+  ELSE
+    call errore('MatInv', 'Wrong MShape.', 1) 
+  END IF 
+
+END SUBROUTINE MatInv 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE MatChol(n,A)
+  USE kinds, ONLY : dp
+  IMPLICIT NONE
+  INTEGER, INTENT(IN) :: n
+  REAL(dp), INTENT(INOUT):: A(n,n)
+!
+! given a (real, positive definite) matrix A, returns the Cholesky factor in A
+! (only the Lower Triangular part of the input matrix is considered)
+!
+  integer :: INFO
+
+  INFO = -1
+  CALL DPOTRF( 'L', n, A, n, INFO )
+  CALL errinfo('DPOTRF','Cholesky failed in MatChol.',INFO)
+
+END SUBROUTINE MatChol
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE invchol(n,A)
   USE kinds, ONLY : dp
@@ -196,4 +251,99 @@ SUBROUTINE errinfo(routine,message,INFO)
   ENDIF
 
 END SUBROUTINE
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE MatSymm( MShape, How, Mat, n )
+USE kinds, ONLY : dp
+!
+! Symmetrize the (square) matrix Mat
+!       How    = 'U'  ... copying the upper block into the lower block
+!                'L'  ... copying the lower block into the upper block
+!                'S'  ... averaging 
+!
+!       MShape = 'U'  ... return the Upper Triangular (Zeros in Lower)
+!                'L'  ... return the Lower Triangular (Zeros in Upper)
+!                'S'  ... return the Square symmetric matrix
+!
+IMPLICIT NONE
+  INTEGER :: n, i, j 
+  REAL(DP) ::  Mat(n,n) 
+  REAL(DP), ALLOCATABLE :: MatT(:,:)
+  REAL(DP), PARAMETER :: Zero=0.0d0, Two=2.0d0
+  CHARACTER(LEN=1) :: How, MShape
+
+  ALLOCATE( MatT(n,n) )
+ 
+! Properly fill the lower triangular of MatT
+  MatT = Zero 
+  IF(How.eq.'L') then ! use lower
+    do i = 1, n
+      MatT(i,i) = Mat(i,i)
+      do j = i+1, n 
+        MatT(j,i) = Mat(j,i)
+      end do        
+    end do        
+  ELSE IF( How.eq.'U' ) then ! use upper
+    do i = 1, n
+      MatT(i,i) = Mat(i,i)
+      do j = i+1, n
+        MatT(j,i) = Mat(i,j)
+      end do        
+    end do        
+  ELSE IF( How.eq.'S' ) then ! use average 
+    do i = 1, n
+      MatT(i,i) = Mat(i,i)
+      do j = i+1, n
+        MatT(j,i) = (Mat(i,j) + Mat(j,i))  / Two
+      end do        
+    end do        
+  ELSE
+    Call errore('MatSymm','Wrong How in MatSymm.',1)
+  END IF 
+
+! Properly copy the results in Mat
+  Mat = Zero 
+  IF(MShape.eq.'L') then ! return lower 
+    Mat=MatT
+  ELSE IF(MShape.eq.'U') then ! return upper 
+    do i = 1, n
+      Mat(i,i) = MatT(i,i)
+      do j = i+1, n
+        Mat(i,j) = MatT(j,i)   
+      end do        
+    end do        
+  ELSE IF(MShape.eq.'S') then ! return square
+    Mat=MatT
+    do i = 1, n
+      do j = i+1, n
+        Mat(i,j) = MatT(j,i)   
+      end do        
+    end do        
+  ELSE
+    Call errore('MatSymm','Wrong MShape in MatSymm.',1)
+  END IF 
+
+  DEALLOCATE( MatT )
+
+END SUBROUTINE MatSymm  
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE MatTrp( Mat, n )
+USE kinds, ONLY : dp
+!
+! Transpose the (square) matrix Mat
+!
+IMPLICIT NONE
+  INTEGER :: n, i, j 
+  REAL(DP) ::  IJth, JIth
+  REAL(DP), INTENT(INOUT) ::  Mat(n,n)
+
+  do i = 1, n
+    do j = i+1, n 
+      IJth = Mat(i,j)
+      JIth = Mat(j,i)
+      Mat(i,j) = JIth 
+      Mat(j,i) = IJth 
+    end do        
+  end do        
+
+END SUBROUTINE MatTrp  
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -17,10 +17,10 @@ SUBROUTINE local_dos_mag(spin_component, kpoint, kband, raux)
   USE ions_base,            ONLY : nat, ntyp => nsp, ityp
   USE cell_base,            ONLY : omega
   USE fft_base,             ONLY : dffts
-  USE fft_interfaces,       ONLY : invfft
+  USE fft_interfaces,       ONLY : invfft, fft_interpolate
   USE gvect,                ONLY : ngm, g
   USE fft_base,             ONLY : dfftp
-  USE gvecs,                ONLY : nls, doublegrid
+  USE gvecs,                ONLY : doublegrid
   USE klist,                ONLY : nks, xk, ngk, igk_k, nkstot
   USE scf,                  ONLY : rho
   USE io_files,             ONLY : iunwfc, nwordwfc
@@ -87,8 +87,8 @@ SUBROUTINE local_dos_mag(spin_component, kpoint, kband, raux)
         !
         psic_nc = (0.D0,0.D0)
         DO ig = 1, npw
-           psic_nc(nls(igk_k(ig,ik)),1)=evc(ig     ,ibnd)
-           psic_nc(nls(igk_k(ig,ik)),2)=evc(ig+npwx,ibnd)
+           psic_nc(dffts%nl(igk_k(ig,ik)),1)=evc(ig     ,ibnd)
+           psic_nc(dffts%nl(igk_k(ig,ik)),2)=evc(ig+npwx,ibnd)
         ENDDO
         DO ipol=1,npol
            CALL invfft ('Wave', psic_nc(:,ipol), dffts)
@@ -257,7 +257,7 @@ SUBROUTINE local_dos_mag(spin_component, kpoint, kband, raux)
   !
      IF ( doublegrid ) THEN
        is=spin_component+1
-       CALL interpolate( rho%of_r(1,is), rho%of_r(1,is), 1 )
+       CALL fft_interpolate( dffts, rho%of_r(:,is), dfftp, rho%of_r(:,is) )
      ENDIF
   !
   ! ... Here we add the Ultrasoft contribution to the charge and magnetization

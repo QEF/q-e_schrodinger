@@ -1,7 +1,164 @@
-Known problems in 6.2 version:
+New in development version:
+
+  * Improved FFT threading (Ye Luo, Argonne)
+
+  * EXX: ACE can be projected on arbitrary number of orbitals
+    Slight change in SCF convergence with ACE (dexx) properly
+    accounting for difference between 2*<new|V(old)|new> 
+    and <new|V(old)|new> + <old|V(new)|old>  (see "fock3" term) 
+    SCDM and localized exchange is now compatible with ecutfock
+    Localized exchange can deal with virtual orbitals (empty bands)
+    (Ivan Carnimeo)
+
+  * Spin-polarized X3LYP (experimental)
+
+  * EPW: Electronic transport (Boltzmann transport equation)
+         Iterative Boltzmann transport equation (experimental)
+         Cumulant treatement (model)
+         Possible screening
+         Support for exclude bands
+         Calculation of velocity beyond the local approximation (experimental)
+
+Problems fixed in development version:
+
+  * Stress with hybrid functionals and Gamma point was grossly wrong
+    (5ed148646)
+
+  * EPW: Velocity in the dipole approximation was unstable because of 
+    G-vector ordering. 
+
+  * Real-space augmentation functions were crashing with -nt N option
+
+  * Calculation of ELF wasn't always working due to a bad usage of FFT
+    descriptors - noticed by Enrique Zanardi Maffiotte (commit a86fb75d)
+
+  * Workaround for gfortran bug in FoX (commit 5b36b697) and for pgi+openmp
+    bug (f43e72c9)
+
+  * Reading of starting wavefunctions from file, including restart case,
+    wasn't always working as expected. This might be at the origin of
+    mysterious "davcio errors" (April 18, 2018)
+
+  * Parameters for electric fields were not saved to the new XML file, thus
+    breaking some forms of postprocessing (noticed by Thomas Brumme and 
+    Giovanni Cantele, fixed April 18, 2018)
+
+  * Bug in reading (with FoX) the augmentation part of pseudopotentials in
+    upf v.2 format. The bug shows up only for PPs generated using David
+    Vanderbilt's code, yielding a mysterious message "Error in scalartorealdp
+    Too few elements found" (March 20, 2018)
+
+  * LDA+U for spin-orbit (kind=1) was crashing for one k-point, trying to read
+    data not previously saved (noticed by Christof Wolf, Feb 8, 2018)
+
+  * ibrav =-13 wasn't documented and did not recognize the correct parameter
+    cosBC (noticed by Jose' Conesa, Jan 26, 2018)
+
+  * Yet another problem with the final scf step in a vc-relax calculation: if
+    restarted from an interrupted calculation, the final step was trying to
+    read the charge density with a different number of G-vectors (Jan 23, 2018)
+
+  * CP with LDA+U: the choice of the LDA+U manifolds from atomic wavefunctions
+    was sometimes not working properly due to a missing check (Jan 22, 2018)
+
+  * pw2bgw.x fixed, courtesy G. Samsonidze (Jan.16, 2018)
+
+  * Band parallelization was broken in one of the last commits
+    just before v.6.2.1 (Dec.23, 2017)
+
+  * TDDFPT in "lr_addus_dvpsi.f90" had a bug for systems with USPP
+    and more than 2 atoms (Dec.22, 2017) (Oleksandr Motornyi, 
+    Michele Raynaud, Iurii Timrov, Nathalie Vast, Andrea Dal Corso)
+
+  * Phonons with images wasn't working in v.6.2.1 with old PP files
+    containing "&" in the header section (Dec.20, 2017)
+
+  * PWscf in "manypw" mode wasn't working due to a bad IF (Dec.12, 2017)
+
+Incompatible changes in development version:
+
+  * EPW: Removal of q-point paralelization (not very used and generated large code 
+    duplication) ==> removal of the parallel_k and parallel_q input variables. 
+
+  * various subroutines computing gradients and similar quantities using FFTs
+    have been harmonized and collected into Modules/gradutils.f90
+
+  * subroutine "ggen" split into two subroutines: "ggen" takes care of
+    G-vectors for the FFT grid only, "ggens" for the subgrid only
+
+  * FFT interfaces fwfft, invfft now accept only 'Rho', 'Wave', 'tgWave'.
+    Together with FFT descriptor, these options cover all cases.
+
+  * Structure for 'custom' FFT (exx_fft) deleted from exact exchange code,
+    FFT descriptor dfftt and a few variables used instead
+    (a different exx_fft structure is still present in GWW)
+
+  * FFT indices nl, nlm, nls, nlsm, moved from their previous location
+    (gvect, gvecs) into FFT descriptors (dfft* structures)
+
+  * Development moved to GitLab
+
+New in 6.2.1 version:
+
+  * Spin-polarized SCAN meta-GGA; spin-unpolarized stress for meta-GGA
+    (Hsin-Yu Ho and Marcos Calegari Andrade)
+
+  * Interface with Grimme's DFT-D3, as repackaged by Bálint Aradi
+    (Miha Gunde and Layla Martins-Samos)
+  
+  * Phonons for two-dimensional systems (Thibault Sohier et al.)
+
+Problems fixed in 6.2.1 version:
+
+  * PWscf in "driver" mode with i-Pi wasn't working with k-points and
+    wasn't honoring options for interpolation - fixed by Przemyslaw Juda
+    (r14037)
+
+  * Restart in phonon wasn't working with tetrahedra (r14029)
+    and for USPP/PAW at q != 0 (r14034-14036)
+
+  * QM-MM interface with LAMMPS was broken in v.6.2 (r14006-14008)
+
+  * NASTY BUG IN META-GGA WITH LIBXC (tpss, tb09, scan): incorrect results -
+    fixed by Hsin-Yu Ho and Marcos Calegari Andrade (r14000, 14004-5, 14027)
+
+  * Electron-phonon with ibrav=0 not working due to a mismatch between
+    what is written and what is read in "fildyn" (r13999)
+
+  * Tetrahedra with "old" XML format working again (r13993)
+
+  * Option "-in file" for fermi_proj.x and fermi_velocity.x was not working
+    in serial execution; fermisurfer_example/ was missing (r13986). Also:
+    Fermi velocity in vfermi.frmsf was 4*celldm(1) times bigger than in
+    fermisurfer (reported by Victor Chang, fixed by Mitsuaki Kawamura, r14033)
+
+  * Inconsistent "short name" for DFT was breaking Perdew-Wang pseudopotentials
+    (r13975)
+
+  * Yet another problem with last scf step in vc-relax, present since v.6.1: 
+    if no atoms of a given kind were present, there was a division by zero
+    and a NaN in starting magnetization (reported by Malte Sachs) (r13971)
+
+  * FFT's for ARM libraries were broken (r13956,13959, courtesy Jason Wood)
+
+Known problems in 6.2.1 version:
+
+  * pw2bgw.x not working
+
+  * QM-MM not yet working; COUPLE interface not aligned with new parallelism
 
   * New format for charge density no longer allows to perform a non-scf
     calculation with k-points starting from a scf calculation at Gamma
+
+  * NEB with one k-point per pool requires "wf_collect=.false.", because
+    update_neb is not updated for the new format
+
+Incompatible changes in 6.2.1 version:
+
+  * __OPENMP with two underscores (set by configure) replaced by _OPENMP
+    with one underscore (automatically set by all OpenMP-aware compilers)
+
+  * "Old" xml input file deleted
 
 New in 6.2 version:
 
@@ -92,7 +249,7 @@ Incompatible changes in 6.2 version:
 
   * MAJOR restructuring of the distribution:
     - diagonalizers moved to KS_Solvers/
-    - general utility modules moved to UtilsXlib/
+    - general utility modules moved to UtilXlib/
   * MAJOR restructuring of parallel FFTs, affecting ordering of real-space
     arrays
   * Restructuring of C routines, introduction of ISO_C_BINDING:
@@ -104,9 +261,9 @@ Incompatible changes in 6.2 version:
     some variables in modules constants, cell_base
   * The new XML format with schema is now the default. Use configure option
     "--disable-xml", or add -D__OLDXML to MANUAL_FLAGS in make.inc, to revert
-    to the old xml format. IMPORTANT NOTICE: the format is incompatibile both
-    with the "old" format and with the previous "new" one: files may be in
-    different locations with different names and contain different data.
+    to the old xml format. IMPORTANT NOTICE: the new format is incompatibile 
+    both with the "old" format and with the previous "new" one: files may be
+    in different locations with different names and contain different data.
     IMPORTANT NOTICE 2: the "collected" format is now the default
     IMPORTANT NOTICE 3: the new format uses FoX instead of iotk
   * Hybrid functionals: ACE is now the default for scf calculations (it wasn't

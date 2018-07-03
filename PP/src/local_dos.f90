@@ -28,9 +28,9 @@ SUBROUTINE local_dos (iflag, lsign, kpoint, kband, spin_component, &
   USE ions_base,            ONLY : nat, ntyp => nsp, ityp
   USE ener,                 ONLY : ef
   USE fft_base,             ONLY : dffts, dfftp
-  USE fft_interfaces,       ONLY : fwfft, invfft
-  USE gvect,                ONLY : nl, ngm, g
-  USE gvecs,                ONLY : nls, nlsm, doublegrid
+  USE fft_interfaces,       ONLY : fwfft, invfft, fft_interpolate
+  USE gvect,                ONLY : ngm, g
+  USE gvecs,                ONLY : doublegrid
   USE klist,                ONLY : lgauss, degauss, ngauss, nks, wk, xk, &
                                    nkstot, ngk, igk_k
   USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
@@ -171,8 +171,8 @@ SUBROUTINE local_dos (iflag, lsign, kpoint, kband, spin_component, &
               IF (noncolin) THEN
                  psic_nc = (0.d0,0.d0)
                  DO ig = 1, npw
-                    psic_nc(nls(igk_k(ig,ik)),1)=evc(ig     ,ibnd)
-                    psic_nc(nls(igk_k(ig,ik)),2)=evc(ig+npwx,ibnd)
+                    psic_nc(dffts%nl(igk_k(ig,ik)),1)=evc(ig     ,ibnd)
+                    psic_nc(dffts%nl(igk_k(ig,ik)),2)=evc(ig+npwx,ibnd)
                  ENDDO
                  DO ipol=1,npol
                     CALL invfft ('Wave', psic_nc(:,ipol), dffts)
@@ -180,11 +180,11 @@ SUBROUTINE local_dos (iflag, lsign, kpoint, kband, spin_component, &
               ELSE
                  psic(1:dffts%nnr) = (0.d0,0.d0)
                  DO ig = 1, npw
-                    psic (nls (igk_k(ig,ik) ) ) = evc (ig, ibnd)
+                    psic (dffts%nl (igk_k(ig,ik) ) ) = evc (ig, ibnd)
                  ENDDO
                  IF (gamma_only) THEN
                     DO ig = 1, npw
-                       psic (nlsm(igk_k (ig,ik) ) ) = conjg(evc (ig, ibnd))
+                       psic (dffts%nlm(igk_k (ig,ik) ) ) = conjg(evc (ig, ibnd))
                     ENDDO
                  ENDIF
                  CALL invfft ('Wave', psic, dffts)
@@ -226,7 +226,7 @@ SUBROUTINE local_dos (iflag, lsign, kpoint, kband, spin_component, &
 #endif
                     segno(1:dffts%nnr) = dble( psic(1:dffts%nnr)*conjg(phase) )
                  ENDIF
-                 IF (doublegrid) CALL interpolate (segno, segno, 1)
+                 IF (doublegrid) CALL fft_interpolate (dffts, segno, dfftp, segno)
                  segno(:) = sign( 1.d0, segno(:) )
               ENDIF
               !
@@ -368,10 +368,10 @@ SUBROUTINE local_dos (iflag, lsign, kpoint, kband, spin_component, &
   ENDIF
   IF (doublegrid) THEN
      IF (noncolin) THEN
-       CALL interpolate(rho%of_r, rho%of_r, 1)
+       CALL fft_interpolate(dffts, rho%of_r(:,1), dfftp, rho%of_r(:,1) )
      ELSE
        DO is = 1, nspin
-         CALL interpolate(rho%of_r(1, is), rho%of_r(1, is), 1)
+         CALL fft_interpolate(dffts, rho%of_r(:, is), dfftp, rho%of_r(:, is))
        ENDDO
      ENDIF
   ENDIF
@@ -407,14 +407,14 @@ SUBROUTINE local_dos (iflag, lsign, kpoint, kband, spin_component, &
   CALL sym_rho_init (gamma_only )
   !
   psic(:) = cmplx ( dos(:), 0.0_dp, kind=dp)
-  CALL fwfft ('Dense', psic, dfftp)
-  rho%of_g(:,1) = psic(nl(:))
+  CALL fwfft ('Rho', psic, dfftp)
+  rho%of_g(:,1) = psic(dfftp%nl(:))
   !
   CALL sym_rho (1, rho%of_g)
   !
   psic(:) = (0.0_dp, 0.0_dp)
-  psic(nl(:)) = rho%of_g(:,1)
-  CALL invfft ('Dense', psic, dfftp)
+  psic(dfftp%nl(:)) = rho%of_g(:,1)
+  CALL invfft ('Rho', psic, dfftp)
   dos(:) = dble(psic(:))
   !
   CALL sym_rho_deallocate()

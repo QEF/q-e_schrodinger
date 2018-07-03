@@ -25,35 +25,36 @@
   USE kinds,         ONLY : DP
   USE io_global,     ONLY : stdout
   USE io_epw,        ONLY : iospectral_sup, iospectral
-  USE phcom,         ONLY : nmodes
-  USE epwcom,        ONLY : nbndsub, lrepmatf, eps_acustic, &
+  USE epwcom,        ONLY : nbndsub, &
                             fsthick, eptemp, ngaussw, degaussw, wmin_specfun,&
                             wmax_specfun, nw_specfun, &
                             efermi_read, fermi_energy,&
                             nel, meff, epsiHEG 
   USE pwcom,         ONLY : nelec, ef, isk
   USE elph2,         ONLY : etf, ibndmin, ibndmax, nkqf, &
-                            wkf, nkf, nqtotf, wf, wqf, xkf, nkqtotf,&
+                            wkf, nkf, nqtotf, wqf, xkf, nkqtotf,&
                             esigmar_all, esigmai_all, a_all,&
                             xqf, dmef  
   USE constants_epw, ONLY : ryd2mev, one, ryd2ev, two, zero, pi, ci
   USE mp,            ONLY : mp_barrier, mp_sum
-  USE mp_global,     ONLY : me_pool, inter_pool_comm, my_pool_id
-  USE cell_base,     ONLY : omega, alat
+  USE mp_global,     ONLY : me_pool, inter_pool_comm 
+  USE cell_base,     ONLY : omega, alat, bg
   ! 
   implicit none
   !
-  real(kind=DP), external :: efermig, dos_ef, wgauss
-  integer :: iw, ik, ikk, ikq, ibnd, jbnd, imode, nrec, iq, fermicount
-  real(kind=DP) :: g2, ekk, ekq, wq, ef0, wgq, wgkq, ww, dw, weight
-  real(kind=DP) :: specfun_sum, esigmar0, tpiba_new
-  real(kind=DP) :: fermi(nw_specfun)
-  !
   ! variables for collecting data from all pools in parallel case 
   !
+  integer :: iw, ik, ikk, ikq, ibnd, jbnd, iq, fermicount
   integer :: nksqtotf, lower_bnd, upper_bnd
-  real(kind=DP), allocatable :: xkf_all(:,:) , etf_all(:,:)
-  REAL(kind=DP) :: kF, vF, fermiHEG, qin, wpl0, eps0, deltaeps, qcut, qcut2, qsquared, qTF, dipole, rs, ekk1
+  REAL(kind=DP), external :: efermig, dos_ef, wgauss
+  REAL(kind=DP) :: g2, ekk, ekq, wq, ef0, wgq, wgkq, ww, dw, weight
+  REAL(kind=DP) :: specfun_sum, esigmar0, tpiba_new
+  REAL(kind=DP) :: fermi(nw_specfun)
+  REAL(kind=DP), allocatable :: xkf_all(:,:) , etf_all(:,:)
+  REAL(kind=DP) :: kF, vF, fermiHEG, qin, wpl0, eps0, deltaeps, qcut, &
+                   qsquared, qTF, dipole, rs, ekk1, degen
+  REAL(kind=DP) :: q(3)
+  !! The q-point in cartesian unit. 
   !
   ! loop over temperatures can be introduced
   !
@@ -119,17 +120,21 @@
   !nel      =  0.01    ! this should be read from input - # of doping electrons 
   !epsiHEG  =  12.d0   ! this should be read from input - # dielectric constant at zero doping  
   !meff     =  0.25    ! this should be read from input - effective mass 
-  tpiba_new = 2.0d0 * pi / alat
-  rs       =  (3.d0/(4.d0*pi*nel/omega))**(1./3.)*meff/epsiHEG ! omega is the unit cell volume in Bohr^3
-  kF       =  ( 3.*pi**2*nel/omega )**(1.d0/3.d0) 
-  vF       =  1.d0/meff * (3.*pi**2*nel/omega)**(1./3.) 
-  fermiHEG =  1./(2.*meff) * (3.*pi**2*nel/omega)**(2./3.) * 2.d0 ! [Ryd] multiplication by 2 converts from Ha to Ry
-  qTF      =  (6.d0*pi*nel/omega/(fermiHEG/2.d0))**(1.d0/2.d0)    ! [a.u.]
+  tpiba_new=  2.0d0 * pi / alat
+  degen    =  1.0d0
+  rs       =  (3.d0/(4.d0*pi*nel/omega/degen))**(1.d0/3.d0)*meff*degen ! omega is the unit cell volume in Bohr^3
+!  rs       = (3.d0/(4.d0*pi*nel/omega/degen))**(1.d0/3.d0)*meff*degen/epsiHEG ! omega is the unit cell volume in Bohr^3
+  kF       =  (3.d0*pi**2*nel/omega/degen )**(1.d0/3.d0)
+  vF       =  1.d0/meff * (3.d0*pi**2*nel/omega/degen)**(1.d0/3.d0)
+  fermiHEG =  1.d0/(2.d0*meff) * (3.d0*pi**2*nel/omega/degen)**(2.d0/3.d0) * 2.d0 ! [Ryd] multiplication by 2 converts from Ha to Ry
+  qTF      =  (6.d0*pi*nel/omega/degen/(fermiHEG/2.d0))**(1.d0/2.d0)    ! [a.u.]
   wpl0     =  sqrt(4.d0*pi*nel/omega/meff/epsiHEG) * 2.d0         ! [Ryd] multiplication by 2 converts from Ha to Ryd
   wq       =  wpl0 ! [Ryd] 
-  qsquared =  (xqf(1,iq)**2 + xqf(2,iq)**2 + xqf(3,iq)**2)
+  q(:)     =  xqf(:,iq) 
+  CALL cryst_to_cart (1, q, bg, 1)
+  qsquared =  (q(1)**2 + q(2)**2 + q(3)**2)
   qin      =  sqrt(qsquared)*tpiba_new
-  qcut     = wpl0 / vF  / tpiba_new / 2.d0 ! 1/2 converts from Ryd to Ha
+  qcut     =  wpl0 / vF  / tpiba_new / 2.d0 ! 1/2 converts from Ryd to Ha
   !qcut = qcut / 2.d0 ! phenomenological Landau damping
   ! 
   ! qcut2  = kF * ( sqrt( 1.d0 + wpl0 / fermiHEG) - 1.d0 ) / tpiba_new
@@ -137,7 +142,22 @@
   !call get_eps_mahan (qin,qTF,kF,eps0) ! qin should be in atomic units for Mahan formula
   deltaeps = -(1.d0/(epsiHEG+eps0-1.d0)-1.d0/epsiHEG)
   !
-  IF (sqrt(qsquared) < qcut) then
+  IF (iq .EQ. 1) THEN
+    WRITE(stdout,'(12x," nel       = ", E15.10)') nel
+    WRITE(stdout,'(12x," meff      = ", E15.10)') meff
+    WRITE(stdout,'(12x," rs        = ", E15.10)') rs
+    WRITE(stdout,'(12x," kF        = ", E15.10)') kF
+    WRITE(stdout,'(12x," vF        = ", E15.10)') vF
+    WRITE(stdout,'(12x," fermi_en  = ", E15.10)') fermiHEG
+    WRITE(stdout,'(12x," qTF       = ", E15.10)') qTF
+    WRITE(stdout,'(12x," wpl       = ", E15.10)') wpl0
+    WRITE(stdout,'(12x," qcut      = ", E15.10)') qcut
+    WRITE(stdout,'(12x," eps0      = ", E15.10)') eps0
+    WRITE(stdout,'(12x," epsiHEG   = ", E15.10)') epsiHEG
+    WRITE(stdout,'(12x," deltaeps  = ", E15.10)') deltaeps
+  ENDIF
+  !
+  IF (sqrt(qsquared) < qcut) THEN
     !
     ! loop over all k points of the fine mesh
     !
@@ -180,8 +200,8 @@
               endif
             else
               if (abs(ekq-ekk1) > 1d-6) then
-                dipole = dmef(1,ibndmin-1+jbnd,ibndmin-1+ibnd,ikk) * &
-                             conjg(dmef(1,ibndmin-1+jbnd,ibndmin-1+ibnd,ikk))/((ekk1-ekk)**2 + degaussw**2)
+                dipole = REAL( dmef(1,ibndmin-1+jbnd,ibndmin-1+ibnd,ikk) * &
+                             conjg(dmef(1,ibndmin-1+jbnd,ibndmin-1+ibnd,ikk))/((ekk1-ekk)**2 + degaussw**2) )
               else 
                 dipole = 0.d0
               endif
@@ -374,7 +394,6 @@
   ENDIF
   !
   100 FORMAT(5x,'Gaussian Broadening: ',f10.6,' eV, ngauss=',i4)
-  101 FORMAT(5x,'DOS =',f10.6,' states/spin/eV/Unit Cell at Ef=',f10.6,' eV')
   103 FORMAT(5x,'ik = ',i7,'  w = ',f9.4,' eV   A(k,w) = ',e12.5,' meV^-1')
   !
   RETURN

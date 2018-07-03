@@ -38,6 +38,7 @@ SUBROUTINE lr_calc_dens_eels_nc (drhoscf, dpsi)
   USE mp,                    ONLY : mp_sum
   USE io_files,              ONLY : iunwfc, nwordwfc
   USE buffers,               ONLY : get_buffer
+  USE fft_interfaces,        ONLY : fft_interpolate
   !
   IMPLICIT NONE
   !
@@ -97,7 +98,7 @@ SUBROUTINE lr_calc_dens_eels_nc (drhoscf, dpsi)
   ! drhoscfh -> drhoscf
   !
   DO is = 1, nspin_mag
-     CALL cinterpolate(drhoscf(1,is), drhoscfh(1,is), 1)
+     CALL fft_interpolate(dffts, drhoscfh(:,is), dfftp, drhoscf(:,is) )
   ENDDO
   !
   IF (okvan) THEN

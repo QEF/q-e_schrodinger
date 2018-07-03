@@ -237,7 +237,8 @@ SUBROUTINE update_pot()
   ! ...                     + beta0*( tau(t-dt) -tau(t-2*dt) )
   !
   !
-  USE io_files,      ONLY : prefix, iunupdate, tmp_dir, wfc_dir, nd_nmbr, seqopn
+  USE io_files,      ONLY : prefix, iunupdate, tmp_dir, wfc_dir, nd_nmbr, &
+                            postfix, seqopn
   USE io_global,     ONLY : ionode, ionode_id
   USE cell_base,     ONLY : bg
   USE ions_base,     ONLY : nat, tau, nsp, ityp
@@ -347,7 +348,7 @@ SUBROUTINE update_pot()
   !
   IF ( pot_order > 1 .AND. ionode ) THEN
      !
-     dirname =  TRIM( tmp_dir ) // TRIM( prefix ) // '.save/'
+     dirname =  TRIM( tmp_dir ) // TRIM( prefix ) // postfix
      INQUIRE( FILE = TRIM( dirname ) // 'charge-density.old.dat', &
           EXIST = exists )
      !
@@ -384,7 +385,7 @@ SUBROUTINE extrapolate_charge( dirname, rho_extr )
   USE ions_base,            ONLY : nat, tau, nsp, ityp
   USE fft_base,             ONLY : dfftp, dffts
   USE fft_interfaces,       ONLY : fwfft, invfft
-  USE gvect,                ONLY : ngm, g, gg, gstart, nl, eigts1, eigts2, eigts3
+  USE gvect,                ONLY : ngm, g, gg, gstart, eigts1, eigts2, eigts3
   USE lsda_mod,             ONLY : lsda, nspin
   USE scf,                  ONLY : rho, rho_core, rhog_core, v
   USE ldaU,                 ONLY : eth
@@ -588,9 +589,9 @@ SUBROUTINE extrapolate_charge( dirname, rho_extr )
      !
      psic(:) = rho%of_r(:,is)
      !
-     CALL fwfft ('Dense', psic, dfftp)
+     CALL fwfft ('Rho', psic, dfftp)
      !
-     rho%of_g(:,is) = psic(nl(:))
+     rho%of_g(:,is) = psic(dfftp%nl(:))
      !
   END DO
   !

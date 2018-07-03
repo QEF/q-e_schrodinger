@@ -6,11 +6,6 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 !----------------------------------------------------------------------------
-! TB
-! included gate related stuff, search for 'TB'
-!----------------------------------------------------------------------------
-!
-!----------------------------------------------------------------------------
 SUBROUTINE iosys()
   !-----------------------------------------------------------------------------
   !
@@ -21,7 +16,7 @@ SUBROUTINE iosys()
   !
   USE kinds,         ONLY : DP
   USE funct,         ONLY : dft_is_hybrid, dft_has_finite_size_correction, &
-                            set_finite_size_volume, get_inlc 
+                            set_finite_size_volume, get_inlc, get_dft_short
   USE funct,         ONLY: set_exx_fraction, set_screening_parameter
   USE control_flags, ONLY: adapt_thr, tr2_init, tr2_multi
   USE constants,     ONLY : autoev, eV_to_kelvin, pi, rytoev, &
@@ -96,7 +91,8 @@ SUBROUTINE iosys()
   USE io_files,      ONLY : input_drho, output_drho, &
                             psfile, tmp_dir, wfc_dir, &
                             prefix_     => prefix, &
-                            pseudo_dir_ => pseudo_dir
+                            pseudo_dir_ => pseudo_dir, &
+                            check_tempdir, clean_tempdir
   !
   USE force_mod,     ONLY : lforce, lstres, force
   !
@@ -131,15 +127,15 @@ SUBROUTINE iosys()
   !
   USE a2F,           ONLY : la2F_ => la2F
   !
-  USE exx,           ONLY : x_gamma_extrapolation_ => x_gamma_extrapolation, &
+  USE exx_base,      ONLY : x_gamma_extrapolation_ => x_gamma_extrapolation, &
                             nqx1_ => nq1, &
                             nqx2_ => nq2, &
                             nqx3_ => nq3, &
                             exxdiv_treatment_ => exxdiv_treatment, &
                             yukawa_           => yukawa, &
-                            ecutvcut_         => ecutvcut, &
-                            ecutfock_         => ecutfock, &
-                            use_ace, local_thr 
+                            ecutvcut_         => ecutvcut
+  USE exx,          ONLY:   ecutfock_         => ecutfock, &
+                            use_ace, nbndproj, local_thr 
   USE loc_scdm,      ONLY : use_scdm, scdm_den, scdm_grd 
   !
   USE lsda_mod,      ONLY : nspin_                  => nspin, &
@@ -155,7 +151,7 @@ SUBROUTINE iosys()
                             nmix, iverbosity, smallmem, niter, &
                             io_level, ethr, lscf, lbfgs, lmd, &
                             lbands, lconstrain, restart, twfcollect, &
-                            llondon, do_makov_payne, lxdm, &
+                            llondon, ldftd3, do_makov_payne, lxdm, &
                             remove_rigid_rot_ => remove_rigid_rot, &
                             diago_full_acc_   => diago_full_acc, &
                             tolp_             => tolp, &
@@ -207,6 +203,8 @@ SUBROUTINE iosys()
                             nwan_             => nwan, &
                             print_wannier_coeff_    => print_wannier_coeff
 
+  USE Coul_cut_2D,  ONLY :  do_cutoff_2D 
+
   USE realus,                ONLY : real_space_ => real_space
 
   USE read_pseudo_mod,       ONLY : readpp
@@ -243,13 +241,13 @@ SUBROUTINE iosys()
                                exxdiv_treatment, yukawa, ecutvcut,          &
                                exx_fraction, screening_parameter, ecutfock, &
                                gau_parameter, localization_thr, scdm, ace,    &
-                               scdmden, scdmgrd,                              & 
+                               scdmden, scdmgrd, n_proj,                      & 
                                edir, emaxpos, eopreg, eamp, noncolin, lambda, &
                                angle1, angle2, constrained_magnetization,     &
                                B_field, fixed_magnetization, report, lspinorb,&
                                starting_spin_angle, assume_isolated,spline_ps,&
                                vdw_corr, london, london_s6, london_rcut, london_c6, &
-                               london_rvdw, &
+                               london_rvdw, dftd3_threebody, dftd3_version,   &
                                ts_vdw, ts_vdw_isolated, ts_vdw_econv_thr,     &
                                xdm, xdm_a1, xdm_a2, lforcet,                  &
                                one_atom_occupations,                          &
@@ -302,6 +300,10 @@ SUBROUTINE iosys()
   USE constraints_module,    ONLY : init_constraint
   USE read_namelists_module, ONLY : read_namelists, sm_not_set
   USE london_module,         ONLY : init_london, lon_rcut, scal6, in_c6, in_rvdw
+  USE dftd3_api,             ONLY : dftd3_init, dftd3_set_params, &
+                                    dftd3_set_functional, dftd3_calc, &
+                                    dftd3_input
+  USE dftd3_qe,              ONLY : dftd3_printout, dftd3_xc, dftd3, dftd3_in
   USE xdm_module,            ONLY : init_xdm, a1i, a2i
   USE tsvdw_module,          ONLY : vdw_isolated, vdw_econv_thr
   USE us,                    ONLY : spline_ps_ => spline_ps
@@ -322,8 +324,10 @@ SUBROUTINE iosys()
      CHARACTER(LEN=*),INTENT(IN)  :: obj_tagname
      END SUBROUTINE
   END INTERFACE
-!!!!  
+  !
   CHARACTER(LEN=256), EXTERNAL :: trimcheck
+  CHARACTER(LEN=256):: dft_
+  !
   INTEGER, EXTERNAL :: read_config_from_file
   !
   INTEGER  :: ia, nt, inlc, ibrav_sg, ierr
@@ -1254,24 +1258,36 @@ SUBROUTINE iosys()
     CASE( 'grimme-d2', 'Grimme-D2', 'DFT-D', 'dft-d' )
       !
       llondon= .TRUE.
+      ldftd3 = .FALSE.
       ts_vdw_= .FALSE.
       lxdm   = .FALSE.
       !
+    CASE( 'grimme-d3', 'Grimme-D3', 'DFT-D3', 'dft-d3' )
+      !
+      ldftd3 = .TRUE.
+      llondon= .FALSE.
+      ts_vdw_= .FALSE.
+      lxdm   = .FALSE.
+      !
+
     CASE( 'TS', 'ts', 'ts-vdw', 'ts-vdW', 'tkatchenko-scheffler' )
       !
       llondon= .FALSE.
+      ldftd3 = .FALSE.
       ts_vdw_= .TRUE.
       lxdm   = .FALSE.
       !
     CASE( 'XDM', 'xdm' )
        !
       llondon= .FALSE.
+      ldftd3 = .FALSE.
       ts_vdw_= .FALSE.
       lxdm   = .TRUE.
       !
     CASE DEFAULT
       !
       llondon= .FALSE.
+      ldftd3 = .FALSE.
       ts_vdw_= .FALSE.
       lxdm   = .FALSE.
       !
@@ -1281,6 +1297,9 @@ SUBROUTINE iosys()
      vdw_corr='grimme-d2'
      llondon = .TRUE.
   END IF
+  IF ( ldftd3 ) THEN
+     vdw_corr='grimme-d3'
+  ENDIF
   IF ( xdm ) THEN
      CALL infomsg("iosys","xdm is obsolete, use ""vdw_corr='xdm'"" instead")
      vdw_corr='xdm'
@@ -1291,7 +1310,8 @@ SUBROUTINE iosys()
      vdw_corr='TS'
      ts_vdw_ = .TRUE.
   END IF
-  IF ( llondon.AND.lxdm .OR. llondon.AND.ts_vdw_ .OR. lxdm.AND.ts_vdw_ ) &
+  IF ( llondon.AND.lxdm .OR. llondon.AND.ts_vdw_ .OR. lxdm.AND.ts_vdw_ .OR. &
+           ldftd3.AND.llondon .OR. ldftd3.AND.lxdm .OR. ldftd3.AND.ts_vdw ) &
      CALL errore("iosys","must choose a unique vdW correction!", 1)
   !
   IF ( llondon) THEN
@@ -1339,6 +1359,7 @@ SUBROUTINE iosys()
   do_makov_payne  = .false.
   do_comp_mt      = .false.
   do_comp_esm     = .false.
+  do_cutoff_2D    = .false.
   !
   SELECT CASE( trim( assume_isolated ) )
       !
@@ -1360,6 +1381,11 @@ SUBROUTINE iosys()
       !
       do_comp_esm    = .true.
       !
+    CASE( '2D' )
+      !
+      do_cutoff_2D   = .true.
+      !
+
   END SELECT
   !
   IF ( do_comp_mt .AND. lstres ) THEN
@@ -1522,6 +1548,23 @@ SUBROUTINE iosys()
   !
   CALL init_dofree ( cell_dofree )
   !
+  !
+  ! ... Initialize temporary directory(-ies)
+  !
+  CALL check_tempdir ( tmp_dir, exst, parallelfs )
+  IF ( .NOT. exst .AND. restart ) THEN
+     CALL infomsg('iosys', 'restart disabled: needed files not found')
+     restart = .false.
+  ELSE IF ( .NOT. exst .AND. (lbands .OR. .NOT. lscf) ) THEN
+     CALL errore('iosys', 'bands or non-scf calculation not possible: ' // &
+                          'needed files are missing', 1)
+  ELSE IF ( exst .AND. .NOT.restart ) THEN
+     CALL clean_tempdir ( tmp_dir )
+  END IF
+  IF ( TRIM(wfc_dir) /= TRIM(tmp_dir) ) &
+     CALL check_tempdir( wfc_dir, exst, parallelfs )
+  !
+
   ! ... read pseudopotentials (also sets DFT and a few more variables)
   ! ... returns values read from PP files into ecutwfc_pp, ecutrho_pp
   !
@@ -1540,16 +1583,17 @@ SUBROUTINE iosys()
   yukawa_   = yukawa
   ecutvcut_ = ecutvcut
   use_ace   = ace
+  nbndproj  = n_proj
   local_thr = localization_thr
   use_scdm  = scdm
   scdm_den = scdmden
   scdm_grd = scdmgrd
   IF ( local_thr > 0.0_dp .AND. .NOT. gamma_only) &
-     CALL errore('input','localization for k-points not yet implemented',1)
+     CALL errore('input','localization for k-points not implemented',1)
   IF ( local_thr > 0.0_dp .AND. .NOT. use_ace ) &
-     CALL errore('input','localization without ACE not yet implemented',1)
-  IF ( local_thr > 0.0_dp .AND. nspin > 1 ) &
-     CALL errore('input','spin-polarized localization not yet implemented',1)
+     CALL errore('input','localization without ACE not implemented',1)
+! IF ( local_thr > 0.0_dp .AND. nspin > 1 ) &
+!    CALL errore('input','spin-polarized localization not implemented',1)
   IF ( use_scdm ) CALL errore('input','use_scdm not yet implemented',1)
   !
   IF(ecutfock <= 0.0_DP) THEN
@@ -1562,8 +1606,8 @@ SUBROUTINE iosys()
   END IF
   IF ( lstres .AND. dft_is_hybrid() .AND. npool > 1 )  CALL errore('iosys', &
          'stress for hybrid functionals not available with pools', 1)
-  IF ( lmovecell.AND. dft_is_hybrid() ) CALL errore('iosys',&
-         'Variable cell and hybrid XC not tested',1)
+  IF ( lmovecell.AND. dft_is_hybrid() ) CALL infomsg('iosys',&
+         'Variable cell and hybrid XC little tested')
   !
   ! ... must be done AFTER dft is read from PP files and initialized
   ! ... or else the two following parameters will be overwritten
@@ -1602,9 +1646,22 @@ SUBROUTINE iosys()
      !
   ENDIF
   !
-  ! ... allocate arrays for dispersion correction
+  ! ... allocate arrays for DFT-D2 dispersion correction
   !
   IF ( llondon) CALL init_london ( )
+  !
+  ! Setting DFT-D3 functional dependent parameters
+  !
+  IF ( ldftd3)  THEN
+      if (dftd3_version==2) dftd3_threebody=.false.
+      dftd3_in%threebody = dftd3_threebody
+      CALL dftd3_init(dftd3, dftd3_in)
+      CALL dftd3_printout(dftd3, dftd3_in)
+      dft_ = get_dft_short( )
+      dft_ = dftd3_xc ( dft_ )
+      CALL dftd3_set_functional(dftd3, func=dft_, version=dftd3_version,tz=.false.)
+  END IF
+  !
   IF ( lxdm) CALL init_xdm ( )
   !
   ! ... variables for constrained dynamics are set here
@@ -1621,21 +1678,6 @@ SUBROUTINE iosys()
   !
   CALL pw_init_qexsd_input(qexsd_input_obj, obj_tagname="input")
   CALL deallocate_input_parameters ()  
-  !
-  ! ... Initialize temporary directory(-ies)
-  !
-  CALL check_tempdir ( tmp_dir, exst, parallelfs )
-  IF ( .NOT. exst .AND. restart ) THEN
-     CALL infomsg('iosys', 'restart disabled: needed files not found')
-     restart = .false.
-  ELSE IF ( .NOT. exst .AND. (lbands .OR. .NOT. lscf) ) THEN
-     CALL errore('iosys', 'bands or non-scf calculation not possible: ' // &
-                          'needed files are missing', 1)
-  ELSE IF ( exst .AND. .NOT.restart ) THEN
-     CALL clean_tempdir ( tmp_dir )
-  END IF
-  IF ( TRIM(wfc_dir) /= TRIM(tmp_dir) ) &
-     CALL check_tempdir( wfc_dir, exst, parallelfs )
   !
   max_seconds_ = max_seconds
   !
@@ -1831,72 +1873,3 @@ SUBROUTINE convert_tau (tau_format, nat_, tau)
   END SELECT
   !
 END SUBROUTINE convert_tau
-!-----------------------------------------------------------------------
-SUBROUTINE check_tempdir ( tmp_dir, exst, pfs )
-  !-----------------------------------------------------------------------
-  !
-  ! ... Verify if tmp_dir exists, creates it if not
-  ! ... On output:
-  ! ...    exst= .t. if tmp_dir exists
-  ! ...    pfs = .t. if tmp_dir visible from all procs of an image
-  !
-  USE wrappers,      ONLY : f_mkdir_safe
-  USE io_global,     ONLY : ionode, ionode_id
-  USE mp_images,     ONLY : intra_image_comm, nproc_image, me_image
-  USE mp,            ONLY : mp_barrier, mp_bcast, mp_sum
-  !
-  IMPLICIT NONE
-  !
-  CHARACTER(len=*), INTENT(in) :: tmp_dir
-  LOGICAL, INTENT(out)         :: exst, pfs
-  !
-  INTEGER             :: ios, image, proc, nofi
-  CHARACTER (len=256) :: file_path, filename
-  CHARACTER(len=6), EXTERNAL :: int_to_char
-  !
-  ! ... create tmp_dir on ionode
-  ! ... f_mkdir_safe returns -1 if tmp_dir already exists
-  ! ...                       0 if         created
-  ! ...                       1 if         cannot be created
-  !
-  IF ( ionode ) ios = f_mkdir_safe( TRIM(tmp_dir) )
-  CALL mp_bcast ( ios, ionode_id, intra_image_comm )
-  exst = ( ios == -1 )
-  IF ( ios > 0 ) CALL errore ('check_tempdir','tmp_dir cannot be opened',1)
-  !
-  ! ... let us check now if tmp_dir is visible on all nodes
-  ! ... if not, a local tmp_dir is created on each node
-  !
-  ios = f_mkdir_safe( TRIM(tmp_dir) )
-  CALL mp_sum ( ios, intra_image_comm )
-  pfs = ( ios == -nproc_image ) ! actually this is true only if .not.exst 
-  !
-  RETURN
-  !
-END SUBROUTINE check_tempdir
-!
-!-----------------------------------------------------------------------
-SUBROUTINE clean_tempdir( tmp_dir )
-  !-----------------------------------------------------------------------
-  !
-  USE io_files,         ONLY : prefix, delete_if_present
-  USE io_global,        ONLY : ionode
-  !
-  IMPLICIT NONE
-  !
-  CHARACTER(len=*), INTENT(in) :: tmp_dir
-  !
-  CHARACTER (len=256) :: file_path, filename
-  !
-  ! ... remove temporary files from tmp_dir ( only by the master node )
-  !
-  file_path = trim( tmp_dir ) // trim( prefix )
-  IF ( ionode ) THEN
-     CALL delete_if_present( trim( file_path ) // '.update' )
-     CALL delete_if_present( trim( file_path ) // '.md' )
-     CALL delete_if_present( trim( file_path ) // '.bfgs' )
-  ENDIF
-  !
-  RETURN
-  !
-END SUBROUTINE clean_tempdir

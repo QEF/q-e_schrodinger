@@ -43,7 +43,7 @@ PROGRAM do_dos
   !
   CHARACTER(len=256) :: fildos, outdir
   CHARACTER(LEN=33) :: fermi_str
-  REAL(DP) :: E, DOSofE (2), DOSint, DOSintDn, DeltaE, Emin, Emax, &
+  REAL(DP) :: E, DOSofE (2), DOSint, DeltaE, Emin, Emax, &
               degauss1, E_unset=1000000.d0
   INTEGER :: nks2, n, ndos, ngauss1, ios
 
@@ -157,7 +157,7 @@ PROGRAM do_dos
         Emin = Emin/rytoev
      END IF
      IF ( Emax  == E_unset ) THEN
-        Emax = MINVAL ( et(nbnd, 1:nks) )
+        Emax = MAXVAL ( et(nbnd, 1:nks) )
         IF ( degauss > 0.0_dp ) Emax = Emax + 3.0_dp * degauss
      ELSE 
         Emax = Emax/rytoev
@@ -166,7 +166,6 @@ PROGRAM do_dos
      DeltaE = DeltaE / rytoev
      ndos = nint ( (Emax - Emin) / DeltaE+0.500001d0)
      DOSint = 0.d0
-     DOSintDn = 0.d0
      !
      IF ( fildos == ' ' ) fildos = trim(prefix)//'.dos'
      OPEN (unit = 4, file = fildos, status = 'unknown', form = 'formatted')
@@ -179,8 +178,8 @@ PROGRAM do_dos
      IF (nspin==1.or.nspin==4) THEN
         WRITE(4,'("#  E (eV)   dos(E)     Int dos(E)",A)') TRIM(fermi_str)
      ELSE
-        WRITE(4, '("#  E (eV)   dosup(E)     dosdw(E) Int dosup(E)", &
-             &     " Int dosdw(E) Int dos(E)",A)') TRIM(fermi_str)
+        WRITE(4,'("#  E (eV)   dosup(E)     dosdw(E)   Int dos(E)",A)') &
+        &          TRIM(fermi_str)
      ENDIF
      !
      DO n= 1, ndos
@@ -198,10 +197,8 @@ PROGRAM do_dos
            DOSint = DOSint + DOSofE (1) * DeltaE
            WRITE (4, '(f8.3,2e12.4)') E * rytoev, DOSofE(1)/rytoev, DOSint
         ELSE
-           DOSint = DOSint + DOSofE (1) * DeltaE
-           DOSintDn = DOSintDn + DOSofE (2)  * DeltaE
-           WRITE (4, '(f8.3,5e12.4)') E * rytoev, DOSofE/rytoev, DOSint, &
-                                      DOSintDn, DOSint + DOSintDn
+           DOSint = DOSint + (DOSofE (1) + DOSofE (2) ) * DeltaE
+           WRITE (4, '(f8.3,3e12.4)') E * rytoev, DOSofE/rytoev, DOSint
         ENDIF
      ENDDO
 

@@ -22,6 +22,7 @@ MODULE environment
   USE mp_pools,  ONLY: npool
   USE mp_bands,  ONLY: ntask_groups, nproc_bgrp, nbgrp, nyfft
   USE global_version, ONLY: version_number, svn_revision
+  USE fox_init_module, ONLY: fox_init
 #if defined(__HDF5)
   USE qeh5_base_module,   ONLY: initialize_hdf5, finalize_hdf5
 #endif
@@ -125,6 +126,9 @@ CONTAINS
 #else
     CALL serial_info()
 #endif
+#if !defined(__OLDXML)
+    CALL fox_init()
+#endif
 #if defined(__HDF5) & !defined(__OLDXML)
   CALL initialize_hdf5()
 #endif
@@ -177,7 +181,10 @@ CONTAINS
          &/9X," URL http://www.quantum-espresso.org"", ", &
          &/5X,"in publications or presentations arising from this work. More details at",&
          &/5x,"http://www.quantum-espresso.org/quote")' )
-
+#if defined (__OLDXML)
+    WRITE( stdout, '(/," *** WARNING: using old-style file format, will ",&
+         &             "disappear from next version ***")')
+#endif
     RETURN
   END SUBROUTINE opening_message
 
@@ -208,7 +215,7 @@ CONTAINS
   SUBROUTINE parallel_info ( code )
     !
     CHARACTER(LEN=*), INTENT(IN) :: code
-#if defined(__OPENMP)
+#if defined(_OPENMP)
     INTEGER, EXTERNAL :: omp_get_max_threads
     !
     WRITE( stdout, '(/5X,"Parallel version (MPI & OpenMP), running on ",&
@@ -247,11 +254,11 @@ CONTAINS
   !==-----------------------------------------------------------------------==!
   SUBROUTINE serial_info ( )
     !
-#if defined(__OPENMP)
+#if defined(_OPENMP)
     INTEGER, EXTERNAL :: omp_get_max_threads
 #endif
     !
-#if defined(__OPENMP)
+#if defined(_OPENMP)
     WRITE( stdout, '(/5X,"Serial multi-threaded version, running on ",&
          &I4," processor cores")' ) omp_get_max_threads()
     !

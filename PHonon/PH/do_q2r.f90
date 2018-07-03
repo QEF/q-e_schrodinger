@@ -6,23 +6,24 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 !-----------------------------------------------------------------------
-SUBROUTINE do_q2r(fildyn_, flfrc, prefix, zasr, la2F)
+SUBROUTINE do_q2r(fildyn_, flfrc, prefix, zasr, la2F, loto_2d)
   !-----------------------------------------------------------------------
   !
   ! ... This is the main driver of the q2r code.
   !
-
   USE kinds,      ONLY : DP
   USE mp,         ONLY : mp_bcast
   USE mp_world,   ONLY : world_comm
   USE mp_global,  ONLY : mp_startup, mp_global_end
   USE dynamicalq, ONLY : phiq, tau, ityp, zeu
   USE fft_scalar, ONLY : cfft3d
-  USE io_global, ONLY : ionode_id, ionode, stdout
+  USE io_global,  ONLY : ionode_id, ionode, stdout
+  USE io_files,   ONLY : postfix
   USE io_dyn_mat, ONLY : read_dyn_mat_param, read_dyn_mat_header, &
                          read_dyn_mat, read_dyn_mat_tail, &
                          write_dyn_mat_header, write_ifc
   USE environment, ONLY : environment_start, environment_end
+  USE rigid, ONLY: rgd_blk
   !
   IMPLICIT NONE
   !
@@ -55,27 +56,23 @@ SUBROUTINE do_q2r(fildyn_, flfrc, prefix, zasr, la2F)
   REAL(DP) :: q(3,48), omega, xq, amass(ntypx), resi
   REAL(DP) :: epsil(3,3)
   !
-  logical, INTENT(IN) :: la2F
+  logical, INTENT(IN) :: la2F, loto_2d
   LOGICAL, EXTERNAL :: has_xml
-
-  CALL mp_bcast(flfrc, ionode_id, world_comm)
-  CALL mp_bcast(prefix, ionode_id, world_comm)
-  CALL mp_bcast(zasr, ionode_id, world_comm)
-  CALL mp_bcast(la2f, ionode_id, world_comm)
      !
      ! check input
      !
   IF (flfrc == ' ')  CALL errore ('q2r',' bad flfrc',1)
      !
-  xmldyn=has_xml(fildyn)
+  xmldyn=has_xml(fildyn_)
   IF(xmldyn) post='.xml'
 
   IF ( trim( prefix ) /= ' ' ) THEN
-     fildyn = trim(prefix) // '.save/' //trim(fildyn_)
+     fildyn = trim(prefix) // postfix //trim(fildyn_)
+  ELSE
+     fildyn = trim(fildyn_)
   END IF
-
   CALL mp_bcast(fildyn, ionode_id, world_comm)
-
+  
   IF (ionode) THEN
      OPEN (unit=1, file=TRIM(fildyn)//'0'//post, status='old', form='formatted', &
           iostat=ierr)
@@ -203,7 +200,7 @@ SUBROUTINE do_q2r(fildyn_, flfrc, prefix, zasr, la2F)
               nc(m(1),m(2),m(3))=1
               IF (lrigid) THEN
                  CALL rgd_blk (nr1,nr2,nr3,nat,phiq(1,1,1,1,nq),q(1,nq), &
-                  tau,epsil,zeu,bg,omega,-1.d0)
+                  tau,epsil,zeu,bg,omega,celldm(1), loto_2d,-1.d0) ! 2D added celldm and flag
               END IF
               CALL trasl ( phid, phiq, nq, nr1,nr2,nr3, nat, m(1),m(2),m(3))
            ELSE

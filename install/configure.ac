@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2016 Quantum ESPRESSO group
+# Copyright (C) 2001-2018 Quantum ESPRESSO group
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -6,10 +6,9 @@
 # of the License. See the file `License' in the root directory
 # of the present distribution.
 
-AC_INIT(ESPRESSO, 6.1, , espresso)
+AC_INIT(ESPRESSO, 6.3, , espresso)
 
-# Do not use Autoconf 2.69 
-AC_PREREQ(2.60)
+AC_PREREQ(2.64)
 AC_CONFIG_MACRO_DIR([m4/])
 
 # Initialize variables, filling with one comes from the environment...
@@ -28,13 +27,16 @@ X_AC_QE_ARCH()
 try_dflags=""
 
 # "-I../include" is required by IOTK ...
-try_iflags="-I\$(TOPDIR)/include -I\$(TOPDIR)/FoX/finclude -I../include/"
+try_iflags="-I\$(TOPDIR)/include -I\$(TOPDIR)/FoX/finclude -I\$(TOPDIR)/S3DE/iotk/include/"
 
 # Checking archiver...
 X_AC_QE_AR()
 
 # Checking OpenMP...
 X_AC_QE_OPENMP()
+
+# Checking OpenMP...
+X_AC_QE_CUDA()
 
 # Checking MPIF90...
 X_AC_QE_MPIF90()
@@ -88,9 +90,6 @@ X_AC_QE_ELPA()
 
 # Enable XML ...
 X_AC_QE_XML()
-
-# Enable DTR ...
-X_AC_QE_DTR()
 
 # Setting HDF5...
 X_AC_QE_HDF5()

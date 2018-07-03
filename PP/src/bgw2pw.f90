@@ -68,7 +68,7 @@
 PROGRAM bgw2pw
 
   USE environment, ONLY : environment_start, environment_end
-  USE io_files, ONLY : prefix, tmp_dir
+  USE io_files, ONLY : prefix, tmp_dir, create_directory
   USE io_global, ONLY : ionode, ionode_id
   USE kinds, ONLY : DP
   USE mp, ONLY : mp_bcast
@@ -193,7 +193,6 @@ SUBROUTINE write_evc ( input_file_name, real_or_complex, &
   USE mp_world, ONLY : world_comm, nproc
   USE mp_pools, ONLY : kunit, npool, my_pool_id, intra_pool_comm
   USE symm_base, ONLY : s, nsym
-  USE xml_io_base, ONLY : create_directory
 #if defined (__OLDXML)
   USE qexml_module, ONLY : qexml_kpoint_dirname, qexml_wfc_filename
 #endif
@@ -655,7 +654,7 @@ SUBROUTINE write_cd ( input_file_name, real_or_complex, output_dir_name )
   USE constants, ONLY : eps6
   USE fft_base, ONLY : dfftp
   USE fft_interfaces, ONLY : invfft
-  USE gvect, ONLY : ngm, ngm_g, ig_l2g, nl, mill
+  USE gvect, ONLY : ngm, ngm_g, ig_l2g, mill
   USE io_global, ONLY : ionode, ionode_id
   USE ions_base, ONLY : nat
   USE xml_io_base, ONLY : write_rho
@@ -670,7 +669,6 @@ SUBROUTINE write_cd ( input_file_name, real_or_complex, output_dir_name )
   USE scf, ONLY : rho
   USE symm_base, ONLY : s, nsym
   USE wavefunctions_module, ONLY : psic
-  USE xml_io_base, ONLY : create_directory
 
   IMPLICIT NONE
 
@@ -864,9 +862,9 @@ SUBROUTINE write_cd ( input_file_name, real_or_complex, output_dir_name )
 
   DO is = 1, ns
     DO ig = 1, ngm
-      psic ( nl ( ig ) ) = rho%of_g ( ig, is )
+      psic ( dfftp%nl ( ig ) ) = rho%of_g ( ig, is )
     ENDDO
-    CALL invfft ( 'Dense', psic, dfftp )
+    CALL invfft ( 'Rho', psic, dfftp )
     DO ir = 1, dfftp%nnr
       rho%of_r ( ir, is ) = psic ( ir )
     ENDDO

@@ -33,11 +33,10 @@ SUBROUTINE setup()
   ! ...    electric-field, LDA+U calculations, and for parallelism
   !
   USE kinds,              ONLY : DP
-  USE constants,          ONLY : eps8, rytoev, fpi
+  USE constants,          ONLY : eps8, rytoev, fpi, pi, degspin
   USE parameters,         ONLY : npk
   USE io_global,          ONLY : stdout
   USE io_files,           ONLY : tmp_dir, prefix, xmlpun, delete_if_present
-  USE constants,          ONLY : pi, degspin
   USE cell_base,          ONLY : at, bg, alat, tpiba, tpiba2, ibrav, omega
   USE ions_base,          ONLY : nat, tau, ntyp => nsp, ityp, zv
   USE basis,              ONLY : starting_pot, natomwfc
@@ -89,7 +88,8 @@ SUBROUTINE setup()
   USE qes_libs_module,    ONLY : qes_reset_output, qes_reset_parallel_info, qes_reset_general_info
   USE qes_types_module,   ONLY : output_type, parallel_info_type, general_info_type 
 #endif
-  USE exx,                ONLY : ecutfock, exx_grid_init, exx_mp_init, exx_div_check
+  USE exx,                ONLY : ecutfock, nbndproj
+  USE exx_base,           ONLY : exx_grid_init, exx_mp_init, exx_div_check
   USE funct,              ONLY : dft_is_meta, dft_is_hybrid, dft_is_gradient
   USE paw_variables,      ONLY : okpaw
   USE fcp_variables,      ONLY : lfcpopt, lfcpdyn
@@ -102,13 +102,13 @@ SUBROUTINE setup()
   REAL(DP) :: iocc, ionic_charge, one
   !
   LOGICAL, EXTERNAL  :: check_para_diag
-!
+  !
 #if !defined(__OLDXML)
   TYPE(output_type)                         :: output_obj 
   TYPE(parallel_info_type)                  :: parinfo_obj
   TYPE(general_info_type)                   :: geninfo_obj
 #endif
-!  
+  !  
 #if defined(__MPI)
   LOGICAL :: lpara = .true.
 #else
@@ -404,11 +404,7 @@ SUBROUTINE setup()
   nbndx = nbnd
   IF ( isolve == 0 ) nbndx = david * nbnd
   !
-#if defined(__MPI)
   use_para_diag = check_para_diag( nbnd )
-#else
-  use_para_diag = .FALSE.
-#endif
   !
   ! ... Set the units in real and reciprocal space
   !
@@ -417,7 +413,7 @@ SUBROUTINE setup()
   !
   ! ... Compute the cut-off of the G vectors
   !
-  doublegrid = ( dual > 4.D0 )
+  doublegrid = ( dual > 4.0_dp + eps8 )
   IF ( doublegrid .AND. ( .NOT.okvan .AND. .NOT.okpaw .AND. &
                           .NOT. ANY (upf(1:ntyp)%nlcc)      ) ) &
        CALL infomsg ( 'setup', 'no reason to have ecutrho>4*ecutwfc' )
@@ -684,10 +680,11 @@ LOGICAL FUNCTION check_para_diag( nbnd )
   LOGICAL, SAVE :: first = .TRUE.
   LOGICAL, SAVE :: saved_value = .FALSE.
 
-  IF( .NOT. first ) then
+#if defined(__MPI)
+  IF( .NOT. first ) THEN
       check_para_diag = saved_value
       RETURN
-  end if
+  END IF
   first = .FALSE.
   !
   IF( np_ortho(1) > nbnd ) &
@@ -727,5 +724,8 @@ LOGICAL FUNCTION check_para_diag( nbnd )
      !
   END IF
   !
+#else
+  check_para_diag = .FALSE.
+#endif
   RETURN
 END FUNCTION check_para_diag

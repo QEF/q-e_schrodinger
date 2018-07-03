@@ -13,6 +13,17 @@ AC_ARG_ENABLE(debug,
    fi],
    [use_debug=0])
 
+# pedantic flags implemented only for gcc
+AC_ARG_ENABLE(pedantic,
+   [AS_HELP_STRING([--enable-pedantic],
+       [compile Fortran with pedantic flags (default: no)])],
+   [if   test "$enableval" = "yes" ; then
+      use_pedantic=1
+   else
+      use_pedantic=0
+   fi],
+   [use_pedantic=0])
+
 # shared library flags are implemented only for a few (untested) cases
 AC_ARG_ENABLE(shared,
    [AS_HELP_STRING([--enable-shared],
@@ -69,9 +80,9 @@ x86_64:nagfor* )
         ;;
 ia32:pgf* | ia64:pgf* | x86_64:pgf* )
 	    try_fflags_nomain="-Mnomain"
-        try_fflags="-fast -r8"
+        try_fflags="-fast"
         try_fflags_openmp="-mp"
-        try_f90flags="-fast -r8 -Mcache_align -Mpreprocess"
+        try_f90flags="-fast -Mcache_align -Mpreprocess -Mlarge_arrays"
         try_fflags_noopt="-O0"
         try_ldflags=""
         try_ldflags_openmp="-mp"
@@ -88,66 +99,19 @@ ia32:path* | ia64:path* | x86_64:path* )
         have_cpp=0
         ;;
 *:*gfortran )
+	try_fflags="-O3 -g"
         if test "$use_debug" -eq 1; then
-            try_fflags="-O3 -g  -Wall -fbounds-check -frange-check"
-        else
-            try_fflags="-O3 -g"
+            try_fflags="-O3 -g  -Wall -fbounds-check -frange-check -finit-integer=987654321 -finit-real=nan -finit-logical=true -finit-character=64"
+        fi
+        if test "$use_pedantic" -eq 1; then
+            try_fflags="-O2 -g -pedantic -Wall -Wextra -Wconversion -fimplicit-none -fbacktrace -ffree-line-length-0 -fcheck=all"
         fi
         try_fflags_openmp="-fopenmp"
         try_f90flags="\$(FFLAGS) -x f95-cpp-input"
         try_fflags_noopt="-O0 -g"
-        try_ldflags="-g -pthread"
-        try_ldflags_openmp="-fopenmp"
+        try_ldflags="-g"
+        try_ldflags_openmp="-pthread -fopenmp"
         try_ldflags_static="-static"
-        ;;
-*:sunf95 )
-        try_fflags="-O4"
-        try_fflags_openmp="-openmp"
-        try_f90flags="\$(FFLAGS) -fpp"
-        try_fflags_noopt="-O0"
-        try_ldflags="-fast"
-        try_ldflags_static="-Bstatic"
-        imod="-M"
-        ;;
-*:openf95 )
-        try_fflags="-O3"
-        try_f90flags="\$(FFLAGS) -ftpp"
-        try_fflags_noopt="-O0"
-        try_ldflags=""
-        imod="-I"
-        ;;
-aix:*xlf* )
-        if test "$use_debug" -eq 1; then
-            try_fflags="-q64 -qalias=noaryovrlp -g -C \
--qarch=auto -qtune=auto -qdpc -Q -qalias=nointptr"
-        else
-            try_fflags="-q64 -qalias=noaryovrlp -O3 -qstrict \
--qarch=auto -qtune=auto -qdpc -Q -qalias=nointptr"
-        fi
-        try_fflags_openmp="-qsmp=omp"
-        try_f90flags="\$(FFLAGS) -qsuffix=cpp=f90 -qfree=f90"
-        try_fflags_noopt="-q64 -O0"
-        try_ldflags="-q64"
-        try_ldflags_openmp="-qsmp=omp"
-        # try_ldflags_static="-bstatic"
-        pre_fdflags="-WF,"
-        xlf_flags=1
-        ;;
-solaris:sunf95 )
-        try_fflags="-fast -O2 -fpp"
-        try_f90flags="\$(FFLAGS)"
-        try_fflags_noopt="-O0 "
-        try_ldflags=""
-        imod="-M"
-        ;;
-sparc:f90 )
-        try_fflags="-fast -O1 -nodepend -xvector=no -xchip=ultra3 \
--xarch=v8plusb -xlic_lib=sunperf"
-        try_f90flags="\$(FFLAGS)"
-        try_fflags_noopt="-O0 -xlic_lib=sunperf"
-        try_ldflags=""
-        imod="-M"
-        have_cpp=0
         ;;
 crayxt*:cray* )
         try_fflags_nomain=""
@@ -156,7 +120,8 @@ crayxt*:cray* )
         try_fflags="-O2"
         #NOTE: add '-rm' to get messages from crayftn about why
         #      optimizations have not been applied
-        try_f90flags="-O3,fp3 -f free"
+        #      -x dir disable directives introduced by !DIR$
+        try_f90flags="-O3,fp3 -f free -x dir"
         try_fflags_noopt="-O0"
         try_ldflags_openmp="-homp"
         try_ldflags="-v"
@@ -168,8 +133,8 @@ crayxt*:pgf* )
 # see comment above for pgf*
 	    try_fflags_nomain="-Mnomain"
         try_fflags_openmp="-mp"
-        try_fflags="-O3 -r8"
-        try_f90flags="-fast -Mcache_align -r8 -Mpreprocess"
+        try_fflags="-O3"
+        try_f90flags="-fast -Mcache_align -Mpreprocess -Mlarge_arrays"
         try_fflags_noopt="-O0"
         try_ldflags_openmp="-mp"
         try_ldflags="-v"

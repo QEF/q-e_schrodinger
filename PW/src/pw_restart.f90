@@ -39,14 +39,15 @@ MODULE pw_restart
                           qexml_read_bands_info, qexml_read_bands_pw, qexml_read_symmetry, &
                           qexml_read_efield, qexml_read_para, qexml_read_exx, qexml_read_esm
   !
-  USE xml_io_base, ONLY : rho_binary,read_wfc, write_wfc, create_directory
+  USE xml_io_base, ONLY : rho_binary,read_wfc, write_wfc
   !
   !
   USE kinds,     ONLY : DP
   USE constants, ONLY : e2, PI
   !
   USE io_files,  ONLY : tmp_dir, prefix, iunpun, xmlpun, delete_if_present, &
-                        qexml_version, qexml_version_init, pseudo_dir
+                        qexml_version, qexml_version_init, pseudo_dir,      &
+                        create_directory, postfix
   !
   USE io_global, ONLY : ionode, ionode_id
   USE mp_images, ONLY : intra_image_comm
@@ -148,8 +149,9 @@ MODULE pw_restart
       USE funct,                ONLY : get_exx_fraction, dft_is_hybrid, &
                                        get_gau_parameter, &
                                        get_screening_parameter, exx_is_active
-      USE exx,                  ONLY : x_gamma_extrapolation, nq1, nq2, nq3, &
-                                       exxdiv_treatment, yukawa, ecutvcut, ecutfock
+      USE exx_base,             ONLY : x_gamma_extrapolation, nq1, nq2, nq3, &
+                                       exxdiv_treatment, yukawa, ecutvcut 
+      USE exx,                   ONLY:  ecutfock
       USE cellmd,               ONLY : lmovecell, cell_factor 
       USE martyna_tuckerman,    ONLY : do_comp_mt
       USE esm,                  ONLY : do_comp_esm, esm_nfit, esm_efield, esm_w, &
@@ -157,7 +159,8 @@ MODULE pw_restart
       USE acfdt_ener,           ONLY : acfdt_in_pw 
       USE london_module,        ONLY : scal6, lon_rcut, in_C6, in_rvdw
       USE tsvdw_module,         ONLY : vdw_isolated
-
+      USE Coul_cut_2D,          ONLY : do_cutoff_2D 
+      
       !
       IMPLICIT NONE
       !
@@ -211,7 +214,7 @@ MODULE pw_restart
       CALL errore( 'pw_writefile ', &
                    'no free units to write wavefunctions', ierr )
       !
-      dirname = TRIM( tmp_dir ) // TRIM( prefix ) // '.save/'
+      dirname = TRIM( tmp_dir ) // TRIM( prefix ) // postfix
       !
       ! ... create the main restart directory
       !
@@ -353,8 +356,8 @@ MODULE pw_restart
          !
          CALL qexml_write_cell( ibrav, celldm, alat, &
                           at(:,1), at(:,2), at(:,3), bg(:,1), bg(:,2), bg(:,3), &
-                          "Bohr","Bohr","2 pi / a", &
-                          do_makov_payne, do_comp_mt, do_comp_esm )
+                      "Bohr","Bohr","2 pi / a", &  
+                       do_makov_payne, do_comp_mt, do_comp_esm, do_cutoff_2D ) 
          !
          IF (lmovecell) CALL qexml_write_moving_cell(lmovecell, cell_factor)
          !
@@ -832,7 +835,7 @@ MODULE pw_restart
       !
       ierr = 0
       !
-      dirname = TRIM( tmp_dir ) // TRIM( prefix ) // '.save/'
+      dirname = TRIM( tmp_dir ) // TRIM( prefix ) // postfix
       !
       ! ... look for an empty unit
       !
@@ -1351,6 +1354,7 @@ MODULE pw_restart
       USE control_flags,     ONLY : do_makov_payne
       USE martyna_tuckerman, ONLY : do_comp_mt
       USE esm,               ONLY : do_comp_esm
+      USE Coul_cut_2D,       ONLY : do_cutoff_2D 
       
       !
       IMPLICIT NONE
@@ -1379,19 +1383,28 @@ MODULE pw_restart
          CASE ("Makov-Payne")
             do_makov_payne = .true.
             do_comp_mt     = .false.
-            do_comp_esm    = .false. 
+            do_comp_esm    = .false.
+            do_cutoff_2D   = .false.
          CASE ("Martyna-Tuckerman")
             do_makov_payne = .false.
             do_comp_mt     = .true.
             do_comp_esm    = .false.
+            do_cutoff_2D   = .false.
          CASE ("ESM")
             do_makov_payne = .false.
             do_comp_mt     = .false.
             do_comp_esm    = .true.
+            do_cutoff_2D   = .false.
+         CASE ("2D")
+            do_makov_payne = .false.
+            do_comp_mt     = .false.
+            do_comp_esm    = .false.
+            do_cutoff_2D   = .true.
          CASE ("None")
             do_makov_payne = .false.
             do_comp_mt     = .false.
             do_comp_esm    = .false.
+            do_cutoff_2D   = .false.
          END SELECT
          !
          SELECT CASE ( TRIM(bravais_lattice) )
@@ -1463,6 +1476,7 @@ MODULE pw_restart
       CALL mp_bcast( do_makov_payne, ionode_id, intra_image_comm )
       CALL mp_bcast( do_comp_mt,     ionode_id, intra_image_comm )
       CALL mp_bcast( do_comp_esm,    ionode_id, intra_image_comm )
+      CALL mp_bcast( do_cutoff_2D,   ionode_id, intra_image_comm ) 
       CALL mp_bcast( lmovecell, ionode_id, intra_image_comm )
       IF (lmovecell) THEN
          CALL mp_bcast( cell_factor,  ionode_id, intra_image_comm )
@@ -2099,7 +2113,7 @@ MODULE pw_restart
          f_inp( :, :) = 0.0d0
          !
          CALL qexml_read_occ( LGAUSS=lgauss, NGAUSS=ngauss, DEGAUSS=degauss, &
-                               LTETRA=ltetra, NTETRA=ntetra, TETRA=tetra, TETRA_TYPE= tetra_type, TFIXED_OCC=tfixed_occ, &
+                               LTETRA=ltetra, NTETRA=ntetra, TETRA_TYPE= tetra_type, TFIXED_OCC=tfixed_occ, &
                                NSTATES_UP=nupdwn(1), NSTATES_DW=nupdwn(2), INPUT_OCC=f_inp, IERR=ierr )
          !
       ENDIF
@@ -2642,8 +2656,9 @@ MODULE pw_restart
       !
       USE funct,                ONLY : set_exx_fraction, set_screening_parameter, &
                                        set_gau_parameter, enforce_input_dft, start_exx
-      USE exx,                  ONLY : x_gamma_extrapolation, nq1, nq2, nq3, &
-                                       exxdiv_treatment, yukawa, ecutvcut, ecutfock
+      USE exx_base,             ONLY : x_gamma_extrapolation, nq1, nq2, nq3, &
+                                       exxdiv_treatment, yukawa, ecutvcut 
+      USE exx,                  ONLY : ecutfock
       IMPLICIT NONE
       !
       INTEGER,          INTENT(OUT) :: ierr
@@ -2895,7 +2910,7 @@ MODULE pw_restart
       LOGICAL            :: lval, found, back_compat
       !
       !
-      dirname  = TRIM( tmp_dir ) // TRIM( prefix ) // '.save/'
+      dirname  = TRIM( tmp_dir ) // TRIM( prefix ) // postfix
       filename = TRIM( dirname ) // TRIM( xmlpun )
       !
       IF ( ionode ) &

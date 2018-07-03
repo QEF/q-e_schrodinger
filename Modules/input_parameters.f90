@@ -373,6 +373,7 @@ MODULE input_parameters
           ! (do not) use symmetry, q => -q symmetry in k-point generation
         LOGICAL :: nosym_evc = .false.
           ! if .true. use symmetry only to symmetrize k points
+
         LOGICAL :: force_symmorphic = .false.
           ! if .true. disable fractionary translations (nonsymmorphic groups)
         LOGICAL :: use_all_frac = .false.
@@ -440,7 +441,8 @@ MODULE input_parameters
         REAL(DP) :: conv_thr_multi = 0.1_DP
         REAL(DP) :: ecutfock = -1.d0
           ! variables used in Lin Lin's ACE and SCDM
-        REAL(DP) :: localization_thr = 0.0_dp, scdmden=0.10d0, scdmgrd=0.20d0
+        REAL(DP) :: localization_thr = 0.0_dp, scdmden=1.0d0, scdmgrd=1.0d0
+        INTEGER  :: n_proj  = 0
         LOGICAL  :: scdm=.FALSE.
         LOGICAL  :: ace=.TRUE.
 
@@ -514,6 +516,13 @@ MODULE input_parameters
                        london_c6( nsx ) = -1.0_DP, &
                        london_rvdw( nsx ) = -1.0_DP
 
+          ! Grimme-D3 (DFT-D3) dispersion correction.
+          ! version=3 is Grimme-D3, version=2 is Grimme-D2,
+          ! version=3 dftd3_threebody = .false. similar to grimme d2 but with
+          ! the two_body parameters of d3
+        integer  ::    dftd3_version = 3
+        logical ::     dftd3_threebody = .true.
+
         LOGICAL   :: ts_vdw = .false.
           ! OBSOLESCENT: same as vdw_corr='Tkatchenko-Scheffler'
         LOGICAL :: ts_vdw_isolated = .FALSE.
@@ -525,10 +534,8 @@ MODULE input_parameters
 
         LOGICAL :: xdm = .FALSE.
           ! OBSOLESCENT: same as vdw_corr='xdm'
-        REAL(DP) :: xdm_a1 = 0.6836_DP
-        REAL(DP) :: xdm_a2 = 1.5045_DP
-          ! xdm_a1 and xdm_a2 -- parameters for the BJ damping function
-          ! The default values are for the b86bpbe functional.
+        REAL(DP) :: xdm_a1 = 0.0_DP
+        REAL(DP) :: xdm_a2 = 0.0_DP
           !
         CHARACTER(LEN=3) :: esm_bc = 'pbc'
           ! 'pbc': ordinary calculation with periodic boundary conditions
@@ -617,7 +624,7 @@ MODULE input_parameters
              edir, emaxpos, eopreg, eamp, smearing, starting_ns_eigenvalue,   &
              U_projection_type, input_dft, la2F, assume_isolated,             &
              nqx1, nqx2, nqx3, ecutfock, localization_thr, scdm, ace,         &
-             scdmden, scdmgrd,                                                &
+             scdmden, scdmgrd, n_proj,                                        &
              exxdiv_treatment, x_gamma_extrapolation, yukawa, ecutvcut,       &
              exx_fraction, screening_parameter, ref_alat,                     &
              noncolin, lspinorb, starting_spin_angle, lambda, angle1, angle2, &
@@ -626,6 +633,7 @@ MODULE input_parameters
              sic, sic_epsilon, force_pairing, sic_alpha,                      &
              tot_charge, tot_magnetization, spline_ps, one_atom_occupations,  &
              vdw_corr, london, london_s6, london_rcut, london_c6, london_rvdw,&
+             dftd3_version, dftd3_threebody,                                  &
              ts_vdw, ts_vdw_isolated, ts_vdw_econv_thr,                       &
              xdm, xdm_a1, xdm_a2,                                             &
              step_pen, A_pen, sigma_pen, alpha_pen, no_t_rev,                 &

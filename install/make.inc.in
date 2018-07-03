@@ -34,7 +34,7 @@ TOPDIR = $(dir $(abspath $(filter %make.inc,$(MAKEFILE_LIST))))
 
 # DFLAGS  = precompilation options (possible arguments to -D and -U)
 #           used by the C compiler and preprocessor
-# FDFLAGS = as DFLAGS, for the f90 compiler
+# To use libxc (v>=3.0.1), add -D__LIBXC to DFLAGS
 # See include/defs.h.README for a list of options and their meaning
 # With the exception of IBM xlf, FDFLAGS = $(DFLAGS)
 # For IBM xlf, FDFLAGS is the same as DFLAGS with separating commas
@@ -46,15 +46,26 @@ DFLAGS         = @dflags@
 FDFLAGS        = @fdflags@
 
 # IFLAGS = how to locate directories with *.h or *.f90 file to be included
-#          typically -I../include -I/some/other/directory/
+#          typically -I$(TOPDIR)/include -I/some/other/directory/
 #          the latter contains .e.g. files needed by FFT libraries
+# for libxc add -I/path/to/libxc/include/
 
 IFLAGS         = @iflags@
 
-# MOD_FLAGS = flag used by f90 compiler to locate modules
-# Each Makefile defines the list of needed modules in MODFLAGS
+# MOD_FLAG = flag used by f90 compiler to locate modules
 
 MOD_FLAG      = @imod@
+
+# BASEMOD_FLAGS points to directories containing basic modules,
+# while BASEMODS points to the corresponding module libraries
+# Each Makefile can add directories to MODFLAGS and libraries to QEMODS
+
+BASEMOD_FLAGS= $(MOD_FLAG)$(TOPDIR)/iotk/src \
+               $(MOD_FLAG)$(TOPDIR)/Modules \
+               $(MOD_FLAG)$(TOPDIR)/FFTXlib \
+	       $(MOD_FLAG)$(TOPDIR)/LAXlib \
+	       $(MOD_FLAG)$(TOPDIR)/UtilXlib \
+	       $(MOD_FLAG)$(TOPDIR)/FoX/finclude
 
 # Compilers: fortran-90, fortran-77, C
 # If a parallel compilation is desired, MPIF90 should be a fortran-90
@@ -70,6 +81,15 @@ F90           = @f90@
 CC             = @cc@
 F77            = @f77@
 
+# GPU architecture (Kepler: 35, Pascal: 60, Volta: 70 )
+GPU_ARCH=@gpu_arch@
+
+# CUDA runtime (Pascal: 8.0, Volta: 9.0)
+CUDA_RUNTIME=@gpu_runtime@
+
+# CUDA F90 Flags
+CUDA_F90FLAGS=@cuda_fflags@
+
 # C preprocessor and preprocessing flags - for explicit preprocessing,
 # if needed (see the compilation rules above)
 # preprocessing flags must include DFLAGS and IFLAGS
@@ -82,7 +102,7 @@ CPPFLAGS       = @cppflags@ $(DFLAGS) $(IFLAGS)
 # F90 flags must include MODFLAGS, IFLAGS, and FDFLAGS with appropriate syntax
 
 CFLAGS         = @cflags@ $(DFLAGS) $(IFLAGS)
-F90FLAGS       = @f90flags@ @pre_fdflags@$(FDFLAGS) $(IFLAGS) $(MODFLAGS)
+F90FLAGS       = @f90flags@ @pre_fdflags@$(FDFLAGS) $(CUDA_F90FLAGS) $(IFLAGS) $(MODFLAGS)
 FFLAGS         = @fflags@
 
 # compiler flags without optimization for fortran-77
@@ -97,6 +117,7 @@ FFLAGS_NOMAIN   = @fflags_nomain@
 
 # Linker, linker-specific flags (if any)
 # Typically LD coincides with F90 or MPIF90, LD_LIBS is empty
+# for libxc, set LD_LIBS=-L/path/to/libxc/lib/ -lxcf90 -lxc
 
 LD             = @ld@
 LDFLAGS        = @ldflags@
@@ -141,6 +162,10 @@ MPI_LIBS       = @mpi_libs@
 
 MASS_LIBS      = @mass_libs@
 
+# CUDA libraries
+CUDA_LIBS=@cuda_libs@
+CUDA_EXTLIBS = @cuda_extlibs@
+
 # ar command and flags - for most architectures: AR = ar, ARFLAGS = ruv
 
 AR             = @ar@
@@ -156,7 +181,7 @@ RANLIB         = @ranlib@
 FLIB_TARGETS   = all
 
 LIBOBJS        = $(TOPDIR)/clib/clib.a  $(TOPDIR)/iotk/src/libiotk.a
-LIBS           = $(SCALAPACK_LIBS) $(LAPACK_LIBS) $(FOX_LIB) $(FFT_LIBS) $(BLAS_LIBS) $(MPI_LIBS) $(MASS_LIBS) $(HDF5_LIB)  $(LD_LIBS)
+LIBS           = $(CUDA_LIBS) $(SCALAPACK_LIBS) $(LAPACK_LIBS) $(FOX_LIB) $(FFT_LIBS) $(BLAS_LIBS) $(MPI_LIBS) $(MASS_LIBS) $(HDF5_LIB) $(LD_LIBS)
 
 # wget or curl - useful to download from network
 WGET = @wget@

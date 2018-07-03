@@ -31,7 +31,8 @@ SUBROUTINE memory_report()
   USE wvfct,     ONLY : nbnd, nbndx
   USE basis,     ONLY : natomwfc, starting_wfc
   USE cell_base, ONLY : omega, bg, alat
-  USE exx,       ONLY : ecutfock, nkqs, use_ace
+  USE exx,       ONLY : ecutfock, use_ace
+  USE exx_base,  ONLY : nkqs
   USE fft_base,  ONLY : dffts, dfftp
   USE gvect,     ONLY : ngm, ngl, ngm_g, g, gcutm
   USE gvecs,     ONLY : ngms, doublegrid
@@ -39,7 +40,7 @@ SUBROUTINE memory_report()
   USE klist,     ONLY : nks, nkstot, xk, qnorm
   USE cellmd,    ONLY : cell_factor
   USE uspp,      ONLY : nkb, okvan
-  USE atom,       ONLY : rgrid
+  USE atom,      ONLY : rgrid
   USE funct,     ONLY : dft_is_meta, dft_is_hybrid
   USE ldaU,      ONLY : lda_plus_u, U_projection, nwfcU
   USE fixed_occ, ONLY : one_atom_occupations
@@ -48,12 +49,13 @@ SUBROUTINE memory_report()
   USE uspp_param,ONLY : lmaxkb, upf, nh, nbetam
   USE us,        ONLY : dq
   USE noncollin_module, ONLY : npol, nspin_mag
-  USE control_flags, ONLY: isolve, nmix, imix, gamma_only, lscf, io_level, &
+  USE control_flags,    ONLY: isolve, nmix, imix, gamma_only, lscf, io_level, &
        lxdm, smallmem, tqr, iverbosity
-  USE force_mod,        ONLY : lforce
+  USE force_mod, ONLY : lforce, lstres
   USE ions_base, ONLY : nat, ntyp => nsp, ityp
   USE mp_diag,   ONLY : np_ortho
   USE mp_bands,  ONLY : nproc_bgrp, nbgrp
+  USE mp_pools,  ONLY : npool
   USE mp_images, ONLY : nproc_image  
   !
   IMPLICIT NONE
@@ -61,7 +63,7 @@ SUBROUTINE memory_report()
   INTEGER, PARAMETER :: MB=1024*1024
   INTEGER, PARAMETER :: GB=1024*MB
   INTEGER :: g_fact, mix_type_size, scf_type_size
-  INTEGER :: nk, nbnd_l, npwx_g, npwx_l, ngxx_g, nexx_l
+  INTEGER :: nk, nbnd_l, npwx_g, npwx_l, ngxx_g, nexx_l, nexx_g, ngm_l
   INTEGER :: maxbnd, maxnab, maxnij, nab, na, nij, nt, lmaxq, nqxq
   INTEGER :: indm, ijv, roughestimate
   REAL(DP):: mbr, mbx, mby, mbz, dmbx, dmby, dmbz
@@ -123,15 +125,22 @@ SUBROUTINE memory_report()
   ! hybrid functionals
   IF ( dft_is_hybrid () ) THEN
      ! ngxx_g = estimated global number of G-vectors used in V_x\psi products
+     ! nexx_g = estimated global size of the FFT grid used in V_x\psi products
      ! nexx_l = estimated local size of the FFT grid used in V_x\psi products
      ngxx_g = NINT ( fpi/3.0_dp * SQRT(ecutfock)**3 / (tpi**3/omega) )
-     nexx_l = 16*ngxx_g/nproc_bgrp
+     nexx_g = 2*ngxx_g
+     nexx_l = nexx_g/nproc_bgrp
      ! nbnd_l : estimated number of bands per proc with band parallelization
      nbnd_l = NINT( DBLE(nbnd) / nbgrp )
      ! Stored wavefunctions in real space 
      add = complex_size/g_fact * nexx_l * npol * nbnd_l * nkqs
      ! ACE Projectors
      IF (use_ace) add = add + complex_size * npwx_l * npol * nbnd * nks
+#if defined (__MPI)
+     ! scratch space needed for symmetrization
+     add = add + complex_size * nexx_g*npol*2
+#endif
+     add = add + complex_size * nexx_l*npol*2
      IF ( iverbosity > 0 ) WRITE( stdout, 1013 ) 'EXX', add/MB
      ram = ram + add
   END IF
@@ -307,17 +316,18 @@ SUBROUTINE memory_report()
   !=====================================================================
   !
   !=====================================================================
-  ! ram1: arrays allocated in addusdens_g and addusforce & addusforce_r
+  ! ram1: arrays allocated in addusdens_g and addusforce & addusstress
   !       for ultrasoft/paw pp.
   !
   !       N.B: newq is always smaller than addusdens_g
   !
-  !       files: addusdens.f90:76-78,104
-  !              addusforce.f90:89,106,121,122
+  !       files: addusdens.f90  : 92,93,114
+  !              addusforce.f90 : 78,102,105,117,132-133
+  !              addusstress.f90
   !=====================================================================
   IF ( okvan ) THEN
      IF ( .not. tqr ) THEN
-        
+        ngm_l  = ngm/npool
         maxnab = 0
         maxnij = 0
         DO nt = 1, ntyp
@@ -337,28 +347,40 @@ SUBROUTINE memory_report()
               IF ( nab > maxnab ) maxnab = nab
             END IF
         END DO
-        !                          ylmk0          qmod
-        ram1 = real_size * ngm * ( lmaxq * lmaxq + 1 )
-        !                                    aux         skk      aux2   qgm
-        ram1 = ram1 + complex_size * ngm * ( nspin_mag + maxnab + maxnij + 1)
+        !                               ylmk0      qmod
+        ram1 = real_size * ngm_l * ( lmaxq * lmaxq + 1 )
+        !                                aux                   skk   aux2   qgm
+        ram1 = ram1 + complex_size * ( ngm*nspin_mag + ngm_l*(maxnab+maxnij+1) )
         !
         IF ( iverbosity > 0 ) WRITE( stdout, 1013 ) 'addusdens', ram1/MB
         ram_ = MAX ( ram_, ram1 )
         !
-        ! forces? (this is pretty stupid, just add what's missing in addusdens
-        !  addusforce.f90:89,106,121,122
+        ! forces
+        !
         IF (lforce) THEN
-           !                              ylmk0     qmod     vg
-           ram1 = real_size * ngm * ( lmaxq * lmaxq + 1  + nspin_mag )
+           !                      vg                       ylmk0     qmod
+           ram1 = real_size * (ngm*nspin_mag + ngm_l*( lmaxq*lmaxq + 1 ) )
            !                                    qgm      aux1
-           ram1 = ram1 + complex_size * ngm * ( maxnij + nat*3 )
+           ram1 = ram1 + complex_size * ngm_l * ( maxnij + nat*3 )
            !                           ddeeq
            ram1 = ram1 + real_size * ( maxnij * nat * 3 * nspin_mag )
            IF ( iverbosity > 0 ) WRITE( stdout, 1013 ) 'addusforce', ram1/MB
            !
            ram_ = MAX ( ram_, ram1 )
         END IF
-        ! what about stress?
+        !
+        ! stress
+        !
+        IF (lstres) THEN
+           !                      vg                      ylmk0,dylmk0  qmod
+           ram1 = real_size *  (ngm*nspin_mag + ngm_l*( 2*lmaxq*lmaxq + 1 ) )
+           !                                    qgm      aux1  aux2
+           ram1 = ram1 + complex_size * ngm_l * ( maxnij + 3 + nspin )
+           !                           ddeeq
+           IF ( iverbosity > 0 ) WRITE( stdout, 1013 ) 'addusstress', ram1/MB
+           !
+           ram_ = MAX ( ram_, ram1 )
+        END IF
      ELSE
         ! nothing allocated in addusdens_r, hurray!
         IF (lforce) THEN
@@ -372,10 +394,10 @@ SUBROUTINE memory_report()
   maxram = ram + ram_
   !
   ! arrays used for global sorting in ggen:
-  !    mill_g, mill_unsorted, igsrt, g2sort_g, total dimensions:
+  !    igsrt, g2l, g2sort_g, total dimensions:
   !
   IF ( .NOT. smallmem ) maxram = MAX ( maxram, &
-       int_size * 7 * ngm_g + real_size * ngm_g )
+       int_size * 2 * ngm_g + real_size * ngm_g )
   !
   totram = maxram * nproc_image
   IF ( iverbosity > 0 ) THEN

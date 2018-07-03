@@ -22,9 +22,9 @@ subroutine localdos_paw (ldos, ldoss, becsum1, dos_ef)
   USE ions_base, ONLY : nat, ityp, ntyp => nsp
   USE ener,      ONLY : ef
   USE fft_base,  ONLY : dffts, dfftp
-  USE fft_interfaces, ONLY: invfft
+  USE fft_interfaces, ONLY: invfft, fft_interpolate
   USE buffers,   ONLY : get_buffer
-  USE gvecs,     ONLY : doublegrid, nls
+  USE gvecs,     ONLY : doublegrid
   USE klist,     ONLY : xk, wk, ngk, igk_k, degauss, ngauss, ltetra
   USE lsda_mod,  ONLY : nspin, lsda, current_spin, isk
   USE noncollin_module, ONLY : noncolin, npol, nspin_mag
@@ -111,11 +111,11 @@ subroutine localdos_paw (ldos, ldoss, becsum1, dos_ef)
         IF (noncolin) THEN
            psic_nc = (0.d0, 0.d0)
            do ig = 1, npw
-              psic_nc (nls (igk_k(ig,ik)), 1 ) = evc (ig, ibnd)
-              psic_nc (nls (igk_k(ig,ik)), 2 ) = evc (ig+npwx, ibnd)
+              psic_nc (dffts%nl (igk_k(ig,ik)), 1 ) = evc (ig, ibnd)
+              psic_nc (dffts%nl (igk_k(ig,ik)), 2 ) = evc (ig+npwx, ibnd)
            enddo
-           CALL invfft ('Smooth', psic_nc(:,1), dffts)
-           CALL invfft ('Smooth', psic_nc(:,2), dffts)
+           CALL invfft ('Rho', psic_nc(:,1), dffts)
+           CALL invfft ('Rho', psic_nc(:,2), dffts)
            do j = 1, dffts%nnr
               ldoss (j, 1) = ldoss (j, 1) + &
                     w1 * ( DBLE(psic_nc(j,1))**2+AIMAG(psic_nc(j,1))**2 + &
@@ -141,9 +141,9 @@ subroutine localdos_paw (ldos, ldoss, becsum1, dos_ef)
         ELSE
            psic (:) = (0.d0, 0.d0)
            do ig = 1, npw
-              psic (nls (igk_k(ig,ik) ) ) = evc (ig, ibnd)
+              psic (dffts%nl (igk_k(ig,ik) ) ) = evc (ig, ibnd)
            enddo
-           CALL invfft ('Smooth', psic, dffts)
+           CALL invfft ('Rho', psic, dffts)
            do j = 1, dffts%nnr
               ldoss (j, current_spin) = ldoss (j, current_spin) + &
                     w1 * ( DBLE ( psic (j) ) **2 + AIMAG (psic (j) ) **2)
@@ -210,7 +210,7 @@ subroutine localdos_paw (ldos, ldoss, becsum1, dos_ef)
   enddo
   if (doublegrid) then
      do is = 1, nspin_mag
-        call cinterpolate (ldos (1, is), ldoss (1, is), 1)
+        call fft_interpolate (dffts, ldoss (:, is), dfftp, ldos (:, is))
      enddo
   else
      ldos (:,:) = ldoss (:,:)
@@ -243,9 +243,9 @@ subroutine localdos_paw (ldos, ldoss, becsum1, dos_ef)
   !check
   !      check =0.d0
   !      do is=1,nspin_mag
-  !         call fwfft('Dense',ldos(:,is),dfftp)
+  !         call fwfft('Rho',ldos(:,is),dfftp)
   !         check = check + omega* DBLE(ldos(nl(1),is))
-  !         call invfft('Dense',ldos(:,is),dfftp)
+  !         call invfft('Rho',ldos(:,is),dfftp)
   !      end do
   !      WRITE( stdout,*) ' check ', check, dos_ef
   !check

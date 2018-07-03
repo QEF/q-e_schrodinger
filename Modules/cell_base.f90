@@ -760,6 +760,26 @@
               iforceh(1,1) = 1
               iforceh(2,2) = 1
               iforceh(3,3) = 1
+! epitaxial constraints (2 axes fixed, one free)
+! added by ulrich.aschauer@dcb.unibe.ch on 2018-02-02
+            CASE ('epitaxial_ab')
+              !fix the a and b axis while allowing c to change
+              iforceh      = 0
+              iforceh(1,3) = 1
+              iforceh(2,3) = 1
+              iforceh(3,3) = 1
+            CASE ('epitaxial_ac')
+              !fix the a and c axis while allowing b to change
+              iforceh      = 0
+              iforceh(1,2) = 1
+              iforceh(2,2) = 1
+              iforceh(3,2) = 1
+            CASE ('epitaxial_bc')
+              !fix the b and c axis while allowing a to change
+              iforceh      = 0
+              iforceh(1,1) = 1
+              iforceh(2,1) = 1
+              iforceh(3,1) = 1
             CASE DEFAULT
               CALL errore(' init_dofree ',' unknown cell_dofree '//TRIM(cell_dofree), 1 )
 
@@ -952,7 +972,7 @@
     REAL(DP), intent(in) :: omega, press
     REAL(DP), intent(in), optional :: wmassIN
     integer        :: i, j
-    REAL(DP) :: wmass
+    REAL(DP) :: wmass, fiso
     IF (.not. present(wmassIN)) THEN
       wmass = 1.0
     ELSE
@@ -971,6 +991,17 @@
     IF( wmass < eps8 ) &
        CALL errore( ' movecell ',' cell mass is less than 0 ! ', 1 )
     fcell = omega * fcell / wmass
+! added this :
+    IF( isotropic ) THEN
+      !
+      ! Isotropic force on the cell
+      !
+      fiso = (fcell(1,1)+fcell(2,2)+fcell(3,3))/3.0_DP
+      do i=1,3
+          fcell(i,i)=fiso
+      end do
+    END IF
+! 
     return
   end subroutine cell_force
 

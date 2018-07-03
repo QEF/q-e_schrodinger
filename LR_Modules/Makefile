@@ -3,7 +3,7 @@
 include ../make.inc
 
 # location of needed modules and included files (if any)
-MODFLAGS=$(MOD_FLAG)../FFTXlib $(MOD_FLAG)../UtilXlib $(MOD_FLAG)../Modules $(MOD_FLAG)../LAXlib $(MOD_FLAG)../PW/src $(MOD_FLAG).
+MODFLAGS=$(BASEMOD_FLAGS) $(MOD_FLAG)$(TOPDIR)/PW/src
 
 IFLAGS=
 
@@ -17,6 +17,7 @@ cgsolve_all.o \
 cg_psi.o \
 ch_psi_all.o \
 commutator_Hx_psi.o \
+Coul_cut_2D_ph.o \
 dfpt_tetra_mod.o \
 dynmat_sub.o \
 h_prec.o \

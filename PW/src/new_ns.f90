@@ -11,7 +11,7 @@ SUBROUTINE new_ns(ns)
   !-----------------------------------------------------------------------
   !
   ! This routine computes the new value for ns (the occupation numbers of
-  ! ortogonalized atomic wfcs).
+  ! orthogonalized atomic wfcs).
   ! These quantities are defined as follows: ns_{I,s,m1,m2} = \sum_{k,v}
   ! f_{kv} <\fi^{at}_{I,m1}|\psi_{k,v,s}><\psi_{k,v,s}|\fi^{at}_{I,m2}>
 
@@ -333,10 +333,10 @@ SUBROUTINE new_ns_nc(ns)
   DO ik = 1, nks
 
      npw = ngk (ik)
-     IF (nks > 1) &
+     IF (nks > 1) THEN
         CALL get_buffer  (evc, nwordwfc, iunwfc, ik)
- 
-     CALL get_buffer (wfcU, nwordwfcU, iunhub, ik)
+        CALL get_buffer (wfcU, nwordwfcU, iunhub, ik)
+     END IF
      !
      ! make the projection - FIXME: use ZGEMM or calbec instead
      !

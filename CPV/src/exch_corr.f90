@@ -15,13 +15,12 @@
 ! of e(xc) with respect to to cell parameter h(i,j)
 !     
       use funct,           only : dft_is_gradient, dft_is_meta
-      use gvect,           only : ngm
-      use gvecs,           only : ngms
-      use fft_base,        only : dfftp
+      use fft_base,        only : dfftp, dffts
       use cell_base,       only : ainv, omega, h
       use ions_base,       only : nsp
       use control_flags,   only : tpre, iverbosity
       use core,            only : drhocg
+      use gvect,           only : g
       use uspp,            only : nlcc_any
       use mp,              only : mp_sum
       use metagga,         ONLY : kedtaur
@@ -30,7 +29,7 @@
       use kinds,           ONLY : DP
       use constants,       ONLY : au_gpa
       USE sic_module,      ONLY : self_interaction, sic_alpha
-      USE cp_interfaces,   ONLY : fillgrad, denlcc
+      USE cp_interfaces,   ONLY : denlcc
       use cp_main_variables,    only : drhor
 !
       implicit none
@@ -42,8 +41,8 @@
       ! rhog contains the charge density in G space
       ! rhor contains the charge density in R space
       !
-      complex(DP) :: rhog( ngm, nspin )
-      complex(DP) :: sfac( ngms, nsp )
+      complex(DP) :: rhog( dfftp%ngm, nspin )
+      complex(DP) :: sfac( dffts%ngm, nsp )
       !
       ! output
       ! rhor contains the exchange-correlation potential
@@ -69,12 +68,14 @@
       !
       if ( dft_is_gradient() ) then
          !
-         allocate( gradr( dfftp%nnr, 3, nspin ) )
-         call fillgrad( nspin, rhog, gradr )
+         allocate( gradr( 3, dfftp%nnr, nspin ) )
+         do iss = 1, nspin
+            CALL fft_gradient_g2r ( dfftp, rhog(1,iss), g, gradr(1,1,iss) )
+         end do
          ! 
       else
          ! 
-         allocate( gradr( 1, 3, 2 ) )
+         allocate( gradr( 3, 1, 2 ) )
          !
       end if
 
@@ -90,20 +91,15 @@
          !  allocate the sic_arrays
          !
          ALLOCATE( self_rho( dfftp%nnr, nspin ) )
-         ALLOCATE( self_rhog(ngm, nspin ) )
-         IF( dft_is_gradient() ) ALLOCATE( self_gradr( dfftp%nnr, 3, nspin ) )
+         ALLOCATE( self_rhog(dfftp%ngm, nspin ) )
 
-         self_rho(:, 1) = rhor( :, 2)
-         self_rho(:, 2) = rhor( :, 2)
-
+         self_rho(:, :) = rhor( :, :)
          IF( dft_is_gradient() ) THEN
-            self_gradr(:, :, 1) = gradr(:, :, 2)
-            self_gradr(:, :, 2) = gradr(:, :, 2)
+            ALLOCATE( self_gradr( 3, dfftp%nnr, nspin ) )
+            self_gradr(:, :, :) = gradr(:, :, :)
          ENDIF
-
-         self_rhog(:, 1) = rhog( :, 2)
-         self_rhog(:, 2) = rhog( :, 2)
-!
+         self_rhog(:, :) = rhog( :, :)
+         !
       END IF
 !
       self_exc = 0.d0
@@ -269,26 +265,28 @@
       USE kinds,              ONLY: DP
       use control_flags, only: iprint, tpre
       use gvect, only: g
-      use gvect, only: ngm, nl, nlm
       use cell_base, only: ainv, tpiba, omega
       use cp_main_variables, only: drhog
       USE fft_interfaces, ONLY: fwfft, invfft
       USE fft_base,       ONLY: dfftp
+      USE fft_helper_subroutines, ONLY: fftx_threed2oned, fftx_oned2threed
 !                 
       implicit none  
 ! input                   
       integer nspin
-      real(DP)    :: gradr( dfftp%nnr, 3, nspin ), rhor( dfftp%nnr, nspin ), dexc( 3, 3 )
-      complex(DP) :: rhog( ngm, nspin )
+      real(DP)    :: gradr( 3, dfftp%nnr, nspin ), rhor( dfftp%nnr, nspin ), dexc( 3, 3 )
+      complex(DP) :: rhog( dfftp%ngm, nspin )
 !
-      complex(DP), allocatable:: v(:)
+      complex(DP), allocatable:: v(:), vp(:), vm(:)
       complex(DP), allocatable:: x(:), vtemp(:)
       complex(DP) ::  ci, fp, fm
       integer :: iss, ig, ir, i,j
 !
       allocate(v(dfftp%nnr))
-      allocate(x(ngm))
-      allocate(vtemp(ngm))
+      allocate(x(dfftp%ngm))
+      allocate(vp(dfftp%ngm))
+      allocate(vm(dfftp%ngm))
+      allocate(vtemp(dfftp%ngm))
       !
       ci=(0.0d0,1.0d0)
       !
@@ -299,18 +297,19 @@
 !     second part xc-potential: 3 forward ffts
 !
          do ir=1,dfftp%nnr
-            v(ir)=CMPLX(gradr(ir,1,iss),0.d0,kind=DP)
+            v(ir)=CMPLX(gradr(1,ir,iss),0.d0,kind=DP)
          end do
-         call fwfft('Dense',v, dfftp )
-         do ig=1,ngm
-            x(ig)=ci*tpiba*g(1,ig)*v(nl(ig))
+         call fwfft('Rho',v, dfftp )
+         CALL fftx_threed2oned( dfftp, v, vp )
+         do ig=1,dfftp%ngm
+            x(ig)=ci*tpiba*g(1,ig)*vp(ig)
          end do
 !
          if(tpre) then
             do i=1,3
                do j=1,3
-                  do ig=1,ngm
-                     vtemp(ig) = omega*ci*CONJG(v(nl(ig)))*             &
+                  do ig=1,dfftp%ngm
+                     vtemp(ig) = omega*ci*CONJG(vp(ig))*             &
      &                    tpiba*(-rhog(ig,iss)*g(i,ig)*ainv(j,1)+      &
      &                    g(1,ig)*drhog(ig,iss,i,j))
                   end do
@@ -320,32 +319,23 @@
          endif
 !
          do ir=1,dfftp%nnr
-            v(ir)=CMPLX(gradr(ir,2,iss),gradr(ir,3,iss),kind=DP)
+            v(ir)=CMPLX(gradr(2,ir,iss),gradr(3,ir,iss),kind=DP)
          end do
-         call fwfft('Dense',v, dfftp )
+         call fwfft('Rho',v, dfftp )
+         CALL fftx_threed2oned( dfftp, v, vp, vm )
 !
-         do ig=1,ngm
-            fp=v(nl(ig))+v(nlm(ig))
-            fm=v(nl(ig))-v(nlm(ig))
-            x(ig) = x(ig) +                                             &
-     &           ci*tpiba*g(2,ig)*0.5d0*CMPLX( DBLE(fp),AIMAG(fm),kind=DP)
-            x(ig) = x(ig) +                                             &
-     &           ci*tpiba*g(3,ig)*0.5d0*CMPLX(AIMAG(fp),-DBLE(fm),kind=DP)
+         do ig=1,dfftp%ngm
+            x(ig) = x(ig) + ci*tpiba*g(2,ig)*vp(ig)
+            x(ig) = x(ig) + ci*tpiba*g(3,ig)*vm(ig)
          end do
 !
          if(tpre) then
             do i=1,3
                do j=1,3
-                  do ig=1,ngm
-                     fp=v(nl(ig))+v(nlm(ig))
-                     fm=v(nl(ig))-v(nlm(ig))
-                     vtemp(ig) = omega*ci*                              &
-     &                    (0.5d0*CMPLX(DBLE(fp),-AIMAG(fm),kind=DP)*              &
-     &                    tpiba*(-rhog(ig,iss)*g(i,ig)*ainv(j,2)+      &
-     &                    g(2,ig)*drhog(ig,iss,i,j))+                  &
-     &                    0.5d0*CMPLX(AIMAG(fp),DBLE(fm),kind=DP)*tpiba*          &
-     &                    (-rhog(ig,iss)*g(i,ig)*ainv(j,3)+            &
-     &                    g(3,ig)*drhog(ig,iss,i,j)))
+                  do ig=1,dfftp%ngm
+                     vtemp(ig) = omega*ci*( &
+     &                    CONJG(vp(ig))*tpiba*(-rhog(ig,iss)*g(i,ig)*ainv(j,2)+g(2,ig)*drhog(ig,iss,i,j))+ &
+     &                    CONJG(vm(ig))*tpiba*(-rhog(ig,iss)*g(i,ig)*ainv(j,3)+g(3,ig)*drhog(ig,iss,i,j))  )
                   end do
                   dexc(i,j) = dexc(i,j) + 2.0d0*DBLE(SUM(vtemp))
                end do
@@ -354,14 +344,8 @@
 !     _________________________________________________________________
 !     second part xc-potential: 1 inverse fft
 !
-         do ig=1,dfftp%nnr
-            v(ig)=(0.0d0,0.0d0)
-         end do
-         do ig=1,ngm
-            v(nl(ig))=x(ig)
-            v(nlm(ig))=CONJG(x(ig))
-         end do
-         call invfft('Dense',v, dfftp )
+         CALL fftx_oned2threed( dfftp, v, x )
+         call invfft('Rho',v, dfftp )
          do ir=1,dfftp%nnr
             rhor(ir,iss)=rhor(ir,iss)-DBLE(v(ir))
          end do
@@ -370,6 +354,8 @@
       deallocate(vtemp)
       deallocate(x)
       deallocate(v)
+      deallocate(vp)
+      deallocate(vm)
 !
       return
    end subroutine gradh
@@ -389,7 +375,7 @@ subroutine exch_corr_wrapper(nnr, nspin, grhor, rhor, etxc, v, h)
   implicit none
   integer, intent(in) :: nnr
   integer, intent(in) :: nspin
-  real(DP), intent(in) :: grhor( nnr, 3, nspin )
+  real(DP), intent(in) :: grhor( 3, nnr, nspin )
   real(DP) :: h( nnr, nspin, nspin )
   real(DP), intent(in) :: rhor( nnr, nspin )
   real(DP) :: v( nnr, nspin )
@@ -484,7 +470,7 @@ subroutine exch_corr_wrapper(nnr, nspin, grhor, rhor, etxc, v, h)
 !$omp private( is, grho2, arho, segno, sx, sc, v1x, v2x, v1c, v2c  ), reduction(+:etxc)
        do k = 1, nnr
           !
-          grho2 (1) = grhor(k, 1, 1)**2 + grhor(k, 2, 1)**2 + grhor(k, 3, 1)**2
+          grho2 (1) = grhor(1, k, 1)**2 + grhor(2, k, 1)**2 + grhor(3, k, 1)**2
           arho = abs (rhor (k, 1) )
           segno = sign (1.d0, rhor (k, 1) )
           if (arho > epsr .and. grho2 (1) > epsg) then
@@ -513,7 +499,7 @@ subroutine exch_corr_wrapper(nnr, nspin, grhor, rhor, etxc, v, h)
        !
        do k = 1, nnr
           do is = 1, nspin
-             grho2 (is) = grhor(k, 1, is)**2 + grhor(k, 2, is)**2 + grhor(k, 3, is)**2
+             grho2 (is) = grhor(1, k, is)**2 + grhor(2, k, is)**2 + grhor(3, k, is)**2
           enddo
           rup = rhor (k, 1)
           rdw = rhor (k, 2)
@@ -523,19 +509,19 @@ subroutine exch_corr_wrapper(nnr, nspin, grhor, rhor, etxc, v, h)
           !
           if (rh.gt.epsr) then
              if( igcc_is_lyp ) then
-                grhoup = grhor(k,1,1)**2 + grhor(k,2,1)**2 + grhor(k,3,1)**2
-                grhodw = grhor(k,1,2)**2 + grhor(k,2,2)**2 + grhor(k,3,2)**2
-                grhoud =          grhor(k,1,1)* grhor(k,1,2)
-                grhoud = grhoud + grhor(k,2,1)* grhor(k,2,2)
-                grhoud = grhoud + grhor(k,3,1)* grhor(k,3,2)
+                grhoup = grhor(1,k,1)**2 + grhor(2,k,1)**2 + grhor(3,k,1)**2
+                grhodw = grhor(1,k,2)**2 + grhor(2,k,2)**2 + grhor(3,k,2)**2
+                grhoud =          grhor(1,k,1)* grhor(1,k,2)
+                grhoud = grhoud + grhor(2,k,1)* grhor(2,k,2)
+                grhoud = grhoud + grhor(3,k,1)* grhor(3,k,2)
                 call gcc_spin_more(rup, rdw, grhoup, grhodw, grhoud, sc, &
                      v1cup, v1cdw, v2cup, v2cdw, v2cud)
              else
                 zeta = (rhor (k, 1) - rhor (k, 2) ) / rh
                 !
-                grh2 = (grhor (k, 1, 1) + grhor (k, 1, 2) ) **2 + &
-                       (grhor (k, 2, 1) + grhor (k, 2, 2) ) **2 + &
-                       (grhor (k, 3, 1) + grhor (k, 3, 2) ) **2
+                grh2 = (grhor (1, k, 1) + grhor (1, k, 2) ) **2 + &
+                       (grhor (2, k, 1) + grhor (2, k, 2) ) **2 + &
+                       (grhor (3, k, 1) + grhor (3, k, 2) ) **2
                 call gcc_spin (rh, zeta, grh2, sc, v1cup, v1cdw, v2c)
                 v2cup = v2c
                 v2cdw = v2c
@@ -588,7 +574,7 @@ subroutine exch_corr_cp(nnr,nspin,grhor,rhor,etxc)
   implicit none
   integer, intent(in) :: nnr
   integer, intent(in) :: nspin
-  real(DP) :: grhor( nnr, 3, nspin )
+  real(DP) :: grhor( 3, nnr, nspin )
   real(DP) :: rhor( nnr, nspin )
   real(DP) :: etxc
   integer :: k, ipol
@@ -615,7 +601,7 @@ subroutine exch_corr_cp(nnr,nspin,grhor,rhor,etxc)
         do ipol = 1, 3
 !$omp do
            do k = 1, nnr
-              grhor (k, ipol, 1) = h (k, 1, 1) * grhor (k, ipol, 1)
+              grhor (ipol, k, 1) = h (k, 1, 1) * grhor (ipol, k, 1)
            enddo
 !$omp end do
         end do
@@ -628,10 +614,10 @@ subroutine exch_corr_cp(nnr,nspin,grhor,rhor,etxc)
         do ipol = 1, 3
 !$omp do
            do k = 1, nnr
-             grup = grhor (k, ipol, 1)
-             grdw = grhor (k, ipol, 2)
-             grhor (k, ipol, 1) = h (k, 1, 1) * grup + h (k, 1, 2) * grdw
-             grhor (k, ipol, 2) = h (k, 2, 2) * grdw + h (k, 2, 1) * grup
+             grup = grhor (ipol, k, 1)
+             grdw = grhor (ipol, k, 2)
+             grhor (ipol, k, 1) = h (k, 1, 1) * grup + h (k, 1, 2) * grdw
+             grhor (ipol, k, 2) = h (k, 2, 2) * grdw + h (k, 2, 1) * grup
            enddo
 !$omp end do
         enddo

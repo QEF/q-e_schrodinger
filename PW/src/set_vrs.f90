@@ -84,7 +84,8 @@ subroutine interpolate_vrs ( nrxx, nspin, doublegrid, kedtau, kedtaur, vrs )
   !
   USE kinds
   USE funct, only : dft_is_meta
-  USE fft_base, only : dffts 
+  USE fft_base, only : dffts, dfftp
+  USE fft_interfaces, ONLY : fft_interpolate
   implicit none
 
   integer :: nspin, nrxx
@@ -98,14 +99,14 @@ subroutine interpolate_vrs ( nrxx, nspin, doublegrid, kedtau, kedtaur, vrs )
   ! input: true if a doublegrid is used
 
   integer:: is
-
+  !
+  ! ... interpolate it on the smooth mesh if necessary
+  !
   do is = 1, nspin
-     !
-     ! ... and interpolate it on the smooth mesh if necessary
-     !
-     if (doublegrid) call interpolate (vrs (1, is), vrs (1, is), - 1)
-     if (dft_is_meta()) call interpolate(kedtaur(1,is),kedtau(1,is),-1)
+     if (doublegrid) call fft_interpolate(dfftp, vrs (:, is), dffts, vrs (:, is))
+     if (dft_is_meta()) call fft_interpolate(dfftp, kedtaur(:,is),dffts, kedtau(:,is))
   enddo
+
   return
 
 end subroutine interpolate_vrs

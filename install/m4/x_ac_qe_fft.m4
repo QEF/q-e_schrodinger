@@ -9,8 +9,7 @@ have_fft_include=0
  
 # check for FFT libraries (no check for explicit openmp)
 # supported vendor replacements:
-#   essl on aix and some IBM linux machines
-#   SUNperf on sparc
+#   essl on IBM linux machines
 #   ASL/Mathkeisan on Nec
 #   acml on amd
 if test "$fft_libs" = "" && test "$use_openmp" -eq 0
@@ -20,14 +19,6 @@ then
         ld_library_path=`echo $LD_LIBRARY_PATH | sed 's/:/ /g'`
 
         case "$arch" in
-        aix )
-                # check for essl
-                unset ac_cv_search_dcft # clear cached value
-                FFLAGS="$test_fflags"
-                LDFLAGS="$test_ldflags"
-                LIBS="$fft_libs"
-                AC_SEARCH_LIBS(dcft, essl, have_fft=1 fft_libs="$LIBS")
-            ;;
         ppc64 | ppc64-mn )
                 # check for essl
                 unset ac_cv_search_dcft # clear cached value
@@ -44,17 +35,6 @@ then
                 LIBS="$fft_libs $blas_libs"
                 AC_SEARCH_LIBS(dcft, esslbg, have_fft=1 fft_libs="$LIBS")
             ;;
-        sparc )
-                # check for SUNperf FFT library on Sun Sparcs
-                # but not on solaris PC! it is slower than FFTW
-                unset ac_cv_search_zfft3i # clear cached value
-                FFLAGS="$test_fflags"
-                LDFLAGS="$test_ldflags"
-                LIBS="$libs"
-                AC_SEARCH_LIBS(zfft3i, sunperf, have_fft=1
-                               try_dflags="$try_dflags -D__SUNPERF"
-                               fft_libs="-xlic_lib=sunperf $LIBS")
-                ;;
         necsx )
                 if test "$use_fft_mathkeisan" -ne 0
                 then
@@ -208,8 +188,15 @@ then
 
                   if test "$use_openmp" -eq 1
                   then
+                    # Try testing openmp without -lfftw3 first, if that fails then return
+                    # to previous behaviour
                     AC_SEARCH_LIBS(dfftw_execute_dft, fftw3_omp, have_fft=1
-                               fft_libs="$try_loption $LIBS -lfftw3", , -lfftw3 -lm)
+                               fft_libs="$try_loption $LIBS", , -lm)
+                    if test "$have_fft" -eq 0
+                    then
+                      AC_SEARCH_LIBS(dfftw_execute_dft, fftw3_omp, have_fft=1
+                                 fft_libs="$try_loption $LIBS -lfftw3", , -lfftw3 -lm)
+                    fi 
                   else
                     AC_SEARCH_LIBS(dfftw_execute_dft, fftw3, have_fft=1
                                fft_libs="$try_loption $LIBS", , -lm)

@@ -23,7 +23,7 @@
   USE start_k,        ONLY : nk1, nk2, nk3
   USE pwcom,          ONLY : nkstot !, npk
   USE epwcom,         ONLY : xk_cryst           
-  USE wannier,        ONLY : mp_grid, n_wannier, kpt_latt
+  USE wannierEPW,     ONLY : mp_grid, n_wannier, kpt_latt
   USE mp,             ONLY : mp_bcast
   USE mp_world,       ONLY : world_comm
   !
@@ -84,24 +84,33 @@
   !------------------------------------------------------------
   !!
   !!
-  !!  This SUBROUTINE write the prefix.win file which wannier90.x
+  !!  This subroutine writes the prefix.win file which wannier90.x
   !!  needs to run.  Primarily it contains information about the 
-  !!  windows USEd for the disentanglement, and the initial projections.
+  !!  windows used for the disentanglement, and the initial projections.
   !!  JN - 10/2008  projections now in elph.in file  
   !------------------------------------------------------------
   !
+  USE kinds,       ONLY : DP
   USE io_files,    ONLY : prefix
   USE io_epw,      ONLY : iuwinfil
   USE io_global,   ONLY : meta_ionode
+  USE pwcom,       ONLY : et, nbnd, nkstot, nks
   USE epwcom,      ONLY : nbndsub, nwanxx, proj, iprint, dis_win_min, &
                           dis_win_max, dis_froz_min, dis_froz_max, num_iter, &
-                          wdata 
+                          bands_skipped, wdata 
+  USE constants_epw, ONLY : ryd2ev
   !
-  implicit none
+  IMPLICIT NONE
   !
-  integer :: i
+  INTEGER :: i
   !
-  logical :: random
+  REAL(KIND=DP) :: et_tmp(nbnd,nkstot)
+  !! eigenvalues on full coarse k-mesh
+  !
+  LOGICAL :: random
+  !
+  CALL poolgather ( nbnd, nkstot, nks, et(1:nbnd,1:nks), et_tmp)
+  et_tmp = et_tmp*ryd2ev
   !
   IF (meta_ionode) THEN
     !
@@ -113,7 +122,7 @@
     WRITE (iuwinfil,'(a)') "begin projections"
     !
     random = .true.
-    DO i = 1, nbndsub+1
+    DO i = 1, nbndsub
        IF (proj(i) .ne. ' ') THEN
           WRITE (iuwinfil,*) trim(proj(i))
           random = .false.
@@ -124,13 +133,23 @@
     !
     WRITE (iuwinfil,'(a)') "end projections"
     !
+    IF (bands_skipped .ne. ' ') WRITE(iuwinfil,*) bands_skipped
+    !
     WRITE (iuwinfil,'("num_wann ",i3)') nbndsub
     WRITE (iuwinfil,'("iprint ",i3)') iprint
     !
-    WRITE (iuwinfil, '("dis_win_min ", f9.3)')  dis_win_min
-    WRITE (iuwinfil, '("dis_win_max ", f9.3)')  dis_win_max
-    WRITE (iuwinfil, '("dis_froz_min ", f9.3)') dis_froz_min
-    WRITE (iuwinfil, '("dis_froz_max ", f9.3)') dis_froz_max
+    ! SP: This is not ok. Indeed you can have more bands in nscf.in than in 
+    !     nbndskip+nbndsub. In which case the dis_win_max can be larger than 
+    !     nbndskip+nbndsub. This is crucial for disantanglement. 
+    !IF ( dis_win_min .lt. minval(et_tmp) ) dis_win_min = minval(et_tmp)
+    !IF ( dis_win_max .gt. maxval(et_tmp) ) dis_win_max = maxval(et_tmp)
+    IF ( dis_froz_min .lt. minval(et_tmp) ) dis_froz_min = minval(et_tmp)
+    IF ( dis_froz_max .gt. maxval(et_tmp) ) dis_froz_max = maxval(et_tmp)
+    !
+    WRITE (iuwinfil, '("dis_win_min ", f18.12)')  dis_win_min
+    WRITE (iuwinfil, '("dis_win_max ", f18.12)')  dis_win_max
+    WRITE (iuwinfil, '("dis_froz_min ", f18.12)') dis_froz_min
+    WRITE (iuwinfil, '("dis_froz_max ", f18.12)') dis_froz_max
     WRITE (iuwinfil, '("num_iter ", i7)')       num_iter
     !
     ! write any extra parameters to the prefix.win file
@@ -143,9 +162,6 @@
   ENDIF
   !
   END SUBROUTINE write_winfil
-
-
-
 !------------------------------------------------------------
   SUBROUTINE proj_w90
 !------------------------------------------------------------
@@ -163,7 +179,7 @@
   USE mp,          ONLY : mp_sum
   USE epwcom,      ONLY : DP, dis_win_max, dis_win_min
   USE constants_epw, ONLY : ryd2ev 
-  USE wannier,     ONLY : n_wannier
+  USE wannierEPW,  ONLY : n_wannier
   USE wvfct,       ONLY : nbnd, et
   USE klist,       ONLY : nks, nkstot
   !
@@ -176,6 +192,7 @@
   !
   logical :: lwin( nbnd, nks ), lwinq( nbnd, nks )
   ! FG: introduced after extensive compiler tests
+  logical :: exband( nbnd )
   !
   WRITE(stdout,'(5x,"Computing energy projections")')
   ! dummy var
@@ -196,7 +213,7 @@
   ALLOCATE (cu (nbnd, n_wannier, nks) )
   ALLOCATE (cuq(nbnd, n_wannier, nks) )
   !
-  CALL loadumat(nbnd, n_wannier, nks, nkstot, xxq, cu, cuq, lwin, lwinq) 
+  CALL loadumat(nbnd, n_wannier, nks, nkstot, xxq, cu, cuq, lwin, lwinq, exband) 
   ! FG: introduced after ifort checks
 
   !

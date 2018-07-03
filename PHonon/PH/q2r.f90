@@ -48,6 +48,7 @@ PROGRAM q2r
   !                   molecule or if all the atoms are aligned, etc.).
   !                   In these cases the supplementary asr are cancelled
   !                   during the orthonormalization procedure (see below).
+  !     loto_2d    :  set to .true. to activate two-dimensional treatment of LO-TO splitting. 
   !
   !  If a file "fildyn"0 is not found, the code will ignore variable "fildyn"
   !  and will try to read from the following cards the missing information
@@ -58,6 +59,7 @@ PROGRAM q2r
   !     filin      :  name of file containing C(q_n)
   !  The name and order of files is not important as long as q=0 is the first
   !
+  USE kinds,      ONLY : DP
   USE mp,         ONLY : mp_bcast
   USE mp_world,   ONLY : world_comm
   USE mp_global,  ONLY : mp_startup, mp_global_end
@@ -66,17 +68,12 @@ PROGRAM q2r
   !
   IMPLICIT NONE
   !
-  CHARACTER(len=256) :: fildyn, filin, filj, filf, flfrc, prefix
-  CHARACTER(len=4) :: post=''
-  !
-  LOGICAL :: lq, lrigid, lrigid1, lnogridinfo, xmldyn
+  CHARACTER(len=256) :: fildyn, filin, flfrc, prefix
   CHARACTER (LEN=10) :: zasr
+  LOGICAL            :: la2F, loto_2d
+  INTEGER            :: ios
   !
-  INTEGER :: ios
-  !
-  logical :: la2F
-  !
-  NAMELIST / input / fildyn, flfrc, prefix, zasr, la2F
+  NAMELIST / input / fildyn, flfrc, prefix, zasr, la2F, loto_2d
   !
   CALL mp_startup()
   CALL environment_start('Q2R')
@@ -86,6 +83,7 @@ PROGRAM q2r
   fildyn = ' '
   flfrc = ' '
   prefix = ' '
+  loto_2d=.false.
   zasr = 'no'
      !
   la2F=.false.
@@ -96,10 +94,19 @@ PROGRAM q2r
   CALL mp_bcast(ios, ionode_id, world_comm)
   CALL errore('q2r','error reading input namelist', abs(ios))
 
-  CALL do_q2r(fildyn, flfrc, prefix, zasr, la2F)
-
+  CALL mp_bcast(fildyn, ionode_id, world_comm)
+  CALL mp_bcast(flfrc, ionode_id, world_comm)
+  CALL mp_bcast(prefix, ionode_id, world_comm)
+  CALL mp_bcast(zasr, ionode_id, world_comm)
+  CALL mp_bcast(loto_2d, ionode_id, world_comm)
+  CALL mp_bcast(la2F, ionode_id, world_comm)
+  !
+  CALL do_q2r(fildyn, flfrc, prefix, zasr, la2F, loto_2d)
+  !
   CALL environment_end('Q2R')
 
   CALL mp_global_end()
   !
 END PROGRAM q2r
+!
+!----------------------------------------------------------------------------

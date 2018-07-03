@@ -22,15 +22,18 @@ SUBROUTINE ccgdiagg( hs_1psi, s_1psi, precondition, &
   ! ... Calls hs_1psi and s_1psi to calculate H|psi> + S|psi> and S|psi>
   ! ... Works for generalized eigenvalue problem (US pseudopotentials) as well
   !
-  USE constants,      ONLY : pi
   USE cg_param,       ONLY : DP
-  USE mp_bands_util,  ONLY : intra_bgrp_comm, inter_bgrp_comm, set_bgrp_indices
+  USE mp_bands_util,  ONLY : intra_bgrp_comm, inter_bgrp_comm
   USE mp,             ONLY : mp_sum
 #if defined(__VERBOSE)
   USE cg_param,     ONLY : stdout
 #endif
   !
   IMPLICIT NONE
+  !
+  ! ... Mathematical constants
+  ! 
+  REAL(DP), PARAMETER :: pi     = 3.14159265358979323846_DP
   !
   ! ... I/O variables
   !
@@ -122,7 +125,7 @@ SUBROUTINE ccgdiagg( hs_1psi, s_1psi, precondition, &
      !
      ! ... orthogonalize starting eigenfunction to those already calculated
      !
-     call set_bgrp_indices(m,m_start,m_end); !write(*,*) m,m_start,m_end
+     call divide(inter_bgrp_comm,m,m_start,m_end); !write(*,*) m,m_start,m_end
      lagrange = ZERO
      if(m_start.le.m_end) &
      CALL ZGEMV( 'C', kdim, m_end-m_start+1, ONE, psi(1,m_start), kdmx, spsi, 1, ZERO, lagrange(m_start), 1 )
@@ -186,7 +189,7 @@ SUBROUTINE ccgdiagg( hs_1psi, s_1psi, precondition, &
         CALL s_1psi( npwx, npw, g(1), scg(1) )
         !
         lagrange(1:m-1) = ZERO
-        call set_bgrp_indices(m-1,m_start,m_end); !write(*,*) m-1,m_start,m_end
+        call divide(inter_bgrp_comm,m-1,m_start,m_end); !write(*,*) m-1,m_start,m_end
         if(m_start.le.m_end) &
         CALL ZGEMV( 'C', kdim, m_end-m_start+1, ONE, psi(1,m_start), kdmx, scg, 1, ZERO, lagrange(m_start), 1 )
         CALL mp_sum( lagrange( 1:m-1 ), inter_bgrp_comm )

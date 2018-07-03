@@ -35,6 +35,9 @@ SUBROUTINE read_file()
   USE klist,                ONLY : init_igk
   USE gvect,                ONLY : ngm, g
   USE gvecw,                ONLY : gcutw
+#if defined (__HDF5)
+  USE hdf5_qe
+#endif
   !
   IMPLICIT NONE 
   INTEGER :: ierr
@@ -48,6 +51,9 @@ SUBROUTINE read_file()
   !
   IF ( ionode ) WRITE( stdout, '(/,5x,A,/,5x,A)') &
      'Reading data from directory:', TRIM( tmp_dir ) // TRIM( prefix ) // '.save'
+#if defined(__HDF5)
+  CALL initialize_hdf5()
+#endif
   !
   CALL read_xml_file ( )
   !
@@ -122,11 +128,12 @@ SUBROUTINE read_xml_file_internal(withbs)
   USE fft_base,             ONLY : dfftp
   USE fft_interfaces,       ONLY : fwfft
   USE fft_types,            ONLY : fft_type_allocate
-  USE recvec_subs,          ONLY : ggen
-  USE gvect,                ONLY : gg, ngm, g, gcutm, &
-                                   eigts1, eigts2, eigts3, nl, gstart
+  USE recvec_subs,          ONLY : ggen, ggens
+  USE gvect,                ONLY : gg, ngm, g, gcutm, mill, ngm_g, ig_l2g, &
+                                   eigts1, eigts2, eigts3, gstart
+  USE Coul_cut_2D,          ONLY : do_cutoff_2D, cutoff_fact
   USE fft_base,             ONLY : dfftp, dffts
-  USE gvecs,                ONLY : ngms, nls, gcutms 
+  USE gvecs,                ONLY : ngms, gcutms 
   USE spin_orb,             ONLY : lspinorb, domag
   USE scf,                  ONLY : rho, rho_core, rhog_core, v
   USE wavefunctions_module, ONLY : psic
@@ -289,7 +296,9 @@ SUBROUTINE read_xml_file_internal(withbs)
   CALL pre_init()
   CALL data_structure ( gamma_only )
   CALL allocate_fft()
-  CALL ggen ( gamma_only, at, bg ) 
+  CALL ggen ( dfftp, gamma_only, at, bg, gcutm, ngm_g, ngm, &
+       g, gg, mill, ig_l2g, gstart ) 
+  CALL ggens( dffts, gamma_only, at, g, gg, mill, gcutms, ngms ) 
   IF (do_comp_esm) THEN
     CALL pw_readfile( 'esm', ierr )
     CALL esm_init()
@@ -320,6 +329,9 @@ SUBROUTINE read_xml_file_internal(withbs)
   ! ... and the core correction charge (if any) - This is done here
   ! ... for compatibility with the previous version of read_file
   !
+  ! 2D calculations: re-initialize cutoff fact before calculating potentials
+  IF(do_cutoff_2D) CALL cutoff_fact()
+  !
   CALL init_vloc()
   CALL struc_fact( nat, tau, nsp, ityp, ngm, g, bg, dfftp%nr1, dfftp%nr2, &
                    dfftp%nr3, strf, eigts1, eigts2, eigts3 )
@@ -331,8 +343,8 @@ SUBROUTINE read_xml_file_internal(withbs)
   DO is = 1, nspin
      !
      psic(:) = rho%of_r(:,is)
-     CALL fwfft ('Dense', psic, dfftp)
-     rho%of_g(:,is) = psic(nl(:))
+     CALL fwfft ('Rho', psic, dfftp)
+     rho%of_g(:,is) = psic(dfftp%nl(:))
      !
   END DO
   !
@@ -354,7 +366,7 @@ SUBROUTINE read_xml_file_internal(withbs)
     SUBROUTINE set_dimensions()
       !------------------------------------------------------------------------
       !
-      USE constants, ONLY : pi
+      USE constants, ONLY : pi, eps8
       USE cell_base, ONLY : alat, tpiba, tpiba2
       USE gvect,     ONLY : ecutrho, gcutm
       USE gvecs,     ONLY : gcutms, dual, doublegrid
@@ -372,7 +384,7 @@ SUBROUTINE read_xml_file_internal(withbs)
       gcutm = dual * ecutwfc / tpiba2
       ecutrho=dual * ecutwfc
       !
-      doublegrid = ( dual > 4.D0 )
+      doublegrid = ( dual > 4.0_dp + eps8 )
       IF ( doublegrid ) THEN
          gcutms = 4.D0 * ecutwfc / tpiba2
       ELSE

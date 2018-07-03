@@ -12,9 +12,9 @@ SUBROUTINE gradcorr( rho, rhog, rho_core, rhog_core, etxc, vtxc, v )
   !
   USE constants,            ONLY : e2
   USE kinds,                ONLY : DP
-  USE gvect,                ONLY : nl, ngm, g
+  USE gvect,                ONLY : ngm, g
   USE lsda_mod,             ONLY : nspin
-  USE cell_base,            ONLY : omega, alat
+  USE cell_base,            ONLY : omega
   USE funct,                ONLY : gcxc, gcx_spin, gcc_spin, igcc_is_lyp, &
                                    gcc_spin_more, dft_is_gradient, get_igcc
   USE spin_orb,             ONLY : domag
@@ -83,9 +83,9 @@ SUBROUTINE gradcorr( rho, rhog, rho_core, rhog_core, etxc, vtxc, v )
         !
         psic(:) = rhoout(:,is)
         !
-        CALL fwfft ('Dense', psic, dfftp)
+        CALL fwfft ('Rho', psic, dfftp)
         !
-        rhogsum(:,is) = psic(nl(:))
+        rhogsum(:,is) = psic(dfftp%nl(:))
         !
      END DO
   ELSE
@@ -99,7 +99,7 @@ SUBROUTINE gradcorr( rho, rhog, rho_core, rhog_core, etxc, vtxc, v )
      rhoout(:,is)  = fac * rho_core(:)  + rhoout(:,is)
      rhogsum(:,is) = fac * rhog_core(:) + rhogsum(:,is)
      !
-     CALL gradrho( dfftp%nnr, rhogsum(1,is), ngm, g, nl, grho(1,1,is) )
+     CALL fft_gradient_g2r( dfftp, rhogsum(1,is), g, grho(1,1,is) )
      !
   END DO
   !
@@ -109,6 +109,8 @@ SUBROUTINE gradcorr( rho, rhog, rho_core, rhog_core, etxc, vtxc, v )
      !
      ! ... This is the spin-unpolarised case
      !
+!$omp parallel do private( arho, grho2, segno, sx, sc, v1x, v2x, v1c, v2c ) &
+!$omp             reduction(+:etxcgc,vtxcgc)
      DO k = 1, dfftp%nnr
         !
         arho = ABS( rhoout(k,1) )
@@ -147,6 +149,7 @@ SUBROUTINE gradcorr( rho, rhog, rho_core, rhog_core, etxc, vtxc, v )
         END IF
         !
      END DO
+!$omp end parallel do
      !
   ELSE
      !
@@ -253,7 +256,7 @@ SUBROUTINE gradcorr( rho, rhog, rho_core, rhog_core, etxc, vtxc, v )
   !
   DO is = 1, nspin0
      !
-     CALL grad_dot( dfftp%nnr, h(1,1,is), ngm, g, nl, alat, dh )
+     CALL fft_graddot( dfftp, h(1,1,is), g, dh )
      !
      v(:,is) = v(:,is) - dh(:)
      !
@@ -292,431 +295,3 @@ SUBROUTINE gradcorr( rho, rhog, rho_core, rhog_core, etxc, vtxc, v )
   RETURN
   !
 END SUBROUTINE gradcorr
-!
-!----------------------------------------------------------------------------
-SUBROUTINE gradrho( nrxx, a, ngm, g, nl, ga )
-  !----------------------------------------------------------------------------
-  !
-  ! ... Calculates ga = \grad a in R-space (a is in G-space)
-  !
-  USE kinds,     ONLY : DP
-  USE constants, ONLY : tpi
-  USE cell_base, ONLY : tpiba
-  USE gvect,     ONLY : nlm
-  USE control_flags, ONLY : gamma_only
-  USE fft_base,      ONLY : dfftp
-  USE fft_interfaces,ONLY : invfft
-
-  !
-  IMPLICIT NONE
-  !
-  INTEGER,     INTENT(IN)  :: nrxx
-  INTEGER,     INTENT(IN)  :: ngm, nl(ngm)
-  COMPLEX(DP), INTENT(IN)  :: a(ngm)
-  REAL(DP),    INTENT(IN)  :: g(3,ngm)
-  REAL(DP),    INTENT(OUT) :: ga(3,nrxx)
-  !
-  INTEGER                  :: ipol
-  COMPLEX(DP), ALLOCATABLE :: gaux(:)
-  !
-  !
-  ALLOCATE( gaux( nrxx ) )
-  !
-  ! ... multiply by (iG) to get (\grad_ipol a)(G) ...
-  !
-  ga(:,:) = 0.D0
-  !
-  DO ipol = 1, 3
-     !
-     gaux(:) = CMPLX(0.d0,0.d0,kind=dp)
-     !
-     gaux(nl(:)) = g(ipol,:) * CMPLX( -AIMAG( a(:) ), REAL( a(:) ) ,kind=DP)
-     !
-     IF ( gamma_only ) THEN
-        !
-        gaux(nlm(:)) = CMPLX( REAL( gaux(nl(:)) ), -AIMAG( gaux(nl(:)) ) ,kind=DP)
-        !
-     END IF
-     !
-     ! ... bring back to R-space, (\grad_ipol a)(r) ...
-     !
-     CALL invfft ('Dense', gaux, dfftp)
-     !
-     ! ...and add the factor 2\pi/a  missing in the definition of G
-     !
-     ga(ipol,:) = ga(ipol,:) + tpiba * REAL( gaux(:) )
-     !
-  END DO
-  !
-  DEALLOCATE( gaux )
-  !
-  RETURN
-  !
-END SUBROUTINE gradrho
-!
-!----------------------------------------------------------------------------
-SUBROUTINE gradient( nrxx, a, ngm, g, nl, ga )
-  !----------------------------------------------------------------------------
-  !
-  ! ... Calculates ga = \grad a in R-space (a is also in R-space)
-  !
-  USE constants, ONLY : tpi
-  USE cell_base, ONLY : tpiba
-  USE kinds,     ONLY : DP
-  USE gvect,     ONLY : nlm
-  USE control_flags, ONLY : gamma_only
-  USE fft_base,      ONLY : dfftp
-  USE fft_interfaces,ONLY : fwfft, invfft
-  !
-  IMPLICIT NONE
-  !
-  INTEGER,  INTENT(IN)  :: nrxx
-  INTEGER,  INTENT(IN)  :: ngm, nl(ngm)
-  REAL(DP), INTENT(IN)  :: a(nrxx), g(3,ngm)
-  REAL(DP), INTENT(OUT) :: ga(3,nrxx)
-  !
-  INTEGER                  :: ipol
-  COMPLEX(DP), ALLOCATABLE :: aux(:), gaux(:)
-  !
-  !
-  ALLOCATE(  aux( nrxx ) )
-  ALLOCATE( gaux( nrxx ) )
-  !
-  aux = CMPLX( a(:), 0.D0 ,kind=DP)
-  !
-  ! ... bring a(r) to G-space, a(G) ...
-  !
-  CALL fwfft ('Dense', aux, dfftp)
-  !
-  ! ... multiply by (iG) to get (\grad_ipol a)(G) ...
-  !
-  DO ipol = 1, 3
-     !
-     gaux(:) = CMPLX(0.d0,0.d0, kind=dp)
-     !
-     gaux(nl(:)) = g(ipol,:) * &
-                   CMPLX( -AIMAG( aux(nl(:)) ), REAL( aux(nl(:)) ) ,kind=DP)
-     !
-     IF ( gamma_only ) THEN
-        !
-        gaux(nlm(:)) = CMPLX( REAL( gaux(nl(:)) ), -AIMAG( gaux(nl(:)) ) ,kind=DP)
-        !
-     END IF
-     !
-     ! ... bring back to R-space, (\grad_ipol a)(r) ...
-     !
-     CALL invfft ('Dense', gaux, dfftp)
-     !
-     ! ...and add the factor 2\pi/a  missing in the definition of G
-     !
-     ga(ipol,:) = tpiba * DBLE( gaux(:) )
-     !
-  END DO
-  !
-  DEALLOCATE( gaux )
-  DEALLOCATE( aux )
-  !
-  RETURN
-  !
-END SUBROUTINE gradient
-!
-!----------------------------------------------------------------------------
-SUBROUTINE grad_dot( nrxx, a, ngm, g, nl, alat, da )
-  !----------------------------------------------------------------------------
-  !
-  ! ... Calculates da = \sum_i \grad_i a_i in R-space
-  !
-  USE constants, ONLY : tpi
-  USE cell_base, ONLY : tpiba
-  USE kinds,     ONLY : DP
-  USE gvect,     ONLY : nlm
-  USE control_flags, ONLY : gamma_only
-  USE fft_base,      ONLY : dfftp
-  USE fft_interfaces,ONLY : fwfft, invfft
-  !
-  IMPLICIT NONE
-  !
-  INTEGER,  INTENT(IN)     :: nrxx, ngm, nl(ngm)
-  REAL(DP), INTENT(IN)     :: a(3,nrxx), g(3,ngm), alat
-  REAL(DP), INTENT(OUT)    :: da(nrxx)
-  !
-  INTEGER                  :: n, ipol
-  COMPLEX(DP), ALLOCATABLE :: aux(:), gaux(:)
-  !
-  !
-  ALLOCATE( aux( nrxx ), gaux( nrxx ) )
-  !
-  gaux(:) = CMPLX(0.d0,0.d0, kind=dp)
-  !
-  DO ipol = 1, 3
-     !
-     aux = CMPLX( a(ipol,:), 0.D0 ,kind=DP)
-     !
-     ! ... bring a(ipol,r) to G-space, a(G) ...
-     !
-     CALL fwfft ('Dense', aux, dfftp)
-     !
-     DO n = 1, ngm
-        !
-        gaux(nl(n)) = gaux(nl(n)) + g(ipol,n) * &
-                      CMPLX( -AIMAG( aux(nl(n)) ), REAL( aux(nl(n)) ) ,kind=DP)
-        !
-     END DO
-    !
-  END DO
-  !
-  IF ( gamma_only ) THEN
-     !
-     DO n = 1, ngm
-        !
-        gaux(nlm(n)) = CONJG( gaux(nl(n)) )
-        !
-     END DO
-     !
-  END IF
-  !
-  ! ... bring back to R-space, (\grad_ipol a)(r) ...
-  !
-  CALL invfft ('Dense', gaux, dfftp)
-  !
-  ! ... add the factor 2\pi/a  missing in the definition of G and sum
-  !
-  da(:) = tpiba * REAL( gaux(:) )
-  !
-  DEALLOCATE( aux, gaux )
-  !
-  RETURN
-  !
-END SUBROUTINE grad_dot
-!--------------------------------------------------------------------
-SUBROUTINE hessian( nrxx, a, ngm, g, nl, ga, ha )
-!--------------------------------------------------------------------
-  !
-  ! ... Calculates ga = \grad a in R-space 
-  ! ... and ha = \hessian a in R-space (a is also in R-space)
-  !
-  USE constants, ONLY : tpi
-  USE cell_base, ONLY : tpiba
-  USE kinds,     ONLY : DP
-  USE gvect,     ONLY : nlm
-  USE control_flags, ONLY : gamma_only
-  USE fft_base,      ONLY : dfftp
-  USE fft_interfaces,ONLY : fwfft, invfft
-  !
-  IMPLICIT NONE
-  !
-  INTEGER,  INTENT(IN)  :: nrxx
-  INTEGER,  INTENT(IN)  :: ngm, nl(ngm)
-  REAL(DP), INTENT(IN)  :: a(nrxx), g(3,ngm)
-  REAL(DP), INTENT(OUT) :: ga( 3, nrxx )
-  REAL(DP), INTENT(OUT) :: ha( 3, 3, nrxx )
-  !
-  INTEGER                  :: ipol, jpol
-  COMPLEX(DP), ALLOCATABLE :: aux(:), gaux(:), haux(:)
-  !
-  !
-  ALLOCATE(  aux( nrxx ) )
-  ALLOCATE( gaux( nrxx ) )
-  ALLOCATE( haux( nrxx ) )
-  !
-  aux = CMPLX( a(:), 0.D0 ,kind=DP)
-  !
-  ! ... bring a(r) to G-space, a(G) ...
-  !
-  CALL fwfft ('Dense', aux, dfftp)
-  !
-  ! ... multiply by (iG) to get (\grad_ipol a)(G) ...
-  !
-  DO ipol = 1, 3
-     !
-     gaux(:) = CMPLX(0.d0,0.d0, kind=dp)
-     !
-     gaux(nl(:)) = g(ipol,:) * &
-                   CMPLX( -AIMAG( aux(nl(:)) ), REAL( aux(nl(:)) ) ,kind=DP)
-     !
-     IF ( gamma_only ) THEN
-        !
-        gaux(nlm(:)) = CMPLX( REAL( gaux(nl(:)) ), -AIMAG( gaux(nl(:)) ) ,kind=DP)
-        !
-     END IF
-     !
-     ! ... bring back to R-space, (\grad_ipol a)(r) ...
-     !
-     CALL invfft ('Dense', gaux, dfftp)
-     !
-     ! ...and add the factor 2\pi/a  missing in the definition of G
-     !
-     ga(ipol,:) = tpiba * DBLE( gaux(:) )
-     !
-     ! ... compute the second derivatives
-     !
-     DO jpol = 1, ipol
-        !
-        haux(:) = CMPLX(0.d0,0.d0, kind=dp)
-        !
-        haux(nl(:)) = - g(ipol,:) * g(jpol,:) * &
-                       CMPLX( REAL( aux(nl(:)) ), AIMAG( aux(nl(:)) ) ,kind=DP)
-        !
-        IF ( gamma_only ) THEN
-           !
-           haux(nlm(:)) = CMPLX( REAL( haux(nl(:)) ), -AIMAG( haux(nl(:)) ) ,kind=DP)
-           !
-        END IF
-        !
-        ! ... bring back to R-space, (\grad_ipol a)(r) ...
-        !
-        CALL invfft ('Dense', haux, dfftp)
-        !
-        ! ...and add the factor 2\pi/a  missing in the definition of G
-        !
-        ha(ipol, jpol, :) = tpiba * tpiba * DBLE( haux(:) )
-        !
-        ha(jpol, ipol, :) = ha(ipol, jpol, :) 
-        !
-     END DO
-     !
-  END DO
-  !
-  DEALLOCATE( haux )
-  DEALLOCATE( gaux )
-  DEALLOCATE( aux )
-  !
-  RETURN
-  !
-END SUBROUTINE hessian
-
-!--------------------------------------------------------------------
-SUBROUTINE laplacian( nrxx, a, ngm, gg, nl, lapla )
-!--------------------------------------------------------------------
-  !
-  ! ... Calculates lapla = \laplace a in R-space (a is also in R-space)
-  !
-  USE constants, ONLY : tpi
-  USE cell_base, ONLY : tpiba2
-  USE kinds,     ONLY : DP
-  USE gvect,     ONLY : nlm, gstart
-  USE control_flags, ONLY : gamma_only
-  USE fft_base,      ONLY : dfftp
-  USE fft_interfaces,ONLY : fwfft, invfft
-  !
-  IMPLICIT NONE
-  !
-  INTEGER,  INTENT(IN)  :: nrxx
-  INTEGER,  INTENT(IN)  :: ngm, nl(ngm)
-  REAL(DP), INTENT(IN)  :: a(nrxx), gg(ngm)
-  REAL(DP), INTENT(OUT) :: lapla( nrxx )
-  !
-  INTEGER                  :: ig
-  COMPLEX(DP), ALLOCATABLE :: aux(:), laux(:)
-  !
-  !
-  ALLOCATE(  aux( nrxx ) )
-  ALLOCATE( laux( nrxx ) )
-  !
-  aux = CMPLX( a(:), 0.D0 ,kind=DP)
-  !
-  ! ... bring a(r) to G-space, a(G) ...
-  !
-  CALL fwfft ('Dense', aux, dfftp)
-  !
-  ! ... Compute the laplacian
-  !
-  laux(:) = CMPLX(0.d0,0.d0, kind=dp)
-  !
-  DO ig = gstart, ngm
-     !
-     laux(nl(ig)) = -gg(ig)*aux(nl(ig))
-     !
-  END DO
-  !
-  IF ( gamma_only ) THEN
-     !
-     laux(nlm(:)) = CMPLX( REAL(laux(nl(:)) ), -AIMAG(laux(nl(:)) ) ,kind=DP)
-     !
-  ENDIF
-  !
-  ! ... bring back to R-space, (\lapl a)(r) ...
-  !
-  CALL invfft ('Dense', laux, dfftp)
-  !
-  ! ... add the missing factor (2\pi/a)^2 in G
-  !
-  lapla = tpiba2 * DBLE( laux )   
-  !
-  DEALLOCATE( laux )
-  DEALLOCATE( aux )
-  !
-  RETURN
-  !
-END SUBROUTINE laplacian
-
-!--------------------------------------------------------------------
-SUBROUTINE external_gradient( a, grada )
-!--------------------------------------------------------------------
-  ! 
-  ! Interface for computing gradients in real space, to be called by
-  ! an external module
-  !
-  USE kinds,            ONLY : DP
-  USE fft_base,         ONLY : dfftp
-  USE gvect,            ONLY : ngm, nl, g
-  !
-  IMPLICIT NONE
-  !
-  REAL( DP ), INTENT(IN)   :: a( dfftp%nnr )
-  REAL( DP ), INTENT(OUT)  :: grada( 3, dfftp%nnr )
-
-! A in real space, grad(A) in real space
-  CALL gradient( dfftp%nnr, a, ngm, g, nl, grada )
-
-  RETURN
-
-END SUBROUTINE external_gradient
-
-!--------------------------------------------------------------------
-SUBROUTINE external_hessian( a, grada, hessa )
-!--------------------------------------------------------------------
-  ! 
-  ! Interface for computing hessian in real space, to be called by
-  ! an external module
-  !
-  USE kinds,            ONLY : DP
-  USE fft_base,         ONLY : dfftp
-  USE gvect,            ONLY : ngm, nl, g
-  !
-  IMPLICIT NONE
-  !
-  REAL( DP ), INTENT(IN)   :: a( dfftp%nnr )
-  REAL( DP ), INTENT(OUT)  :: grada( 3, dfftp%nnr )
-  REAL( DP ), INTENT(OUT)  :: hessa( 3, 3, dfftp%nnr )
-
-! A in real space, grad(A) and hess(A) in real space
-  CALL hessian( dfftp%nnr, a, ngm, g, nl, grada, hessa )
-
-  RETURN
-
-END SUBROUTINE external_hessian
-
-!--------------------------------------------------------------------
-SUBROUTINE external_laplacian( a, lapla )
-!--------------------------------------------------------------------
-  ! 
-  ! Interface for computing laplacian in real space, to be called by 
-  ! an external module
-  !
-  USE kinds,            ONLY : DP
-  USE fft_base,         ONLY : dfftp
-  USE gvect,            ONLY : ngm, nl, gg
-  !
-  IMPLICIT NONE
-  !
-  REAL( DP ), INTENT(IN)   :: a( dfftp%nnr )
-  REAL( DP ), INTENT(OUT)  :: lapla( dfftp%nnr )
-
-! A in real space, lapl(A) in real space
-  CALL laplacian( dfftp%nnr, a, ngm, gg, nl, lapla )
-
-  RETURN
-
-END SUBROUTINE external_laplacian
-!--------------------------------------------------------------------

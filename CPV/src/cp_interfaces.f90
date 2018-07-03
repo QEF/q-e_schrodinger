@@ -31,9 +31,7 @@
    PUBLIC :: compute_xgtab
 
    PUBLIC :: rhoofr
-   PUBLIC :: fillgrad
    PUBLIC :: checkrho
-   PUBLIC :: dft_total_charge
 
    PUBLIC :: writefile
    PUBLIC :: readfile
@@ -226,18 +224,6 @@
    END INTERFACE
 
 
-   INTERFACE dft_total_charge
-      FUNCTION dft_total_charge_x( c, ngw, fi, n )
-         USE kinds,      ONLY: DP         
-         IMPLICIT NONE
-         INTEGER,     INTENT(IN) :: ngw, n
-         COMPLEX(DP), INTENT(IN) :: c(:,:)
-         REAL (DP),   INTENT(IN) :: fi(:)
-         REAL(DP) dft_total_charge_x
-      END FUNCTION
-   END INTERFACE
-
-  
    INTERFACE rhoofr
       SUBROUTINE rhoofr_cp &
          ( nfi, c_bgrp, irb, eigrb, bec, dbec, rhovan, rhor, drhor, rhog, drhog, rhos, enl, denl, ekin, dekin, tstress, ndwwf )
@@ -261,20 +247,6 @@
          INTEGER, OPTIONAL, INTENT(IN) :: ndwwf
       END SUBROUTINE rhoofr_cp
    END INTERFACE
-
-
-   INTERFACE fillgrad
-      SUBROUTINE fillgrad_x( nspin, rhog, gradr )
-         USE kinds,           ONLY: DP         
-         USE gvect,           ONLY: ngm
-         USE fft_base,        ONLY: dfftp
-         IMPLICIT NONE
-         INTEGER, INTENT(IN) :: nspin
-         complex(DP) :: rhog( ngm, nspin )
-         real(DP)    :: gradr( dfftp%nnr, 3, nspin )
-      END SUBROUTINE fillgrad_x
-   END INTERFACE
-
 
    INTERFACE checkrho
       SUBROUTINE checkrho_x(nnr,nspin,rhor,rmin,rmax,rsum,rnegsum)

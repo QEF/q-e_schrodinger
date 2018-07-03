@@ -28,10 +28,11 @@
       use smallbox_grid_dim,    only: smallbox_grid_init,smallbox_grid_info
       USE fft_types,            ONLY: fft_type_init
       use ions_base,            only: nat
-      USE recvec_subs,          ONLY: ggen
-      USE gvect,                ONLY: mill_g, eigts1,eigts2,eigts3, gg, &
-                                      ecutrho, gcutm, gvect_init
-      use gvecs,                only: gcutms, gvecs_init
+      USE recvec_subs,          ONLY: ggen, ggens
+      USE gvect,                ONLY: mill_g, eigts1,eigts2,eigts3, g, gg, &
+                                      ecutrho, gcutm, gvect_init, mill, &
+                                      ig_l2g, gstart, ngm, ngm_g
+      use gvecs,                only: gcutms, gvecs_init, ngms
       use gvecw,                only: gkcut, gvecw_init, g2kin_init
       USE smallbox_subs,        ONLY: ggenb
       USE fft_base,             ONLY: dfftp, dffts, dfftb, fft_base_info
@@ -89,8 +90,8 @@
 
       ! ... Initialize FFT real-space grids and small box grid
       nyfft_ = ntask_groups
-      dffts%have_task_groups = (ntask_groups >1)
-      dfftp%have_task_groups = .FALSE.
+      dffts%has_task_groups = (ntask_groups >1)
+      dfftp%has_task_groups = .FALSE.
       lpara = ( nproc_bgrp > 1 )
       !
       IF ( ref_cell ) THEN
@@ -112,6 +113,9 @@
         CALL fft_type_init( dfftp, smap, "rho", gamma_only, lpara, intra_bgrp_comm, at, bg,  gcutm, nyfft=nyfft_ )
         !
       END IF
+      ! define the clock labels ( this enables the corresponding fft too ! )
+      dffts%rho_clock_label = 'ffts' ; dffts%wave_clock_label = 'fftw'
+      dfftp%rho_clock_label = 'fft' 
       !
       !
       CALL smallbox_grid_init( dfftp, dfftb )
@@ -141,15 +145,9 @@
       !        for a left-handed triplet, ainv is minus the inverse of a)
       !
       CALL fft_base_info( ionode, stdout )
-      !!CALL fft_extra_info()
-      ngw_ = dffts%nwl( dffts%mype + 1 )
-      ngs_ = dffts%ngl( dffts%mype + 1 )
-      ngm_ = dfftp%ngl( dfftp%mype + 1 )
-      IF( gamma_only ) THEN
-         ngw_ = (ngw_ + 1)/2
-         ngs_ = (ngs_ + 1)/2
-         ngm_ = (ngm_ + 1)/2
-      END IF
+      ngw_ = dffts%ngw
+      ngs_ = dffts%ngm
+      ngm_ = dfftp%ngm
 
       !
       ! ... Initialize reciprocal space local and global dimensions
@@ -173,18 +171,24 @@
         WRITE( stdout,'(3X,"Reference Cell alat  =",F14.8,1X,"A.U.")' ) ref_alat
         !
         IF( smallmem ) THEN
-           CALL ggen( gamma_only, ref_at, ref_bg, intra_bgrp_comm, no_global_sort = .TRUE. )
+           CALL ggen( dfftp, gamma_only, ref_at, ref_bg, gcutm, ngm_g, ngm, &
+                g, gg, mill, ig_l2g, gstart, no_global_sort = .TRUE. )
         ELSE
-           CALL ggen( gamma_only, ref_at, ref_bg )
+           CALL ggen( dfftp, gamma_only, ref_at, ref_bg, gcutm, ngm_g, ngm, &
+                g, gg, mill, ig_l2g, gstart )
         END IF
+        CALL ggens( dffts, gamma_only, ref_at, g, gg, mill, gcutms, ngms )
         !
       ELSE
         !
         IF( smallmem ) THEN
-           CALL ggen( gamma_only, at, bg, intra_bgrp_comm, no_global_sort = .TRUE. )
+           CALL ggen( dfftp, gamma_only, at, bg, gcutm, ngm_g, ngm, &
+                g, gg, mill, ig_l2g, gstart, no_global_sort = .TRUE. )
         ELSE
-           CALL ggen( gamma_only, at, bg )
+           CALL ggen( dfftp, gamma_only, at, bg, gcutm, ngm_g, ngm, &
+                g, gg, mill, ig_l2g, gstart )
         END IF
+        CALL ggens( dffts, gamma_only, at, g, gg, mill, gcutms, ngms )
         !
       END IF
 
@@ -221,7 +225,7 @@
          !
          CALL ggenb ( ecutrho, iverbosity )
          !
-#if defined __OPENMP
+#if defined _OPENMP
          CALL cft_b_omp_init( dfftb%nr1, dfftb%nr2, dfftb%nr3 )
 #endif
       ELSE IF( okvan .OR. nlcc_any ) THEN
@@ -371,12 +375,8 @@
         ! geometry is set to the cell parameters read from stdin
         !
         WRITE(stdout, '(3X,"ibrav = ",i4,"       cell parameters read from input file")') ibrav
-        do i = 1, 3
-            h(i,1) = at(i,1)*alat
-            h(i,2) = at(i,2)*alat
-            h(i,3) = at(i,3)*alat
-        enddo
 
+        h    = at * alat
         hold = h
 
       end if
@@ -420,7 +420,7 @@
       INTEGER,  INTENT(IN) :: iverbosity
       !
       REAL(DP) :: rat1, rat2, rat3
-      INTEGER :: ig, i1, i2, i3
+      INTEGER :: ig
       !
       !WRITE( stdout, "(4x,'h from newinit')" )
       !do i=1,3
@@ -433,11 +433,8 @@
       !
       !  re-calculate G-vectors and kinetic energy
       !
-      do ig=1,ngm
-         i1=mill(1,ig)
-         i2=mill(2,ig)
-         i3=mill(3,ig)
-         g(:,ig)=i1*bg(:,1)+i2*bg(:,2)+i3*bg(:,3)
+      do ig = 1, dfftp%ngm
+         g(:,ig)= mill(1,ig)*bg(:,1) + mill(2,ig)*bg(:,2) + mill(3,ig)*bg(:,3)
          gg(ig)=g(1,ig)**2 + g(2,ig)**2 + g(3,ig)**2
       enddo
       !
@@ -467,53 +464,22 @@
 
       USE fft_types, ONLY: fft_type_descriptor
       use io_global, only: stdout, ionode
-      USE fft_helper_subroutines
+      USE fft_helper_subroutines, ONLY: fft_dist_info
 
       IMPLICIT NONE
 
-
       TYPE(fft_type_descriptor), INTENT(IN) :: dfftp, dffts
 
-      INTEGER :: i, j, nr3l
-
       IF(ionode) THEN
-
-        CALL tg_get_local_nr3( dfftp, nr3l )
-
         WRITE( stdout,*)
         WRITE( stdout,*) '  Real Mesh'
         WRITE( stdout,*) '  ---------'
-        WRITE( stdout,1000) dfftp%nr1, dfftp%nr2, dfftp%nr3, &
-                            dfftp%nr1, dfftp%my_nr2p, dfftp%my_nr3p, &
-                            1, dfftp%nproc2, dfftp%nproc3
-        WRITE( stdout,1010) dfftp%nr1x, dfftp%nr2x, dfftp%nr3x
-        WRITE( stdout,1020) dfftp%nnr
-        WRITE( stdout,*) '  Number of x-y planes for each processors: '
-        WRITE( stdout, fmt = '( 5("  |",I4,",",I4) )' ) ( ( dfftp%nr2p(j), &
-                dfftp%nr3p(i), i = 1, dfftp%nproc3 ), j=1,dfftp%nproc2 )
-
-        CALL tg_get_local_nr3( dffts, nr3l )
-
+        CALL fft_dist_info( dfftp, stdout )
         WRITE( stdout,*)
         WRITE( stdout,*) '  Smooth Real Mesh'
         WRITE( stdout,*) '  ----------------'
-        WRITE( stdout,1000) dffts%nr1, dffts%nr2, dffts%nr3, &
-                            dffts%nr1, dffts%my_nr2p, dffts%my_nr3p, &
-                            1, dffts%nproc2, dffts%nproc3
-        WRITE( stdout,1010) dffts%nr1x, dffts%nr2x, dffts%nr3x
-        WRITE( stdout,1020) dffts%nnr
-        WRITE( stdout,*) '  Number of x-y planes for each processors: '
-        WRITE( stdout, fmt = '( 5("  |",I4,",",I4) )' ) ( ( dffts%nr2p(j), &
-                dffts%nr3p(i), i = 1, dffts%nproc3 ), j=1,dffts%nproc2 )
-
+        CALL fft_dist_info( dffts, stdout )
       END IF
-
-1000  FORMAT(3X, &
-         'Global Dimensions   Local  Dimensions   Processor Grid',/,3X, &
-         '.X.   .Y.   .Z.     .X.   .Y.   .Z.     .X.   .Y.   .Z.',/, &
-         3(1X,I5),2X,3(1X,I5),2X,3(1X,I5) )
-1010  FORMAT(3X, 'Array leading dimensions ( nr1x, nr2x, nr3x )   = ', 3(1X,I5))
-1020  FORMAT(3X, 'Local number of cell to store the grid ( nrxx ) = ', 1X, I9 )
 
       RETURN
       END SUBROUTINE realspace_grids_info

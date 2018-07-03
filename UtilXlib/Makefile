@@ -6,14 +6,17 @@ include ../make.inc
 MODFLAGS=$(MOD_FLAG).
 
 UTIL = clocks_handler.o \
+       divide.o \
 error_handler.o \
 find_free_unit.o \
 fletcher32_mod.o \
+mem_counter.o \
 mp.o \
 mp_base.o \
 mp_bands_util.o \
 parallel_include.o \
-util_param.o
+util_param.o \
+thread_util.o
 
 all : libutil.a
 

@@ -24,9 +24,8 @@ SUBROUTINE clean_pw( lflag )
   USE basis,                ONLY : swfcatom
   USE cellmd,               ONLY : lmovecell
   USE ions_base,            ONLY : deallocate_ions_base
-  USE gvect,                ONLY : g, gg, gl, nl, nlm, igtongl, mill, &
+  USE gvect,                ONLY : g, gg, gl, igtongl, mill, &
                                    eigts1, eigts2, eigts3
-  USE gvecs,                ONLY : nls, nlsm
   USE fixed_occ,            ONLY : f_inp
   USE ktetra,               ONLY : deallocate_tetra
   USE klist,                ONLY : deallocate_igk
@@ -63,9 +62,11 @@ SUBROUTINE clean_pw( lflag )
   USE pseudo_types,         ONLY : deallocate_pseudo_upf
   USE bp,                   ONLY : deallocate_bp_efield
   USE exx,                  ONLY : deallocate_exx
+  USE Coul_cut_2D,          ONLY : cutoff_2D, lr_Vloc 
   !
   USE control_flags,        ONLY : ts_vdw
   USE tsvdw_module,         ONLY : tsvdw_finalize
+  USE dftd3_qe,             ONLY : dftd3_clean
   !
   IMPLICIT NONE
   !
@@ -95,6 +96,7 @@ SUBROUTINE clean_pw( lflag )
      !
      CALL dealloca_london()
      CALL cleanup_xdm()
+     CALL dftd3_clean()
      CALL deallocate_constraint()
      CALL deallocate_tetra ( )
      !
@@ -119,8 +121,6 @@ SUBROUTINE clean_pw( lflag )
   !
   IF ( ALLOCATED( g ) )          DEALLOCATE( g )
   IF ( ALLOCATED( gg ) )         DEALLOCATE( gg )
-  IF ( ALLOCATED( nl ) )         DEALLOCATE( nl )  
-  IF ( ALLOCATED( nlm ) )        DEALLOCATE( nlm )
   IF ( ALLOCATED( igtongl ) )    DEALLOCATE( igtongl )  
   IF ( ALLOCATED( mill ) )       DEALLOCATE( mill )
   call destroy_scf_type(rho)
@@ -136,12 +136,12 @@ SUBROUTINE clean_pw( lflag )
   if (spline_ps) then
     IF ( ALLOCATED( tab_d2y) )     DEALLOCATE( tab_d2y )
   endif
-  IF ( ALLOCATED( nls ) )     DEALLOCATE( nls )
-  IF ( ALLOCATED( nlsm ) )   DEALLOCATE( nlsm )
   !
   ! ... arrays allocated in allocate_locpot.f90 ( and never deallocated )
   !
-  IF ( ALLOCATED( vloc ) )       DEALLOCATE( vloc )
+  IF ( ALLOCATED( vloc ) )       DEALLOCATE( vloc ) 
+  IF ( ALLOCATED( cutoff_2D ) )  DEALLOCATE( cutoff_2D )
+  IF ( ALLOCATED( lr_Vloc ) )    DEALLOCATE( lr_Vloc )
   IF ( ALLOCATED( strf ) )       DEALLOCATE( strf )
   IF ( ALLOCATED( eigts1 ) )     DEALLOCATE( eigts1 )
   IF ( ALLOCATED( eigts2 ) )     DEALLOCATE( eigts2 )

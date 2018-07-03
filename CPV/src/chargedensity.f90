@@ -6,63 +6,6 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 
-!  ----------------------------------------------
-!  AB INITIO COSTANT PRESSURE MOLECULAR DYNAMICS
-!  ----------------------------------------------
-
-
-
-
-!=----------------------------------------------------------------------=!
-    FUNCTION dft_total_charge_x( c, ngw, fi, n )
-!=----------------------------------------------------------------------=!
-       !
-       !  This subroutine compute the Total Charge in reciprocal space
-       !
-
-       USE kinds,              ONLY: DP
-       USE gvect, ONLY: gstart
-
-       IMPLICIT NONE
-
-       INTEGER,     INTENT(IN) :: ngw, n
-       COMPLEX(DP), INTENT(IN) :: c(:,:)
-       REAL (DP),   INTENT(IN) :: fi(:)
-       !
-       REAL(DP) :: dft_total_charge_x
-       !
-       INTEGER     :: ib, igs
-       REAL(DP)    :: rsum
-       COMPLEX(DP) :: wdot
-       COMPLEX(DP) :: zdotc
-       EXTERNAL zdotc
-
-        rsum = 0.0d0
-
-        IF( gstart == 2 ) THEN
-
-          DO ib = 1, n
-            wdot = zdotc( ( ngw - 1 ), c(2,ib), 1, c(2,ib), 1 )
-            wdot = wdot + DBLE( c(1,ib) )**2 / 2.0d0
-            rsum = rsum + fi(ib) * DBLE( wdot )
-          END DO
-
-        ELSE
-
-          DO ib = 1, n
-            wdot = zdotc( ngw, c(1,ib), 1, c(1,ib), 1 )
-            rsum = rsum + fi(ib) * DBLE( wdot )
-          END DO
-
-        END IF
-
-        dft_total_charge_x = rsum
-
-        RETURN
-      END FUNCTION dft_total_charge_x
-
-
-
 !-----------------------------------------------------------------------
    SUBROUTINE rhoofr_cp &
       ( nfi, c_bgrp, irb, eigrb, bec_bgrp, dbec, rhovan, rhor, drhor, rhog, drhog, rhos, enl, denl, ekin, dekin, tstress, ndwwf )
@@ -100,10 +43,8 @@
       USE kinds,              ONLY: DP
       USE control_flags,      ONLY: iprint, iverbosity, thdyn, tpre, trhor, ndr
       USE ions_base,          ONLY: nat
-      USE gvect,              ONLY: ngm,  gstart, ig_l2g
-      USE gvecs,              ONLY: ngms, nls, nlsm
+      USE gvect,              ONLY: gstart, ig_l2g
       USE smallbox_gvec,      ONLY: ngb
-      USE gvecw,              ONLY: ngw
       USE uspp,               ONLY: nkb
       USE uspp_param,         ONLY: nh, nhm
       USE cell_base,          ONLY: omega
@@ -129,8 +70,9 @@
 #else
       USE io_base,            ONLY: read_rhog
 #endif      
-      USE io_files,           ONLY: tmp_dir, prefix
+      USE io_files,           ONLY: tmp_dir, prefix, postfix
       USE fft_rho
+      USE fft_helper_subroutines, ONLY: c2psi_gamma
       !
       IMPLICIT NONE
       INTEGER nfi
@@ -249,11 +191,11 @@
             CALL read_rho( dirname, rhor, nspin )
 #else
             CALL errore('rhoofr','option trhor unverified, please report',1)
-            WRITE(dirname,'(A,A,"_",I2,".save/")') &
-                 TRIM(tmp_dir), TRIM(prefix), ndr
+            WRITE(dirname,'(A,A,"_",I2,A)') &
+                 TRIM(tmp_dir), TRIM(prefix), ndr,postfix
             CALL read_rhog ( dirname, root_bgrp, intra_bgrp_comm, &
                  ig_l2g, nspin, rhog )
-            CALL rho_g2r ( rhog, rhor )
+            CALL rho_g2r ( dfftp, rhog, rhor )
 #endif
             rhopr = rhor
             first = .FALSE.
@@ -261,7 +203,7 @@
             rhor = rhopr
          END IF
 
-         CALL rho_r2g( rhor, rhog )
+         CALL rho_r2g( dfftp, rhor, rhog )
 
       ELSE
          !
@@ -287,21 +229,11 @@
             !
             ALLOCATE( psis( dffts%nnr ) ) 
             !
-            i = iwf
-            !
-            psis = 0.D0
-            DO ig=1,ngw
-               psis(nlsm(ig))=CONJG(c_bgrp(ig,i))
-               psis(nls(ig))=c_bgrp(ig,i)
-            END DO
+            CALL c2psi_gamma( dffts, psis, c_bgrp(:,iwf) )
             !
             CALL invfft('Wave',psis, dffts )
             !
-            iss1=1
-            sa1=f_bgrp(i)/omega
-            DO ir=1,dffts%nnr
-               rhos(ir,iss1)=rhos(ir,iss1) + sa1*( DBLE(psis(ir)))**2
-            END DO
+            rhos(1:dffts%nnr,1) = rhos(1:dffts%nnr,1) + f_bgrp(iwf) * ( DBLE(psis(:)))**2 / omega
             !
             DEALLOCATE( psis )
             !
@@ -313,11 +245,11 @@
          !
          !     smooth charge in g-space is put into rhog(ig)
          !
-         CALL smooth_rho_r2g( rhos, rhog )
+         CALL rho_r2g( dffts, rhos, rhog )
          !
-         rhog(ngms+1:,:) = 0.0d0
+         rhog(dffts%ngm+1:,:) = 0.0d0
          !
-         CALL rho_g2r( rhog, rhor )
+         CALL rho_g2r( dfftp, rhog, rhor )
          !
          IF ( dft_is_meta() ) THEN
             CALL kedtauofr_meta( c_bgrp ) ! METAGGA
@@ -421,7 +353,7 @@
          !
          IMPLICIT NONE
          !
-         INTEGER :: from, i, eig_index, eig_offset, ii, right_nnr, tg_nr3
+         INTEGER :: from, i, eig_index, eig_offset, ii, tg_nr3
          !
 #if defined(__INTEL_COMPILER)
 #if __INTEL_COMPILER  >= 1300
@@ -438,57 +370,15 @@
          !
          tmp_rhos = 0_DP
 
-         CALL tg_get_nnr( dffts, right_nnr )
-
          do i = 1, nbsp_bgrp, 2 * fftx_ntgrp(dffts)
-
-            !
-            !  Initialize wave-functions in Fourier space (to be FFTed)
-            !  The size of psis is nnr: which is equal to the total number
-            !  of local fourier coefficients.
-            !
 
 #if defined(__MPI)
             !
-            !  Loop for all local g-vectors (ngw)
-            !  ci_bgrp: stores the Fourier expansion coefficients
-            !     the i-th column of c_bgrp corresponds to the i-th state (in
-            !     this band group)
-            !  nlsm and nls matrices: hold conversion indices form 3D to
-            !     1-D vectors. Columns along the z-direction are stored contigiously
-            !
-            !  The outer loop goes through i : i + 2*NOGRP to cover
-            !  2*NOGRP eigenstates at each iteration
-            !
-            eig_offset = 0
-
-            do eig_index = 1, 2 * fftx_ntgrp(dffts), 2   
-               !
-               !  here we pack 2*nogrp electronic states in the psis array
-               !  note that if nogrp == nproc_bgrp each proc perform a full 3D
-               !  fft and the scatter phase is local (without communication)
-               !
-               IF ( ( i + eig_index - 1 ) <= nbsp_bgrp ) THEN
-                  !
-                  !  The  eig_index loop is executed only ONCE when NOGRP=1.
-                  !
-                  CALL c2psi( psis( eig_offset * right_nnr + 1 ), right_nnr, &
-                       c_bgrp( 1, i+eig_index-1 ), c_bgrp( 1, i+eig_index ), ngw, 2 )
-                  !
-               ENDIF
-               !
-               eig_offset = eig_offset + 1
-               !
-            end do
-
-            !
-            !  2*NOGRP bands are trasformed at the same time
-            !
+            CALL c2psi_gamma_tg(dffts, psis, c_bgrp, i, nbsp_bgrp )
 
             CALL invfft ('tgWave', psis, dffts )
 #else
-
-            CALL c2psi( psis, dffts%nnr, c_bgrp( 1, i ), c_bgrp( 1, i+1 ), ngw, 2 )
+            CALL c2psi_gamma( dffts, psis, c_bgrp(:,i), c_bgrp(:,i+1) )
 
             CALL invfft('Wave', psis, dffts )
 
@@ -562,91 +452,6 @@
 !-----------------------------------------------------------------------
    END SUBROUTINE rhoofr_cp
 !-----------------------------------------------------------------------
-
-
-
-!=----------------------------------------------------------------------=!
-   SUBROUTINE fillgrad_x( nspin, rhog, gradr )
-!=----------------------------------------------------------------------=!
-
-      !
-      !     calculates gradient of charge density for gradient corrections
-      !     in: charge density on G-space    out: gradient in R-space
-      !
-      USE kinds,              ONLY: DP
-      use gvect,              ONLY: g, ngm, nl, nlm
-      use cell_base,          ONLY: tpiba
-      USE fft_interfaces,     ONLY: invfft
-      USE fft_base,           ONLY: dfftp
-!
-      implicit none
-! input
-      integer, intent(in) :: nspin
-      complex(DP) :: rhog( ngm, nspin )
-! output
-      real(DP) ::    gradr( dfftp%nnr, 3, nspin )
-! local
-#if defined(__INTEL_COMPILER)
-#if __INTEL_COMPILER  >= 1300
-!dir$ attributes align: 4096 :: v
-#endif
-#endif
-      complex(DP), allocatable :: v(:)
-      complex(DP) :: ci
-      integer     :: iss, ig, ir
-!
-!
-      allocate( v( dfftp%nnr ) ) 
-      !
-      ci = ( 0.0d0, 1.0d0 )
-      do iss = 1, nspin
-!$omp parallel default(shared), private(ig)
-!$omp do
-         do ig = 1, dfftp%nnr
-            v( ig ) = ( 0.0d0, 0.0d0 )
-         end do
-!$omp do
-         do ig=1,ngm
-            v(nl (ig))=      ci*tpiba*g(1,ig)*rhog(ig,iss)
-            v(nlm(ig))=CONJG(ci*tpiba*g(1,ig)*rhog(ig,iss))
-         end do
-!$omp end parallel
-         !
-         call invfft( 'Dense', v, dfftp )
-         !
-!$omp parallel default(shared), private(ig,ir)
-!$omp do
-         do ir=1,dfftp%nnr
-            gradr(ir,1,iss)=DBLE(v(ir))
-         end do
-!$omp do
-         do ig=1,dfftp%nnr
-            v(ig)=(0.0d0,0.0d0)
-         end do
-!$omp do
-         do ig=1,ngm
-            v(nl(ig))= tpiba*(      ci*g(2,ig)*rhog(ig,iss)-           &
-     &                                 g(3,ig)*rhog(ig,iss) )
-            v(nlm(ig))=tpiba*(CONJG(ci*g(2,ig)*rhog(ig,iss)+           &
-     &                                 g(3,ig)*rhog(ig,iss)))
-         end do
-!$omp end parallel
-         !
-         call invfft( 'Dense', v, dfftp )
-         !
-!$omp parallel do default(shared)
-         do ir=1,dfftp%nnr
-            gradr(ir,2,iss)= DBLE(v(ir))
-            gradr(ir,3,iss)=AIMAG(v(ir))
-         end do
-      end do
-      !
-      deallocate( v )
-!
-      RETURN
-    END SUBROUTINE fillgrad_x
-
-
 !
 !----------------------------------------------------------------------
    SUBROUTINE checkrho_x(nnr,nspin,rhor,rmin,rmax,rsum,rnegsum)
@@ -701,14 +506,15 @@ SUBROUTINE drhov(irb,eigrb,rhovan,drhovan,rhog,rhor,drhog,drhor)
       USE ions_base,                ONLY: na, nsp, nat
       USE uspp_param,               ONLY: nhm, nh, nvb
       USE electrons_base,           ONLY: nspin
-      USE smallbox_gvec,            ONLY: ngb, npb, nmb
-      USE gvect,                    ONLY: ngm, nlm, nl
+      USE smallbox_gvec,            ONLY: ngb
+      USE smallbox_subs,            ONLY: fft_oned2box
       USE cell_base,                ONLY: ainv
       USE qgb_mod,                  ONLY: qgb, dqgb
       USE fft_interfaces,           ONLY: fwfft, invfft
       USE fft_base,                 ONLY: dfftb, dfftp
       USE mp_global,                ONLY: my_bgrp_id, nbgrp, inter_bgrp_comm
       USE mp,                       ONLY: mp_sum
+      USE fft_helper_subroutines,   ONLY: fftx_add_threed2oned_gamma
 
       IMPLICIT NONE
 ! input
@@ -716,10 +522,10 @@ SUBROUTINE drhov(irb,eigrb,rhovan,drhovan,rhog,rhor,drhog,drhor)
       REAL(DP),    INTENT(IN) ::  rhor(dfftp%nnr,nspin)
       REAL(DP),    INTENT(IN) ::  rhovan(nhm*(nhm+1)/2,nat,nspin)
       REAL(DP),    INTENT(IN) ::  drhovan(nhm*(nhm+1)/2,nat,nspin,3,3)
-      COMPLEX(DP), INTENT(IN) ::  eigrb(ngb,nat), rhog(ngm,nspin)
+      COMPLEX(DP), INTENT(IN) ::  eigrb(ngb,nat), rhog(dfftp%ngm,nspin)
 ! output
       REAL(DP),    INTENT(OUT) :: drhor(dfftp%nnr,nspin,3,3)
-      COMPLEX(DP), INTENT(OUT) :: drhog(ngm,nspin,3,3)
+      COMPLEX(DP), INTENT(OUT) :: drhog(dfftp%ngm,nspin,3,3)
 ! local
       INTEGER i, j, isup, isdw, nfft, ifft, iv, jv, ig, ijv, is, iss,   &
      &     isa, ia, ir, ijs
@@ -733,15 +539,16 @@ SUBROUTINE drhov(irb,eigrb,rhovan,drhovan,rhog,rhor,drhog,drhor)
       COMPLEX(DP), ALLOCATABLE :: v(:)
       COMPLEX(DP), ALLOCATABLE:: dqgbt(:,:)
       COMPLEX(DP), ALLOCATABLE :: qv(:)
+      COMPLEX(DP), ALLOCATABLE :: fg1(:), fg2(:)
 !
       INTEGER  :: itid, mytid, ntids
-#if defined(__OPENMP)
+#if defined(_OPENMP)
       INTEGER  :: omp_get_thread_num, omp_get_num_threads
       EXTERNAL :: omp_get_thread_num, omp_get_num_threads
 #endif
 !
-!$omp parallel default(none), private(i,j,iss,ir,ig,mytid,ntids,itid), shared(nspin,dfftp,drhor,drhog,rhor,rhog,ainv,ngm) 
-#if defined(__OPENMP)
+!$omp parallel default(none), private(i,j,iss,ir,ig,mytid,ntids,itid), shared(nspin,dfftp,drhor,drhog,rhor,rhog,ainv) 
+#if defined(_OPENMP)
       mytid = omp_get_thread_num()  ! take the thread ID
       ntids = omp_get_num_threads() ! take the number of threads
 #else
@@ -756,7 +563,7 @@ SUBROUTINE drhov(irb,eigrb,rhovan,drhovan,rhog,rhor,drhog,drhor)
                   DO ir=1,dfftp%nnr
                      drhor(ir,iss,i,j)=-rhor(ir,iss)*ainv(j,i)
                   END DO
-                  DO ig=1,ngm
+                  DO ig=1,dfftp%ngm
                      drhog(ig,iss,i,j)=-rhog(ig,iss)*ainv(j,i)
                   END DO
                END IF
@@ -783,14 +590,16 @@ SUBROUTINE drhov(irb,eigrb,rhovan,drhovan,rhog,rhor,drhog,drhor)
 
 !$omp parallel default(none) &
 !$omp          shared(nvb, na, ngb, nh, eigrb, dfftb, irb, v, &
-!$omp                 nmb, ci, npb, i, j, dqgb, qgb, nhm, rhovan, drhovan ) &
+!$omp                 ci, i, j, dqgb, qgb, nhm, rhovan, drhovan ) &
 !$omp          private(mytid, ntids, is, ia, nfft, ifft, iv, jv, ijv, ig, iss, isa, &
-!$omp                  qv, itid, dqgbt, dsumt, asumt )
+!$omp                  qv, fg1, fg2, itid, dqgbt, dsumt, asumt )
 
                ALLOCATE( qv( dfftb%nnr ) )
                ALLOCATE( dqgbt( ngb, 2 ) )
+               ALLOCATE( fg1( ngb ) )
+               ALLOCATE( fg2( ngb ) )
 
-#if defined(__OPENMP)
+#if defined(_OPENMP)
                mytid = omp_get_thread_num()  ! take the thread ID
                ntids = omp_get_num_threads() ! take the number of threads
                itid  = 0
@@ -816,7 +625,7 @@ SUBROUTINE drhov(irb,eigrb,rhovan,drhovan,rhog,rhor,drhog,drhor)
                      IF (ia.EQ.na(is)) nfft=1
 #endif
 
-#if defined(__OPENMP)
+#if defined(_OPENMP)
                      IF ( mytid /= itid ) THEN
                         isa = isa + nfft
                         itid = MOD( itid + 1, ntids )
@@ -827,7 +636,6 @@ SUBROUTINE drhov(irb,eigrb,rhovan,drhovan,rhog,rhor,drhog,drhor)
 #endif
 
                      dqgbt(:,:) = (0.d0, 0.d0) 
-                     qv(:) = (0.d0, 0.d0)
                      DO ifft=1,nfft
                         DO iv=1,nh(is)
                            DO jv=iv,nh(is)
@@ -850,17 +658,12 @@ SUBROUTINE drhov(irb,eigrb,rhovan,drhovan,rhog,rhor,drhog,drhor)
                      ! add structure factor
                      !
                      IF(nfft.EQ.2) THEN
-                        DO ig=1,ngb
-                           qv(npb(ig)) = eigrb(ig,isa   )*dqgbt(ig,1)  &
-     &                        + ci*      eigrb(ig,isa+1 )*dqgbt(ig,2)
-                           qv(nmb(ig))=  CONJG(eigrb(ig,isa  )*dqgbt(ig,1)) &
-     &                        + ci*      CONJG(eigrb(ig,isa+1)*dqgbt(ig,2))
-                        END DO
+                        fg1 = eigrb(1:ngb,isa   )*dqgbt(1:ngb,1)
+                        fg2 = eigrb(1:ngb,isa+1 )*dqgbt(1:ngb,2)
+                        CALL fft_oned2box( qv, fg1, fg2 )
                      ELSE
-                        DO ig=1,ngb
-                           qv(npb(ig)) =       eigrb(ig,isa)*dqgbt(ig,1)
-                           qv(nmb(ig)) = CONJG(eigrb(ig,isa)*dqgbt(ig,1))
-                        END DO
+                        fg1 = eigrb(1:ngb,isa   )*dqgbt(1:ngb,1)
+                        CALL fft_oned2box( qv, fg1 )
                      ENDIF
                      !
                      CALL invfft( qv, dfftb, isa )
@@ -878,6 +681,8 @@ SUBROUTINE drhov(irb,eigrb,rhovan,drhovan,rhog,rhor,drhog,drhor)
                   END DO
                END DO
 
+               DEALLOCATE( fg1 )
+               DEALLOCATE( fg2 )
                DEALLOCATE( dqgbt )
                DEALLOCATE( qv )
 !
@@ -890,11 +695,8 @@ SUBROUTINE drhov(irb,eigrb,rhovan,drhovan,rhog,rhor,drhog,drhor)
                   drhor(ir,iss,i,j) = drhor(ir,iss,i,j) + DBLE(v(ir))
                END DO
 !
-               CALL fwfft( 'Dense', v, dfftp )
-!
-               DO ig=1,ngm
-                  drhog(ig,iss,i,j) = drhog(ig,iss,i,j) + v(nl(ig))
-               END DO
+               CALL fwfft( 'Rho', v, dfftp )
+               CALL fftx_add_threed2oned_gamma( dfftp, v, drhog(:,iss,i,j) )
 !
             ENDDO
          ENDDO
@@ -910,6 +712,8 @@ SUBROUTINE drhov(irb,eigrb,rhovan,drhovan,rhog,rhor,drhog,drhor)
                v(:) = (0.d0, 0.d0)
                ALLOCATE( qv( dfftb%nnr ) )
                ALLOCATE( dqgbt( ngb, 2 ) )
+               ALLOCATE( fg1( ngb ) )
+               ALLOCATE( fg2( ngb ) )
                isa=1
                DO is=1,nvb
                   DO ia=1,na(is)
@@ -938,13 +742,9 @@ SUBROUTINE drhov(irb,eigrb,rhovan,drhovan,rhog,rhor,drhog,drhor)
                      !     
                      ! add structure factor
                      !
-                     qv(:) = (0.d0, 0.d0)
-                     DO ig=1,ngb
-                        qv(npb(ig))= eigrb(ig,isa)*dqgbt(ig,1)        &
-     &                    + ci*      eigrb(ig,isa)*dqgbt(ig,2)
-                        qv(nmb(ig))= CONJG(eigrb(ig,isa)*dqgbt(ig,1)) &
-     &                    +       ci*CONJG(eigrb(ig,isa)*dqgbt(ig,2))
-                     END DO
+                     fg1 = eigrb(1:ngb,isa)*dqgbt(1:ngb,1)
+                     fg2 = eigrb(1:ngb,isa)*dqgbt(1:ngb,2)
+                     CALL fft_oned2box( qv, fg1, fg2 )
 
                      CALL invfft(qv, dfftb, isa )
                      !
@@ -962,24 +762,17 @@ SUBROUTINE drhov(irb,eigrb,rhovan,drhovan,rhog,rhor,drhog,drhor)
 
                DEALLOCATE( dqgbt )
                DEALLOCATE( qv )
+               DEALLOCATE( fg1 )
+               DEALLOCATE( fg2 )
 !
                DO ir=1,dfftp%nnr
                   drhor(ir,isup,i,j) = drhor(ir,isup,i,j) + DBLE(v(ir))
                   drhor(ir,isdw,i,j) = drhor(ir,isdw,i,j) +AIMAG(v(ir))
                ENDDO
-
 !
-               CALL fwfft('Dense', v, dfftp )
+               CALL fwfft('Rho', v, dfftp )
+               CALL fftx_add_threed2oned_gamma( dfftp, v, drhog(:,isup,i,j), drhog(:,isdw,i,j) )
 
-               DO ig=1,ngm
-                  fp=v(nl(ig))+v(nlm(ig))
-                  fm=v(nl(ig))-v(nlm(ig))
-                  drhog(ig,isup,i,j) = drhog(ig,isup,i,j) +             &
-     &                 0.5d0*CMPLX( DBLE(fp),AIMAG(fm),kind=DP)
-                  drhog(ig,isdw,i,j) = drhog(ig,isdw,i,j) +             &
-     &                 0.5d0*CMPLX(AIMAG(fp),-DBLE(fm),kind=DP)
-               END DO
-!
             END DO
          END DO
       ENDIF
@@ -1007,14 +800,15 @@ SUBROUTINE rhov(irb,eigrb,rhovan,rhog,rhor)
       USE uspp_param,               ONLY: nh, nhm, nvb
       USE uspp,                     ONLY: deeq
       USE electrons_base,           ONLY: nspin
-      USE smallbox_gvec,                    ONLY: npb, nmb, ngb
-      USE gvect,                    ONLY: ngm, nl, nlm
+      USE smallbox_gvec,            ONLY: ngb
+      USE smallbox_subs,            ONLY: fft_oned2box
       USE cell_base,                ONLY: omega
       USE small_box,                ONLY: omegab
       USE control_flags,            ONLY: iprint, iverbosity, tpre
       USE qgb_mod,                  ONLY: qgb
       USE fft_interfaces,           ONLY: fwfft, invfft
       USE fft_base,                 ONLY: dfftb, dfftp, dfftb
+      USE fft_helper_subroutines,   ONLY: fftx_add_threed2oned_gamma
 !
       IMPLICIT NONE
       !
@@ -1023,7 +817,7 @@ SUBROUTINE rhov(irb,eigrb,rhovan,rhog,rhor)
       COMPLEX(DP), INTENT(in):: eigrb(ngb,nat)
       ! 
       REAL(DP),     INTENT(inout):: rhor(dfftp%nnr,nspin)
-      COMPLEX(DP),  INTENT(inout):: rhog(ngm,nspin)
+      COMPLEX(DP),  INTENT(inout):: rhog(dfftp%ngm,nspin)
 !
       INTEGER     :: isup, isdw, nfft, ifft, iv, jv, ig, ijv, is, iss, isa, ia, ir, i, j
       REAL(DP)    :: sumrho
@@ -1036,8 +830,9 @@ SUBROUTINE rhov(irb,eigrb,rhovan,rhog,rhor)
       COMPLEX(DP), ALLOCATABLE :: qgbt(:,:)
       COMPLEX(DP), ALLOCATABLE :: v(:)
       COMPLEX(DP), ALLOCATABLE :: qv(:)
+      COMPLEX(DP), ALLOCATABLE :: fg1(:), fg2(:)
 
-#if defined(__OPENMP)
+#if defined(_OPENMP)
       INTEGER  :: itid, mytid, ntids
       INTEGER  :: omp_get_thread_num, omp_get_num_threads
       EXTERNAL :: omp_get_thread_num, omp_get_num_threads
@@ -1056,7 +851,7 @@ SUBROUTINE rhov(irb,eigrb,rhovan,rhog,rhor)
       ! private variable need to be initialized, otherwise
       ! outside the parallel region they have an undetermined value
       !
-#if defined(__OPENMP)
+#if defined(_OPENMP)
       mytid = 0
       ntids = 1
       itid  = 0
@@ -1071,9 +866,9 @@ SUBROUTINE rhov(irb,eigrb,rhovan,rhog,rhor)
 
 !$omp parallel default(none) &
 !$omp          shared(nvb, na, ngb, nh, rhovan, qgb, eigrb, dfftb, iverbosity, omegab, irb, v, &
-!$omp                 nmb, stdout, ci, npb, rhor, dfftp ) &
+!$omp                 stdout, ci, rhor, dfftp ) &
 !$omp          private(mytid, ntids, is, ia, nfft, ifft, iv, jv, ijv, sumrho, qgbt, ig, iss, isa, ca, &
-!$omp                  qv, itid, ir )
+!$omp                  qv, fg1, fg2, itid, ir )
 
          iss=1
          isa=1
@@ -1082,7 +877,7 @@ SUBROUTINE rhov(irb,eigrb,rhovan,rhog,rhor)
          v (:) = (0.d0, 0.d0)
 !$omp end workshare
 
-#if defined(__OPENMP)
+#if defined(_OPENMP)
          mytid = omp_get_thread_num()  ! take the thread ID
          ntids = omp_get_num_threads() ! take the number of threads
          itid  = 0
@@ -1090,6 +885,8 @@ SUBROUTINE rhov(irb,eigrb,rhovan,rhog,rhor)
 
          ALLOCATE( qgbt( ngb, 2 ) )
          ALLOCATE( qv( dfftb%nnr ) )
+         ALLOCATE( fg1( ngb ) )
+         ALLOCATE( fg2( ngb ) )
 
 
          DO is = 1, nvb
@@ -1110,7 +907,7 @@ SUBROUTINE rhov(irb,eigrb,rhovan,rhog,rhor)
                IF( ia .EQ. na(is) ) nfft = 1
 #endif
 
-#if defined(__OPENMP)
+#if defined(_OPENMP)
                IF ( mytid /= itid ) THEN
                   isa = isa + nfft
                   itid = MOD( itid + 1, ntids )
@@ -1135,21 +932,14 @@ SUBROUTINE rhov(irb,eigrb,rhovan,rhog,rhor)
                !
                ! add structure factor
                !
-               qv(:) = (0.d0, 0.d0)
                IF(nfft.EQ.2)THEN
-                  DO ig=1,ngb
-                     qv(npb(ig))=      eigrb(ig,isa  )*qgbt(ig,1)  &
-                                + ci * eigrb(ig,isa+1)*qgbt(ig,2)
-                     qv(nmb(ig))=      CONJG(eigrb(ig,isa  )*qgbt(ig,1)) &
-                                + ci * CONJG(eigrb(ig,isa+1)*qgbt(ig,2))
-                  END DO
+                  fg1 = eigrb(1:ngb,isa   )*qgbt(1:ngb,1)
+                  fg2 = eigrb(1:ngb,isa+1 )*qgbt(1:ngb,2)
+                  CALL fft_oned2box( qv, fg1, fg2 )
                ELSE
-                  DO ig=1,ngb
-                     qv(npb(ig)) = eigrb(ig,isa)*qgbt(ig,1)
-                     qv(nmb(ig)) = CONJG(eigrb(ig,isa)*qgbt(ig,1))
-                  END DO
+                  fg1 = eigrb(1:ngb,isa   )*qgbt(1:ngb,1)
+                  CALL fft_oned2box( qv, fg1 )
                ENDIF
-
 
                CALL invfft( qv, dfftb, isa )
                !
@@ -1178,6 +968,8 @@ SUBROUTINE rhov(irb,eigrb,rhovan,rhog,rhor)
             END DO
          END DO
 
+         DEALLOCATE( fg1 )
+         DEALLOCATE( fg2 )
          DEALLOCATE(qv)
          DEALLOCATE(qgbt)
          !
@@ -1201,7 +993,7 @@ SUBROUTINE rhov(irb,eigrb,rhovan,rhog,rhor)
      &           ' rhov: int  n_v(r)  dr = ',omega*ca/(dfftp%nr1*dfftp%nr2*dfftp%nr3)
          ENDIF
 !
-         CALL fwfft('Dense',v, dfftp )
+         CALL fwfft('Rho',v, dfftp )
 !
          IF( iverbosity > 1 ) THEN
             WRITE( stdout,*) ' rhov: smooth ',omega*rhog(1,iss)
@@ -1211,11 +1003,8 @@ SUBROUTINE rhov(irb,eigrb,rhovan,rhog,rhor)
          !
          !  rhog(g) = total (smooth + US) charge density in G-space
          !
-         DO ig = 1, ngm
-            rhog(ig,iss)=rhog(ig,iss)+v(nl(ig))
-         END DO
+         CALL fftx_add_threed2oned_gamma( dfftp, v, rhog(:,iss) )
 
-!
          IF( iverbosity > 1 ) WRITE( stdout,'(a,2f12.8)')                          &
      &        ' rhov: n_v(g=0) = ',omega*DBLE(rhog(1,iss))
 !
@@ -1230,6 +1019,8 @@ SUBROUTINE rhov(irb,eigrb,rhovan,rhog,rhor)
 
          ALLOCATE( qgbt( ngb, 2 ) )
          ALLOCATE( qv( dfftb%nnr ) )
+         ALLOCATE( fg1( ngb ) )
+         ALLOCATE( fg2( ngb ) )
 
          isa=1
          DO is=1,nvb
@@ -1253,13 +1044,9 @@ SUBROUTINE rhov(irb,eigrb,rhovan,rhog,rhor)
 !     
 ! add structure factor
 !
-               qv(:) = (0.d0, 0.d0)
-               DO ig=1,ngb
-                  qv(npb(ig)) =    eigrb(ig,isa)*qgbt(ig,1)           &
-     &                  + ci*      eigrb(ig,isa)*qgbt(ig,2)
-                  qv(nmb(ig)) = CONJG(eigrb(ig,isa)*qgbt(ig,1))       &
-     &                  + ci*   CONJG(eigrb(ig,isa)*qgbt(ig,2))
-               END DO
+               fg1 = eigrb(1:ngb,isa)*qgbt(1:ngb,1)
+               fg2 = eigrb(1:ngb,isa)*qgbt(1:ngb,2)
+               CALL fft_oned2box( qv, fg1, fg2 )
 !
                CALL invfft( qv,dfftb,isa)
 !
@@ -1297,7 +1084,7 @@ SUBROUTINE rhov(irb,eigrb,rhovan,rhog,rhor)
             WRITE( stdout,'(a,2f12.8)') 'rhov:in n_v  ',omega*ca/(dfftp%nr1*dfftp%nr2*dfftp%nr3)
          ENDIF
 !
-         CALL fwfft('Dense',v, dfftp )
+         CALL fwfft('Rho',v, dfftp )
 !
          IF( iverbosity > 1 ) THEN
             WRITE( stdout,*) 'rhov: smooth up',omega*rhog(1,isup)
@@ -1310,13 +1097,7 @@ SUBROUTINE rhov(irb,eigrb,rhovan,rhog,rhor)
      &           omega*(rhog(1,isdw)+AIMAG(v(1)))
          ENDIF
 !
-         DO ig=1,ngm
-            fp=  v(nl(ig)) + v(nlm(ig))
-            fm=  v(nl(ig)) - v(nlm(ig))
-            rhog(ig,isup)=rhog(ig,isup) + 0.5d0*CMPLX(DBLE(fp),AIMAG(fm),kind=DP)
-            rhog(ig,isdw)=rhog(ig,isdw) + 0.5d0*CMPLX(AIMAG(fp),-DBLE(fm),kind=DP)
-         END DO
-
+         CALL fftx_add_threed2oned_gamma( dfftp, v, rhog(:,isup), rhog(:,isdw) )
 !
          IF( iverbosity > 1 ) THEN
             WRITE( stdout,'(a,2f12.8,/,a,2f12.8)')                 &
@@ -1325,6 +1106,8 @@ SUBROUTINE rhov(irb,eigrb,rhovan,rhog,rhor)
          END IF
          DEALLOCATE(qgbt)
          DEALLOCATE( qv )
+         DEALLOCATE( fg1 )
+         DEALLOCATE( fg2 )
 !
       ENDIF
 

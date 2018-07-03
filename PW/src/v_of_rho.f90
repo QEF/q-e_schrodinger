@@ -53,11 +53,13 @@ SUBROUTINE v_of_rho( rho, rho_core, rhog_core, &
   !
   ! ... calculate exchange-correlation potential
   !
+  !
   if (dft_is_meta() .and. (get_meta() /= 4)) then
      call v_xc_meta( rho, rho_core, rhog_core, etxc, vtxc, v%of_r, v%kin_r )
   else
      CALL v_xc( rho, rho_core, rhog_core, etxc, vtxc, v%of_r )
   endif
+  !
   !
   ! ... add a magnetic field  (if any)
   !
@@ -109,11 +111,11 @@ SUBROUTINE v_xc_meta( rho, rho_core, rhog_core, etxc, vtxc, v, kedtaur )
   USE constants,        ONLY : e2, eps8
   USE io_global,        ONLY : stdout
   USE fft_base,         ONLY : dfftp
-  USE gvect,            ONLY : g, nl,ngm
+  USE gvect,            ONLY : g, ngm
   USE lsda_mod,         ONLY : nspin
-  USE cell_base,        ONLY : omega, alat
+  USE cell_base,        ONLY : omega
   USE spin_orb,         ONLY : domag
-  USE funct,            ONLY : xc, xc_spin, tau_xc, tau_xc_spin, get_meta
+  USE funct,            ONLY : xc, xc_spin, tau_xc, tau_xc_spin, get_meta, dft_is_nonlocc, nlc
   USE scf,              ONLY : scf_type
   USE mp,               ONLY : mp_sum
   USE mp_bands,         ONLY : intra_bgrp_comm
@@ -125,7 +127,7 @@ SUBROUTINE v_xc_meta( rho, rho_core, rhog_core, etxc, vtxc, v, kedtaur )
     ! the core charge in real space
   COMPLEX(DP), INTENT(IN) :: rhog_core(ngm)
     ! the core charge in reciprocal space
-  REAL(DP), INTENT(OUT) :: v(dfftp%nnr,nspin), kedtaur(dfftp%nnr,nspin), &
+  REAL(DP), INTENT(INOUT) :: v(dfftp%nnr,nspin), kedtaur(dfftp%nnr,nspin), &
                            vtxc, etxc
     ! v:      V_xc potential
     ! kedtau: local K energy density 
@@ -178,7 +180,7 @@ SUBROUTINE v_xc_meta( rho, rho_core, rhog_core, etxc, vtxc, v, kedtaur )
      rhoout(:,is)  = fac * rho_core(:)  + rhoout(:,is)
      rhogsum(:,is) = fac * rhog_core(:) + rhogsum(:,is)
      !
-     CALL gradrho( dfftp%nnr, rhogsum(1,is), ngm, g, nl, grho(1,1,is) )
+     CALL fft_gradient_g2r( dfftp, rhogsum(1,is), g, grho(1,1,is) )
      !
   END DO
   !
@@ -251,7 +253,7 @@ SUBROUTINE v_xc_meta( rho, rho_core, rhog_core, etxc, vtxc, v, kedtaur )
           !
           ! h contains D(rho*Exc)/D(|grad rho|) * (grad rho) / |grad rho|
           !
-          if (get_meta()==1) then  ! tpss functional
+          if (get_meta()==1 .OR. get_meta()==5 ) then  ! tpss, scan
             !
             h(:,k,1) = (v2xup * grhoup(:) + v2cup(:)) * e2
             h(:,k,2) = (v2xdw * grhodw(:) + v2cdw(:)) * e2
@@ -292,7 +294,7 @@ SUBROUTINE v_xc_meta( rho, rho_core, rhog_core, etxc, vtxc, v, kedtaur )
   !
   DO is = 1, nspin
      !
-     CALL grad_dot( dfftp%nnr, h(1,1,is), ngm, g, nl, alat, dh )
+     CALL fft_graddot( dfftp, h(1,1,is), g, dh )
      !
      v(:,is) = v(:,is) - dh(:)
      !
@@ -313,6 +315,8 @@ SUBROUTINE v_xc_meta( rho, rho_core, rhog_core, etxc, vtxc, v, kedtaur )
   vtxc = omega * vtxc / ( dfftp%nr1*dfftp%nr2*dfftp%nr3 ) 
   etxc = omega * etxc / ( dfftp%nr1*dfftp%nr2*dfftp%nr3 )
   !
+  IF ( dft_is_nonlocc() ) CALL nlc( rho%of_r, rho_core, nspin, etxc, vtxc, v )
+  !
   CALL mp_sum(  vtxc , intra_bgrp_comm )
   CALL mp_sum(  etxc , intra_bgrp_comm )
   !
@@ -320,6 +324,8 @@ SUBROUTINE v_xc_meta( rho, rho_core, rhog_core, etxc, vtxc, v, kedtaur )
   DEALLOCATE(h)
   DEALLOCATE(rhoout)
   DEALLOCATE(rhogsum)
+  !
+  CALL stop_clock( 'v_xc_meta' )
   !
   RETURN
   !
@@ -536,7 +542,7 @@ SUBROUTINE v_h( rhog, ehart, charge, v )
   USE kinds,     ONLY : DP
   USE fft_base,  ONLY : dfftp
   USE fft_interfaces,ONLY : invfft
-  USE gvect,     ONLY : nl, nlm, ngm, gg, gstart
+  USE gvect,     ONLY : ngm, gg, gstart
   USE lsda_mod,  ONLY : nspin
   USE cell_base, ONLY : omega, tpiba2
   USE control_flags, ONLY : gamma_only
@@ -544,6 +550,7 @@ SUBROUTINE v_h( rhog, ehart, charge, v )
   USE mp,        ONLY: mp_sum
   USE martyna_tuckerman, ONLY : wg_corr_h, do_comp_mt
   USE esm,       ONLY: do_comp_esm, esm_hartree, esm_bc
+  USE Coul_cut_2D, ONLY : do_cutoff_2D, cutoff_2D, cutoff_hartree  
   !
   IMPLICIT NONE
   !
@@ -586,28 +593,32 @@ SUBROUTINE v_h( rhog, ehart, charge, v )
      ehart     = 0.D0
      aux1(:,:) = 0.D0
      !
+     IF (do_cutoff_2D) THEN  !TS
+        CALL cutoff_hartree(rhog, aux1, ehart)
+     ELSE
 !$omp parallel do private( fac, rgtot_re, rgtot_im ), reduction(+:ehart)
-     DO ig = gstart, ngm
-        !
-        fac = 1.D0 / gg(ig)
-        !
-        rgtot_re = REAL(  rhog(ig,1) )
-        rgtot_im = AIMAG( rhog(ig,1) )
-        !
-        IF ( nspin == 2 ) THEN
+        DO ig = gstart, ngm
            !
-           rgtot_re = rgtot_re + REAL(  rhog(ig,2) )
-           rgtot_im = rgtot_im + AIMAG( rhog(ig,2) )
+           fac = 1.D0 / gg(ig) 
            !
-        END IF
-        !
-        ehart = ehart + ( rgtot_re**2 + rgtot_im**2 ) * fac
-        !
-        aux1(1,ig) = rgtot_re * fac
-        aux1(2,ig) = rgtot_im * fac
-        !
-     ENDDO
+           rgtot_re = REAL(  rhog(ig,1) )
+           rgtot_im = AIMAG( rhog(ig,1) )
+           !
+           IF ( nspin == 2 ) THEN
+              !
+              rgtot_re = rgtot_re + REAL(  rhog(ig,2) )
+              rgtot_im = rgtot_im + AIMAG( rhog(ig,2) )
+              !
+           END IF
+           !
+           ehart = ehart + ( rgtot_re**2 + rgtot_im**2 ) * fac
+           !
+           aux1(1,ig) = rgtot_re * fac
+           aux1(2,ig) = rgtot_im * fac
+           !
+        ENDDO
 !$omp end parallel do
+     ENDIF
      !
      fac = e2 * fpi / tpiba2
      !
@@ -640,18 +651,18 @@ SUBROUTINE v_h( rhog, ehart, charge, v )
      ! 
      aux(:) = 0.D0
      !
-     aux(nl(1:ngm)) = CMPLX ( aux1(1,1:ngm), aux1(2,1:ngm), KIND=dp )
+     aux(dfftp%nl(1:ngm)) = CMPLX ( aux1(1,1:ngm), aux1(2,1:ngm), KIND=dp )
      !
      IF ( gamma_only ) THEN
         !
-        aux(nlm(1:ngm)) = CMPLX ( aux1(1,1:ngm), -aux1(2,1:ngm), KIND=dp )
+        aux(dfftp%nlm(1:ngm)) = CMPLX ( aux1(1,1:ngm), -aux1(2,1:ngm), KIND=dp )
         !
      END IF
   END IF
   !
   ! ... transform hartree potential to real space
   !
-  CALL invfft ('Dense', aux, dfftp)
+  CALL invfft ('Rho', aux, dfftp)
   !
   ! ... add hartree potential to the xc potential
   !
@@ -1064,7 +1075,6 @@ SUBROUTINE v_h_of_rho_r( rhor, ehart, charge, v )
   USE kinds,           ONLY : DP
   USE fft_base,        ONLY : dfftp
   USE fft_interfaces,  ONLY : fwfft
-  USE gvect,           ONLY : nl, ngm
   USE lsda_mod,        ONLY : nspin
   !
   IMPLICIT NONE
@@ -1083,12 +1093,12 @@ SUBROUTINE v_h_of_rho_r( rhor, ehart, charge, v )
   !
   ! ... bring the (unsymmetrized) rho(r) to G-space (use aux as work array)
   !
-  ALLOCATE( rhog( ngm, nspin ) )
+  ALLOCATE( rhog( dfftp%ngm, nspin ) )
   ALLOCATE( aux( dfftp%nnr ) )
   DO is = 1, nspin
      aux(:) = CMPLX(rhor( : , is ),0.D0,kind=dp) 
-     CALL fwfft ('Dense', aux, dfftp)
-     rhog(:,is) = aux(nl(:))
+     CALL fwfft ('Rho', aux, dfftp)
+     rhog(:,is) = aux(dfftp%nl(:))
   END DO
   DEALLOCATE( aux )
   !
@@ -1113,7 +1123,7 @@ SUBROUTINE gradv_h_of_rho_r( rho, gradv )
   USE constants,       ONLY : fpi, e2
   USE control_flags,   ONLY : gamma_only
   USE cell_base,       ONLY : tpiba, omega
-  USE gvect,           ONLY : nl, ngm, nlm, gg, gstart, g
+  USE gvect,           ONLY : ngm, gg, gstart, g
   USE martyna_tuckerman, ONLY : wg_corr_h, do_comp_mt
   !
   IMPLICIT NONE
@@ -1136,7 +1146,7 @@ SUBROUTINE gradv_h_of_rho_r( rho, gradv )
   ALLOCATE( rhoaux( dfftp%nnr ) )
   rhoaux( : ) = CMPLX( rho( : ), 0.D0, KIND=dp ) 
   !
-  CALL fwfft('Dense', rhoaux, dfftp)
+  CALL fwfft('Rho', rhoaux, dfftp)
   !
   ! ... Compute total potential in G space
   !
@@ -1149,7 +1159,7 @@ SUBROUTINE gradv_h_of_rho_r( rho, gradv )
     DO ig = gstart, ngm
       !
       fac = g(ipol,ig) / gg(ig)
-      gaux(nl(ig)) = CMPLX(-AIMAG(rhoaux(nl(ig))),REAL(rhoaux(nl(ig))),kind=dp) * fac 
+      gaux(dfftp%nl(ig)) = CMPLX(-AIMAG(rhoaux(dfftp%nl(ig))),REAL(rhoaux(dfftp%nl(ig))),kind=dp) * fac 
       !
     END DO
     !
@@ -1163,25 +1173,25 @@ SUBROUTINE gradv_h_of_rho_r( rho, gradv )
     ! 
     if (do_comp_mt) then
        ALLOCATE( vaux( ngm ), rgtot(ngm) )
-       rgtot(1:ngm) = rhoaux(nl(1:ngm))
+       rgtot(1:ngm) = rhoaux(dfftp%nl(1:ngm))
        CALL wg_corr_h (omega, ngm, rgtot, vaux, eh_corr)
        DO ig = gstart, ngm
          fac = g(ipol,ig) * tpiba
-         gaux(nl(ig)) = gaux(nl(ig)) + CMPLX(-AIMAG(vaux(ig)),REAL(vaux(ig)),kind=dp)*fac 
+         gaux(dfftp%nl(ig)) = gaux(dfftp%nl(ig)) + CMPLX(-AIMAG(vaux(ig)),REAL(vaux(ig)),kind=dp)*fac 
        END DO
        DEALLOCATE( rgtot, vaux )
     end if
     !
     IF ( gamma_only ) THEN
       !
-      gaux(nlm(:)) = &
-        CMPLX( REAL( gaux(nl(:)) ), -AIMAG( gaux(nl(:)) ) ,kind=DP)
+      gaux(dfftp%nlm(:)) = &
+        CMPLX( REAL( gaux(dfftp%nl(:)) ), -AIMAG( gaux(dfftp%nl(:)) ) ,kind=DP)
        !
     END IF
     !
     ! ... bring back to R-space, (\grad_ipol a)(r) ...
     !
-    CALL invfft ('Dense', gaux, dfftp)
+    CALL invfft ('Rho', gaux, dfftp)
     !
     gradv(ipol,:) = REAL( gaux(:) )
     !

@@ -220,10 +220,11 @@ MODULE read_namelists_module
        ! ... EXX
        !
        ace=.TRUE.
+       n_proj = 0    
        localization_thr = 0.0_dp
        scdm=.FALSE.
-       scdmden=0.10d0
-       scdmgrd=0.20d0
+       scdmden=1.0d0
+       scdmgrd=1.0d0
        !
        ! ... electric fields
        !
@@ -279,8 +280,8 @@ MODULE read_namelists_module
        ts_vdw_isolated = .FALSE.
        ts_vdw_econv_thr = 1.E-6_DP
        xdm = .FALSE.
-       xdm_a1 = 0.6836_DP
-       xdm_a2 = 1.5045_DP
+       xdm_a1 = 0.0_DP
+       xdm_a2 = 0.0_DP
        !
        ! ... ESM
        !
@@ -805,6 +806,7 @@ MODULE read_namelists_module
        CALL mp_bcast( scdm,                ionode_id, intra_image_comm )
        CALL mp_bcast( scdmden,             ionode_id, intra_image_comm )
        CALL mp_bcast( scdmgrd,             ionode_id, intra_image_comm )
+       CALL mp_bcast( n_proj,              ionode_id, intra_image_comm )
        CALL mp_bcast( nqx1,                   ionode_id, intra_image_comm )
        CALL mp_bcast( nqx2,                   ionode_id, intra_image_comm )
        CALL mp_bcast( nqx3,                   ionode_id, intra_image_comm )
@@ -1804,7 +1806,7 @@ MODULE read_namelists_module
      !=----------------------------------------------------------------------=!
      !
      !-----------------------------------------------------------------------
-     SUBROUTINE read_namelists( prog, unit )
+     SUBROUTINE read_namelists( prog_, unit )
        !-----------------------------------------------------------------------
        !
        !  this routine reads data from standard input and puts them into
@@ -1822,17 +1824,17 @@ MODULE read_namelists_module
        !
        ! ... declare variables
        !
-       CHARACTER(LEN=2) :: prog   ! ... specify the calling program
-                                  !     prog = 'PW'  pwscf
-                                  !     prog = 'CP'  cpr
-       !
+       CHARACTER(LEN=*) :: prog_  ! specifies the calling program, allowed:
+                                  !     prog = 'PW'     pwscf
+                                  !     prog = 'CP'     cp
+                                  !     prog = 'PW+iPi' pwscf + i-Pi
        !
        INTEGER, INTENT(IN), optional :: unit
        !
        ! ... declare other variables
        !
+       CHARACTER(LEN=2) :: prog
        INTEGER :: ios
-       !
        INTEGER :: unit_loc=5
        !
        ! ... end of declarations
@@ -1841,25 +1843,23 @@ MODULE read_namelists_module
        !
        IF(PRESENT(unit)) unit_loc = unit
        !
+       prog = prog_(1:2) ! Allowed: 'PW' or 'CP'
        IF( prog /= 'PW' .AND. prog /= 'CP' ) &
           CALL errore( ' read_namelists ', ' unknown calling program ', 1 )
        !
        ! ... default settings for all namelists
        !
-       IF( prog == 'PW' .OR. prog == 'CP') THEN
-         CALL control_defaults( prog )
-         CALL system_defaults( prog )
-         CALL electrons_defaults( prog )
-         CALL ions_defaults( prog )
-         CALL cell_defaults( prog )
-       ENDIF
+       CALL control_defaults( prog )
+       CALL system_defaults( prog )
+       CALL electrons_defaults( prog )
+       CALL ions_defaults( prog )
+       CALL cell_defaults( prog )
        !
        ! ... Here start reading standard input file
        !
        !
        ! ... CONTROL namelist
        !
-       IF(prog == 'PW' .OR. prog == 'CP' ) THEN
        ios = 0
        IF( ionode ) THEN
           READ( unit_loc, control, iostat = ios )
@@ -1897,22 +1897,17 @@ MODULE read_namelists_module
        CALL electrons_bcast( )
        CALL electrons_checkin( prog )
        !
-       ! ... IONS namelist
+       ! ... IONS namelist - must be read only if ionic motion is expected,
+       ! ...                 or if code called by i-Pi via run_driver
        !
        ios = 0
        IF ( ionode ) THEN
-          !
-          IF ( TRIM( calculation ) == 'relax'    .OR. &
-               TRIM( calculation ) == 'md'       .OR. &
-               TRIM( calculation ) == 'vc-relax' .OR. &
-               TRIM( calculation ) == 'vc-md'    .OR. &
-               TRIM( calculation ) == 'cp'       .OR. &
-               TRIM( calculation ) == 'vc-cp'    .OR. &
-               TRIM( calculation ) == 'smd'      .OR. &
-               TRIM( calculation ) == 'cp-wf-nscf' .OR. &
-               TRIM( calculation ) == 'vc-cp-wf'   .OR. &
-               TRIM( calculation ) == 'cp-wf' ) READ( unit_loc, ions, iostat = ios )
-  
+          IF ( ( TRIM( calculation ) /= 'scf'   .AND. &
+                 TRIM( calculation ) /= 'nscf'  .AND. &
+                 TRIM( calculation ) /= 'bands' ) .OR. &
+               ( TRIM( prog_ ) == 'PW+iPi' ) ) THEN
+             READ( unit_loc, ions, iostat = ios )
+          END IF
        END IF
        CALL check_namelist_read(ios, unit_loc, "ions")
        !
@@ -1976,8 +1971,6 @@ MODULE read_namelists_module
        CALL wannier_ac_bcast()
        CALL wannier_ac_checkin( prog )
        !
-       ENDIF
-       !
        RETURN
        !
      END SUBROUTINE read_namelists
@@ -1991,21 +1984,28 @@ MODULE read_namelists_module
        INTEGER,INTENT(in) :: ios, unit_loc
        CHARACTER(LEN=*) :: nl_name
        CHARACTER(len=512) :: line
+       INTEGER :: ios2
        !
        IF( ionode ) THEN
-         !READ( unit_loc, control, iostat = ios )
+         ios2=0
          IF (ios /=0) THEN
            BACKSPACE(unit_loc)
-           READ(unit_loc,'(A512)') line
-          END IF
+           READ(unit_loc,'(A512)', iostat=ios2) line
+         END IF
        END IF
+
+       CALL mp_bcast( ios2, ionode_id, intra_image_comm )
+       IF( ios2 /= 0 ) THEN
+          CALL errore( ' read_namelists ', ' could not find namelist &'//TRIM(nl_name), 2)
+       ENDIF
+       !
        CALL mp_bcast( ios, ionode_id, intra_image_comm )
        CALL mp_bcast( line, ionode_id, intra_image_comm )
        IF( ios /= 0 ) THEN
           CALL errore( ' read_namelists ', &
                        ' bad line in namelist &'//TRIM(nl_name)//&
                        ': "'//TRIM(line)//'" (error could be in the previous line)',&
-                       ABS(ios) )
+                       1 )
        END IF
        !
      END SUBROUTINE check_namelist_read

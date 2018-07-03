@@ -3,9 +3,11 @@
 include ../../make.inc
 
 # location of needed modules and included files (if any)
-MODFLAGS= $(MOD_FLAG)../../iotk/src $(MOD_FLAG)../../Modules \
-          $(MOD_FLAG)../../FFTXlib $(MOD_FLAG)../../LAXlib $(MOD_FLAG)../../UtilXlib $(MOD_FLAG)../../PW/src $(MOD_FLAG).
-IFLAGS=
+MODFLAGS= $(BASEMOD_FLAGS) \
+          $(MOD_FLAG)../../PW/src \
+          $(MOD_FLAG)../../KS_Solvers/Davidson \
+          $(MOD_FLAG)../../KS_Solvers/CG \
+          $(MOD_FLAG)../../dft-d3/
 
 PPOBJS = \
 addusdens1d.o \
@@ -56,7 +58,7 @@ MODULES = $(PWOBJS) $(QEOBJS)
 
 TLDEPS= bindir mods libs pw
 
-all : tldeps average.x bands.x dos.x epsilon.x initial_state.x fs.x \
+all : tldeps open_grid.x average.x bands.x dos.x epsilon.x initial_state.x fs.x \
       plan_avg.x plotband.x plotproj.x plotrho.x pmw.x pp.x projwfc.x \
       pawplot.x sumpdos.x pw2wannier90.x pw_export.x pw2gw.x \
       wannier_ham.x wannier_plot.x molecularpdos.x \
@@ -70,6 +72,11 @@ libpp.a : $(PPOBJS)
 
 qexml.x: qexml.o qexml_example.o
 	$(LD) $(LDFLAGS) -o $@ qexml_example.o qexml.o $(QEOBJS) $(LIBOBJS)
+
+open_grid.x : open_grid.o libpp.a $(MODULES) $(LIBOBJS)
+	$(LD) $(LDFLAGS) -o $@ \
+		open_grid.o libpp.a $(MODULES) $(LIBOBJS) $(LIBS)
+	- ( cd ../../bin ; ln -fs ../PP/src/$@ . )
 
 average.x : average.o libpp.a $(MODULES) $(LIBOBJS)
 	$(LD) $(LDFLAGS) -o $@ \

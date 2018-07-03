@@ -198,7 +198,6 @@ CONTAINS
  subroutine assign_mix_to_scf_type(rho_m, rho_s)
    USE wavefunctions_module, ONLY : psic
    USE control_flags,        ONLY : gamma_only
-   USE gvect,                ONLY : nl, nlm
    IMPLICIT NONE
    TYPE (mix_type), INTENT(IN) :: rho_m
    TYPE (scf_type), INTENT(INOUT) :: rho_s
@@ -209,9 +208,9 @@ CONTAINS
 
    DO is = 1, nspin
       psic(:) = ( 0.D0, 0.D0 )
-      psic(nl(:)) = rho_s%of_g(:,is)
-      IF ( gamma_only ) psic(nlm(:)) = CONJG( rho_s%of_g(:,is) )
-      CALL invfft ('Dense', psic, dfftp)
+      psic(dfftp%nl(:)) = rho_s%of_g(:,is)
+      IF ( gamma_only ) psic(dfftp%nlm(:)) = CONJG( rho_s%of_g(:,is) )
+      CALL invfft ('Rho', psic, dfftp)
       rho_s%of_r(:,is) = psic(:)
    END DO
 
@@ -220,9 +219,9 @@ CONTAINS
       ! define rho_s%kin_r 
       DO is = 1, nspin
          psic(:) = ( 0.D0, 0.D0 )
-         psic(nl(:)) = rho_s%kin_g(:,is)
-         IF ( gamma_only ) psic(nlm(:)) = CONJG( rho_s%kin_g(:,is) )
-         CALL invfft ('Dense', psic, dfftp)
+         psic(dfftp%nl(:)) = rho_s%kin_g(:,is)
+         IF ( gamma_only ) psic(dfftp%nlm(:)) = CONJG( rho_s%kin_g(:,is) )
+         CALL invfft ('Rho', psic, dfftp)
          rho_s%kin_r(:,is) = psic(:)
       END DO
    end if
@@ -315,7 +314,6 @@ CONTAINS
  subroutine high_frequency_mixing ( rhoin, input_rhout, alphamix )
    USE wavefunctions_module, ONLY : psic
    USE control_flags,        ONLY : gamma_only
-   USE gvect,                ONLY : nl, nlm
  IMPLICIT NONE
    TYPE (scf_type), INTENT(INOUT)     :: rhoin
    TYPE (scf_type), INTENT(IN)  :: input_rhout
@@ -327,9 +325,9 @@ CONTAINS
       ! define rho_s%of_r 
       DO is = 1, nspin
          psic(:) = ( 0.D0, 0.D0 )
-         psic(nl(:)) = rhoin%of_g(:,is)
-         IF ( gamma_only ) psic(nlm(:)) = CONJG( rhoin%of_g(:,is) )
-         CALL invfft ('Dense', psic, dfftp)
+         psic(dfftp%nl(:)) = rhoin%of_g(:,is)
+         IF ( gamma_only ) psic(dfftp%nlm(:)) = CONJG( rhoin%of_g(:,is) )
+         CALL invfft ('Rho', psic, dfftp)
          rhoin%of_r(:,is) = psic(:)
       END DO
       !
@@ -339,9 +337,9 @@ CONTAINS
          ! define rho_s%of_r 
          DO is = 1, nspin
             psic(:) = ( 0.D0, 0.D0 )
-            psic(nl(:)) = rhoin%kin_g(:,is)
-            IF ( gamma_only ) psic(nlm(:)) = CONJG( rhoin%kin_g(:,is) )
-            CALL invfft ('Dense', psic, dfftp)
+            psic(dfftp%nl(:)) = rhoin%kin_g(:,is)
+            IF ( gamma_only ) psic(dfftp%nlm(:)) = CONJG( rhoin%kin_g(:,is) )
+            CALL invfft ('Rho', psic, dfftp)
             rhoin%kin_r(:,is) = psic(:)
          END DO
       end if
@@ -742,9 +740,11 @@ END FUNCTION ns_ddot
   !
   fac = e2 * fpi / tpiba2
   !
+  !$omp parallel do reduction(+:local_tf_ddot)
   DO ig = gstart, ngm0
      local_tf_ddot = local_tf_ddot + REAL( CONJG(rho1(ig))*rho2(ig) ) / gg(ig)
   END DO
+  !$omp end parallel do
   !
   local_tf_ddot = fac * local_tf_ddot * omega * 0.5D0
   !

@@ -23,7 +23,6 @@
       USE parallel_include
       USE kinds,                  ONLY: dp
       USE control_flags,          ONLY: iprint
-      USE gvecs,                  ONLY: nlsm, nls
       USE uspp,                   ONLY: nhsa=>nkb, dvan, deeq
       USE uspp_param,             ONLY: nhm, nh, ish
       USE constants,              ONLY: pi, fpi
@@ -83,59 +82,16 @@
       nogrp_ = fftx_ntgrp(dffts)
       ALLOCATE( psi( dffts%nnr_tg ) )
       !
-      ci = ( 0.0d0, 1.0d0 )
-      !
 #if defined(__MPI)
 
-
-!$omp  parallel
-!$omp  single
-
-      DO idx = 1, 2*nogrp_ , 2
-
-!$omp task default(none) &
-!$omp          firstprivate( idx, i, n, ngw, ci, nogrp_ ) &
-!$omp          private( igoff, ig ) &
-!$omp          shared( c, dffts, psi, nlsm, nls )
-         !
-         !  This loop is executed only ONCE when NOGRP=1.
-         !  Equivalent to the case with no task-groups
-         !  dfft%nsw(me) holds the number of z-sticks for the current processor per wave-function
-         !  We can either send these in the group with an mpi_allgather...or put the
-         !  in the PSIS vector (in special positions) and send them with them.
-         !  Otherwise we can do this once at the beginning, before the loop.
-         !  we choose to do the latter one.
-         !
-         !  important: if n is odd => c(*,n+1)=0.
-         ! 
-         IF ( ( idx + i - 1 ) == n ) c( : , idx + i ) = 0.0d0
-
-         igoff = ( idx - 1 )/2 * dffts%nnr 
-
-         psi( igoff + 1 : igoff + dffts%nnr ) = (0.d0, 0.d0)
-
-         IF( idx + i - 1 <= n ) THEN
-            DO ig=1,ngw
-               psi(nlsm(ig)+igoff) = conjg( c(ig,idx+i-1) - ci * c(ig,idx+i) )
-               psi(nls(ig)+igoff) =         c(ig,idx+i-1) + ci * c(ig,idx+i)
-            END DO
-         END IF
-!$omp end task
-
-      END DO
-
-!$omp  end single
-!$omp  end parallel
+      CALL c2psi_gamma_tg( dffts, psi, c, i, n )
 
       CALL invfft('tgWave', psi, dffts)
 
 #else
 
-      psi = 0.0d0
-      DO ig=1,ngw
-         psi(nlsm(ig)) = conjg( c(ig,i) - ci * c(ig,i+1) )
-         psi(nls(ig)) =  c(ig,i) + ci * c(ig,i+1)
-      END DO
+      CALL c2psi_gamma( dffts, psi, c(:,i), c(:,i+1) )
+      !
       CALL invfft( 'Wave', psi, dffts )
 
 #endif
@@ -150,7 +106,7 @@
          iss2 = iss1
       END IF
       !
-      IF( dffts%have_task_groups ) THEN
+      IF( dffts%has_task_groups ) THEN
          !
          CALL tg_get_group_nr3( dffts, tg_nr3 )
          !
@@ -270,19 +226,11 @@
       !   Each processor will treat its own part of the eigenstate
       !   assigned to its ORBITAL group
       !
-!$omp  parallel
-!$omp  single
-
       eig_offset = 0
       CALL tg_get_recip_inc( dffts, inc )
       igno = 1
 
       DO idx = 1, 2*nogrp_ , 2
-
-!$omp task default(none)  &
-!$omp          private( fi, fip, fp, fm, ig ) &
-!$omp          firstprivate( eig_offset, igno, idx, nogrp_, ngw, tpiba2, me_bgrp, i, n, tens ) &
-!$omp          shared( f, psi, df, da, c, dffts, g2kin, nls, nlsm )
 
          IF( idx + i - 1 <= n ) THEN
             if (tens) then
@@ -292,25 +240,19 @@
                fi = -0.5d0*f(i+idx-1)
                fip = -0.5d0*f(i+idx)
             endif
-            IF( dffts%have_task_groups ) THEN
+            CALL fftx_psi2c_gamma( dffts, psi(eig_offset+1:eig_offset+inc), df(igno:igno+ngw), da(igno:igno+ngw))
+            IF( dffts%has_task_groups ) THEN
                DO ig=1,ngw
-                  fp= psi(nls(ig)+eig_offset) +  psi(nlsm(ig)+eig_offset)
-                  fm= psi(nls(ig)+eig_offset) -  psi(nlsm(ig)+eig_offset)
-                  df(ig+igno-1)= fi *(tpiba2 * g2kin(ig) * c(ig,idx+i-1) + &
-                                 CMPLX(real (fp), aimag(fm), kind=dp ))
-                  da(ig+igno-1)= fip*(tpiba2 * g2kin(ig) * c(ig,idx+i  ) + &
-                                 CMPLX(aimag(fp),-real (fm), kind=dp ))
+                  df(ig+igno-1)= fi *(tpiba2 * g2kin(ig) * c(ig,idx+i-1) + df(ig+igno-1))
+                  da(ig+igno-1)= fip*(tpiba2 * g2kin(ig) * c(ig,idx+i  ) + da(ig+igno-1))
                END DO
             ELSE
                DO ig=1,ngw
-                  fp= psi(nls(ig)) + psi(nlsm(ig))
-                  fm= psi(nls(ig)) - psi(nlsm(ig))
-                  df(ig)= fi*(tpiba2*g2kin(ig)* c(ig,idx+i-1)+CMPLX(DBLE(fp), AIMAG(fm),kind=DP))
-                  da(ig)=fip*(tpiba2*g2kin(ig)* c(ig,idx+i  )+CMPLX(AIMAG(fp),-DBLE(fm),kind=DP))
+                  df(ig)= fi*(tpiba2*g2kin(ig)* c(ig,idx+i-1)+df(ig))
+                  da(ig)=fip*(tpiba2*g2kin(ig)* c(ig,idx+i  )+da(ig))
                END DO
             END IF
          END IF
-!$omp end task
 
          igno = igno + ngw
          eig_offset = eig_offset + inc
@@ -319,10 +261,18 @@
 
       ENDDO
 
-!$omp end single
-!$omp end parallel 
       !
       IF(dft_is_meta()) THEN
+         ! HK/MCA : warning on task groups
+         if (nogrp_.gt.1) call errore('forces','metagga force not supporting taskgroup parallelization',1)
+         ! HK/MCA : reset occupation numbers since omp private screws it up... need a better fix FIXME
+         if (tens) then
+            fi = -0.5d0
+            fip = -0.5d0
+         else
+            fi = -0.5d0*f(i)
+            fip = -0.5d0*f(i+1)
+         endif
          CALL dforce_meta(c(1,i),c(1,i+1),df,da,psi,iss1,iss2,fi,fip) !METAGGA
       END IF
 

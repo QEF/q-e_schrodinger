@@ -105,9 +105,9 @@
   !!  true if we are using time reversal
   !
   ! Local variables
-  logical :: exst!, addnlcc
+  LOGICAL :: exst!, addnlcc
   !
-  integer :: ik, ipert, mode, ibnd, jbnd, ig, nkq, ipool, &
+  INTEGER :: ik, ipert, mode, ibnd, jbnd, ig, nkq, ipool, &
        ik0, igkq_tmp (npwx), imap, &
        ipooltmp, nkq_abs, ipol, npw
   INTEGER :: ng0vec, ngxx, lower_bnd, upper_bnd, nkk, nkk_abs
@@ -115,7 +115,7 @@
   !   bound for the allocation of the array gmap
   !
   ! variables for rotating the wavefunctions (in order to USE q in the irr wedge)
-  real(kind=DP) :: xktmp(3), sxk(3)
+  REAL(kind=DP) :: xktmp(3), sxk(3)
   REAL(kind=DP) :: g0vec_all_r(3,125)
   !! Variables for folding of k+q grid
   REAL(kind=DP) :: zero_vect(3)
@@ -149,7 +149,7 @@
   ! SP: Bound for band parallelism
   CALL fkbounds_bnd( nbnd, lower_band, upper_band )
   !
-  IF ( .not. ALLOCATED (aux3) )    ALLOCATE ( aux3( npwx*npol, lower_band:upper_band) )
+  IF ( .not. ALLOCATED (aux3) )     ALLOCATE ( aux3( npwx*npol, lower_band:upper_band) )
   IF ( .not. ALLOCATED (dvpsi) )    ALLOCATE ( dvpsi( npwx*npol, lower_band:upper_band) )
   ! setup for k+q folding
   !

@@ -38,7 +38,8 @@ MODULE control_flags
             timing, memchk, trane, dt_old, ampre, tranp, amprp,              &
             tnosee, tnosep, tnoseh, tcp, tcap,                               &
             tconvthrs, tolp, convergence_criteria, tionstep, nstepe,         &
-            tscreen, gamma_only, force_pairing, lecrpa, tddfpt, smallmem
+            tscreen, gamma_only, force_pairing, lecrpa, tddfpt, smallmem,    &
+            tfirst, tlast, tprint, trescalee
   !
   PUBLIC :: fix_dependencies, check_flags
   PUBLIC :: tksw, trhor, thdyn, trhow
@@ -50,9 +51,16 @@ MODULE control_flags
   LOGICAL :: trhor     = .FALSE. ! read rho from unit 47 (only cp, seldom used)
   LOGICAL :: trhow     = .FALSE. ! CP code, write rho to restart dir
   LOGICAL :: tksw      = .FALSE. ! CP: write Kohn-Sham states to restart dir
+  LOGICAL :: tfirst    = .TRUE.  ! CP: true if first iteration after restart
+  LOGICAL :: tlast     = .FALSE. ! CP: true if last iteration before ending
+  LOGICAL :: tprint    = .FALSE. ! CP: set to true when calculation of time
+                                 !     derivatives of wave functions must be 
+                                 !     computed via projection on occupied
+                                 !     manifold 
   !
   LOGICAL :: tsde          = .FALSE. ! electronic steepest descent
   LOGICAL :: tzeroe        = .FALSE. ! set to zero the electronic velocities
+  LOGICAL :: trescalee     = .FALSE. ! rescale the electronics velocities
   LOGICAL :: tfor          = .FALSE. ! move the ions ( calculate forces )
   LOGICAL :: tsdp          = .FALSE. ! ionic steepest descent
   LOGICAL :: tzerop        = .FALSE. ! set to zero the ionic velocities
@@ -158,6 +166,7 @@ MODULE control_flags
     lbands  =.FALSE., &! if .TRUE. the calc. is band structure
     lconstrain=.FALSE.,&! if .TRUE. the calc. is constraint
     llondon =.FALSE., & ! if .TRUE. compute Grimme D2 dispersion corrections
+    ldftd3 =.FALSE., & ! if .TRUE. compute Grimme D3 dispersion corrections
     ts_vdw  =.FALSE., & ! as above for Tkatchenko-Scheffler disp.corrections
     lxdm    =.FALSE., & ! if .TRUE. compute XDM dispersion corrections
     restart =.FALSE.   ! if .TRUE. restart from results of a preceding run

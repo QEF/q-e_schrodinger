@@ -32,7 +32,7 @@ SUBROUTINE potinit()
   USE lsda_mod,             ONLY : lsda, nspin
   USE fft_base,             ONLY : dfftp
   USE fft_interfaces,       ONLY : fwfft
-  USE gvect,                ONLY : ngm, gstart, nl, g, gg, ig_l2g
+  USE gvect,                ONLY : ngm, gstart, g, gg, ig_l2g
   USE gvecs,                ONLY : doublegrid
   USE control_flags,        ONLY : lscf, gamma_only
   USE scf,                  ONLY : rho, rho_core, rhog_core, &
@@ -43,14 +43,13 @@ SUBROUTINE potinit()
   USE ldaU,                 ONLY : lda_plus_u, Hubbard_lmax, eth, &
                                    niter_with_fixed_ns
   USE noncollin_module,     ONLY : noncolin, report
-  USE io_files,             ONLY : tmp_dir, prefix, input_drho
+  USE io_files,             ONLY : tmp_dir, prefix, postfix, input_drho, check_file_exist
   USE spin_orb,             ONLY : domag, lforcet
   USE mp,                   ONLY : mp_sum
   USE mp_bands ,            ONLY : intra_bgrp_comm, root_bgrp
   USE io_global,            ONLY : ionode, ionode_id
   USE io_rho_xml,           ONLY : read_scf
-  USE xml_io_base,          ONLY : check_file_exst
-#if defined __OLDXML
+#if defined(__OLDXML)
   USE xml_io_base,          ONLY : read_rho
 #else
   USE io_base,              ONLY : read_rhog
@@ -73,13 +72,13 @@ SUBROUTINE potinit()
   !
   CALL start_clock('potinit')
   !
-  dirname = TRIM(tmp_dir) // TRIM (prefix) // '.save/'
+  dirname = TRIM(tmp_dir) // TRIM (prefix) // postfix
 #if defined __HDF5
   filename = TRIM(dirname) // 'charge-density.hdf5'
 #else 
   filename = TRIM(dirname) // 'charge-density.dat'
 #endif
-  exst     =  check_file_exst( TRIM(filename) )
+  exst     =  check_file_exist( TRIM(filename) )
   !
   IF ( starting_pot == 'file' .AND. exst ) THEN
      !
@@ -89,7 +88,7 @@ SUBROUTINE potinit()
      IF ( .NOT.lforcet ) THEN
         CALL read_scf ( rho, nspin, gamma_only )
 #if !defined (__OLDXML)
-        CALL rho_g2r ( rho%of_g, rho%of_r )
+        CALL rho_g2r ( dfftp, rho%of_g, rho%of_r )
 #endif
      ELSE
         !
@@ -101,7 +100,7 @@ SUBROUTINE potinit()
 #else
         CALL read_rhog ( dirname, root_bgrp, intra_bgrp_comm, &
              ig_l2g, nspin, rho%of_g, gamma_only )
-        CALL rho_g2r ( rho%of_g, rho%of_r )
+        CALL rho_g2r ( dfftp, rho%of_g, rho%of_r )
 #endif
         CALL nc_magnetization_from_lsda ( dfftp%nnr, nspin, rho%of_r )
      END IF
@@ -157,7 +156,7 @@ SUBROUTINE potinit()
 #else
         CALL read_rhog ( dirname, root_bgrp, intra_bgrp_comm, &
              ig_l2g, nspin, v%of_g, gamma_only )
-        CALL rho_g2r ( v%of_g, v%of_r )
+        CALL rho_g2r ( dfftp, v%of_g, v%of_r )
 #endif
         !
         WRITE( UNIT = stdout, &
@@ -211,9 +210,9 @@ SUBROUTINE potinit()
      !
      psic(:) = rho%of_r(:,is)
      !
-     CALL fwfft ('Dense', psic, dfftp)
+     CALL fwfft ('Rho', psic, dfftp)
      !
-     rho%of_g(:,is) = psic(nl(:))
+     rho%of_g(:,is) = psic(dfftp%nl(:))
      !
   END DO
   !
@@ -228,8 +227,8 @@ SUBROUTINE potinit()
      DO is = 1, nspin
         if (starting_pot /= 'file') rho%kin_r(:,is) = fact * abs(rho%of_r(:,is)*nspin)**(5.0/3.0)/nspin
         psic(:) = rho%kin_r(:,is)
-        CALL fwfft ('Dense', psic, dfftp)
-        rho%kin_g(:,is) = psic(nl(:))
+        CALL fwfft ('Rho', psic, dfftp)
+        rho%kin_g(:,is) = psic(dfftp%nl(:))
      END DO
      !
   end if
@@ -294,11 +293,11 @@ SUBROUTINE nc_magnetization_from_lsda ( nnr, nspin, rho )
        angle1(1)/PI*180.d0, angle2(1)/PI*180.d0 
   WRITE(stdout,*) '-----------'
   !
-#ifdef __OLDXML
+#if defined(__OLDXML)
   ! On input, rho(1)=rho_up, rho(2)=rho_down
   ! Set rho(1)=rho_tot, rho(3)=rho_up-rho_down=magnetization
   ! 
-  rho(:,3) = rho(:,1)-rho(:,2)
+  rho(:,4) = rho(:,1)-rho(:,2)
   rho(:,1) = rho(:,1)+rho(:,2)
 #endif
   !
@@ -306,9 +305,10 @@ SUBROUTINE nc_magnetization_from_lsda ( nnr, nspin, rho )
   !         rho(3)=magn*sin(theta)*sin(phi)   y
   !         rho(4)=magn*cos(theta)            z
   !
-  rho(:,4) = rho(:,3)*cos(angle1(1))
-  rho(:,2) = rho(:,3)*sin(angle1(1))
+  !rho(:,4) = rho(:,3)*cos(angle1(1))
+  rho(:,2) = rho(:,4)*sin(angle1(1))
   rho(:,3) = rho(:,2)*sin(angle2(1))
+  rho(:,4) = rho(:,4)*cos(angle1(1))
   rho(:,2) = rho(:,2)*cos(angle2(1))
   !
   RETURN

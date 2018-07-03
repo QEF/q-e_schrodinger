@@ -12,6 +12,8 @@
       rhor, rhog, rhos, rhoc, ei1, ei2, ei3, sfac, fion, ema0bg, becdr, &
       lambdap, lambda, nlam, vpot, c0, cm, phi, dbec,l_cprestart  )
 
+!! please see https://journals.aps.org/rmp/abstract/10.1103/RevModPhys.64.1045
+
       use kinds, only: dp
       use control_flags, only: tpre, iverbosity, tfor, tprnfor
 
@@ -24,8 +26,6 @@
       use ensemble_dft, only: tens,   ef,  z0t, c0diag,  &
                       becdiag, fmat0, e0,  id_matrix_init
 !---
-      use gvect, only: ngm
-      use gvecs, only: ngms
       use smallbox_gvec, only: ngb
       use gvecw, only: ngw
       use gvect, only: gstart
@@ -77,13 +77,13 @@
       complex(dp) :: eigrb(ngb,nat)
       real(dp) :: rhor(dfftp%nnr,nspin)
       real(dp) :: vpot(dfftp%nnr,nspin)
-      complex(dp) :: rhog(ngm,nspin)
+      complex(dp) :: rhog(dfftp%ngm,nspin)
       real(dp) :: rhos(dffts%nnr,nspin)
       real(dp) :: rhoc(dfftp%nnr)
       complex(dp) :: ei1(-dfftp%nr1:dfftp%nr1,nat)
       complex(dp) :: ei2(-dfftp%nr2:dfftp%nr2,nat)
       complex(dp) :: ei3(-dfftp%nr3:dfftp%nr3,nat)
-      complex(dp) :: sfac( ngms, nsp )
+      complex(dp) :: sfac( dffts%ngm, nsp )
       real(dp) :: fion(3,nat)
       real(dp) :: ema0bg(ngw)
       real(dp) :: lambdap(nlam,nlam,nspin)
@@ -160,6 +160,7 @@
          write(stdout,*) 'PERFORMING CONJUGATE GRADIENT MINIMIZATION OF EL. STATES'
       
 !set tpa preconditioning
+!eq. 5.16 of https://journals.aps.org/rmp/abstract/10.1103/RevModPhys.64.1045
 
       call  emass_precond_tpa( ema0bg, tpiba2, emass_cutoff )
      

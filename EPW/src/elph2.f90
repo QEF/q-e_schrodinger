@@ -60,6 +60,12 @@
        sigmar_all(:,:),        &!  To store sigmar, sigmai and zi globally
        sigmai_all(:,:),        &!
        sigmai_mode(:,:,:),     &! 
+       Fi_all(:,:,:,:),        &! 
+       F_current(:,:,:,:),     &! 
+       F_SERTA(:,:,:,:),       &! 
+       Fi_allcb(:,:,:,:),      &! 
+       F_currentcb(:,:,:,:),   &! 
+       F_SERTAcb(:,:,:,:),     &! 
        zi_all(:,:),            &!
        esigmar_all(:,:,:),     &!
        esigmai_all(:,:,:),     &!   
@@ -71,7 +77,12 @@
        zstar(:,:,:),           &!  Born effective charges
        epsi(:,:),              &!  dielectric tensor
        inv_tau_all(:,:,:),     &!  scattering rate
-       ifc(:,:,:,:,:,:,:)       !  Interatomic force constant in real space
+       inv_tau_allcb(:,:,:),   &!  Second scattering rate (for both)
+       zi_allvb(:,:,:),        &!  Z-factor in scattering rate  
+       zi_allcb(:,:,:),        &!  Second Z-factor in scattering rate (for both VB and CB calculations) 
+       ifc(:,:,:,:,:,:,:),     &!  Interatomic force constant in real space
+       omegap(:),              &!  Photon energy for phonon-assisted absorption
+       alpha_abs(:,:)           !  Imaginary part of dielectric function for phonon-assisted absorption 
   REAL(KIND=DP) ::             &!
        efnew                    !  SP: Fermi level on the fine grid. Added globaly for efficiency reason 
   INTEGER ::                   &!
@@ -95,13 +106,16 @@
        igk(:),                 &!  Index for k+G vector
        igkq(:),                &!  Index for k+q+G vector
        igk_k_all(:,:),         &!  Global index (in case of parallel)
-       ngk_all(:)               !  Global number of plane wave for each global k-point
+       ngk_all(:),             &!  Global number of plane wave for each global k-point
+       s_BZtoIBZ(:,:,:),       &!  Save the symmetry operation that brings BZ k into IBZ
+       BZtoIBZ(:)               !  Map between the full uniform k-grid and the IBZ  
   INTEGER, allocatable ::      &
        shift (:),              &!  for every k+q, index of the G0 which folds k+q into k+q+G0 of the first BZ
        gmap(:)                  !  the map G -> G-G_0 in the large (density) G vectors set, for every G_0
   LOGICAL, allocatable ::      &
        lwin(:,:),              &!  identify bands within outer energy windows (when disentanglement is used)
        lwinq(:,:),             &!
+       exband(:),              &!  k-point independent list of bands excluded from the calculation of overlap and projection matrices in W90
        done_elph(:)
   LOGICAL ::                   &
        elph                   

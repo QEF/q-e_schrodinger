@@ -31,6 +31,7 @@
   USE io_global,        ONLY : ionode, stdout
   USE constants_epw,    ONLY : cone, czero, twopi, rydcm1
   USE io_epw,           ONLY : iudyn
+  USE wan2bloch,        ONLY : dynifc2blochc
   !
   implicit none
   !
@@ -132,11 +133,8 @@
       END DO
     END IF
     !
-    IF (lpolar .and. .not. lrigid) CALL errore('readmat_shuffle2', &
-       &'You set lpolar = .true. but did not put epsil = true in the PH calculation at Gamma. ',1)
-    !
     IF (lrigid) THEN
-      WRITE (6,'(8x,a)') 'Read dielectric tensor and effective charges'
+      WRITE (stdout,'(5x,a)') 'Read dielectric tensor and effective charges'
       zstar = zstar_
       epsi = epsi_
       !ASR on effective charges
@@ -182,7 +180,9 @@
       ! [Gonze and Lee, PRB 55, 10361 (1998), Eq. (45) and (81)]
       !
       IF ( abs(q(1,iq)).lt.eps .and. abs(q(2,iq)).lt.eps .and. abs(q(3,iq)).lt.eps ) THEN
-        WRITE(6,'(8x,a)') 'Imposing acoustic sum rule on the dynamical matrix'
+        WRITE(stdout,'(5x,a)') 'Imposing acoustic sum rule on the dynamical matrix'
+        IF (lpolar .and. .not. lrigid) CALL errore('readmat_shuffle2', &
+          &'You set lpolar = .true. but did not put epsil = true in the PH calculation at Gamma. ',1)
       ENDIF
       DO na = 1,nat
        DO ipol = 1,3
@@ -303,7 +303,7 @@
       ! [Gonze and Lee, PRB 55, 10361 (1998), Eq. (45) and (81)]
       !
       IF ( abs(q(1,iq)).lt.eps .and. abs(q(2,iq)).lt.eps .and. abs(q(3,iq)).lt.eps ) then
-        WRITE(6,'(8x,a)') 'Imposing acoustic sum rule on the dynamical matrix'
+        WRITE(stdout,'(5x,a)') 'Imposing acoustic sum rule on the dynamical matrix'
       ENDIF
       DO na = 1,nat
        DO ipol = 1,3
@@ -361,7 +361,7 @@
              read (iudyn,'(a)') line
              read (iudyn,*) ((zstar(i,j,na), j=1,3), i=1,3)
           ENDDO
-          WRITE (stdout,'(8x,a)') 'Read dielectric tensor and effective charges'
+          WRITE (stdout,'(5x,a)') 'Read dielectric tensor and effective charges'
           !
           !ASR on effective charges
           DO i=1,3
@@ -438,7 +438,7 @@
      CALL wsinit(rws,nrwsx,nrws,atws)
      CALL dynifc2blochc (nmodes, rws, nrws, q(:,1), dynq_tmp)
      dynq(:,:,iq_first)=dynq_tmp
-     write(stdout,*) " Dyn mat calculated from ifcs"
+     WRITE (stdout,'(5x,a)') "Dyn mat calculated from ifcs"
      !
   ENDIF
   !
@@ -634,7 +634,6 @@
   USE phcom,     ONLY : nq1, nq2, nq3
   USE io_global, ONLY : stdout
   USE io_epw,    ONLY : iunifc
-  USE constants_epw, ONLY :  czero
   USE noncollin_module, ONLY : noncolin, nspin_mag
   USE io_dyn_mat2,      ONLY : read_dyn_mat_param, read_dyn_mat_header,&
                                read_dyn_mat, read_ifc_xml, read_ifc_param
@@ -648,18 +647,16 @@
   !
   implicit none
   !
-  LOGICAL             :: exst, lpolar_, has_zstar
+  LOGICAL             :: lpolar_, has_zstar
   CHARACTER (len=80)  :: line
   CHARACTER(len=256)  :: tempfile
-  INTEGER             :: ipol, ios, i, j, m1,m2,m3, na,nb, &
+  INTEGER             :: ios, i, j, m1,m2,m3, na,nb, &
                          idum, ibid, jbid, nabid, nbbid, m1bid, m2bid, m3bid, &
                          ntyp_, nat_, ibrav_, ityp_(nat), nqs
   INTEGER, parameter  :: ntypx = 10
   REAL(kind=DP)       :: tau_(3,nat), alat, amass2(ntypx)
   CHARACTER(LEN=3), ALLOCATABLE :: atm(:)
   REAL(DP), ALLOCATABLE :: m_loc(:,:)
-  !! he magnetic moments of each atom
-  COMPLEX(kind=DP)    :: sumasr
   !
   WRITE(stdout,'(/5x,"Reading interatomic force constants"/)')
   CALL FLUSH(6)
@@ -696,7 +693,7 @@
       !
       READ(iunifc,'(3i4)') ntyp_ , nat_ , ibrav_
       IF (ibrav_ .eq. 0) then
-         DO i = 1,4
+         DO i = 1,3
             read (iunifc, * ) line
          ENDDO
       ENDIF
@@ -714,7 +711,7 @@
             READ (iunifc,*) idum
             READ (iunifc,*) ((zstar(i,j,na), j=1,3), i=1,3)
          ENDDO
-         WRITE(stdout,*) " Read Z*, epsilon"
+         WRITE (stdout,'(5x,a)') "Read Z* and epsilon"
       ENDIF
       !
       READ (iunifc,*) idum
@@ -761,7 +758,7 @@
   CALL mp_bcast (ibrav_, root_pool, intra_pool_comm)
 
   !
-  write(stdout,*) ' IFC last ', ifc(nq1,nq2,nq3,3,3,nat,nat)
+  WRITE(stdout,'(5x,"IFC last ", 1f12.7)') ifc(nq1,nq2,nq3,3,3,nat,nat)
   !
   CALL set_asr2 (asr_typ, nq1, nq2, nq3, ifc, zstar, &
              nat, ibrav_, tau_)
@@ -772,7 +769,6 @@
   ENDIF
   !
   WRITE(stdout,'(/5x,"Finished reading ifcs"/)')
- write(stdout,*) " IFC ", ifc(1,1,1,1,1,1,1), ifc(nq1,nq2,nq3,3,3,nat,nat)
   !
   END SUBROUTINE read_ifc
 !-------------------------------------------------------------------------------
@@ -878,7 +874,7 @@ SUBROUTINE set_asr2 (asr, nr1, nr2, nr3, frc, zeu, nat, ibrav, tau)
             end do
          end do
       end do
-    write(stdout,*) " Imposed simple ASR"
+      WRITE (stdout,'(5x,a)') " Imposed simple ASR"
       !
       return
       !
@@ -1007,8 +1003,7 @@ SUBROUTINE set_asr2 (asr, nr1, nr2, nr3, frc, zeu, nat, ibrav, tau)
   !
   zeu_new(:,:,:)=zeu_new(:,:,:) - zeu_w(:,:,:)
   call sp_zeu(zeu_w,zeu_w,nat,norm2)
-  write(stdout,'("Norm of the difference between old and new effective ", &
-       & "charges: ",F25.20)') SQRT(norm2)
+  WRITE(stdout,'(5x,"Norm of the difference between old and new effective charges: ", 1f12.7)') SQRT(norm2)
   !
   ! Check projection
   !
@@ -1248,8 +1243,7 @@ SUBROUTINE set_asr2 (asr, nr1, nr2, nr3, frc, zeu, nat, ibrav, tau)
   !
   frc_new(:,:,:,:,:,:,:)=frc_new(:,:,:,:,:,:,:) - w(:,:,:,:,:,:,:)
   call sp1(w,w,nr1,nr2,nr3,nat,norm2)
-  write(stdout,'("Norm of the difference between old and new force-constants:",&
-       &     F25.20)') SQRT(norm2)
+  WRITE(stdout,'(5x,"Norm of the difference between old and new force-constants: ", 1f12.7)') SQRT(norm2)
   !
   ! Check projection
   !
@@ -1285,7 +1279,7 @@ SUBROUTINE set_asr2 (asr, nr1, nr2, nr3, frc, zeu, nat, ibrav, tau)
   deallocate (x, w)
   deallocate (v, ind_v)
   deallocate (frc_new)
-   write(stdout,*) " Imposed crystal ASR"
+  WRITE (stdout,'(5x,a)') "Imposed crystal ASR"
   !
   return
 end subroutine set_asr2

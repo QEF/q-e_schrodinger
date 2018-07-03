@@ -28,24 +28,22 @@
   USE kinds,         ONLY : DP
   USE io_global,     ONLY : stdout
   USE io_epw,        ONLY : linewidth_elself
-  USE phcom,         ONLY : nmodes
-  USE epwcom,        ONLY : nbndsub, lrepmatf, &
-                            fsthick, eptemp, ngaussw, degaussw, &
-                            eps_acustic, efermi_read, fermi_energy, & 
+  USE epwcom,        ONLY : nbndsub, fsthick, eptemp, ngaussw, degaussw, &
+                            efermi_read, fermi_energy, & 
                             nel, meff, epsiHEG 
   USE pwcom,         ONLY : ef
   USE elph2,         ONLY : etf, ibndmin, ibndmax, nkqf, &
-                            epf17, wkf, nkf, nqtotf, wf, wqf, xkf, nkqtotf, &
-                            sigmar_all, sigmai_all, sigmai_mode, zi_all, efnew, nqf, & 
+                            nkf, nqtotf, wqf, xkf, nkqtotf, &
+                            sigmar_all, sigmai_all, sigmai_mode, zi_all, efnew, & 
                             xqf, dmef  
   USE constants_epw, ONLY : ryd2mev, one, ryd2ev, two, zero, pi, ci, eps6
   USE mp,            ONLY : mp_barrier, mp_sum
-  USE mp_global,     ONLY : me_pool, inter_pool_comm, my_pool_id
-  use cell_base,     ONLY : omega, alat
-  !USE mp_world,      ONLY : mpime
+  USE mp_global,     ONLY : inter_pool_comm 
+  use cell_base,     ONLY : omega, alat, bg
+  ! 
   implicit none
   !
-  INTEGER :: ik, ikk, ikq, ibnd, jbnd, imode, nrec, iq, fermicount
+  INTEGER :: ik, ikk, ikq, ibnd, jbnd, iq, fermicount
   INTEGER :: nksqtotf, lower_bnd, upper_bnd
   INTEGER :: n
   !! Integer for the degenerate average over eigenstates
@@ -64,11 +62,14 @@
   REAL(kind=DP) :: zi_tmp(ibndmax-ibndmin+1)
   !! Temporary array to store the Z
   REAL(kind=DP) :: g2, ekk, ekq, wq, ef0, wgq, wgkq, weight,  &
-                   w0g1, w0g2, inv_wq, inv_eptemp0, g2_tmp,&
+                   w0g1, w0g2, inv_eptemp0, &
                    inv_degaussw, tpiba_new
   REAL(kind=DP), external :: efermig, dos_ef, wgauss, w0gauss
   REAL(kind=DP), ALLOCATABLE :: xkf_all(:,:), etf_all(:,:)
-  REAL(kind=DP) :: kF, vF, fermiHEG, qin, wpl0, eps0, deltaeps, qcut, qcut2, qsquared, qTF, dipole, rs, ekk1
+  REAL(kind=DP) :: kF, vF, fermiHEG, qin, wpl0, eps0, deltaeps, qcut
+  REAL(kind=DP) :: qsquared, qTF, dipole, rs, ekk1, degen
+  REAL(kind=DP) :: q(3)
+  !! The q-point in cartesian unit.
   !REAL(kind=DP) :: Nel, epsiHEG, meff, kF, vF, fermiHEG, qin, wpl0, eps0, deltaeps, qcut, qcut2, qsquared, qTF, dipole, rs, ekk1
   ! loop over temperatures can be introduced
   !
@@ -133,23 +134,27 @@
   !meff     =  0.25    ! this should be read from input - effective mass 
   !
   tpiba_new = 2.0d0 * pi / alat
-  rs       = (3.d0/(4.d0*pi*nel/omega))**(1.d0/3.d0)*meff/epsiHEG ! omega is the unit cell volume in Bohr^3
-  kF       = (3.d0*pi**2*nel/omega )**(1.d0/3.d0) 
-  vF       =  1.d0/meff * (3.d0*pi**2*nel/omega)**(1.d0/3.d0) 
-  fermiHEG =  1.d0/(2.d0*meff) * (3.d0*pi**2*nel/omega)**(2.d0/3.d0) * 2.d0 ! [Ryd] multiplication by 2 converts from Ha to Ry
-  qTF      =  (6.d0*pi*nel/omega/(fermiHEG/2.d0))**(1.d0/2.d0)    ! [a.u.]
+  degen    = 1.0d0
+  rs       = (3.d0/(4.d0*pi*nel/omega/degen))**(1.d0/3.d0)*meff*degen ! omega is the unit cell volume in Bohr^3
+!  rs       = (3.d0/(4.d0*pi*nel/omega/degen))**(1.d0/3.d0)*meff*degen/epsiHEG ! omega is the unit cell volume in Bohr^3
+  kF       = (3.d0*pi**2*nel/omega/degen )**(1.d0/3.d0) 
+  vF       =  1.d0/meff * (3.d0*pi**2*nel/omega/degen)**(1.d0/3.d0) 
+  fermiHEG =  1.d0/(2.d0*meff) * (3.d0*pi**2*nel/omega/degen)**(2.d0/3.d0) * 2.d0 ! [Ryd] multiplication by 2 converts from Ha to Ry
+  qTF      =  (6.d0*pi*nel/omega/degen/(fermiHEG/2.d0))**(1.d0/2.d0)    ! [a.u.]
   wpl0     =  sqrt(4.d0*pi*nel/omega/meff/epsiHEG) * 2.d0         ! [Ryd] multiplication by 2 converts from Ha to Ryd
   wq       =  wpl0 ! [Ryd] 
-  qsquared = (xqf(1,iq)**2 + xqf(2,iq)**2 + xqf(3,iq)**2)
+  q(:)     =  xqf(:,iq)
+  CALL cryst_to_cart (1, q, bg, 1)
+  qsquared =  (q(1)**2 + q(2)**2 + q(3)**2)
   qin      =  sqrt(qsquared)*tpiba_new
-  qcut = wpl0 / vF  / tpiba_new / 2.d0    ! 1/2 converts from Ryd to Ha
+  qcut     = wpl0 / vF / tpiba_new / 2.d0    ! 1/2 converts from Ryd to Ha
   !
   !if (.true.) qcut = qcut / 2.d0 ! renorm to account for Landau damping 
   !
   CALL get_eps_mahan (qin,rs,kF,eps0) ! qin should be in atomic units for Mahan formula
   deltaeps = -(1.d0/(epsiHEG+eps0-1.d0)-1.d0/epsiHEG)
   !
-  if (iq .eq. 1) then 
+  IF (iq .EQ. 1) THEN 
     WRITE(stdout,'(12x," nel       = ", E15.10)') nel
     WRITE(stdout,'(12x," meff      = ", E15.10)') meff
     WRITE(stdout,'(12x," rs        = ", E15.10)') rs
@@ -162,7 +167,7 @@
     WRITE(stdout,'(12x," eps0      = ", E15.10)') eps0
     WRITE(stdout,'(12x," epsiHEG   = ", E15.10)') epsiHEG
     WRITE(stdout,'(12x," deltaeps  = ", E15.10)') deltaeps
-  endif
+  ENDIF
   !
   !if (sqrt(qsquared) > qcut) wqf(iq) = 0.d0
   IF (sqrt(qsquared) < qcut) THEN
@@ -220,26 +225,26 @@
               ENDIF
             ELSE
               IF (abs(ekk-ekk1) > 1d-8) THEN
-                dipole = dmef(1,ibndmin-1+jbnd,ibndmin-1+ibnd,ikk)*&
-                             conjg(dmef(1,ibndmin-1+jbnd,ibndmin-1+ibnd,ikk))/((ekk1-ekk)**2 + degaussw**2)
+                dipole = REAL( dmef(1,ibndmin-1+jbnd,ibndmin-1+ibnd,ikk)*&
+                             conjg(dmef(1,ibndmin-1+jbnd,ibndmin-1+ibnd,ikk))/((ekk1-ekk)**2 + degaussw**2) ) 
               ELSE 
                 dipole = 0.d0
               ENDIF
             ENDIF
             !
             ! this approximates the dipoles as delta_ij
-            if (.false.) then
-              if (ibnd==jbnd .and. sqrt(qsquared) .gt. 1d-8 ) then
-                dipole = 1./(qsquared * tpiba_new * tpiba_new)
-              else 
-                dipole = 0.d0
-              endif
-            endif
-            if (.true.) then
-              if ( abs(dipole * (qsquared * tpiba_new * tpiba_new)) .gt.1 ) then
-                dipole = 1./(qsquared*tpiba_new*tpiba_new)
-              endif
-            endif
+            !if (.false.) then
+            !  if (ibnd==jbnd .and. sqrt(qsquared) .gt. 1d-8 ) then
+            !    dipole = 1./(qsquared * tpiba_new * tpiba_new)
+            !  else 
+            !    dipole = 0.d0
+            !  endif
+            !endif
+            !if (.true.) then
+            IF ( abs(dipole * (qsquared * tpiba_new * tpiba_new)) .gt.1 ) THEN
+              dipole = 1./(qsquared*tpiba_new*tpiba_new)
+            ENDIF
+            !endif
             !
             !if (ik .eq. 1) WRITE(stdout,'(/12x," dipole    =", f12.7)') dipole
             g2 = dipole*4.d0*pi * (wq*deltaeps/2.d0)/omega * 2.d0 ! The q^-2 is cancelled by the q->0 limit of the dipole. See e.g., pg. 258 of Grosso Parravicini. 
@@ -465,9 +470,7 @@
   ENDIF 
   !
   100 FORMAT(5x,'Gaussian Broadening: ',f10.6,' eV, ngauss=',i4)
-  101 FORMAT(5x,'DOS =',f10.6,' states/spin/eV/Unit Cell at Ef=',f10.6,' eV')
   102 FORMAT(5x,'E( ',i3,' )=',f9.4,' eV   Re[Sigma]=',f15.6,' meV Im[Sigma]=',f15.6,' meV     Z=',f15.6,' lam=',f15.6)
-  103 FORMAT(5x,'k( ',i7,' )=',f9.4,' eV   Re[Sigma]=',f15.6,' meV Im[Sigma]=',f15.6,' meV     Z=',f15.6)
   !
   RETURN
   !

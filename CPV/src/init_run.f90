@@ -23,8 +23,7 @@ SUBROUTINE init_run()
                                        vels, velsm, velsp, fion, fionm
   USE gvecw,                    ONLY : ngw, ngw_g, g2kin, g2kin_init
   USE smallbox_gvec,            ONLY : ngb
-  USE gvecs,                    ONLY : ngms
-  USE gvect,                    ONLY : ngm, gstart, gg
+  USE gvect,                    ONLY : gstart, gg
   USE fft_base,                 ONLY : dfftp, dffts
   USE electrons_base,           ONLY : nspin, nbsp, nbspx, nupdwn, f
   USE uspp,                     ONLY : nkb, vkb, deeq, becsum,nkbus
@@ -63,11 +62,11 @@ SUBROUTINE init_run()
   USE efield_module,            ONLY : allocate_efield, allocate_efield2
   USE cg_module,                ONLY : allocate_cg
   USE wannier_module,           ONLY : allocate_wannier  
-  USE io_files,                 ONLY : tmp_dir, prefix
+  USE io_files,                 ONLY : tmp_dir, prefix, create_directory
   USE io_global,                ONLY : ionode, stdout
   USE printout_base,            ONLY : printout_base_init
   USE wave_types,               ONLY : wave_descriptor_info
-  USE xml_io_base,              ONLY : restart_dir, create_directory
+  USE xml_io_base,              ONLY : restart_dir
   USE orthogonalize_base,       ONLY : mesure_diag_perf, mesure_mmul_perf
   USE ions_base,                ONLY : ions_reference_positions, cdmi
   USE mp_bands,                 ONLY : nbgrp
@@ -138,7 +137,7 @@ SUBROUTINE init_run()
   !     allocate and initialize local and nonlocal potentials
   !=======================================================================
   !
-  CALL allocate_local_pseudo( ngms, nsp )
+  CALL allocate_local_pseudo( dffts%ngm, nsp )
   !
   CALL nlinit()
   !
@@ -146,7 +145,7 @@ SUBROUTINE init_run()
   !     allocation of all arrays not already allocated in init and nlinit
   !=======================================================================
   !
-  CALL allocate_mainvar( ngw, ngw_g, ngb, ngms, ngm, dfftp%nr1,dfftp%nr2,dfftp%nr3, dfftp%nr1x, &
+  CALL allocate_mainvar( ngw, ngw_g, ngb, dffts%ngm, dfftp%ngm, dfftp%nr1,dfftp%nr2,dfftp%nr3, dfftp%nr1x, &
                          dfftp%nr2x, dfftp%my_nr3p, dfftp%nnr, dffts%nnr, nat, nax, nsp,   &
                          nspin, nbsp, nbspx, nupdwn, nkb, gstart, nudx, &
                          tpre, nbspx_bgrp )
@@ -214,12 +213,15 @@ SUBROUTINE init_run()
      ALLOCATE( dkedtaus(  dffts%nnr, 3, 3, nspin ) )
      ALLOCATE( gradwfc(   dffts%nnr, 3 ) )
      !
+     if (nspin.ne.1) &
+       CALL errore( ' init_run ', 'spin-polarized stress not implemented for metaGGA', 1 )
+     !
   END IF
   !
   IF ( lwf ) THEN
      IF( nbgrp > 1 ) &
         CALL errore( ' init_run ', ' wannier with band parallelization not implemented ', 1 )
-     CALL allocate_wannier( nbsp, dffts%nnr, nspin, ngm )
+     CALL allocate_wannier( nbsp, dffts%nnr, nspin, dfftp%ngm )
   END IF
   !
   IF ( tens .OR. tcg ) THEN

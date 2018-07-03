@@ -3,12 +3,12 @@
 include ../../make.inc
 
 # location of needed modules and included files (if any)
-MODFLAGS= $(MOD_FLAG)../../iotk/src \
-	  $(MOD_FLAG)../../FFTXlib \
-          $(MOD_FLAG)../../LAXlib \
-          $(MOD_FLAG)../../UtilXlib \
-	  $(MOD_FLAG)../../Modules \
-	  $(MOD_FLAG)../../PW/src $(MOD_FLAG).
+MODFLAGS= $(BASEMOD_FLAGS) \
+          $(MOD_FLAG)../../PW/src \
+          $(MOD_FLAG)../../KS_Solvers/Davidson \
+          $(MOD_FLAG)../../KS_Solvers/CG \
+          $(MOD_FLAG)../../dft-d3/
+
 IFLAGS=
 
 NEBOBJS = \
@@ -39,7 +39,7 @@ set_defaults.o \
 stop_run_path.o 
 
 QEMODS=../../Modules/libqemod.a ../../KS_Solvers/Davidson/libdavid.a ../../KS_Solvers/CG/libcg.a \
-       ../../FFTXlib/libqefft.a ../../LAXlib/libqela.a ../../UtilXlib/libutil.a
+       ../../FFTXlib/libqefft.a ../../LAXlib/libqela.a ../../UtilXlib/libutil.a ../../dft-d3/libdftd3qe.a
 PWOBJS= ../../PW/src/libpw.a
 
 TLDEPS=bindir mods libs liblapack libblas pw

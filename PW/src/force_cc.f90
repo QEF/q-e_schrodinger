@@ -12,13 +12,13 @@ subroutine force_cc (forcecc)
   !
   USE kinds,                ONLY : DP
   USE constants,            ONLY : tpi
-  USE atom,                 ONLY : rgrid
+  USE atom,                 ONLY : rgrid, msh
   USE uspp_param,           ONLY : upf
   USE ions_base,            ONLY : nat, ntyp => nsp, ityp, tau
   USE cell_base,            ONLY : alat, omega, tpiba, tpiba2
   USE fft_base,             ONLY : dfftp
   USE fft_interfaces,       ONLY : fwfft
-  USE gvect,                ONLY : ngm, gstart, nl, g, gg, ngl, gl, igtongl
+  USE gvect,                ONLY : ngm, gstart, g, gg, ngl, gl, igtongl
   USE ener,                 ONLY : etxc, vtxc
   USE lsda_mod,             ONLY : nspin
   USE scf,                  ONLY : rho, rho_core, rhog_core
@@ -45,7 +45,7 @@ subroutine force_cc (forcecc)
 
   real(DP), allocatable :: vxc (:,:), rhocg (:)
   ! exchange-correlation potential
-  ! radial fourier trasform of rho core
+  ! radial fourier transform of rho core
   real(DP)  ::  arg, fact
 
   !
@@ -77,7 +77,7 @@ subroutine force_cc (forcecc)
      enddo
   endif
   deallocate (vxc)
-  CALL fwfft ('Dense', psic, dfftp)
+  CALL fwfft ('Rho', psic, dfftp)
   !
   ! psic contains now Vxc(G)
   !
@@ -89,7 +89,7 @@ subroutine force_cc (forcecc)
   do nt = 1, ntyp
      if ( upf(nt)%nlcc ) then
 
-        call drhoc (ngl, gl, omega, tpiba2, rgrid(nt)%mesh, rgrid(nt)%r,&
+        call drhoc (ngl, gl, omega, tpiba2, msh(nt), rgrid(nt)%r,&
              rgrid(nt)%rab, upf(nt)%rho_atc, rhocg)
         do na = 1, nat
            if (nt.eq.ityp (na) ) then
@@ -98,7 +98,7 @@ subroutine force_cc (forcecc)
                       + g (3, ig) * tau (3, na) ) * tpi
                  do ipol = 1, 3
                     forcecc (ipol, na) = forcecc (ipol, na) + tpiba * omega * &
-                         rhocg (igtongl (ig) ) * CONJG(psic (nl (ig) ) ) * &
+                         rhocg (igtongl (ig) ) * CONJG(psic (dfftp%nl (ig) ) ) * &
                          CMPLX( sin (arg), cos (arg) ,kind=DP) * g (ipol, ig) * fact
                  enddo
               enddo

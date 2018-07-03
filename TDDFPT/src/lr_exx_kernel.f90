@@ -31,7 +31,6 @@ MODULE lr_exx_kernel
   USE fft_interfaces,         ONLY : invfft, fwfft
   USE lsda_mod,               ONLY : nspin
   USE wvfct,                  ONLY : nbnd, npwx, wg
-  USE gvecs,                  ONLY : nls, nlsm
   USE gvect,                  ONLY : g, ngm
   USE klist,                  ONLY : xk, wk, nks
   USE lr_variables,           ONLY : gamma_only, lr_verbosity
@@ -39,7 +38,8 @@ MODULE lr_exx_kernel
                                    & invfft_orbital_k, fwfft_orbital_k
   USE wavefunctions_module,   ONLY : psic
   USE cell_base,              ONLY : omega
-  USE exx,                    ONLY : exxalfa, g2_convolution, exx_fft
+  USE exx_base,               ONLY : g2_convolution
+  USE exx,                    ONLY : exxalfa, npwt, gt, dfftt
 
 
   REAL(kind=dp),    PUBLIC, ALLOCATABLE :: revc_int(:,:)
@@ -61,16 +61,55 @@ MODULE lr_exx_kernel
   INTEGER, PRIVATE, ALLOCATABLE :: k2q(:)
 
 CONTAINS
-SUBROUTINE lr_exx_alloc()
+  !------------------------------------------------------------------------
+  SUBROUTINE lr_exx_restart( set_ace )
+     !------------------------------------------------------------------------
+     !This SUBROUTINE is called when restarting an exx calculation
+     USE funct,     ONLY : get_exx_fraction, start_exx, &
+                           exx_is_active, get_screening_parameter
+     USE cell_base, ONLY : at
+     USE exx_base,  ONLY : exxdiv, erfc_scrlen, exx_divergence, exx_grid_init,&
+                           exx_div_check
+     ! FIXME: are these variable useful?
+     USE exx,       ONLY : fock0, exxenergy2, local_thr, use_ace
+     USE exx,       ONLY : exxinit, aceinit, exx_gvec_reinit
 
-  USE exx,         ONLY : nkqs
+     IMPLICIT NONE
+     LOGICAL, INTENT(in) :: set_ace
+     !
+     CALL exx_grid_init( reinit=.true. )
+     CALL exx_gvec_reinit( at )
+     CALL exx_div_check()
+     !
+     use_ace = set_ace
+     erfc_scrlen = get_screening_parameter()
+     
+     exxdiv = exx_divergence()
+     exxalfa = get_exx_fraction()
+     CALL start_exx()
+     CALL weights()
+     ! FIXME: is this useful ?
+     IF(local_thr.gt.0.0d0) Call errore('exx_restart','SCDM with restart NYI',1)
+     CALL exxinit(.false.)
+     IF (use_ace) CALL aceinit ( )
+     ! FIXME: are these variable useful?
+     fock0 = exxenergy2()
+     !
+     RETURN
+     !------------------------------------------------------------------------
+   END SUBROUTINE lr_exx_restart
+  !------------------------------------------------------------------------
+
+  SUBROUTINE lr_exx_alloc()
+
+  USE exx_base,    ONLY : nkqs
   USE klist,       ONLY : nks
   
   IMPLICIT NONE
   INTEGER :: nrxxs
 
   IF (gamma_only) THEN
-     nrxxs= exx_fft%dfftt%nnr
+     nrxxs= dfftt%nnr
   ELSE
      nrxxs= dffts%nnr
   ENDIF
@@ -144,7 +183,7 @@ SUBROUTINE lr_exx_apply_revc_int(psi, ibnd, nbnd, ik)
 
   CALL start_clock('lr_exx_apply')
 
-  nrxxs= exx_fft%dfftt%nnr
+  nrxxs= dfftt%nnr
 
   IF (gamma_only) THEN
      !
@@ -165,22 +204,22 @@ SUBROUTINE lr_exx_apply_revc_int(psi, ibnd, nbnd, ik)
         !
         ! To g-space
         !
-        CALL fwfft ('CustomWave', tempphic(:,1), exx_fft%dfftt)
+        CALL fwfft ('Wave', tempphic(:,1), dfftt)
         !
         ! Now separate the two bands and apply the correct nl mapping
         !
         DO j = 1, npw
-           fp = (tempphic(exx_fft%nlt(j),1) + &
-                 tempphic(exx_fft%nltm(j),1))*0.5d0 
-           fm = (tempphic(exx_fft%nlt(j),1) - &
-                 tempphic(exx_fft%nltm(j),1))*0.5d0 
+           fp = (tempphic(dfftt%nl(j),1) + &
+                 tempphic(dfftt%nlm(j),1))*0.5d0 
+           fm = (tempphic(dfftt%nl(j),1) - &
+                 tempphic(dfftt%nlm(j),1))*0.5d0 
            temppsic( j, 1) = CMPLX( DBLE(fp), AIMAG(fm),kind=DP)
            temppsic( j, 2) = CMPLX(AIMAG(fp),- DBLE(fm),kind=DP)
         ENDDO
 
-        psi_t(nls(1:npw))= temppsic(1:npw,1)+ (0.0_dp,1.0_dp)&
+        psi_t(dffts%nl(1:npw))= temppsic(1:npw,1)+ (0.0_dp,1.0_dp)&
              &*temppsic(1:npw,2) 
-        psi_t(nlsm(1:npw))= CONJG(temppsic(1:npw,1)- (0.0_dp,1.0_dp)&
+        psi_t(dffts%nlm(1:npw))= CONJG(temppsic(1:npw,1)- (0.0_dp,1.0_dp)&
              &*temppsic(1:npw,2))
      ELSE
         tempphic(1:nrxxs,1) = 0.5d0 * CMPLX( revc_int(1:nrxxs,ibnd),&
@@ -188,13 +227,13 @@ SUBROUTINE lr_exx_apply_revc_int(psi, ibnd, nbnd, ik)
         !
         ! To g-space
         !
-        CALL fwfft ('CustomWave', tempphic(:,1), exx_fft%dfftt)
+        CALL fwfft ('Wave', tempphic(:,1), dfftt)
         !
         ! Correct the nl mapping for the two grids.
         !
-        temppsic(1:npw,1)=tempphic(exx_fft%nlt(1:npw),1)
-        psi_t(nls(1:npw))=temppsic(1:npw,1)
-        psi_t(nlsm(1:npw))=CONJG(temppsic(1:npw,1))
+        temppsic(1:npw,1)=tempphic(dfftt%nl(1:npw),1)
+        psi_t(dffts%nl(1:npw))=temppsic(1:npw,1)
+        psi_t(dffts%nlm(1:npw))=CONJG(temppsic(1:npw,1))
         !
      ENDIF
      !
@@ -231,8 +270,7 @@ SUBROUTINE lr_exx_revc0_init(orbital, ik)
   !
   
   USE mp_global,    ONLY : me_bgrp
-  USE exx,          ONLY : rir, nkqs, index_sym, index_xk
-  USE exx,          ONLY : exx_fft
+  USE exx_base,     ONLY : rir, nkqs, index_sym, index_xk
   USE scatter_mod,  ONLY : gather_grid, scatter_grid
   USE symm_base,    ONLY : sname
 
@@ -246,12 +284,12 @@ SUBROUTINE lr_exx_revc0_init(orbital, ik)
 
   IF (gamma_only) THEN
      !
-     nnr_= exx_fft%dfftt%nnr
+     nnr_= dfftt%nnr
      !
      DO ibnd=1,nbnd,2
         !
-        CALL invfft_orbital_custom_gamma(orbital(:,:,1), ibnd, nbnd,&
-             & exx_fft)
+        CALL invfft_orbital_custom_gamma(orbital(:,:,1), ibnd, nbnd, &
+             npwt, dfftt)
         red_revc0(1:nnr_,ibnd,1)=psic(1:nnr_)
         !
      ENDDO
@@ -317,8 +355,9 @@ SUBROUTINE lr_exx_kernel_noint ( evc, int_vect )
 
   USE kinds,                  ONLY : DP
   USE lr_variables,           ONLY : gamma_only, lr_verbosity
-  USE exx,                    ONLY : exxalfa, g2_convolution, nqs,&
-                                   & index_sym, index_xkq, index_xk, rir, nkqs
+  USE exx_base,               ONLY : g2_convolution, nqs, index_sym, &
+                                     index_xkq, index_xk, rir, nkqs
+  USE exx,                    ONLY : exxalfa
   USE symm_base,              ONLY : s
   USE cell_base,              ONLY : bg, at
   USE funct,                  ONLY : exx_is_active
@@ -361,8 +400,8 @@ SUBROUTINE lr_exx_kernel_noint ( evc, int_vect )
   !
   ! Setup the variables that describe the FFT grid in use.
   IF(gamma_only) THEN
-     ALLOCATE( fac(exx_fft%ngmt) )
-     nrxxs= exx_fft%dfftt%nnr
+     ALLOCATE( fac(dfftt%ngm) )
+     nrxxs= dfftt%nnr
   ELSE
      ALLOCATE( fac(ngm) )
      nxxs=dffts%nr1x * dffts%nr2x * dffts%nr3x
@@ -384,8 +423,7 @@ SUBROUTINE lr_exx_kernel_noint ( evc, int_vect )
      ! Put the appropriate interaction in fac(). Note g2_convolution respects
      ! the choice of divergence treatment etc set in the initial PWscf run.
      !
-     CALL g2_convolution(exx_fft%ngmt, exx_fft%gt, xk(:,1),&
-          & xk(:,1), fac)
+     CALL g2_convolution(dfftt%ngm, gt, xk(:,1), xk(:,1), fac)
      !
      ALLOCATE(revc_int(nrxxs,nbnd))
      !
@@ -402,8 +440,8 @@ SUBROUTINE lr_exx_kernel_noint ( evc, int_vect )
      !
      DO ibnd=ibnd_start_gamma,ibnd_end_gamma,2
         !
-        CALL invfft_orbital_custom_gamma(evc(:,:,1), ibnd, nbnd,&
-             & exx_fft)
+        CALL invfft_orbital_custom_gamma(evc(:,:,1), ibnd, nbnd, &
+             npwt, dfftt)
         !
         w1=wg(ibnd,1)/omega
         !
@@ -413,7 +451,7 @@ SUBROUTINE lr_exx_kernel_noint ( evc, int_vect )
            w2=0.0d0
         ENDIF
         ! Update the container with the actual interaction for this band(s).
-        revc_int(1:exx_fft%dfftt%nnr,:)= revc_int(1:exx_fft%dfftt%nnr,:) & 
+        revc_int(1:dfftt%nnr,:)= revc_int(1:dfftt%nnr,:) & 
              & -1.d0 * scale * k1d_term_gamma(w1,w2,psic,fac,ibnd) &
              & +1.d0 * scale * k2d_term_gamma(w1,w2,psic,fac,ibnd)
         !
@@ -433,8 +471,8 @@ SUBROUTINE lr_exx_kernel_noint ( evc, int_vect )
         IF (ibnd==nbnd) psic(1:nrxxs)=CMPLX(revc_int(1:nrxxs,ibnd)&
              &,0.d0,dp)
         !
-        CALL fwfft_orbital_custom_gamma (int_vect(:,:,1), ibnd, nbnd,&
-             & exx_fft) 
+        CALL fwfft_orbital_custom_gamma (int_vect(:,:,1), ibnd, nbnd, &
+             npwt, dfftt) 
         !
      ENDDO
      !
@@ -575,8 +613,9 @@ SUBROUTINE lr_exx_kernel_int ( orbital, ibnd, nbnd, ikk )
   USE kinds,                  ONLY : DP
   USE klist,                  ONLY : xk
   USE io_global,              ONLY : stdout  
-  USE exx,                    ONLY : exxalfa, g2_convolution, nqs,&
-                                   & index_sym, index_xkq, index_xk, rir, nkqs
+  USE exx,                    ONLY : exxalfa
+  USE exx_base,               ONLY : g2_convolution, nqs, index_sym, &
+                                     index_xkq, index_xk, rir, nkqs
   USE symm_base,              ONLY : s
   USE cell_base,              ONLY : bg, at
   USE funct,                  ONLY : exx_is_active
@@ -612,8 +651,8 @@ SUBROUTINE lr_exx_kernel_int ( orbital, ibnd, nbnd, ikk )
   IF (lr_verbosity > 5 ) WRITE(stdout,'("<lr_exx_kernel_int>")')
 
   IF(gamma_only) THEN
-     ALLOCATE( fac(exx_fft%ngmt) )
-     nrxxs= exx_fft%dfftt%nnr
+     ALLOCATE( fac(dfftt%ngm) )
+     nrxxs= dfftt%nnr
   ELSE
      ALLOCATE( fac(ngm) )
      nxxs=dffts%nr1x * dffts%nr2x * dffts%nr3x
@@ -631,7 +670,7 @@ SUBROUTINE lr_exx_kernel_int ( orbital, ibnd, nbnd, ikk )
   !
   IF( gamma_only ) THEN
      !
-     CALL invfft_orbital_custom_gamma( orbital, ibnd, nbnd, exx_fft )
+     CALL invfft_orbital_custom_gamma( orbital, ibnd, nbnd, npwt, dfftt )
      !
      w1=wg(ibnd,1)/omega
      !
@@ -641,11 +680,10 @@ SUBROUTINE lr_exx_kernel_int ( orbital, ibnd, nbnd, ikk )
         w2=0.0d0
      ENDIF
      !
-     CALL g2_convolution(exx_fft%ngmt, exx_fft%gt,&
-          & xk(:,1), xk(:,1), fac)
+     CALL g2_convolution(dfftt%ngm, gt,xk(:,1), xk(:,1), fac)
      !
      IF (.NOT.ltammd) THEN
-        revc_int(1:exx_fft%dfftt%nnr,:)= revc_int(1:exx_fft%dfftt%nnr,:)&
+        revc_int(1:dfftt%nnr,:)= revc_int(1:dfftt%nnr,:)&
              & -1.d0 * scale * k1d_term_gamma(w1,w2,psic,fac,ibnd) &
              & -1.d0 * scale * k2d_term_gamma(w1,w2,psic,fac,ibnd)
      ELSE
@@ -655,7 +693,7 @@ SUBROUTINE lr_exx_kernel_int ( orbital, ibnd, nbnd, ikk )
         ! scales the *whole interaction term* by a factor of 0.5 in the TD
         ! case.
         !
-        revc_int(1:exx_fft%dfftt%nnr,:)= revc_int(1:exx_fft%dfftt%nnr,:)&
+        revc_int(1:dfftt%nnr,:)= revc_int(1:dfftt%nnr,:)&
              & -2.d0 * scale * k1d_term_gamma(w1,w2,psic,fac,ibnd)
      ENDIF
      !
@@ -775,9 +813,9 @@ FUNCTION k1d_term_gamma(w1, w2, psi, fac_in, ibnd) RESULT (psi_int)
   !
   INTEGER                  :: ibnd2, is, npw_, ngm_, nnr_
   !
-  npw_=exx_fft%npwt
-  ngm_=exx_fft%ngmt
-  nnr_=exx_fft%dfftt%nnr
+  npw_=npwt
+  ngm_=dfftt%ngm
+  nnr_=dfftt%nnr
   !  
   ALLOCATE(psi_int(nnr_, nbnd))
   psi_int = 0.d0
@@ -807,22 +845,22 @@ FUNCTION k1d_term_gamma(w1, w2, psi, fac_in, ibnd) RESULT (psi_int)
              &AIMAG(red_revc0(1:nnr_,ibnd2-1,1)), kind=DP )
      ENDIF
      !
-     CALL fwfft ('Custom', pseudo_dens_c, exx_fft%dfftt)
+     CALL fwfft ('Rho', pseudo_dens_c, dfftt)
      !
      ! hartree contribution is computed in reciprocal space
      !
      DO is = 1, nspin
         !
-        vhart(exx_fft%nlt(1:ngm_),is) =&
-             & pseudo_dens_c(exx_fft%nlt(1:ngm_)) *&
+        vhart(dfftt%nl(1:ngm_),is) =&
+             & pseudo_dens_c(dfftt%nl(1:ngm_)) *&
              & fac_in(1:ngm_) 
-        IF (gamma_only) vhart(exx_fft%nltm(1:ngm_),is) = &
-             & pseudo_dens_c(exx_fft%nltm(1:ngm_)) *&
+        IF (gamma_only) vhart(dfftt%nlm(1:ngm_),is) = &
+             & pseudo_dens_c(dfftt%nlm(1:ngm_)) *&
              & fac_in(1:ngm_) 
         !
         !  and transformed back to real space
         !
-        CALL invfft ('Custom', vhart (:, is), exx_fft%dfftt)
+        CALL invfft ('Rho', vhart (:, is), dfftt)
         !
      ENDDO
      !
@@ -877,18 +915,18 @@ FUNCTION k1d_term_k(w1, psi, fac_in, ibnd, ik,ikq) RESULT (psi_int)
      pseudo_dens_c(:) = CONJG(red_revc0(:,ibnd,ikq))*&
           &red_revc0(:,ibnd2,k2q(ik))/omega
      !
-     CALL fwfft ('Smooth', pseudo_dens_c, dffts)
+     CALL fwfft ('Rho', pseudo_dens_c, dffts)
      !
      ! hartree contribution is computed in reciprocal space
      !
      DO is = 1, nspin
         !
-        vhart(nls(1:ngm),is) = w1*pseudo_dens_c(nls(1:ngm)) *&
+        vhart(dffts%nl(1:ngm),is) = w1*pseudo_dens_c(dffts%nl(1:ngm)) *&
              & fac_in(1:ngm) 
         !
         !  and transformed back to real space
         !
-        CALL invfft ('Smooth', vhart (:, is), dffts)
+        CALL invfft ('Rho', vhart (:, is), dffts)
         !
      ENDDO
      !
@@ -923,9 +961,9 @@ FUNCTION k2d_term_gamma(w1, w2, psi, fac_in, ibnd) RESULT (psi_int)
   !
   INTEGER                  :: ibnd2, is, npw_,ngm_, nnr_
   !
-  nnr_ = exx_fft%dfftt%nnr
-  npw_ = exx_fft%npwt
-  ngm_ = exx_fft%ngmt
+  nnr_ = dfftt%nnr
+  ngm_ = dfftt%ngm
+  npw_ = npwt
   !
   ALLOCATE(psi_int(nnr_, nbnd))
   psi_int = 0.d0
@@ -952,21 +990,20 @@ FUNCTION k2d_term_gamma(w1, w2, psi, fac_in, ibnd) RESULT (psi_int)
              & w2*AIMAG(psi(1:nnr_))*AIMAG(red_revc0(1:nnr_,ibnd2-1,1)), kind=DP )
      ENDIF
      !
-     CALL fwfft ('Custom', pseudo_dens_c, exx_fft%dfftt)
+     CALL fwfft ('Rho', pseudo_dens_c, dfftt)
      !
      ! hartree contribution is computed in reciprocal space
      !
      DO is = 1, nspin
         !
-        vhart(exx_fft%nlt(1:ngm_),is) = pseudo_dens_c(exx_fft&
-             &%nlt(1:ngm_)) * fac_in(1:ngm_)
-        IF (gamma_only) vhart(exx_fft%nltm(1:ngm_),is) = &
-             & pseudo_dens_c(exx_fft%nltm(1:ngm_)) *&
+        vhart(dfftt%nl(1:ngm_),is) = pseudo_dens_c(dfftt%nl(1:ngm_)) * fac_in(1:ngm_)
+        IF (gamma_only) vhart(dfftt%nlm(1:ngm_),is) = &
+             & pseudo_dens_c(dfftt%nlm(1:ngm_)) *&
              & fac_in(1:ngm_)
         !
         !  and transformed back to real space
         !
-        CALL invfft ('Custom', vhart (:, is), exx_fft%dfftt)
+        CALL invfft ('Rho', vhart (:, is), dfftt)
         !
      ENDDO
      !
@@ -1017,18 +1054,18 @@ FUNCTION k2d_term_k(w1, psi, fac_in, ibnd, ik, ikq) RESULT (psi_int)
      !
      pseudo_dens_c(:) =  CONJG(psi(:))*red_revc0(:,ibnd2,k2q(ik))/omega
      !
-     CALL fwfft ('Smooth', pseudo_dens_c, dffts)
+     CALL fwfft ('Rho', pseudo_dens_c, dffts)
      !
      ! hartree contribution is computed in reciprocal space
      !
      DO is = 1, nspin
         !
-        vhart(nls(1:ngm),is) = w1*pseudo_dens_c(nls(1:ngm)) *&
+        vhart(dffts%nl(1:ngm),is) = w1*pseudo_dens_c(dffts%nl(1:ngm)) *&
              & fac_in(1:ngm) 
         !
         !  and transformed back to real space
         !
-        CALL invfft ('Smooth', vhart (:, is), dffts)
+        CALL invfft ('Rho', vhart (:, is), dffts)
         !
      ENDDO
      !
@@ -1050,70 +1087,70 @@ END FUNCTION k2d_term_k
 !! moved somewhere else but for now they live here.
 !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE invfft_orbital_custom_gamma(orbital, ibnd, nbnd, g2r)
+SUBROUTINE invfft_orbital_custom_gamma(orbital, ibnd, nbnd, npwt, dfftt)
 
   USE kinds,        ONLY : DP
-  USE fft_custom,   ONLY : fft_cus
+  USE fft_types,    ONLY : fft_type_descriptor
 
   IMPLICIT NONE
 
   COMPLEX(DP), INTENT(IN)    :: orbital(:,:)
-  INTEGER, INTENT(IN)        :: ibnd, nbnd
-  TYPE(fft_cus), INTENT(IN)  :: g2r
+  INTEGER, INTENT(IN)        :: ibnd, nbnd, npwt
+  TYPE(fft_type_descriptor), INTENT(IN)  :: dfftt
   !
   psic=(0.0_dp, 0.0_dp)
   !
   IF (ibnd < nbnd) THEN
      !
-     psic(g2r%nlt(1:g2r%npwt)) = orbital(1:g2r%npwt,ibnd) + &
-          &(0.0_dp, 1.0_dp) * orbital(1:g2r%npwt,ibnd+1) 
-     psic(g2r%nltm(1:g2r%npwt)) = CONJG(orbital(1:g2r%npwt,ibnd) - &   
-          &(0.0_dp, 1.0_dp) * orbital(1:g2r%npwt,ibnd+1))
+     psic(dfftt%nl(1:npwt)) = orbital(1:npwt,ibnd) + &
+          &(0.0_dp, 1.0_dp) * orbital(1:npwt,ibnd+1) 
+     psic(dfftt%nlm(1:npwt)) = CONJG(orbital(1:npwt,ibnd) - &   
+          &(0.0_dp, 1.0_dp) * orbital(1:npwt,ibnd+1))
      !
   ELSE
      !
-     psic(g2r%nlt(1:g2r%npwt))  = orbital(1:g2r%npwt,ibnd)
-     psic(g2r%nltm(1:g2r%npwt)) =CONJG(orbital(1:g2r%npwt,ibnd))
+     psic(dfftt%nl(1:npwt))  = orbital(1:npwt,ibnd)
+     psic(dfftt%nlm(1:npwt)) =CONJG(orbital(1:npwt,ibnd))
      !
   ENDIF
   !
-  CALL invfft ('CustomWave', psic, exx_fft%dfftt)
+  CALL invfft ('Wave', psic, dfftt)
   !
   RETURN
   !
 END SUBROUTINE invfft_orbital_custom_gamma
 
-SUBROUTINE fwfft_orbital_custom_gamma(orbital, ibnd, nbnd, g2r)
+SUBROUTINE fwfft_orbital_custom_gamma(orbital, ibnd, nbnd, npwt, dfftt)
 
   USE kinds,        ONLY : DP
-  USE fft_custom,   ONLY : fft_cus
+  USE fft_types,    ONLY : fft_type_descriptor
 
   IMPLICIT NONE
 
   COMPLEX(DP), INTENT(INOUT)    :: orbital(:,:)
-  INTEGER, INTENT(IN)        :: ibnd, nbnd
-  TYPE(fft_cus), INTENT(IN)  :: g2r
+  INTEGER, INTENT(IN)        :: ibnd, nbnd, npwt
+  TYPE(fft_type_descriptor), INTENT(IN)  :: dfftt
 
   ! Workspaces
   COMPLEX(DP) :: fp, fm
   ! Counters
   INTEGER :: j
   !
-  CALL fwfft ('CustomWave', psic(:), g2r%dfftt)   
+  CALL fwfft ('Wave', psic(:), dfftt)
   !
   IF (ibnd < nbnd) THEN
      !
      ! two ffts at the same time
-     DO j = 1, g2r%npwt
-        fp = (psic(g2r%nlt(j)) + psic(g2r%nltm(j)))*0.5d0
-        fm = (psic(g2r%nlt(j)) - psic(g2r%nltm(j)))*0.5d0
+     DO j = 1, npwt
+        fp = (psic(dfftt%nl(j)) + psic(dfftt%nlm(j)))*0.5d0
+        fm = (psic(dfftt%nl(j)) - psic(dfftt%nlm(j)))*0.5d0
         orbital( j, ibnd)   = CMPLX( DBLE(fp), AIMAG(fm),kind=DP)
         orbital( j, ibnd+1) = CMPLX(AIMAG(fp),- DBLE(fm),kind=DP)
      ENDDO
      !
   ELSE
      !
-     orbital(1:g2r%npwt,ibnd)=psic(g2r%nlt(1:g2r%npwt))
+     orbital(1:npwt,ibnd)=psic(dfftt%nl(1:npwt))
      !
   ENDIF
   !

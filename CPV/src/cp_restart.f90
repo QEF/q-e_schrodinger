@@ -27,11 +27,11 @@ MODULE cp_restart
   USE io_files,  ONLY : xmlpun, qexml_version, qexml_version_init
   USE xml_io_base, ONLY  : write_wfc
 #endif
-  USE xml_io_base,     ONLY  : read_wfc, write_rho, read_print_counter, create_directory
+  USE xml_io_base,     ONLY  : read_wfc, write_rho, read_print_counter
   !
   USE kinds,     ONLY : DP
   USE io_global, ONLY : ionode, ionode_id, stdout
-  USE io_files,  ONLY : prefix, iunpun
+  USE io_files,  ONLY : prefix, iunpun, create_directory
   USE mp,        ONLY : mp_bcast
   USE parser,    ONLY : version_compare
   USE matrix_inversion
@@ -349,7 +349,7 @@ MODULE cp_restart
          !
          CALL qexml_write_cell( ibrav, celldm, alat, a1, a2, a3, b1, b2, b3, &
                           "Bohr","Bohr","2 pi / a", &
-                          do_makov_payne, .FALSE., .FALSE. )
+                          do_makov_payne, .FALSE., .FALSE., .FALSE. )
          !
 !-------------------------------------------------------------------------------
 ! ... IONS
