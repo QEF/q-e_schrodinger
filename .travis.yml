@@ -7,7 +7,7 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
     packages:
-      - gfortran-5
+      - gfortran
       - libblas-dev
       - liblapack-dev
       - libopenmpi-dev
@@ -17,7 +17,7 @@ env:
 install:
      - ./configure --enable-parallel=$PARA --with-netlib
      - make pw pp ph neb vdw_kernels
-script:
-    - make travis
+#script:
+#    - make travis
 git:
   depth: 3
