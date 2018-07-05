@@ -140,7 +140,7 @@ vdw_kernels : pw
 	bin/generate_vdW_kernel_table.x
 	bin/generate_rVV10_kernel_table.x
 
-travis : pwall epw
+travis : pwall
 	if test -d test-suite ; then \
 	( cd test-suite ; make run-travis || exit 1 ) ; fi
 
