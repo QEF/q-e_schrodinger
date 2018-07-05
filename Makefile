@@ -28,6 +28,7 @@ default :
 	@echo '  xspectra     X-ray core-hole spectroscopy calculations'
 	@echo '  couple       Library interface for coupling to external codes'
 	@echo '  epw          Electron-Phonon Coupling with wannier functions'
+	@echo '  vdw_kernels  kernels for vdW functionals'
 	@echo '  gui          Graphical User Interface'
 	@echo '  examples     fetch from web examples for all core packages'
 	@echo '  test-suite   run semi-automated test-suite for regression testing'
@@ -131,10 +132,13 @@ couple : pw cp
 	if test -d COUPLE ; then \
 	( cd COUPLE ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
 
-epw: ph
+epw : ph
 	if test -d EPW ; then \
 	( cd EPW ; $(MAKE) all || exit 1; \
 		cd ../bin; ln -fs ../EPW/bin/epw.x . ); fi
+vdw_kernels : pw
+	bin/generate_vdW_kernel_table.x
+	bin/generate_rVV10_kernel_table.x
 
 travis : pwall epw
 	if test -d test-suite ; then \
