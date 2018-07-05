@@ -1,13 +1,3 @@
---------------------------------------------------------------------------
-[[30685,1],0]: A high-performance Open MPI point-to-point messaging module
-was unable to find any relevant network interfaces:
-
-Module: OpenFabrics (openib)
-  Host: magneto
-
-Another transport will be used instead, although this may result in
-lower performance.
---------------------------------------------------------------------------
                                                                                       
                                        ``:oss/                                        
                            `.+s+.     .+ys--yh+     `./ss+.                           
@@ -37,7 +27,7 @@ lower performance.
                                                 Comput. Phys. Commun. 209, 116 (2016) 
                                                                                       
 
-     Program EPW v.5.0.0 starts on 20Jun2018 at 12:58:54 
+     Program EPW v.5.0.0 starts on  3Jul2018 at 12:50:47 
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
@@ -123,7 +113,7 @@ lower performance.
      Reading interatomic force constants
 
      Read Z* and epsilon
-     IFC last   -0.0026001
+     IFC last   -0.0026003
      Norm of the difference between old and new effective charges:    0.0000000
      Norm of the difference between old and new force-constants:    0.0001053
      Imposed crystal ASR
@@ -134,8 +124,8 @@ lower performance.
      Finished reading Wann rep data from file
 
      ===================================================================
-     Memory usage:  VmHWM =        18Mb
-                   VmPeak =       239Mb
+     Memory usage:  VmHWM =        14Mb
+                   VmPeak =       247Mb
      ===================================================================
      
      Using uniform q-mesh:    7   7   7
@@ -159,18 +149,14 @@ lower performance.
      Number of ep-matrix elements per pool :       100842 ~=  787.83 Kb (@ 8 bytes/ DP)
      Restart from tau_CB:        343/       343
      Restart from tau:        343/       343
-     Restart from iter:          6 and iq:        343/       343
-     ===================================================================
-     IBTE is converged with value for hole mobility of      0.411824E-01 
-
-     ===================================================================
+     Restart from iter:          3 and iq:        343/       343
       
      ===================================================================
      Start solving iterative Boltzmann Transport Equation
      ===================================================================
 
 
-     Iteration number:         6 
+     Iteration number:         3 
 
 
      Temperature  400.000 K
@@ -193,37 +179,110 @@ lower performance.
      Temp [K]  Fermi [eV]  Hole density [cm^-3]  Hole mobility [cm^2/Vs]
      ===================================================================
 
-      400.000      6.8620       0.100000E+14       0.524180E-02  x-axis
-                                                   0.683330E-02  y-axis
-                                                   0.939838E-02  z-axis
-                                                   0.715783E-02     avg
-                                                     0.1529E-05     Err
-      500.000      7.0136       0.100000E+14       0.301695E-01  x-axis
-                                                   0.394724E-01  y-axis
-                                                   0.539354E-01  z-axis
-                                                   0.411924E-01     avg
-                                                     0.1005E-04     Err
+      400.000      6.8620       0.100000E+14       0.578173E-02  x-axis
+                                                   0.778638E-02  y-axis
+                                                   0.102963E-01  z-axis
+                                                   0.795480E-02     avg
+                                                     0.1550E-03     Err
+      500.000      7.0136       0.100000E+14       0.332919E-01  x-axis
+                                                   0.451450E-01  y-axis
+                                                   0.589510E-01  z-axis
+                                                   0.457960E-01     avg
+                                                     0.9350E-03     Err
 
      ===================================================================
      Temp [K]  Fermi [eV]  Elec density [cm^-3]  Elec mobility [cm^2/Vs]
      ===================================================================
 
-      400.000      7.0305       0.999996E+13       0.369028E+02  x-axis
-                                                   0.369028E+02  y-axis
-                                                   0.569197E+02  z-axis
-                                                   0.435751E+02     avg
-                                                     0.7269E-02     Err
-      500.000      6.8729       0.999999E+13       0.251392E+02  x-axis
-                                                   0.251392E+02  y-axis
-                                                   0.386916E+02  z-axis
-                                                   0.296567E+02     avg
-                                                     0.4750E-02     Err
+      400.000      7.0305       0.999995E+13       0.342030E+02  x-axis
+                                                   0.342030E+02  y-axis
+                                                   0.531325E+02  z-axis
+                                                   0.405129E+02     avg
+                                                     0.1712E+01     Err
+      500.000      6.8729       0.999998E+13       0.232978E+02  x-axis
+                                                   0.232978E+02  y-axis
+                                                   0.361117E+02  z-axis
+                                                   0.275691E+02     avg
+                                                     0.1147E+01     Err
      Total time so far
      MOBITER      :      0.00s CPU      0.00s WALL (       1 calls)
 
+
+     Iteration number:         4 
+
+     Applying a scissor shift of   0.70000 eV to the conduction states
+
+     Temperature  400.000 K
+     Valence band maximum    =   6.255556 eV
+     Conduction band minimum =   7.660803 eV
+     Mobility VB Fermi level   6.861971 eV
+     Valence band maximum    =   6.255556 eV
+     Conduction band minimum =   7.660803 eV
+     Mobility CB Fermi level   7.030499 eV
+
+     Temperature  500.000 K
+     Valence band maximum    =   6.255556 eV
+     Conduction band minimum =   7.660803 eV
+     Mobility VB Fermi level   7.013628 eV
+     Valence band maximum    =   6.255556 eV
+     Conduction band minimum =   7.660803 eV
+     Mobility CB Fermi level   6.872902 eV
+     Progression iq (fine) =         50/       343
+     Creation of a restart point
+     Progression iq (fine) =        100/       343
+     Creation of a restart point
+     Progression iq (fine) =        150/       343
+     Creation of a restart point
+     Progression iq (fine) =        200/       343
+     Creation of a restart point
+     Progression iq (fine) =        250/       343
+     Creation of a restart point
+     Progression iq (fine) =        300/       343
+     Creation of a restart point
+     Creation of a restart point
+
      ===================================================================
-     Memory usage:  VmHWM =        28Mb
-                   VmPeak =       278Mb
+     Temp [K]  Fermi [eV]  Hole density [cm^-3]  Hole mobility [cm^2/Vs]
+     ===================================================================
+
+      400.000      6.8620       0.100000E+14       0.579235E-02  x-axis
+                                                   0.781949E-02  y-axis
+                                                   0.103095E-01  z-axis
+                                                   0.797377E-02     avg
+                                                     0.1897E-04     Err
+      500.000      7.0136       0.100000E+14       0.333592E-01  x-axis
+                                                   0.453494E-01  y-axis
+                                                   0.590312E-01  z-axis
+                                                   0.459133E-01     avg
+                                                     0.1173E-03     Err
+
+     ===================================================================
+     Temp [K]  Fermi [eV]  Elec density [cm^-3]  Elec mobility [cm^2/Vs]
+     ===================================================================
+
+      400.000      7.0305       0.999995E+13       0.340643E+02  x-axis
+                                                   0.340643E+02  y-axis
+                                                   0.523807E+02  z-axis
+                                                   0.401697E+02     avg
+                                                     0.3431E+00     Err
+      500.000      6.8729       0.999998E+13       0.232078E+02  x-axis
+                                                   0.232078E+02  y-axis
+                                                   0.356049E+02  z-axis
+                                                   0.273401E+02     avg
+                                                     0.2290E+00     Err
+     Total time so far
+     MOBITER      :     65.20s CPU     67.98s WALL (       2 calls)
+
+
+     Iteration number:         5 
+
+     ===================================================================
+     The iteration reached the maximum but did not converge.
+     ===================================================================
+
+     ===================================================================
+     Memory usage:  VmHWM =        26Mb
+                   VmPeak =       286Mb
      ===================================================================
 
  
@@ -235,16 +294,16 @@ lower performance.
  
  
      Electron-Phonon interpolation
-     ephwann      :      0.50s CPU      0.52s WALL (       1 calls)
-     ep-interp    :      0.13s CPU      0.15s WALL (       1 calls)
+     ephwann      :     65.83s CPU     68.63s WALL (       1 calls)
+     ep-interp    :     65.46s CPU     68.26s WALL (     344 calls)
  
-     DynW2B       :      0.00s CPU      0.00s WALL (       1 calls)
-     HamW2B       :      0.07s CPU      0.07s WALL (    1372 calls)
-     ephW2Bp      :      0.01s CPU      0.02s WALL (       1 calls)
+     DynW2B       :      0.01s CPU      0.02s WALL (     344 calls)
+     HamW2B       :     10.50s CPU     10.55s WALL (  236670 calls)
+     ephW2Bp      :      1.76s CPU      4.36s WALL (     344 calls)
  
  
      Total program execution
-     EPW          :     0.50s CPU         0.52s WALL
+     EPW          :  1m 5.83s CPU     1m 8.63s WALL
 
                                                                                           
  Please consider citing:                                                                  
