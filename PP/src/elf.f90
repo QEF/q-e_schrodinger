@@ -37,7 +37,7 @@ SUBROUTINE do_elf (elf)
   USE symme, ONLY: sym_rho, sym_rho_init
   USE wvfct, ONLY: nbnd, wg
   USE control_flags, ONLY: gamma_only
-  USE wavefunctions_module,  ONLY: evc
+  USE wavefunctions,  ONLY: evc
   USE mp_pools, ONLY: inter_pool_comm, intra_pool_comm
   USE mp, ONLY: mp_sum
   !
@@ -201,13 +201,6 @@ SUBROUTINE do_rdg (rdg)
   ! gradient of rho
   ALLOCATE( grho(3,dfftp%nnr) )
 
-  ! put the total (up+down) charge density in rho%of_r(*,1)
-  DO is = 2, nspin
-     rho%of_g(:,1) =  rho%of_g(:,1) + rho%of_g(:,is)
-     rho%of_r(:,1) =  rho%of_r(:,1) + rho%of_r(:,is)
-  ENDDO
-
-  ! gradient of rho
   CALL fft_gradient_g2r(dfftp, rho%of_g(1,1), g, grho)
 
   ! calculate rdg

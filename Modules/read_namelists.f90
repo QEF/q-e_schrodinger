@@ -60,6 +60,7 @@ MODULE read_namelists_module
        IMPLICIT NONE
        !
        CHARACTER(LEN=2) :: prog   ! ... specify the calling program
+       CHARACTER(LEN=20) ::    temp_string 
        !
        !
        IF ( prog == 'PW' ) THEN
@@ -105,6 +106,10 @@ MODULE read_namelists_module
           pseudo_dir = TRIM( pseudo_dir ) // '/espresso/pseudo/'
        END IF
        !
+       ! ... max number of md steps added to the xml file. Needs to be limited for very long 
+       !     md simulations 
+       CALL get_environment_variable('MAX_XML_STEPS', temp_string) 
+            IF ( TRIM(temp_string) .NE.  ' ')  READ(temp_string, *) max_xml_steps 
        refg          = 0.05_DP
        max_seconds   = 1.E+7_DP
        ekin_conv_thr = 1.E-6_DP
@@ -120,7 +125,6 @@ MODULE read_namelists_module
        lelfield = .FALSE.
        lorbm = .FALSE.
        nberrycyc  = 1
-       lkpoint_dir = .TRUE.
        lecrpa   = .FALSE.   
        tqmmm = .FALSE.
        !
@@ -225,6 +229,7 @@ MODULE read_namelists_module
        scdm=.FALSE.
        scdmden=1.0d0
        scdmgrd=1.0d0
+       nscdm=1
        !
        ! ... electric fields
        !
@@ -282,6 +287,8 @@ MODULE read_namelists_module
        xdm = .FALSE.
        xdm_a1 = 0.0_DP
        xdm_a2 = 0.0_DP
+       dftd3_version = 3
+       dftd3_threebody = .TRUE.
        !
        ! ... ESM
        !
@@ -380,6 +387,7 @@ MODULE read_namelists_module
        diagonalization = 'david'
        diago_thr_init = 0.0_DP
        diago_cg_maxiter = 20
+       diago_ppcg_maxiter = 20
        diago_david_ndim = 4
        diago_full_acc = .FALSE.
        !
@@ -572,6 +580,7 @@ MODULE read_namelists_module
        cell_nstepe = 1
        cell_damping = 0.1_DP
        press_conv_thr = 0.5_DP
+       treinit_gvecs = .FALSE.
        !
        RETURN
        !
@@ -726,7 +735,6 @@ MODULE read_namelists_module
        CALL mp_bcast( gdir,          ionode_id, intra_image_comm )
        CALL mp_bcast( nppstr,        ionode_id, intra_image_comm )
        CALL mp_bcast( point_label_type,   ionode_id, intra_image_comm )
-       CALL mp_bcast( lkpoint_dir,   ionode_id, intra_image_comm )
        CALL mp_bcast( wf_collect,    ionode_id, intra_image_comm )
        CALL mp_bcast( lelfield,      ionode_id, intra_image_comm )
        CALL mp_bcast( lorbm,         ionode_id, intra_image_comm )
@@ -806,6 +814,7 @@ MODULE read_namelists_module
        CALL mp_bcast( scdm,                ionode_id, intra_image_comm )
        CALL mp_bcast( scdmden,             ionode_id, intra_image_comm )
        CALL mp_bcast( scdmgrd,             ionode_id, intra_image_comm )
+       CALL mp_bcast( nscdm,               ionode_id, intra_image_comm )
        CALL mp_bcast( n_proj,              ionode_id, intra_image_comm )
        CALL mp_bcast( nqx1,                   ionode_id, intra_image_comm )
        CALL mp_bcast( nqx2,                   ionode_id, intra_image_comm )
@@ -977,6 +986,7 @@ MODULE read_namelists_module
        CALL mp_bcast( diagonalization,      ionode_id, intra_image_comm )
        CALL mp_bcast( diago_thr_init,       ionode_id, intra_image_comm )
        CALL mp_bcast( diago_cg_maxiter,     ionode_id, intra_image_comm )
+       CALL mp_bcast( diago_ppcg_maxiter,   ionode_id, intra_image_comm )
        CALL mp_bcast( diago_david_ndim,     ionode_id, intra_image_comm )
        CALL mp_bcast( diago_full_acc,       ionode_id, intra_image_comm )
        CALL mp_bcast( sic,                  ionode_id, intra_image_comm )
@@ -1129,6 +1139,7 @@ MODULE read_namelists_module
        CALL mp_bcast( cell_nstepe,      ionode_id, intra_image_comm )
        CALL mp_bcast( cell_damping,     ionode_id, intra_image_comm )
        CALL mp_bcast( press_conv_thr,   ionode_id, intra_image_comm )
+       CALL mp_bcast( treinit_gvecs,    ionode_id, intra_image_comm )
        !
        RETURN
        !

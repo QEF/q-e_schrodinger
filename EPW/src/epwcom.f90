@@ -246,6 +246,12 @@
   !! if .true. then fix the gauge when diagonalizing the interpolated dynamical matrix and electronic Hamiltonian. 
   LOGICAL :: lindabs
   !! if .true., perform phonon-assisted absorption calculations
+  LOGICAL :: use_ws
+  !! if .true., use Wannier-centers to compute the Wigner-Seitz cell. 
+  LOGICAL :: epmatkqread
+  !! if .true., restart and IBTE calculation from the scattering rates written to files. 
+  LOGICAL :: selecqread
+  !! if .true., restart from the selecq.fmt file
   !
   ! Superconductivity
   LOGICAL :: ephwrite
@@ -326,23 +332,6 @@ MODULE klist_epw
   ! 
 END MODULE klist_epw
 !
-MODULE units_epw
-  !!
-  !! ... the units of the files and the record lengths
-  !!
-  SAVE
-  !
-  INTEGER :: lrepmatf
-  !INTEGER :: iudvscf0
-  !
-  ! iudvscf0: the unit where the delta Vscf is read to generate the fake perturbation 
-  ! lrepmatf: the length of the record for the electron-phonon matrix
-  !
-  logical, ALLOCATABLE :: this_dvkb3_is_on_file(:), &
-                          this_pcxpsi_is_on_file(:,:)
-  !
-END MODULE units_epw
-!
 !
 MODULE output_epw
   !!
@@ -369,7 +358,6 @@ END MODULE output_epw
 !
 MODULE epwcom
   USE control_epw
-  USE units_epw
   USE output_epw
   USE klist_epw
 END MODULE epwcom

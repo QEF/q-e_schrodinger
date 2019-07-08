@@ -27,8 +27,8 @@ p1=`grep "P= " $fname | tail -1 | awk '{print $6}'`
 
 # NSCF
 ef1=`grep "the Fermi energy is" $fname | awk '{print $5}'`
-eh1=`grep "highest occupied" $fname | awk '{print $7}'`
-el1=`grep "highest occupied" $fname | awk '{print $8}'`
+eh1=`grep "highest occupied" $fname | tail -1 | awk '{print $5}'`
+ehl1=`grep "highest occupied, lowest unoccupied" $fname | tail -1 | awk '{print $7; print $8}'`
 tf1=`grep " P = " $fname | head -1 | awk '{printf "%7.5f", $3}'`
 
 # PH
@@ -45,6 +45,8 @@ dos1=`grep "DOS =" $fname | awk '{print $3}'`
 e2=`grep " E(" $fname | awk '{print $4}'`
 rsig=`grep "Re\[Sigma\]=" $fname | awk '{print $7}'` 
 isig=`grep "Im\[Sigma\]=" $fname | awk '{print $10}'` 
+rpi=`grep "Re\[Pi\]=" $fname | awk '{print $7}'`
+ipi=`grep "Im\[Pi\]=" $fname | awk '{print $10}'`
 z1=`grep " Z=" $fname | awk '{print $13}'`
 lam=`grep "lam= " $fname | awk '{print $15}'`
 lambda=`grep "     lambda___(" $fname | awk '{print $4}'`
@@ -65,7 +67,7 @@ pi=`grep "Re[Pi]=" $fname | awk '{print $4; print $7; print $10}'`
 mobvb=`grep "Mobility VB Fermi level" $fname | awk '{print $5}'`
 mobcb=`grep "Mobility CB Fermi level" $fname | awk '{print $5}'`
 density=`grep " x-axis" $fname | awk '{print $1; print $2; print $3}'`
-mobx=`grep " x-axis" $fname | awk '{print $4}'`
+mobx=`grep " x-axis" $fname | awk '{print $5}'`
 mobav=`grep "   avg" $fname | awk '{print $1}'`
 mobxZ=`grep " x-axis [Z]" $fname | awk '{print $1; print $2; print $3; print $4}'`
 indabs=`grep "  (cm-1)" $fname | awk '{print $1; print $2; print $3; print $4}'` 
@@ -166,6 +168,16 @@ if test "$isig" != ""; then
         for x in $isig; do echo $x; done
 fi
 
+if test "$rpi" != ""; then
+        echo rpi
+        for x in $rpi; do echo $x; done
+fi
+
+if test "$ipi" != ""; then
+        echo ipi
+        for x in $ipi; do echo $x; done
+fi
+
 if test "$z1" != ""; then
         echo z1
         for x in $z1; do echo $x; done
@@ -247,9 +259,9 @@ if test "$eh1" != ""; then
         for x in $eh1; do echo $x; done
 fi
 
-if test "$el1" != ""; then
-        echo el1
-        for x in $el1; do echo $x; done
+if test "$ehl1" != ""; then
+        echo ehl1
+        for x in $ehl1; do echo $x; done
 fi
 
 if test "$tf1" != ""; then

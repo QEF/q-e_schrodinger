@@ -81,6 +81,7 @@
 
         INTEGER   :: iforceh(3,3) = 1  ! if iforceh( i, j ) = 0 then h( i, j ) 
                                        ! is not allowed to move
+        LOGICAL   :: enforce_ibrav = .FALSE.! True if ibrav representation is fix
         LOGICAL   :: fix_volume = .FALSE.! True if cell volume is kept fixed
         LOGICAL   :: fix_area = .FALSE.  ! True if area in xy plane is kept constant
         LOGICAL   :: isotropic = .FALSE. ! True if volume option is chosen for cell_dofree 
@@ -225,6 +226,8 @@
      at(:,:) = at(:,:) / alat
      !
   END IF
+  IF ( alat < 1.9_dp ) CALL infomsg ('cell_base_init', &
+     'DEPRECATED: use true lattice parameter, not A to a.u. conversion factor') 
   !
   ! ... Generate the reciprocal lattice vectors
   !
@@ -696,6 +699,9 @@
 
             CASE ( 'all', 'default' )
               iforceh = 1
+            CASE ( 'ibrav')
+              iforceh = 1
+              enforce_ibrav = .true.
             CASE ( 'shape' )
               iforceh = 1
               fix_volume = .true.

@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #
 # Post-processing script from of PH data in format used by EPW
 # 14/07/2015 - Creation of the script - Samuel Ponce
@@ -67,7 +68,7 @@ else:
   except ValueError:
     raise Exception('The value you enter is not an integer!')
 
-os.system('mkdir save')
+os.system('mkdir save 2>/dev/null')
 
 for iqpt in np.arange(1,nqpt+1):
   label = str(iqpt)
@@ -118,3 +119,4 @@ for iqpt in np.arange(1,nqpt+1):
       else:
         os.system('cp _ph0/'+prefix+'.q_'+str(iqpt)+'/'+prefix+'.dvscf1 save/'+prefix+'.dvscf_q'+label)
         os.system('rm _ph0/'+prefix+'.q_'+str(iqpt)+'/*wfc*' )
+

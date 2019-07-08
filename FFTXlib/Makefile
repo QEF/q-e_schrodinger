@@ -41,20 +41,12 @@ fft_scalar.o : fft_scalar.f90  fft_scalar.FFTW3.f90  fft_scalar.FFTW.f90  fft_sc
 fft_stick.o : fft_stick.c fftw.c fftw.h konst.h
 
 TEST : test.o libqefft.a
-	$(LD) $(LDFLAGS) -o fft_test.x test.o libqefft.a $(LIBS)
+	$(LD) $(LDFLAGS) -o fft_test.x test.o libqefft.a $(QELIBS)
 
 TEST0:  test0.o libqefft.a
-	$(LD) $(LDFLAGS) -o fft_test0.x test0.o libqefft.a $(LIBS)
+	$(LD) $(LDFLAGS) -o fft_test0.x test0.o libqefft.a $(QELIBS)
 
 clean :
 	- /bin/rm -f *.o *.a *.d *.i *~ *_tmp.f90 *.mod *.L 
-
-# .PHONY forces execution of a rule irrespective of the presence of an
-# updated file with the same name of the rule. In this way, the script 
-# that generates version.f90 always runs, updating the version if you 
-# execute "svn update". The update_version script takes care of not
-# changing the file if the svn version did not change
-
-.PHONY: all clean
 
 include make.depend

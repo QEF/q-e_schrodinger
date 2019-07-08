@@ -165,7 +165,8 @@ PROGRAM matdyn
   LOGICAL :: dos, has_zstar, q_in_cryst_coord, eigen_similarity
   COMPLEX(DP), ALLOCATABLE :: dyn(:,:,:,:), dyn_blk(:,:,:,:), frc_ifc(:,:,:,:)
   COMPLEX(DP), ALLOCATABLE :: z(:,:)
-  REAL(DP), ALLOCATABLE:: tau(:,:), q(:,:), w2(:,:), freq(:,:), wq(:), dynq(:,:,:), DOSofE(:)
+  REAL(DP), ALLOCATABLE:: tau(:,:), q(:,:), w2(:,:), freq(:,:), wq(:), &
+          dynq(:,:,:), DOSofE(:)
   INTEGER, ALLOCATABLE:: ityp(:), itau_blk(:)
   REAL(DP) ::     omega,alat, &! cell parameters and volume
                   at_blk(3,3), bg_blk(3,3),  &! original cell
@@ -202,7 +203,7 @@ PROGRAM matdyn
   CHARACTER(LEN=6) :: int_to_char
   LOGICAL, ALLOCATABLE :: mask(:)
   INTEGER            :: npk_label, nch
-  CHARACTER(LEN=100), ALLOCATABLE :: letter(:)
+  CHARACTER(LEN=3), ALLOCATABLE :: letter(:)
   INTEGER, ALLOCATABLE :: label_list(:)
   LOGICAL :: tend, terr
   CHARACTER(LEN=256) :: input_line, buffer
@@ -423,10 +424,9 @@ PROGRAM matdyn
         CALL mp_bcast(nq, ionode_id, world_comm)
         ALLOCATE ( q(3,nq) )
         IF (.NOT.q_in_band_form) THEN
-           ALLOCATE( letter(nq) )
            ALLOCATE(wq(nq))
            DO n = 1,nq
-              IF (ionode) READ (5,*) (q(i,n),i=1,3), letter(n)
+              IF (ionode) READ (5,*) (q(i,n),i=1,3)
            END DO
            CALL mp_bcast(q, ionode_id, world_comm)
            !
@@ -534,7 +534,7 @@ PROGRAM matdyn
 
      ALLOCATE ( dyn(3,3,nat,nat), dyn_blk(3,3,nat_blk,nat_blk) )
      ALLOCATE ( z(3*nat,3*nat), w2(3*nat,nq), f_of_q(3,3,nat,nat), &
-     &          dynq(3*nat,nq,nat), DosofE(nat) )
+                dynq(3*nat,nq,nat), DOSofE(nat) )
      ALLOCATE ( tmp_w2(3*nat), abs_similarity(3*nat,3*nat), mask(3*nat) )
 
      if(la2F.and.ionode) open(unit=300,file='dyna2F',status='unknown')
@@ -615,7 +615,10 @@ PROGRAM matdyn
         !
         END IF 
 
-        if(iout_dyn.ne.0) call write_dyn_on_file(q(1,n),dyn,nat, iout_dyn)
+        if(iout_dyn.ne.0) THEN
+           call write_dyn_on_file(q(1,n),dyn,nat, iout_dyn)
+           if(sum(abs(q(:,n)))==0._dp) call  write_epsilon_and_zeu (zeu, epsil, nat, iout_dyn)
+        endif
         
 
         CALL dyndiag(nat,ntyp,amass,ityp,dyn,w2(1,n),z)
@@ -699,18 +702,15 @@ PROGRAM matdyn
         END DO
         CLOSE(unit=2)
 
-        IF(.NOT.dos) THEN
-          OPEN (unit=2,file=trim(flfrq)//'.gp' ,status='unknown',form='formatted')
-          pathL = 0._dp
-          WRITE(2, '(f10.6,3x,a,3x,999f10.4)')  pathL, letter(1), (freq(i,1), i=1,3*nat)
-          DO n=2, nq
-             pathL=pathL+(SQRT(SUM(  (q(:,n)-q(:,n-1))**2 )))
-             WRITE(2, '(f10.6,3x,a,3x,999f10.4)')  pathL, letter(n), (freq(i,n), i=1,3*nat)
-          END DO
-          CLOSE(unit=2)
+        OPEN (unit=2,file=trim(flfrq)//'.gp' ,status='unknown',form='formatted')
+        pathL = 0._dp
+        WRITE(2, '(f10.6,3x,999f10.4)')  pathL,  (freq(i,1), i=1,3*nat)
+        DO n=2, nq
+           pathL=pathL+(SQRT(SUM(  (q(:,n)-q(:,n-1))**2 )))
+           WRITE(2, '(f10.6,3x,999f10.4)')  pathL,  (freq(i,n), i=1,3*nat)
+        END DO
+        CLOSE(unit=2)
 
-          DEALLOCATE(letter)
-        END IF
      END IF
      !
      !  If the force constants are in the xml format we write also
@@ -757,12 +757,7 @@ PROGRAM matdyn
               END DO
            END DO
            !
-           ! The factor 0.5 corrects for the factor 2 in dos_t,
-           ! that accounts for the spin in the electron DOS.
-           !
-           !WRITE (2, '(F15.10,F15.2,F15.6,F20.5)') &
-           !     E, E*RY_TO_CMM1, E*RY_TO_THZ, 0.5d0*DOSofE(1)
-           IF (ionode) WRITE (2, '(ES12.4,1000ES12.4)') E, SUM(DOSofE(1:nat)), DOSofE(1:nat)
+           IF (ionode) WRITE (2, '(2ES18.10,1000ES12.4)') E, SUM(DOSofE(1:nat)), DOSofE(1:nat)
         END DO
         IF (ionode) CLOSE(unit=2)
      END IF  !dos
@@ -2582,7 +2577,7 @@ SUBROUTINE find_representations_mode_q ( nat, ntyp, xq, w2, u, tau, ityp, &
      magnetic_sym=(nspin_mag==4)
      CALL prepare_sym_analysis(nsymq,sr,t_rev,magnetic_sym)
      sym (1:nsym) = .TRUE.
-     CALL sgam_ph_new (at, bg, nsym, s, irt, tau, rtau, nat)
+     CALL sgam_lr (at, bg, nsym, s, irt, tau, rtau, nat)
      CALL find_mode_sym_new (u, w2, tau, nat, nsymq, s, sr, irt, xq,    &
              rtau, amass, ntyp, ityp, 1, .FALSE., .FALSE., num_rap_mode, ierr)
 

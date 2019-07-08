@@ -80,7 +80,7 @@ SUBROUTINE cprmain( tau_out, fion_out, etot_out )
                                        electrons_nosevel, electrons_noseupd
   USE pres_ai_mod,              ONLY : P_ext, P_in, P_fin, pvar, volclu, &
                                        surfclu, Surf_t, abivol, abisur
-  USE wavefunctions_module,     ONLY : c0_bgrp, cm_bgrp, phi_bgrp
+  USE wavefunctions,     ONLY : c0_bgrp, cm_bgrp, phi_bgrp
   USE wannier_module,           ONLY : allocate_wannier
   USE cp_interfaces,            ONLY : printout_new, move_electrons, newinit
   USE cell_nose,                ONLY : xnhh0, xnhhm, xnhhp, vnhh, temph, &
@@ -110,8 +110,7 @@ SUBROUTINE cprmain( tau_out, fion_out, etot_out )
   USE orthogonalize_base,       ONLY : updatc
   USE control_flags,            ONLY : force_pairing, tprint
   USE mp,                       ONLY : mp_bcast, mp_sum
-  USE mp_global,                ONLY : root_bgrp, intra_bgrp_comm, np_ortho, &
-                                       me_ortho, ortho_comm, &
+  USE mp_global,                ONLY : root_bgrp, intra_bgrp_comm, &
                                        me_bgrp, inter_bgrp_comm, nbgrp, me_image
   USE ldaU_cp,                  ONLY : lda_plus_u, vupsi
   USE fft_base,                 ONLY : dfftp, dffts
@@ -672,7 +671,7 @@ SUBROUTINE cprmain( tau_out, fion_out, etot_out )
         IF ( tempp > (tempw+tolp) .OR. &
              tempp < (tempw-tolp) .AND. tempp /= 0.D0 ) THEN
            !
-           CALL  ions_vrescal( tcap, tempw, tempp, taup, &
+           CALL  ions_vrescal( .false., tempw, tempp, taup, &
                                tau0, taum, na, nsp, fion, iforce, pmass, delt )
            CALL r_to_s( taup, tausp, na, nsp, ainv ) 
            !

@@ -18,7 +18,7 @@ SUBROUTINE iosys()
   USE funct,         ONLY : dft_is_hybrid, dft_has_finite_size_correction, &
                             set_finite_size_volume, get_inlc, get_dft_short
   USE funct,         ONLY: set_exx_fraction, set_screening_parameter
-  USE control_flags, ONLY: adapt_thr, tr2_init, tr2_multi
+  USE control_flags, ONLY: adapt_thr, tr2_init, tr2_multi  
   USE constants,     ONLY : autoev, eV_to_kelvin, pi, rytoev, &
                             ry_kbar, amu_ry, bohr_radius_angs, eps8
   USE mp_pools,      ONLY : npool
@@ -136,7 +136,7 @@ SUBROUTINE iosys()
                             ecutvcut_         => ecutvcut
   USE exx,          ONLY:   ecutfock_         => ecutfock, &
                             use_ace, nbndproj, local_thr 
-  USE loc_scdm,      ONLY : use_scdm, scdm_den, scdm_grd 
+  USE loc_scdm,      ONLY : use_scdm, scdm_den, scdm_grd, n_scdm
   !
   USE lsda_mod,      ONLY : nspin_                  => nspin, &
                             starting_magnetization_ => starting_magnetization, &
@@ -147,10 +147,10 @@ SUBROUTINE iosys()
   USE relax,         ONLY : epse, epsf, epsp, starting_scf_threshold
   !
   USE extrapolation, ONLY : pot_order, wfc_order
-  USE control_flags, ONLY : isolve, max_cg_iter, david, tr2, imix, gamma_only,&
+  USE control_flags, ONLY : isolve, max_cg_iter, max_ppcg_iter, david, tr2, imix, gamma_only,&
                             nmix, iverbosity, smallmem, niter, &
                             io_level, ethr, lscf, lbfgs, lmd, &
-                            lbands, lconstrain, restart, twfcollect, &
+                            lbands, lconstrain, restart, &
                             llondon, ldftd3, do_makov_payne, lxdm, &
                             remove_rigid_rot_ => remove_rigid_rot, &
                             diago_full_acc_   => diago_full_acc, &
@@ -160,13 +160,14 @@ SUBROUTINE iosys()
                             nstep_            => nstep, &
                             iprint_           => iprint, &
                             noinv_            => noinv, &
-                            lkpoint_dir_      => lkpoint_dir, &
                             tqr_              => tqr, &
                             tq_smoothing_     => tq_smoothing, &
                             tbeta_smoothing_  => tbeta_smoothing, &
                             ts_vdw_           => ts_vdw, &
                             lecrpa_           => lecrpa, &
-                            scf_must_converge_=> scf_must_converge
+                            scf_must_converge_=> scf_must_converge, & 
+                            treinit_gvecs_    => treinit_gvecs, &  
+                            max_xml_steps_    => max_xml_steps 
   USE check_stop,    ONLY : max_seconds_ => max_seconds
   !
   USE wvfct,         ONLY : nbnd_ => nbnd
@@ -218,9 +219,9 @@ SUBROUTINE iosys()
                                wfcdir, prefix, etot_conv_thr, forc_conv_thr,   &
                                pseudo_dir, disk_io, tefield, dipfield, lberry, &
                                gdir, nppstr, wf_collect,lelfield,lorbm,efield, &
-                               nberrycyc, lkpoint_dir, efield_cart, lecrpa,    &
+                               nberrycyc, efield_cart, lecrpa,                 &
                                vdw_table_name, memory, max_seconds, tqmmm,     &
-                               efield_phase, gate
+                               efield_phase, gate, max_xml_steps
 
   !
   ! ... SYSTEM namelist
@@ -241,7 +242,7 @@ SUBROUTINE iosys()
                                exxdiv_treatment, yukawa, ecutvcut,          &
                                exx_fraction, screening_parameter, ecutfock, &
                                gau_parameter, localization_thr, scdm, ace,    &
-                               scdmden, scdmgrd, n_proj,                      & 
+                               scdmden, scdmgrd, nscdm, n_proj,                & 
                                edir, emaxpos, eopreg, eamp, noncolin, lambda, &
                                angle1, angle2, constrained_magnetization,     &
                                B_field, fixed_magnetization, report, lspinorb,&
@@ -264,7 +265,8 @@ SUBROUTINE iosys()
   USE input_parameters, ONLY : electron_maxstep, mixing_mode, mixing_beta, &
                                mixing_ndim, mixing_fixed_ns, conv_thr,     &
                                tqr, tq_smoothing, tbeta_smoothing,         &
-                               diago_thr_init, diago_cg_maxiter,           &
+                               diago_thr_init,                             &
+                               diago_cg_maxiter, diago_ppcg_maxiter,       &
                                diago_david_ndim, diagonalization,          &
                                diago_full_acc, startingwfc, startingpot,   &
                                real_space, scf_must_converge
@@ -284,7 +286,7 @@ SUBROUTINE iosys()
   !
   USE input_parameters, ONLY : cell_parameters, cell_dynamics, press, wmass,  &
                                cell_temperature, cell_factor, press_conv_thr, &
-                               cell_dofree
+                               cell_dofree, treinit_gvecs 
   !
   ! ... WANNIER_NEW namelist
   !
@@ -416,6 +418,7 @@ SUBROUTINE iosys()
      lmd       = .true.
      lmovecell = .true.
      lforce    = .true.
+     treinit_gvecs_ = treinit_gvecs 
      !
      epse =  etot_conv_thr
      epsf =  forc_conv_thr
@@ -545,7 +548,6 @@ SUBROUTINE iosys()
   ! ... define memory- and disk-related internal switches
   !
   smallmem = ( TRIM( memory ) == 'small' )
-  twfcollect = wf_collect
   !
   ! ... Set Values for electron and bands
   !
@@ -871,10 +873,6 @@ SUBROUTINE iosys()
   CASE ( 'none' )
      !
      io_level = -1
-     IF ( twfcollect ) THEN
-        CALL infomsg('iosys', 'minimal I/O required, wf_collect reset to FALSE')
-        twfcollect= .false.
-     ENDIF
      !
   CASE DEFAULT
      !
@@ -932,15 +930,20 @@ SUBROUTINE iosys()
   ENDIF
   !
   SELECT CASE( trim( diagonalization ) )
+  CASE ( 'david', 'davidson' )
+     !
+     isolve = 0
+     david = diago_david_ndim
+     !
   CASE ( 'cg' )
      !
      isolve = 1
      max_cg_iter = diago_cg_maxiter
      !
-  CASE ( 'david', 'davidson' )
+  CASE ( 'ppcg' )
      !
-     isolve = 0
-     david = diago_david_ndim
+     isolve = 2
+     max_ppcg_iter = diago_ppcg_maxiter
      !
   CASE DEFAULT
      !
@@ -1146,7 +1149,6 @@ SUBROUTINE iosys()
   tbeta_smoothing_ = tbeta_smoothing
   !
   title_      = title
-  lkpoint_dir_=lkpoint_dir
   dt_         = dt
   tefield_    = tefield
   dipfield_   = dipfield
@@ -1163,6 +1165,7 @@ SUBROUTINE iosys()
   pseudo_dir_ = trimcheck( pseudo_dir )
   nstep_      = nstep
   iprint_     = iprint
+  max_xml_steps_ = max_xml_steps
   lecrpa_     = lecrpa
   scf_must_converge_ = scf_must_converge
   !
@@ -1172,15 +1175,9 @@ SUBROUTINE iosys()
   emaxpos_ = emaxpos
   eopreg_  = eopreg
   eamp_    = eamp
-  dfftp%nr1     = nr1
-  dfftp%nr2     = nr2
-  dfftp%nr3     = nr3
   ecfixed_ = ecfixed
   qcutz_   = qcutz
   q2sigma_ = q2sigma
-  dffts%nr1    = nr1s
-  dffts%nr2    = nr2s
-  dffts%nr3    = nr3s
   degauss_ = degauss
   !
   tot_charge_        = tot_charge
@@ -1572,6 +1569,24 @@ SUBROUTINE iosys()
   CALL readpp ( input_dft, .FALSE., ecutwfc_pp, ecutrho_pp )
   CALL set_cutoff ( ecutwfc, ecutrho, ecutwfc_pp, ecutrho_pp )
   !
+  ! ... ensure that smooth and dense grid coincide when ecutrho=4*ecutwfc
+  ! ... even when the dense grid is set from input and the smooth grid is not
+  !
+  dfftp%nr1    = nr1
+  dfftp%nr2    = nr2
+  dfftp%nr3    = nr3
+  IF ( ( nr1 /= 0 .AND. nr2 /= 0 .AND. nr3 /= 0 ) .AND. &
+       ( nr1s== 0 .AND. nr2s== 0 .AND. nr3s== 0 ) .AND. &
+       ( ABS(ecutrho -4*ecutwfc)<eps8) ) THEN
+     dffts%nr1 = nr1
+     dffts%nr2 = nr2
+     dffts%nr3 = nr3
+  ELSE
+     dffts%nr1 = nr1s
+     dffts%nr2 = nr2s
+     dffts%nr3 = nr3s
+  END IF
+  !
   ! ... set parameters of hybrid functionals
   !
   x_gamma_extrapolation_ = x_gamma_extrapolation
@@ -1589,12 +1604,9 @@ SUBROUTINE iosys()
   use_scdm  = scdm
   scdm_den = scdmden
   scdm_grd = scdmgrd
-  IF ( local_thr > 0.0_dp .AND. .NOT. gamma_only) &
-     CALL errore('input','localization for k-points not implemented',1)
+  n_scdm   = nscdm   
   IF ( local_thr > 0.0_dp .AND. .NOT. use_ace ) &
      CALL errore('input','localization without ACE not implemented',1)
-! IF ( local_thr > 0.0_dp .AND. nspin > 1 ) &
-!    CALL errore('input','spin-polarized localization not implemented',1)
   IF ( use_scdm ) CALL errore('input','use_scdm not yet implemented',1)
   !
   IF(ecutfock <= 0.0_DP) THEN
@@ -1677,7 +1689,9 @@ SUBROUTINE iosys()
   !
   ! ... End of reading input parameters
   !
+#if ! defined (__INTEL_COMPILER) || (__INTEL_COMPILER >= 1300) 
   CALL pw_init_qexsd_input(qexsd_input_obj, obj_tagname="input")
+#endif
   CALL deallocate_input_parameters ()  
   !
   max_seconds_ = max_seconds

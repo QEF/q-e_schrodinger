@@ -321,6 +321,30 @@ SUBROUTINE print_clock( label )
 END SUBROUTINE print_clock
 !
 !----------------------------------------------------------------------------
+FUNCTION get_cpu_and_wall( n) result (t) 
+  !--------------------------------------------------------------------------
+  !
+  USE util_param, ONLY : DP 
+  USE mytime,     ONLY : clock_label, cputime, walltime, mpi_per_thread, &
+                         notrunning, called, t0cpu, t0wall, f_wall, f_tcpu
+  IMPLICIT NONE 
+  ! 
+  INTEGER  :: n 
+  REAL(DP) :: t(2)  
+  !
+  IF (t0cpu(n) == notrunning ) THEN 
+     t(1) = cputime(n)
+     t(2)  = walltime(n)
+   ELSE 
+     t(1)   = cputime(n) + f_tcpu() - t0cpu(n)
+     t(2)   = walltime(n)+ f_wall() - t0wall(n)
+   END IF 
+#if defined(PRINT_AVG_CPU_TIME_PER_THREAD)
+  ! rescale the elapsed cpu time on a per-thread basis
+  t(1)    = t(1)  * mpi_per_thread
+#endif
+END FUNCTION get_cpu_and_wall      
+!----------------------------------------------------------------------------
 SUBROUTINE print_this_clock( n )
   !----------------------------------------------------------------------------
   !
@@ -405,46 +429,46 @@ SUBROUTINE print_this_clock( n )
      IF ( nday > 0 ) THEN
         !
         WRITE( stdout, ADVANCE='no', &
-               FMT='(5X,A12," : ",3X,I2,"d",3X,I2,"h",I2, "m CPU ")' ) &
+               FMT='(5X,A12," : ",1X,I2,"d",I2,"h",I2,"m CPU ")' ) &
              clock_label(n), nday, nhour, nmin
         !
      ELSEIF ( nhour > 0 ) THEN
         !
         WRITE( stdout, ADVANCE='no', &
-                FMT='(5X,A12," : ",3X,I2,"h",I2,"m CPU ")' ) &
+                FMT='(5X,A12," : ",4X,I2,"h",I2,"m CPU ")' ) &
              clock_label(n), nhour, nmin
         !
      ELSEIF ( nmin > 0 ) THEN
         !
         WRITE( stdout, ADVANCE='no', &
-               FMT='(5X,A12," : ",I2,"m",F5.2,"s CPU ")' ) &
+               FMT='(5X,A12," : ",1X,I2,"m",F5.2,"s CPU ")' ) &
              clock_label(n), nmin, nsec
         !
      ELSE
         !
         WRITE( stdout, ADVANCE='no', &
-               FMT='(5X,A12," : ",3X,F5.2,"s CPU ")' )&
+               FMT='(5X,A12," : ",4X,F5.2,"s CPU ")' )&
              clock_label(n), nsec
         !
      ENDIF
      IF ( mday > 0 ) THEN
         !
-        WRITE( stdout, '("   ",3X,I2,"d",3X,I2,"h",I2, "m WALL"/)' ) &
+        WRITE( stdout, '(1X,I2,"d",I2,"h",I2,"m WALL"/)' ) &
              mday, mhour, mmin
         !
      ELSEIF ( mhour > 0 ) THEN
         !
-        WRITE( stdout, '("   ",3X,I2,"h",I2,"m WALL"/)' ) &
-             nmin, mhour, mmin
+        WRITE( stdout, '(4X,I2,"h",I2,"m WALL"/)' ) &
+             mhour, mmin
         !
      ELSEIF ( mmin > 0 ) THEN
         !
-        WRITE( stdout, '("   ",I2,"m",F5.2,"s WALL"/)' ) &
+        WRITE( stdout, '(1X,I2,"m",F5.2,"s WALL"/)' ) &
              mmin, msec
         !
      ELSE
         !
-        WRITE( stdout, '(7X,F5.2,"s WALL"/)' ) &
+        WRITE( stdout, '(4X,F5.2,"s WALL"/)' ) &
              msec
         !
      ENDIF

@@ -1,5 +1,5 @@
 \documentclass[12pt,a4paper]{article}
-\def\version{6.3}
+\def\version{6.4.1}
 \def\QE{{\sc Quantum ESPRESSO}}
 \def\qe{QE}
 \textwidth = 17cm
@@ -453,28 +453,28 @@ default :
 \end{verbatim}
 {\em If no target specified, ask for one, giving a list of possibilities}
 \begin{verbatim}
-pw : bindir libfft libdavid libcg libla libutil mods liblapack libs libiotk dftd3
+pw : pwlibs
     if test -d PW ; then \
     ( cd PW ; $(MAKE) TLDEPS= all || exit 1) ; fi
 
 \end{verbatim}
-{\em Target {\tt pw}: first check the list of dependencies, bindir etc.,
+{\em Target {\tt pw}: first check the list of dependencies ({\tt pwlib} in this case), 
   do what is needed; then go into {\tt PW/} and give command
-  {\tt make all} (with empty value of TLDEPS: this is likely no longer needed).
-  Note the use of {\tt exit 1}, which is required to forward
+  {\tt make all}. Note the use of {\tt exit 1}, which is required to forward
 the exit status of the sub-directory make to this makefile, since the section
 in parenthesis is run in a subshell and the {\tt if / fi} block will otherwise
 ``hide'' its return status and ``make'' will continue in case of errors. }
+  See below for the meaning of TLDEPS.
 \begin{verbatim}
-gipaw : pw
+gipaw : pwlibs
 	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 \end{verbatim}
-{\em Target {\tt gipaw}: do target pw, then go into directory
+{\em Target {\tt gipaw}: do target {\tt pwlibs}, then go into directory
 {\tt install/}, execute {\tt make gipaw} using {\tt plugins\_makefile}
 as Makefile. This will check if GIPAW is there, download from the network
 if not, compile and link it}
 \begin{verbatim}
-libblas : touch-dummy
+libblas :
      cd install ; $(MAKE) -f extlibs_makefile $@
 \end{verbatim}
 {\em Target {\tt libblas}: this is an external library, that may or may
@@ -501,7 +501,7 @@ pwtools: pw
 \end{verbatim}
 {\em Target {\tt pw}: go into {\tt src/} if it exists, and (apart
 from \texttt{make} wizardry) give command {\tt make pw}. It is important
-to note that {\tt pwtools} has to depend on {\tt pw} or else this
+that {\tt pwtools} explicitly depends upon {\tt pw} or else this
 makefile will break when calling parallel make using {\tt make -j\# }
 Other targets are quite similar: go into a subdirectory, e.g.
 {\tt Doc/} and '{\tt make} something', e.g. {\tt make clean}.}
@@ -516,8 +516,6 @@ include ../../make.inc
 {\em Contains machine- and \qe-specific definitions}
 \begin{verbatim}
 MODFLAGS= $(BASEMOD_FLAGS) \
-          $(MOD_FLAG)../../KS_Solvers/Davidson \
-          $(MOD_FLAG)../../KS_Solvers/CG \
           $(MOD_FLAG)../../dft-d3/
 \end{verbatim}
     {\em Location of needed modules, used in  \texttt{make.inc};
@@ -536,23 +534,32 @@ wannier_enrg.o
 {\em List of objects - add here new objects, or delete from this list. Do not
 forget the backslash! It ensure continuation of the line}
 \begin{verbatim}
-QEMODS=../../Modules/libqemod.a ../../KS_Solvers/Davidson/libdavid.a .....
+QEMODS=../../Modules/libqemod.a \
+       ../../KS_Solvers/libks_solvers.a \
+       ...
 \end{verbatim}
 {\em F95 module objects needed for compiling and linking}
 \begin{verbatim}
-TLDEPS=bindir mods libs liblapack libblas libenviron
+TLDEPS=bindir libs mods libks_solvers dftd3
 \end{verbatim}
 {\em TLDEPS=Top-Level DEPendencieS: a machinery to ensure proper
 compilation with correct dependencies also if compiling from inside
-a package directory and not from top level}
+a package directory and not from top level. In the top-level Makefile,
+TLDEPS is set to an empty string (TLDEPS=) and transmitted to Makefiles
+in the subdirectories. These contain a target "tldeps" that does nothing
+if TLDEPS is empty (i.e. executing from the top level); it goes to the
+top-level directory and executes TLDEPS otherwise. TLDEPS in subdirectory
+Makefiles must be set to the same dependencies of the intended target
+(e.g. pw.x in the following example) in the top-level Makefile.
+}
 \begin{verbatim}
-all : tldeps pw.x generate_vdW_kernel_table.x
+all : tldeps pw.x generate_vdW_kernel_table.x ...
 \end{verbatim}
 {\em Targets that will be build - add here new executables}
 \begin{verbatim}
 pw.x : $(PWOBJS) libpw.a $(LIBOBJS) $(QEMODS)
      $(LD) $(LDFLAGS) -o $@ \
-     $(PWOBJS) libpw.a $(QEMODS) $(LIBOBJS) $(LIBS)
+     $(PWOBJS) libpw.a $(QEMODS) $(LIBOBJS) $(QELIBS)
    - ( cd ../../bin; ln -fs ../PW/src/$@ . ; \
                ln -fs ../PW/src/$@ dist.x ; ln -fs ../PW/src/$@ manypw.x ; )
 \end{verbatim}
@@ -601,6 +608,16 @@ prior to compilation of a2fmod.o - {\tt make} will take care of this.}
 {\bf BEWARE:} the Makefile system is in a stable but delicate equilibrium,
 resulting from many years of experiments on many different machines.
 Handle with care: what works for you may break other cases.
+
+{\bf BEWARE 2:} parallel make (\texttt{make -j N}) works only if all
+needed dependencies are in place. Note that parallel make does not 
+necessarily execute targets in the order they appear, e.g.: if you have
+\begin{verbatim}
+all : a b c d
+\end{verbatim}
+and "d" depends upon "a", that dependency must be explicitly present
+in the Makefiles, or else parallel make will not work (or will work 
+only erratically).
 
 \subsubsection{Preprocessing}
 
@@ -1137,7 +1154,7 @@ Solutions:
 \item use binary I/O for large records
 \item exploit the file system for organizing data
 \item use XML
-\item use a small specialized library (iotk) to read, parse, write
+\item use a specialized library (FoX) to read, parse, write
 \item ensure the possibility to convert to a portable formatted file
 \end{itemize}
 Integration with other packages:
@@ -1177,8 +1194,9 @@ may save hours of searching into the code for a piece of missing information.
   complain if the latter \& is missing, others do.
 % Another example: empty strings are nonstandard,
 % use \texttt{empty='~'}, not \texttt{empty=''}.
-\item do not (yet) use F2008 syntax. Stick to F2003 at most (for now).
-  \qe\ must work even if you do not have the latest and the greatest compiler.
+\item try to stick to F2003 standard: \qe\ must work even if you do not have 
+      the latest and the greatest compiler. Use F2008 syntax only if really
+      useful, and after verifying that it doesn't break too many compilers.
 \item use "dp" (defined in module ''kinds'') to define the type of real and
   complex variables
 \item all constants should be defined to be of kind "dp".  Preferred syntax:
@@ -1193,7 +1211,7 @@ double precision complex number).
 \item Do not use automatic arrays (e.g. \texttt{REAL(dp) :: A(N)} with
 \texttt{N} defined at run time) unless you are sure that the array is
 small in all cases: large arrays may easily exceed the stack size,
-or the memory size,
+or the memory size.
 \item Do not use pointers unless you have a good reason to:
 pointers may hinder optimization. Allocatable arrays should be used instead.
 \item If you use pointers, nullify them before performing tests on their
@@ -1207,9 +1225,12 @@ array sections. Passing an array section to a routine may look elegant
 but it may turn out to be inefficient: a copy will be silently done
 if the section is not contiguous in memory (or if the compiler
 decides it is the right thing to do), increasing the memory footprint.
-\item Do not pass unallocated arrays as arguments, even in those cases where
-they are not actually used inside the subroutine: some compilers don't
-like it.
+\item Do not pass unallocated arrays or pointers as non-optional arguments, 
+even in those cases where they are not actually used inside the subroutine: 
+some compilers don't like it. Also note that if passed as optional argument 
+--provided the argument has not the pointer or allocatable attribute-- 
+unallocated arrays or pointers are interpreted as non present (this is a
+F2008 feature, already used since v.6.4).
 \item Do not use any construct that is susceptible to be flagged as
 out-of-bounds error, even if no actual out-of-bound error takes place.
 \item Always use IMPLICIT NONE and declare all local variables.
@@ -1225,6 +1246,8 @@ example:
 in this order (some compilers complain if you put the second line
 before the first).
 \end{itemize}
+The \texttt{dev-tools/} directory contains some useful tools for developers;
+see the \texttt{dev-tools/README.md} file.
 
 \subsection{Adding or modifying input variables}
 
@@ -1304,98 +1327,128 @@ for serious bugs.
 
 Development can proceed in different ways:
 \begin{enumerate}
-\item Via ``merge'' requests from a private repository
-\item Via ``merge'' requests from a branch
-\item Directly into the ``develop'' branch
+\item Via ``merge'' requests from a branch in the developer's repository 
+      forked from the q-e repository ({\em recommended})
+\item Via ``merge'' requests from a branch of the q-e repository
+      ({\em not recommended})
+\item Directly into the ``develop'' branch, or in a ``backport'' branch
+  if existing.
 \end{enumerate}
-The first option is the recommended one. Register on GitLab and {\em save
-your public ssh keys} on your GitLab account (in this page:
-\verb|https://gitlab.com/profile/keys|). Then:
+The first option is the recommended one. To start:
 \begin{itemize}
-\item  {\em fork} the QEF/q-e project: point your browser to
+\item Register on gitlab.com, {\em save your public ssh keys}
+  on your GitLab account (in this page: \verb|https://gitlab.com/profile/keys|)
+\item {\em fork} the QEF/q-e project: point your browser to
 	 \verb|https://gitlab.com/QEF/q-e|, use the ``fork'' button
 \item {\em clone} your GitLab fork on your workstation, e.g.:\\
    \verb|git clone git@gitlab.com:<your-username>/q-e.git|
-\item {\em switch} to the ``develop'' branch of your fork
-   (not strictly needed, just to keep the symmetry):
+\item optionally, switch to the ``develop'' branch of your fork
+   (just to keep the symmetry):
    \verb|git checkout --track origin/develop|
 \end{itemize}
-Once you have changed your local copy of the repository,
-you have to {\em commit} (save) those changes:
-\begin{quote}
-  \verb|git add| {\em list-of-changed-or-added-files}\\
-  \verb|git commit |
-\end{quote}
-then you can align the repository to the ``develop'' branch:
+Every time you start to do some work, align your fork to the
+``develop'' branch:
 \begin{quote}
   \verb|git pull  git@gitlab.com:QEF/q-e.git develop| 
 \end{quote}
-If a file is modified both locally and in the repository, a conflict
-will arise. You can use the \texttt{stash} to resolve the conflict:
+then create a new branch and work on it:
+\begin{quote}
+   \verb|git checkout -b| {\em my-new-branch}
+\end{quote}
+(if the branch exists, use \verb|git checkout | {\em my-branch} to
+switch to it. If your local repository contains unsaved changes,
+commit or "stash" them before switching branch).
+
+Once you have made your changes, {\em commit} (save) then:
+\begin{quote}
+  \verb|git add| {\em list-of-changed-or-added-files} , then
+	\verb| git commit | , or \\
+  \verb|git commit| {\em list-of-changed-files}, or \\
+  \verb|git commit -a| (commits all modified files)
+\end{quote}
+Please when committing BE EXTREMELY CAREFUL not to add files that do 
+not belong to the repository, e.g.: data files, executables, objects.
+These files MUST NOT BE COMMITTED.
+Once you are finished with changes, you have to {\em push} (publish)
+to the remote repository:
+\begin{quote}
+  \verb|git push origin | {\em my-new-branch}
+\end{quote}
+or just \verb|git push| if the remote branch  {\em my-new-branch} already
+exists. The reply message should contain a link that allows you to make
+a ``merge request'' (the link works only if you are signed in to gitlab.com).
+You can also use the GitLab web interface to that end.
+The branch may be automatically removed after the merge (set the appropriate
+option if you approve your merge) or using \verb|git branch -d | 
+{\em my-new-branch}.
+
+Note: if a merge request is pending and you push further changes to the
+branch to be merged, the merge request will be automatically updated.
+If this is not what you want, commit to a different branch, or wait
+until the merge is done.
+
+It may be a good idea to align your branch to the current development
+version before the merge request. If you have modified a file that has
+meanwhile been modified in the repository, a conflict will arise. You
+can use \texttt{git stash} to resolve the conflict:
 \begin{quote}
   \verb|git stash save | (save and remove modified files)\\
   \verb|git pull  ...  | (update files)\\
   \verb|git stash apply| (overwrite with locally modified files)
 \end{quote}
 Beware! you may need to manually merge files that have been modified both 
-by you and in the repository.
-The stash can be cleared using \texttt{git stash clear}.
+by you and in the repository. \texttt{git stash -l} list all stashed
+changes in reverse chronological order. The stash can be cleared using
+\texttt{git stash clear}.
 
-%Note: it is good practice to use \verb|git fetch| before a pull, as in, e.g.:
-%\begin{quote}
-%  \verb|git fetch  git@gitlab.com:QEF/q-e.git develop|
-%\end{quote}
+Note: if you do not change sources but only documentation, tests, examples,
+add \verb|[skip ci]| in the commit message. This prevents execution of 
+automatic compilation on GitLab (that sometimes fails for no good reason,
+blocking a subsequent merge request).
 
-You may repeat the procedure above, adding more commits to your local copy.
-Unlike in svn, you need to explicitly {\em push} (publish) them to the remote
-repository with
-\begin{verbatim}
-   git push
-\end{verbatim}
-Your repository (more exactly, the ``develop'' branch of your repository)
-should now contain only the differences you want to apply to the ``develop''
-branch of the official repository. You can use the GitLab web interface to
-do a ``merge request'', that some other developer will review and approve
-(or not).
+Note: a commit message containing \verb|[fixes issue #N]| should 
+automatically mark issue N to as solved once it is merged.
 
 \subsection{Working directly into the develop branch}
-Only for people knowing what they are doing (or ready to fix the mess in case
-they didn't know what they were doing):
+NOT RECOMMENDED - only for people knowing what they are doing 
+(or ready to fix the mess in case they didn't know what they were doing):
 \begin{itemize}
 \item \verb|git clone git@gitlab.com:QEF/q-e.git| if not already done
 \item Ensure you switch to the ``develop'' branch:
   \verb|git checkout --track origin/develop|
 \item Work on it as in the previous subsection
-\item When you are ready, \verb|git push|
+\item When you are ready, commit and push.
 \end{itemize}
 
 \subsection{A few useful commands}
 \begin{itemize}
-\item \texttt{status}: information on the current state of the repository 
-\item \texttt{diff}: difference between the local copy and the repository
-\item  \texttt{fetch}:
+\item \texttt{git status}: information on the current state of the repository 
+(use option \texttt{-uno} to get rid of messages about untracked file)
+\item \texttt{git diff}: difference between the local copy and the repository
+\item  \texttt{git fetch}:
   looks at the remote repository, signals if new files or conflicts are present
   in case the local copy is updated
-\item  \texttt{pull}:
+\item  \texttt{git pull}:
   downloads updates from the remote repository, applies them to the local one.
   If there are conflicts that cannot be easily solved, conflicts are flagged
   and one has to proceed with a manual merge
-\item \texttt{add}: adds files or directories to the "stage area", a pool
+\item \texttt{git add}: adds files or directories to the "stage area", a pool
   of files to be committed
-\item \texttt{commit} commits files in the "stage area". Unlike
+\item \texttt{git commit}: commits files in the "stage area". Unlike
   \texttt{svn commit}, files are committed only in the local repository
-\item \texttt{push} publishes the new commits of the local repository
+\item \texttt{git push}: publishes the new commits of the local repository
   to one or more remote repositories
-\item \texttt{merge} merges two branches (typically the local one and
+\item \texttt{git merge}: merges two branches (typically the local one and
   the remote one). A merge may be easy or complex, depending upon the type of
   conflicts.
+\item \texttt{git branch}: information and operations on branches
 \end{itemize}
 
 \section{The \qe \, test-suite}
 \label{Sec:testfarm}
 
 The \qe\, test-suite is used to ensure continuous integration and long-term numerical stability of the code.
-The test-suite is also used by different Buildbot test-farm to automatically test the code nightly after a commit to the SVN qe-forge repository has been detected. 
+The test-suite is also used by different Buildbot test-farm to automatically test the code nightly after a commit to the repository has been detected. 
 
 The currently active test-farm machine can be accessed at 
 \texttt{test-farm.quantum-espresso.org} (points to a machine at CINECA:
@@ -1607,7 +1660,7 @@ others.  In that case, define them as "\$(FFLAGS) -something\_else".
 
 - "try\_fflags\_noopt": flags for Fortran 77 with all optimizations
 turned off: this is usually "-O0".
-These flags used to be needed to compile flib/dlamch.f; likely obsolete
+These flags used to be needed to compile LAPACK dlamch.f; likely obsolete
 
 - "try\_ldflags": flags for the linking phase (not including the list
 of libraries: this is decided later).

@@ -1,5 +1,5 @@
 !
-! Copyright (C) 2001-2017 Quantum ESPRESSO group
+! Copyright (C) 2001-2018 Quantum ESPRESSO group
 ! This file is distributed under the terms of the
 ! GNU General Public License. See the file `License'
 ! in the root directory of the present distribution,
@@ -18,8 +18,7 @@ SUBROUTINE lr_readin
   USE kinds,               ONLY : DP
   USE io_files,            ONLY : tmp_dir, prefix, wfc_dir, create_directory
   USE lsda_mod,            ONLY : current_spin, nspin, isk, lsda
-  USE control_flags,       ONLY : twfcollect,use_para_diag, &
-                                  & tqr, lkpoint_dir, gamma_only, &
+  USE control_flags,       ONLY : use_para_diag, tqr, gamma_only,&
                                   & do_makov_payne
   USE scf,                 ONLY : vltot, v, vrs, vnew, &
                                   & destroy_scf_type, rho
@@ -33,14 +32,11 @@ SUBROUTINE lr_readin
   USE fixed_occ,           ONLY : tfixed_occ
   USE input_parameters,    ONLY : degauss, nosym, wfcdir, outdir
   USE check_stop,          ONLY : max_seconds
-  USE realus,              ONLY : real_space, real_space_debug,&
-                                  & init_realspace_vars, qpointlist,&
-                                  & betapointlist
+  USE realus,              ONLY : real_space, init_realspace_vars, generate_qpointlist, &
+                                  betapointlist
   USE funct,               ONLY : dft_is_meta
-  USE iotk_module
   USE charg_resp,          ONLY : w_T_prefix, omeg, w_T_npol, epsil
   USE mp,                  ONLY : mp_bcast
-  USE mp_world,            ONLY : world_comm
   USE mp_global,           ONLY : my_pool_id, intra_image_comm, &
                                   & intra_bgrp_comm, nproc_image, &
                                   & nproc_pool, nproc_pool_file, &
@@ -48,7 +44,6 @@ SUBROUTINE lr_readin
                                   & nproc_bgrp_file, my_image_id
   USE DFUNCT,              ONLY : newd
   USE vlocal,              ONLY : strf
-  USE exx,                 ONLY : ecutfock
   USE martyna_tuckerman,   ONLY : do_comp_mt
   USE esm,                 ONLY : do_comp_esm
   USE qpoint,              ONLY : xq
@@ -68,24 +63,21 @@ SUBROUTINE lr_readin
   ! Specify the amount of I/O activities
   CHARACTER(LEN=6) :: int_to_char
   INTEGER :: ios, iunout, ierr, ipol
-  LOGICAL :: auto_rs
   LOGICAL, EXTERNAL  :: check_para_diag
   !
   NAMELIST / lr_input /   restart, restart_step ,lr_verbosity, prefix, outdir, &
                         & test_case_no, wfcdir, disk_io, max_seconds
-  NAMELIST / lr_control / itermax, ipol, ltammd, real_space, real_space_debug, lrpa,   &
-                        & charge_response, tqr, auto_rs, no_hxc, n_ipol, project,      &
-                        & scissor, ecutfock, pseudo_hermitian, d0psi_rs, lshift_d0psi, &
+  NAMELIST / lr_control / itermax, ipol, ltammd, lrpa,   &
+                        & charge_response, no_hxc, n_ipol, project,      &
+                        & scissor, pseudo_hermitian, d0psi_rs, lshift_d0psi, &
                         & q1, q2, q3, approximation
   NAMELIST / lr_post /    omeg, beta_gamma_z_prefix, w_T_npol, plot_type, epsil, itermax_int,sum_rule
   namelist / lr_dav /     num_eign, num_init, num_basis_max, residue_conv_thr, precondition,         &
                         & dav_debug, reference,single_pole, sort_contr, diag_of_h, close_pre,        &
                         & broadening,print_spectrum,start,finish,step,if_check_orth, if_random_init, &
                         & if_check_her,p_nbnd_occ,p_nbnd_virt,poor_of_ram,poor_of_ram2,max_iter,     &
-                        & ecutfock, conv_assistant,if_dft_spectrum,no_hxc,d0psi_rs,lshift_d0psi,     &
+                        & conv_assistant,if_dft_spectrum,no_hxc,d0psi_rs,lshift_d0psi,               &
                         & lplot_drho, vccouple_shift, ltammd
-  !
-  auto_rs = .TRUE.
   !
 #if defined(__MPI)
   IF (ionode) THEN
@@ -112,13 +104,9 @@ SUBROUTINE lr_readin
      n_ipol = 1
      no_hxc = .FALSE.
      lrpa = .false.
-     real_space = .FALSE.
-     real_space_debug = 0
      charge_response = 0
      sum_rule = -99
      test_case_no = 0
-     tqr = .FALSE.
-     auto_rs = .TRUE.
      beta_gamma_z_prefix = 'undefined'
      omeg= 0.0_DP
      epsil = 0.0_DP
@@ -127,7 +115,6 @@ SUBROUTINE lr_readin
      project = .FALSE.
      max_seconds = 1.0E+7_DP
      scissor = 0.d0
-     ecutfock = -1d0
      !
      ! For EELS
      !
@@ -207,10 +194,6 @@ SUBROUTINE lr_readin
      ENDIF
      !
      ! The status of the real space flags should be read manually
-     !
-     ! Do not mess with already present wfc structure
-     !
-     twfcollect = .FALSE.
      !
      ! Set-up all the dir and suffix variables.
      !
@@ -320,7 +303,7 @@ SUBROUTINE lr_readin
   ENDIF
   !
   CALL bcast_lr_input
-  CALL mp_bcast(auto_rs, ionode_id, world_comm)
+
 #endif
   !
   ! Required for restart runs as this never gets initialized.
@@ -328,18 +311,6 @@ SUBROUTINE lr_readin
   current_k = 1
   !
   outdir = TRIM( tmp_dir ) // TRIM( prefix ) // '.save'
-  !
-  IF (.NOT.eels) THEN
-     !
-     IF (auto_rs) CALL read_rs_status( outdir, tqr, real_space, ierr )
-     IF (real_space) real_space_debug=99
-     IF (real_space_debug > 0) real_space=.TRUE.
-     IF (lr_verbosity > 1) THEN
-        WRITE(stdout,'(5x,"Status of real space flags: TQR=", L5 ,&
-                      &"  REAL_SPACE=", L5)') tqr, real_space
-     ENDIF
-     !
-  ENDIF
   !
   ! EELS: Create a temporary directory for nscf files, and for
   ! writing of the turboEELS restart files.
@@ -349,16 +320,8 @@ SUBROUTINE lr_readin
      CALL create_directory(tmp_dir_lr)
   ENDIF
   !
-  ! EELS: If restart=.true. read the initial information from the file
-  ! where the turboEELS code saved its own data (including the data about
-  ! the nscf calculation)
-  !
-  IF (eels .AND. restart) tmp_dir = tmp_dir_lr
-  !
   ! Now PWSCF XML file will be read, and various initialisations will be done.
-  ! I. Timrov: Allocate space for PW scf variables (EELS: for PW nscf files,
-  ! if restart=.true.), read and check them.
-  !
+  ! Allocate space for PW scf variables, read and check them.
   ! Optical case: the variables igk_k and ngk are set up through this path:
   ! read_file -> init_igk.
   ! EELS: the variables igk_k and ngk will be re-set up later (because there
@@ -366,6 +329,10 @@ SUBROUTINE lr_readin
   ! lr_run_nscf -> init_run -> hinit0 -> init_igk
   !
   CALL read_file()
+  !
+  IF (.NOT.eels .AND. (tqr .OR. real_space)) &
+     WRITE(stdout,'(/5x,"Status of real space flags: TQR=", L5 , &
+                      & "  REAL_SPACE=", L5)') tqr, real_space
   !
   !   Set wfc_dir - this is done here because read_file sets wfc_dir = tmp_dir
   !   FIXME:,if wfcdir is not present in input, wfc_dir is set to "undefined"
@@ -383,11 +350,6 @@ SUBROUTINE lr_readin
      ! Needed for the nscf calculation.
      !
      IF (.NOT.restart) CALL write_scf( rho, nspin )
-     !
-     ! If a band structure calculation needs to be done, do not open a file
-     ! for k point (PH/phq_readin.f90)
-     !
-     lkpoint_dir = .FALSE.
      !
   ENDIF
   !
@@ -426,9 +388,11 @@ SUBROUTINE lr_readin
   !
   ! I. Timrov: The routine newd was already called in read_file above.
   !
-  CALL newd() !OBM: this is for the ground charge density
+  CALL newd() !OBM: this is for the ground-state charge density
   !
-  IF ( real_space_debug > 0 .AND. .NOT.eels) THEN
+  IF (tqr .AND. .NOT.eels) CALL generate_qpointlist()
+  !
+  IF ( real_space .AND. .NOT.eels) THEN
      !
      WRITE(stdout,'(/5x,"Real space implementation V.1 D190908",1x)')
      ! OBM - correct parellism issues
@@ -527,23 +491,6 @@ CONTAINS
        !
     ENDIF
     !
-    !  Check that either we have the same number of procs as the initial PWscf run
-    !  OR that the wavefunctions were gathered into one file at the end of
-    !  the PWscf run.
-    !
-    IF (nproc_image /= nproc_image_file .AND. .NOT. twfcollect)  &
-         CALL errore('lr_readin',&
-         & 'pw.x run with a different number of processors. &
-         & Use wf_collect=.true.',1)
-    IF (nproc_pool /= nproc_pool_file .AND. .NOT. twfcollect)  &
-         CALL errore('lr_readin',&
-         & 'pw.x run with a different number of pools. &
-         & Use wf_collect=.true.',1)
-    IF (nproc_bgrp /= nproc_bgrp_file .AND. .NOT. twfcollect)  &
-         CALL errore('lr_readin',&
-         & 'pw.x run with a different number of band groups. &
-         & Use wf_collect=.true.',1)
-    !
     ! No taskgroups and EXX.
     !
     IF (dffts%has_task_groups .AND. dft_is_hybrid()) &
@@ -575,6 +522,14 @@ CONTAINS
     !
     IF (lsda) CALL errore( 'lr_readin', 'LSDA is not implemented', 1 )
     !
+    IF (real_space)  THEN
+       IF (eels) THEN
+          CALL errore( 'lr_readin', 'Option real_space=.true. is not implemented', 1 )
+       ELSE
+          CALL errore( 'lr_readin', 'Option real_space=.true. is not tested', 1 )
+       ENDIF
+    ENDIF  
+    !
     ! EELS-related restrictions
     !
     IF (eels) THEN
@@ -589,7 +544,6 @@ CONTAINS
        !
        IF (project)     CALL errore( 'lr_readin', 'project is not allowed', 1 )
        IF (tqr)         CALL errore( 'lr_readin', 'tqr is not supported', 1 )
-       IF (real_space)  CALL errore( 'lr_readin', 'real_space is not supported', 1 )
        IF (charge_response /= 0) CALL errore( 'lr_readin', 'charge_response /= 0 is not allowed', 1 )
        IF (dft_is_hybrid())    CALL errore( 'lr_readin', 'EXX is not supported', 1 )
        IF (do_comp_mt)  CALL errore( 'lr_readin', 'Martyna-Tuckerman PBC is not supported.', 1 )
@@ -607,58 +561,4 @@ CONTAINS
     !
   END SUBROUTINE input_sanity
   !
-  !------------------------------------------------------------------------
-  SUBROUTINE read_rs_status( dirname, tqr, real_space, ierr )
-    !------------------------------------------------------------------------
-    !
-    ! This subroutine reads the real space control flags from a PWscf punch card
-    ! OBM 2009 - FIXME: should be moved to qexml.f90
-    !
-      USE iotk_module
-      USE io_global,     ONLY : ionode,ionode_id
-      USE io_files,      ONLY : iunpun, xmlpun
-      USE mp,            ONLY : mp_bcast
-      USE mp_images,     ONLY : intra_image_comm
-      !
-      IMPLICIT NONE
-      !
-      CHARACTER(len=*), INTENT(in)  :: dirname
-      LOGICAL,          INTENT(out) :: tqr, real_space
-      INTEGER,          INTENT(out) :: ierr
-      !
-      !
-      IF ( ionode ) THEN
-          !
-          ! ... look for an empty unit
-          !
-          CALL iotk_free_unit( iunpun, ierr )
-          !
-          CALL errore( 'realus->read_rs_status', 'no free units to read real space flags', ierr )
-          !
-          CALL iotk_open_read( iunpun, FILE = trim( dirname ) // '/' // &
-                            & trim( xmlpun ), IERR = ierr )
-          !
-      ENDIF
-      !
-      CALL mp_bcast( ierr, ionode_id, intra_image_comm )
-      !
-      IF ( ierr > 0 ) RETURN
-      !
-      IF ( ionode ) THEN
-         CALL iotk_scan_begin( iunpun, "CONTROL" )
-         !
-         CALL iotk_scan_dat( iunpun, "Q_REAL_SPACE", tqr )
-         CALL iotk_scan_dat( iunpun, "BETA_REAL_SPACE", real_space )
-         !
-         CALL iotk_scan_end( iunpun, "CONTROL" )
-         !
-         CALL iotk_close_read( iunpun )
-      ENDIF
-      CALL mp_bcast( tqr,  ionode_id, intra_image_comm )
-      CALL mp_bcast( real_space,    ionode_id, intra_image_comm )
-      !
-      RETURN
-      !
-    END SUBROUTINE read_rs_status
-
 END SUBROUTINE lr_readin

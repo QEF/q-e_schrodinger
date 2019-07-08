@@ -35,6 +35,8 @@ SUBROUTINE mix_rho( input_rhout, rhoin, alphamix, dr2, tr2_min, iter, n_iter,&
   !
   ! ... Modified Broyden's method for charge density mixing
   ! ...         D.D. Johnson PRB 38, 12807 (1988)
+  ! ... Thomas-Fermi preconditioning described in
+  ! ...         Raczkowski, Canning, Wang, PRB 64,121101 (2001)
   ! ... Extended to mix also quantities needed for PAW, meta-GGA, DFT+U,
   ! ... electric field (all these are included into mix_type)
   ! ... On output: the mixed density is in rhoin
@@ -77,7 +79,7 @@ SUBROUTINE mix_rho( input_rhout, rhoin, alphamix, dr2, tr2_min, iter, n_iter,&
   LOGICAL, INTENT(OUT) :: &
     conv          ! .true. if the convergence has been reached
 
-  type(scf_type), intent(in)    :: input_rhout
+  type(scf_type), intent(inout) :: input_rhout
   type(scf_type), intent(inout) :: rhoin
   !
   ! ... Here the local variables
@@ -328,39 +330,21 @@ SUBROUTINE approx_screening( drho )
   USE cell_base,     ONLY : omega, tpiba2
   USE gvect,         ONLY : gg, ngm
   USE klist,         ONLY : nelec
-  USE lsda_mod,      ONLY : nspin
   USE control_flags, ONLY : ngm0
   USE scf,           ONLY : mix_type
-  USE wavefunctions_module, ONLY : psic
+  USE wavefunctions, ONLY : psic
   !
   IMPLICIT NONE  
   !
   type (mix_type), intent(INOUT) :: drho ! (in/out)
   !
-  REAL(DP) :: rrho, rmag, rs, agg0
-  INTEGER  :: ig, is
+  REAL(DP) :: rs, agg0
   !
   rs = ( 3.D0 * omega / fpi / nelec )**( 1.D0 / 3.D0 )
   !
   agg0 = ( 12.D0 / pi )**( 2.D0 / 3.D0 ) / tpiba2 / rs
   !
-  IF ( nspin == 1 .OR. nspin == 4 ) THEN
-     !
-     drho%of_g(:ngm0,1) =  drho%of_g(:ngm0,1) * gg(:ngm0) / (gg(:ngm0)+agg0)
-     !
-  ELSE IF ( nspin == 2 ) THEN
-     !
-     DO ig = 1, ngm0
-        !
-        rrho = ( drho%of_g(ig,1) + drho%of_g(ig,2) ) * gg(ig) / (gg(ig)+agg0)
-        rmag = ( drho%of_g(ig,1) - drho%of_g(ig,2) )
-        !
-        drho%of_g(ig,1) =  0.5D0*( rrho + rmag )
-        drho%of_g(ig,2) =  0.5D0*( rrho - rmag )
-        !
-     END DO
-     !
-  END IF
+  drho%of_g(:ngm0,1) =  drho%of_g(:ngm0,1) * gg(:ngm0) / (gg(:ngm0)+agg0)
   !
   RETURN
   !
@@ -376,9 +360,8 @@ SUBROUTINE approx_screening2( drho, rhobest )
   USE constants,            ONLY : e2, pi, tpi, fpi, eps8, eps32
   USE cell_base,            ONLY : omega, tpiba2
   USE gvect,                ONLY : gg, ngm
-  USE wavefunctions_module, ONLY : psic
+  USE wavefunctions, ONLY : psic
   USE klist,                ONLY : nelec
-  USE lsda_mod,             ONLY : nspin
   USE control_flags,        ONLY : ngm0, gamma_only
   USE scf,                  ONLY : mix_type, local_tf_ddot
   USE mp,                   ONLY : mp_sum
@@ -408,26 +391,8 @@ SUBROUTINE approx_screening2( drho, rhobest )
   REAL(DP), ALLOCATABLE :: &
     alpha(:)     ! alpha(dffts%nnr)
   !
-  COMPLEX(DP)         :: rrho, rmag
   INTEGER             :: ir, ig
   REAL(DP), PARAMETER :: one_third = 1.D0 / 3.D0
-  !
-  !
-  IF ( nspin == 2 ) THEN
-     !
-     !$omp parallel do private(rrho,rmag)
-     DO ig = 1, ngm0
-        !
-        rrho = drho%of_g(ig,1) + drho%of_g(ig,2)
-        rmag = drho%of_g(ig,1) - drho%of_g(ig,2)
-        !        
-        drho%of_g(ig,1) = rrho
-        drho%of_g(ig,2) = rmag
-        !
-     END DO
-     !$omp end parallel do
-     !
-  END IF
   !
   target = 0.D0
   !
@@ -440,27 +405,11 @@ SUBROUTINE approx_screening2( drho, rhobest )
   !$omp parallel
      !
      CALL threaded_barrier_memset(psic, 0.0_DP, dffts%nnr*2)
-     IF ( nspin == 2 ) THEN
-        !$omp do
-        DO ig = 1, ngm0
-           psic(dffts%nl(ig)) = ( rhobest%of_g(ig,1) + rhobest%of_g(ig,2) )
-        ENDDO
-        !$omp end do nowait
-     ELSE
-        !$omp do
-        DO ig = 1, ngm0
-           psic(dffts%nl(ig)) = rhobest%of_g(ig,1)
-        ENDDO
-        !$omp end do nowait
-     END IF
-     !
-     IF ( gamma_only ) THEN
-        !$omp do
-        DO ig = 1, ngm0
-           psic(dffts%nlm(ig)) = CONJG( psic(dffts%nl(ig)) )
-        ENDDO
-        !$omp end do nowait
-     ENDIF
+     !$omp do
+     DO ig = 1, ngm0
+        psic(dffts%nl(ig)) = rhobest%of_g(ig,1)
+     ENDDO
+     !$omp end do nowait
      !
   !$omp end parallel
   !
@@ -620,28 +569,13 @@ SUBROUTINE approx_screening2( drho, rhobest )
      !
      IF ( dr2_best < target ) THEN
         !
-        !$omp parallel private(rrho,rmag)
+        !$omp parallel
            !$omp do
            DO ig = 1, ngm0
               drho%of_g(ig,1) = vbest(ig)
            ENDDO
            !$omp end do nowait
            !
-           IF ( nspin == 2 ) THEN
-              !
-              !$omp do
-              DO ig = 1, ngm0
-                 !
-                 rrho = drho%of_g(ig,1)
-                 rmag = drho%of_g(ig,2)
-                 !
-                 drho%of_g(ig,1) = 0.5D0 * ( rrho + rmag )
-                 drho%of_g(ig,2) = 0.5D0 * ( rrho - rmag )
-                 !
-              END DO
-              !$omp end do nowait
-              !
-           END IF
         !$omp end parallel
         !
         DEALLOCATE( alpha, v, w, dv, vbest, wbest )
