@@ -203,7 +203,7 @@ PROGRAM matdyn
   CHARACTER(LEN=6) :: int_to_char
   LOGICAL, ALLOCATABLE :: mask(:)
   INTEGER            :: npk_label, nch
-  CHARACTER(LEN=3), ALLOCATABLE :: letter(:)
+  CHARACTER(LEN=100), ALLOCATABLE :: letter(:)
   INTEGER, ALLOCATABLE :: label_list(:)
   LOGICAL :: tend, terr
   CHARACTER(LEN=256) :: input_line, buffer
@@ -424,9 +424,10 @@ PROGRAM matdyn
         CALL mp_bcast(nq, ionode_id, world_comm)
         ALLOCATE ( q(3,nq) )
         IF (.NOT.q_in_band_form) THEN
+           ALLOCATE(letter(nq))
            ALLOCATE(wq(nq))
            DO n = 1,nq
-              IF (ionode) READ (5,*) (q(i,n),i=1,3)
+              IF (ionode) READ (5,*) (q(i,n),i=1,3), letter(n)
            END DO
            CALL mp_bcast(q, ionode_id, world_comm)
            !
@@ -702,15 +703,17 @@ PROGRAM matdyn
         END DO
         CLOSE(unit=2)
 
-        OPEN (unit=2,file=trim(flfrq)//'.gp' ,status='unknown',form='formatted')
-        pathL = 0._dp
-        WRITE(2, '(f10.6,3x,999f10.4)')  pathL,  (freq(i,1), i=1,3*nat)
-        DO n=2, nq
-           pathL=pathL+(SQRT(SUM(  (q(:,n)-q(:,n-1))**2 )))
-           WRITE(2, '(f10.6,3x,999f10.4)')  pathL,  (freq(i,n), i=1,3*nat)
-        END DO
-        CLOSE(unit=2)
-
+        IF(.NOT.dos) THEN
+           OPEN (unit=2,file=trim(flfrq)//'.gp' ,status='unknown',form='formatted')
+           pathL = 0._dp
+           WRITE(2, '(f10.6,3x,a,3x,999f10.4)')  pathL, letter(1), (freq(i,1), i=1,3*nat)
+           DO n=2, nq
+               pathL=pathL+(SQRT(SUM(  (q(:,n)-q(:,n-1))**2 )))
+               WRITE(2, '(f10.6,3x,a,3x,999f10.4)')  pathL, letter(n), (freq(i,n), i=1,3*nat)
+           END DO
+           CLOSE(unit=2)
+           DEALLOCATE(letter)
+        END IF
      END IF
      !
      !  If the force constants are in the xml format we write also
