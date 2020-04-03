@@ -473,8 +473,16 @@ subroutine writevib (nat,ntyp,amass,ityp,q,w2,z,zstar,iout)
   write(iout, '("  :::")')
   !
   do i = 1, nat3
+    !
+    znorm = 0.0d0
+    do j = 1, nat3
+      znorm = znorm + abs(z(j,i))**2
+    end do
+    !
+    znorm = sqrt(znorm)
+    !
     write(iout, '("  ", i0, 1x, f20.10, '' "" '', f20.10, "0 0 0", 99999f15.9)') &
-      i, freq(i), infrared(i), ((REAL(z_((na-1)*3+ipol,i)), ipol=1,3), na=1,nat)
+      i, freq(i), infrared(i), ((DBLE(z((na-1)*3+ipol,i))/znorm, ipol=1,3), na=1,nat)
   end do
   !
   write(iout, '("  :::")')
