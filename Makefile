@@ -29,15 +29,13 @@ default :
 	@echo '  tddfpt       time dependent dft code'
 	@echo '  gwl          GW with Lanczos chains'
 	@echo '  ld1          utilities for pseudopotential generation'
-	@echo '  upf          utilities for pseudopotential conversion'
 	@echo '  xspectra     X-ray core-hole spectroscopy calculations'
 	@echo '  couple       Library interface for coupling to external codes'
 	@echo '  epw          Electron-Phonon Coupling with wannier functions'
-	@echo '  vdw_kernels  kernels for vdW functionals'
 	@echo '  gui          Graphical User Interface'
 	@echo '  examples     fetch from web examples for all core packages'
 	@echo '  test-suite   run semi-automated test-suite for regression testing'
-	@echo '  all          same as "make pwall cp ld1 upf tddfpt hp"'
+	@echo '  all          same as "make pwall cp ld1 tddfpt hp"'
 	@echo ' '
 	@echo 'where target identifies one or multiple THIRD-PARTIES PACKAGES:'
 	@echo '  gipaw        NMR and EPR spectra'
@@ -91,7 +89,7 @@ neb : pwlibs
 	if test -d NEB; then \
 	( cd NEB; $(MAKE) TLDEPS= all || exit 1) ; fi
 
-tddfpt : phlibs
+tddfpt : lrmods
 	if test -d TDDFPT; then \
 	( cd TDDFPT; $(MAKE) TLDEPS= all || exit 1) ; fi
 
@@ -125,10 +123,6 @@ ld1 : bindir libs mods
 	if test -d atomic ; then \
 	( cd atomic ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
 
-upf : libs mods
-	if test -d upftools ; then \
-	( cd upftools ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
-
 xspectra : pwlibs
 	if test -d XSpectra ; then \
 	( cd XSpectra ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
@@ -141,10 +135,6 @@ epw: phlibs
 	if test -d EPW ; then \
 	( cd EPW ; $(MAKE) all || exit 1; \
 		cd ../bin; ln -fs ../EPW/bin/epw.x . ); fi
-
-vdw_kernels : pw
-	bin/generate_vdW_kernel_table.x
-	bin/generate_rVV10_kernel_table.x
 
 travis : pwall epw
 	if test -d test-suite ; then \
@@ -172,7 +162,7 @@ examples :
 
 pwall : pw neb ph pp pwcond acfdt
 
-all   : pwall cp ld1 upf tddfpt hp xspectra gwl 
+all   : pwall cp ld1 tddfpt hp xspectra gwl 
 
 ###########################################################
 # Auxiliary targets used by main targets:
@@ -199,7 +189,7 @@ pw4gwwlib : phlibs
 	if test -d GWW ; then \
 	( cd GWW ; $(MAKE) pw4gwwa || exit 1 ) ; fi
 
-mods : libiotk libfox libutil libla libfft
+mods : libiotk libfox libutil libla libfft libupf libbeef
 	( cd Modules ; $(MAKE) TLDEPS= all || exit 1 )
 
 libks_solvers : libs libutil libla
@@ -213,6 +203,9 @@ libfft :
 
 libutil : 
 	( cd UtilXlib ; $(MAKE) TLDEPS= all || exit 1 )
+
+libupf : libiotk libfox libutil
+	( cd upflib ; $(MAKE) TLDEPS= all || exit 1 )
 
 libs :
 	( cd clib ; $(MAKE) TLDEPS= all || exit 1 )
@@ -242,6 +235,9 @@ libfox:
 	cd install ; $(MAKE) -f extlibs_makefile $@
 
 libcuda: 
+	cd install ; $(MAKE) -f extlibs_makefile $@
+
+libbeef:
 	cd install ; $(MAKE) -f extlibs_makefile $@
 # In case of trouble with iotk and compilers, add
 # FFLAGS="$(FFLAGS_NOOPT)" after $(MFLAGS)
@@ -309,7 +305,7 @@ install :
 #########################################################
 # Run test-suite for numerical regression testing
 # NB: it is assumed that reference outputs have been 
-#     already computed once (usualy during release)
+#     already computed once (usually during release)
 #########################################################
 
 test-suite: pw cp 
@@ -323,9 +319,9 @@ test-suite: pw cp
 clean : 
 	touch make.inc 
 	for dir in \
-		CPV LAXlib FFTXlib UtilXlib Modules PP PW EPW KS_Solvers \
+		CPV LAXlib FFTXlib UtilXlib upflib Modules PP PW EPW KS_Solvers \
 		NEB ACFDT COUPLE GWW XSpectra PWCOND dft-d3 \
-		atomic clib LR_Modules pwtools upftools \
+		atomic clib LR_Modules pwtools upflib \
 		dev-tools extlibs Environ TDDFPT PHonon HP GWW Doc GUI \
 	; do \
 	    if test -d $$dir ; then \
@@ -395,10 +391,10 @@ tar-qe-modes :
 # "latex2html" and "convert" (from Image-Magick) are needed.
 doc : 
 	if test -d Doc ; then \
-	( cd Doc ; $(MAKE) VERSION=6.4 TLDEPS= all ) ; fi
+	( cd Doc ; $(MAKE) VERSION=6.6 TLDEPS= all ) ; fi
 	for dir in */Doc; do \
 	( if test -f $$dir/Makefile ; then \
-	( cd $$dir; $(MAKE) VERSION=6.4 TLDEPS= all ) ; fi ) ;  done
+	( cd $$dir; $(MAKE) VERSION=6.6 TLDEPS= all ) ; fi ) ;  done
 
 doc_clean :
 	if test -d Doc ; then \

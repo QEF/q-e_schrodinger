@@ -22,6 +22,7 @@ program dynmat
 !
 !  prefix  character prepended to the input (fildyn) filename
 !                    (default: prefix=' ')
+!
 !  fildyn  character input file containing the dynamical matrix
 !                    (default: fildyn='matdyn')
 !  q(3)      real    calculate LO modes (add nonanalytic terms) along
@@ -92,8 +93,8 @@ program dynmat
   !
   implicit none
   integer, parameter :: ntypx = 10
-  character(len=256) :: prefix, fildyn, filout, filmol, filxsf, fileig, filspm
-  character(len=256) :: filvib
+  character(len=256):: prefix, fildyn, filout, filmol, filxsf, fileig, filspm, &
+                       filvib
   character(len=3) :: atm(ntypx)
   character(len=10) :: asr
   logical :: lread, gamma, loto_2d
@@ -119,7 +120,7 @@ program dynmat
   !
   asr  = 'no'
   axis = 3
-  prefix=' '
+  prefix = ' '
   fildyn='matdyn'
   filout='dynmat.out'
   filmol='dynmat.mold'

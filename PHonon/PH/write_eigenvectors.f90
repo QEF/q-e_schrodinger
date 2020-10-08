@@ -502,4 +502,3 @@ subroutine writevib (nat,ntyp,amass,ityp,q,w2,z,zstar,iout)
   return
   !
 end subroutine writevib
-!

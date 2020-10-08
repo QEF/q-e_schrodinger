@@ -4,8 +4,6 @@ python:
     - "2.7"
 addons:
   apt:
-    sources:
-      - ubuntu-toolchain-r-test
     packages:
       - gfortran
       - libblas-dev
@@ -16,8 +14,12 @@ env:
      - PARA=no
 install:
      - ./configure --enable-parallel=$PARA --with-netlib
-     - make pw pp ph neb vdw_kernels
+     - make pw
+     - make cp
+     - make ph
+     - make epw  
 script:
     - make travis
 git:
   depth: 3
+
