@@ -3,7 +3,7 @@
 ------------------------------------------------------------------------
 INPUT FILE DESCRIPTION
 
-Program: turbo_lanczos.x / turboTDDFPT / Quantum Espresso (version: 6.6)
+Program: turbo_lanczos.x / turboTDDFPT / Quantum ESPRESSO (version: 6.7GPU)
 ------------------------------------------------------------------------
 
 
@@ -21,32 +21,24 @@ either a "!" or a "#" character in the first position of a line.
 Structure of the input data:
 ===============================================================================
 
-&lr_input
+&LR_INPUT
   ...
 /
 
-&lr_control
+&LR_CONTROL
   ...
 /
 
-[ &lr_post
+[ &LR_POST
   ...
  / ]
 
 
 
 ========================================================================
-NAMELIST: &lr_input
+NAMELIST: &LR_INPUT
 
    THIS NAMELIST IS ALWAYS NEEDED !
-   
-   +--------------------------------------------------------------------
-   Variable:       title
-   
-   Type:           CHARACTER
-   Description:    A string describing the job.
-   Status:         OPTIONAL
-   +--------------------------------------------------------------------
    
    +--------------------------------------------------------------------
    Variable:       prefix
@@ -122,7 +114,7 @@ NAMELIST: &lr_input
 
 
 ========================================================================
-NAMELIST: &lr_control
+NAMELIST: &LR_CONTROL
 
    +--------------------------------------------------------------------
    Variable:       itermax
@@ -253,7 +245,7 @@ NAMELIST: &lr_control
 
 
 ========================================================================
-NAMELIST: &lr_post
+NAMELIST: &LR_POST
 
    +--------------------------------------------------------------------
    Variable:       omeg
@@ -309,4 +301,4 @@ NAMELIST: &lr_post
 ===END OF NAMELIST======================================================
 
 
-This file has been created by helpdoc utility on Fri Jul 17 10:28:33 CEST 2020
+This file has been created by helpdoc utility on Fri Apr 23 19:45:01 CEST 2021

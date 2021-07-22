@@ -193,7 +193,7 @@ ppc64-bgq:*xlf* )
         pre_fdflags="-WF,"
         xlf_flags=1
         ;;
-*:pgf* )
+*:pgf* | *:nvfortran )
 	try_fflags_nomain="-Mnomain"
         try_fflags="-fast"
         try_fflags_openmp="-mp"
@@ -212,7 +212,7 @@ ppc64-bgq:*xlf* )
         ;;
 *:*gfortran )
 	try_fflags="-O3 -g"
-        if test "$f90_major_version" -ge 10; then
+        if test "$f90_major_version" -ge "10"; then
  	   try_fflags="$try_fflags -fallow-argument-mismatch"
         fi
         if test "$use_debug" -eq 1; then

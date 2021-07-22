@@ -46,7 +46,6 @@ CONTAINS
          XSI = "http://www.w3.org/2001/XMLSchema-instance", &
          XSD_VERSION = "QE_PP-1.0"
     !
-    WRITE(6,'("WRITE_UPF_NEW")')
     IF ( PRESENT(schema) ) schema_ = schema
     SELECT CASE (TRIM(schema_))
     CASE ('qe_pp', 'QE_PP')
@@ -171,7 +170,7 @@ CONTAINS
     ! optional: unit pointing to input file containing generation data
     INTEGER, OPTIONAL, INTENT(IN):: u_input
     !
-#include "version.h"
+#include "qe_version.h"
     INTEGER :: nw, nb
     !
     CALL xmlw_opentag ( 'pp_info' )
@@ -529,7 +528,9 @@ CONTAINS
     call add_attr( 'columns',  upf%nbeta )
     call add_attr( 'rows', upf%nbeta )
     CALL xmlw_opentag( capitalize_if_v2 ('pp_dij') )
-    WRITE(iun,*) upf%dion(1:upf%nbeta,1:upf%nbeta)
+    DO nb = 1,upf%nbeta
+       WRITE(iun,*) upf%dion(1:upf%nbeta,nb)
+    END DO
     CALL xmlw_closetag( ) 
     !
     ! pp_augmentation
@@ -565,7 +566,9 @@ CONTAINS
        nb = upf%nbeta*upf%nbeta
        call add_attr( 'size', nb )
        CALL xmlw_opentag( capitalize_if_v2('pp_q') )
-       WRITE(iun,*) upf%qqq(1:upf%nbeta,1:upf%nbeta)
+       DO nb = 1,upf%nbeta
+          WRITE(iun,*) upf%qqq(1:upf%nbeta,nb)
+       END DO
        CALL xmlw_closetag( )
        !
        IF ( upf%tpawp ) THEN
@@ -574,7 +577,11 @@ CONTAINS
           call add_attr( 'nbeta', upf%nbeta )
           call add_attr( 'lmax', upf%lmax )
           CALL xmlw_opentag( capitalize_if_v2('pp_multipoles') )
-          WRITE(iun,*) upf%paw%augmom(1:upf%nbeta,1:upf%nbeta,0:2*upf%lmax)
+          DO l = 0,2*upf%lmax
+             DO nb = 1,upf%nbeta
+                WRITE(iun,*) upf%paw%augmom(1:upf%nbeta,nb,l)
+             END DO
+          END DO
           CALL xmlw_closetag ()
        ENDIF
        !
@@ -817,6 +824,10 @@ CONTAINS
        IF ( v2 ) THEN
           call add_attr( 'number_of_core_orbitals', upf%gipaw_ncore_orbitals )
           CALL xmlw_opentag( 'PP_GIPAW_CORE_ORBITALS' )
+       ELSE 
+          CALL xmlw_writetag('number_of_core_orbitals', upf%gipaw_ncore_orbitals )
+          IF ( .NOT. upf%paw_as_gipaw ) &
+             CALL xmlw_writetag('number_of_valence_orbitals', upf%gipaw_wfs_nchannels) 
        END IF
        DO nb = 1,upf%gipaw_ncore_orbitals
           IF ( v2 ) THEN

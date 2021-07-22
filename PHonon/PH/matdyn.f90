@@ -68,11 +68,10 @@ PROGRAM matdyn
   !                  (must be specified if dos=.true., ignored otherwise)
   !     deltaE    energy step, in cm^(-1), for DOS calculation: from min
   !               to max phonon energy (default: 1 cm^(-1) if ndos, see
-  !     degauss   DOS broadening (in cm^-1). Default 0 - meaning use tetrahedra
-  !               to max phonon energy (default: 1 cm^(-1) if ndos, see
   !               below, is not specified)
   !     ndos      number of energy steps for DOS calculations
   !               (default: calculated from deltaE if not specified)
+  !     degauss   DOS broadening (in cm^-1). Default 0 - meaning use tetrahedra
   !     fldos     output file for dos (default: 'matdyn.dos')
   !               the dos is in states/cm(-1) plotted vs omega in cm(-1)
   !               and is normalised to 3*nat, i.e. the number of phonons
@@ -208,7 +207,7 @@ PROGRAM matdyn
   CHARACTER(LEN=6) :: int_to_char
   LOGICAL, ALLOCATABLE :: mask(:)
   INTEGER            :: npk_label, nch
-  CHARACTER(LEN=100), ALLOCATABLE :: letter(:)
+  CHARACTER(LEN=3), ALLOCATABLE :: letter(:)
   INTEGER, ALLOCATABLE :: label_list(:)
   LOGICAL :: tend, terr
   CHARACTER(LEN=256) :: input_line, buffer
@@ -438,10 +437,9 @@ PROGRAM matdyn
         CALL mp_bcast(nq, ionode_id, world_comm)
         ALLOCATE ( q(3,nq) )
         IF (.NOT.q_in_band_form) THEN
-           ALLOCATE(letter(nq))
            ALLOCATE(wq(nq))
            DO n = 1,nq
-              IF (ionode) READ (5,*) (q(i,n),i=1,3), letter(n)
+              IF (ionode) READ (5,*) (q(i,n),i=1,3)
            END DO
            CALL mp_bcast(q, ionode_id, world_comm)
            !
@@ -642,7 +640,7 @@ PROGRAM matdyn
 
         CALL dyndiag(nat,ntyp,amass,ityp,dyn,w2(1,n),z)
         !
-        ! Un-normalize eigen vectors and populate zq
+        ! Convert from displacements to eigenvectors (see rigid.f90 :: dyndiag)
         do i = 1, 3*nat
            do na = 1, nat
               do ipol = 1,3
@@ -730,19 +728,16 @@ PROGRAM matdyn
            WRITE(2,'(6f10.4)') (freq(i,n), i=1,3*nat)
         END DO
         CLOSE(unit=2)
-        !
-        IF(.NOT.dos) THEN
-           OPEN (unit=2,file=trim(flfrq)//'.gp' ,status='unknown',form='formatted')
-           pathL = 0._dp
-           WRITE(2, '(f10.6,3x,a,3x,999f10.4)')  pathL, letter(1), (freq(i,1), i=1,3*nat)
-           DO n=2, nq
-               pathL=pathL+(SQRT(SUM(  (q(:,n)-q(:,n-1))**2 )))
-               WRITE(2, '(f10.6,3x,a,3x,999f10.4)')  pathL, letter(n), (freq(i,n), i=1,3*nat)
-           END DO
-           CLOSE(unit=2)
-           DEALLOCATE(letter)
-        END IF
-        !
+
+        OPEN (unit=2,file=trim(flfrq)//'.gp' ,status='unknown',form='formatted')
+        pathL = 0._dp
+        WRITE(2, '(f10.6,3x,999f10.4)')  pathL,  (freq(i,1), i=1,3*nat)
+        DO n=2, nq
+           pathL=pathL+(SQRT(SUM(  (q(:,n)-q(:,n-1))**2 )))
+           WRITE(2, '(f10.6,3x,999f10.4)')  pathL,  (freq(i,n), i=1,3*nat)
+        END DO
+        CLOSE(unit=2)
+
      END IF
      !
      !  If the force constants are in the xml format we write also
@@ -778,6 +773,7 @@ PROGRAM matdyn
         IF (ionode) WRITE (2, *) "# Frequency[cm^-1] DOS PDOS"
         !
         IF (degauss .EQ. 0) THEN
+           ! Use tetrahedra
            DO na = 1, nat
               dynq(1:3*nat,1:nq,na) = dynq(1:3*nat,1:nq,na) * freq(1:3*nat,1:nq)
            END DO
@@ -789,7 +785,7 @@ PROGRAM matdyn
               DOSofE(na) = 0d0
               !
               IF (degauss .EQ. 0) THEN
-                 ! Use tetrahedra
+                 ! Use tetrahedra 
                  DO i = 1, 3*nat
                     DOSofE(na) = DOSofE(na) &
                     & + dos_gam(3*nat, nq, i, dynq(1:3*nat,1:nq,na), freq, E)

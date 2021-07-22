@@ -20,11 +20,11 @@ try_f90="gfortran f90"
 # candidate compilers and flags based on architecture
 case $arch in
 ia32 | ia64 | x86_64 )
-        try_f90="ifort pgf90 nagfor $try_f90"
+        try_f90="ifort nvfortran pgf90 nagfor $try_f90"
         try_mpif90="mpiifort $try_mpif90"
         ;;
 arm )
-        try_f90="pgf90 armflang $try_f90"
+        try_f90="nvfortran pgf90 armflang $try_f90"
         ;;
 crayxt* )
         try_f90="ftn"
@@ -121,10 +121,12 @@ case "$arch" in
         echo $ECHO_N "checking version of $mpif90... $ECHO_C"
         ifort_version=`$mpif90 -V 2>&1 | grep "Intel(R)"`
         pgf_version=`$mpif90 -V 2>&1 | grep "^pgf"`
+        nvfortran_version=`$mpif90 -V 2>&1 | grep "^nvfortran"`
         gfortran_version=`$mpif90 -v 2>&1 | grep "gcc version"`
         nagfor_version=`$mpif90 -v 2>&1 | grep "NAG Fortran"`
         xlf_version=`$mpif90 -v 2>&1 | grep "xlf"`
         armflang_version=`$mpif90 -v 2>&1 | grep "Arm C/C++/Fortran Compiler version"`
+        frt_version=`$mpif90 -v 2>&1 | grep "Fujitsu Fortran Compiler"`
         #
         if test "$ifort_version" != ""
         then
@@ -132,9 +134,17 @@ case "$arch" in
                 f90_major_version=`echo $version | cut -d. -f1`
                 echo "${ECHO_T}ifort $f90_major_version"
                 f90_in_mpif90="ifort"
+        elif test "$nvfortran_version" != ""
+        then
+                version=`echo $nvfortran_version | cut -d ' ' -f2`
+                f90_major_version=`echo $version | cut -d. -f1`
+		f90_minor_version=`echo $version | cut -d. -f2 | cut -d- -f1`
+                echo "${ECHO_T}nvfortran $version"
+                f90_in_mpif90="nvfortran"
         elif test "$pgf_version" != ""
         then
                 version=`echo $pgf_version | cut -d ' ' -f2`
+                f90_major_version=`echo $version | cut -d. -f1`
                 echo "${ECHO_T}pgf90 $version"
                 f90_in_mpif90="pgf90"
         elif test "$gfortran_version" != ""
@@ -162,6 +172,12 @@ case "$arch" in
                 f90_minor_version=`echo $version | cut -d. -f2` 
                 f90_in_mpif90="armflang"
                 try_foxflags="-D__PGI"  
+        elif test "$frt_version" != ""
+        then
+                version=`echo $frt_version | cut -d" " -f 5`
+                echo "${ECHO_T}frt $version"
+                f90_in_mpif90="frt"
+                try_foxflags="-D__FUJITSU"
         else
                 echo "${ECHO_T}unknown, assuming gfortran"
                 f90_in_mpif90="gfortran"

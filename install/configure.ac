@@ -26,8 +26,8 @@ X_AC_QE_ARCH()
 # Add all needed -D options to try_dflags
 try_dflags=""
 
-# "-I../include" is required by IOTK ...
-try_iflags="-I\$(TOPDIR)/include -I\$(TOPDIR)/FoX/finclude -I\$(TOPDIR)/S3DE/iotk/include/"
+# Add needed include directories
+try_iflags="-I\$(TOPDIR)/include -I\$(TOPDIR)/FoX/finclude "
 
 # Checking archiver...
 X_AC_QE_AR()
@@ -43,9 +43,6 @@ X_AC_QE_ENVIRON()
 
 # Checking CC...
 X_AC_QE_CC()
-
-# Checking F77...
-X_AC_QE_F77()
 
 # Checking F90...
 X_AC_QE_F90()
@@ -90,9 +87,6 @@ X_AC_QE_SCALAPACK()
 
 # Setting ELPA...
 X_AC_QE_ELPA()
-
-# Setting BEEF...
-X_AC_QE_BEEF()
 
 # Setting HDF5...
 X_AC_QE_HDF5()

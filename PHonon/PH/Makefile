@@ -31,7 +31,6 @@ dvscf_interpolate.o \
 bcast_ph_input.o \
 c_bands_ph.o \
 cch_psi_all.o \
-ccg_psi.o \
 check_if_partial_dyn.o \
 check_initial_status.o \
 check_restart_recover.o \
@@ -200,7 +199,7 @@ write_eigenvectors.o
 
 LRMODS = ../../LR_Modules/liblrmod.a
 PWOBJS = ../../PW/src/libpw.a
-QEMODS = ../../Modules/libqemod.a ../../KS_Solvers/libks_solvers.a ../../upflib/libupf.a \
+QEMODS = ../../Modules/libqemod.a ../../KS_Solvers/libks_solvers.a ../../upflib/libupf.a ../../XClib/xc_lib.a \
          ../../FFTXlib/libqefft.a ../../LAXlib/libqela.a ../../UtilXlib/libutil.a ../../dft-d3/libdftd3qe.a
 TLDEPS= phlibs
 

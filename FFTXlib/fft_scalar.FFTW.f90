@@ -49,7 +49,7 @@
 !     (ldz>nz is used on some architectures to reduce memory conflicts)
 !     input  :  c(ldz*nsl)   (complex)
 !     output : cout(ldz*nsl) (complex - NOTA BENE: transform is not in-place!)
-!     isign > 0 : forward (f(G)=>f(R)), isign <0 backward (f(R) => f(G))
+!     isign > 0 : backward (f(G)=>f(R)), isign < 0 : forward (f(R) => f(G))
 !     Up to "ndims" initializations (for different combinations of input
 !     parameters nz, nsl, ldz) are stored and re-used if available
 
@@ -59,17 +59,13 @@
      COMPLEX (DP) :: c(:), cout(:)
 
      REAL (DP)  :: tscale
-     INTEGER    :: i, err, idir, ip, void
+     INTEGER    :: i, err, idir, ip
      INTEGER, SAVE :: zdims( 3, ndims ) = -1
      INTEGER, SAVE :: icurrent = 1
      LOGICAL :: found
 
-     INTEGER :: tid
-
 #if defined(_OPENMP)
      INTEGER :: offset, ldz_t
-     INTEGER :: omp_get_max_threads
-     EXTERNAL :: omp_get_max_threads
 #endif
 
      !   Pointers to the "C" structures containing FFT factors ( PLAN )
@@ -108,7 +104,7 @@
      ldz_t = ldz
      !
      IF (isign < 0) THEN
-!$omp parallel default(none) private(tid,offset,i,tscale) shared(c,isign,nsl,fw_planz,ip,nz,cout,ldz) &
+!$omp parallel default(none) private(offset,i,tscale) shared(c,isign,nsl,fw_planz,ip,nz,cout,ldz) &
 !$omp &        firstprivate(ldz_t)
 !$omp do
        DO i=1, nsl
@@ -120,7 +116,7 @@
        tscale = 1.0_DP / nz
        cout( 1 : ldz * nsl ) = c( 1 : ldz * nsl ) * tscale
      ELSE IF (isign > 0) THEN
-!$omp parallel default(none) private(tid,offset,i) shared(c,isign,nsl,bw_planz,ip,cout,ldz) &
+!$omp parallel default(none) private(offset,i) shared(c,isign,nsl,bw_planz,ip,cout,ldz) &
 !$omp &        firstprivate(ldz_t)
 !$omp do
        DO i=1, nsl
@@ -198,7 +194,7 @@
 !     2d array: r2d(ldx, ldy) (x first dimension, y second dimension)
 !     (ldx>nx, ldy>ny used on some architectures to reduce memory conflicts)
 !     pl2ix(nx) (optional) is 1 for columns along y to be transformed
-!     isign > 0 : forward (f(G)=>f(R)), isign <0 backward (f(R) => f(G))
+!     isign > 0 : backward (f(G)=>f(R)), isign < 0 : forward (f(R) => f(G))
 !     Up to "ndims" initializations (for different combinations of input
 !     parameters nx,ny,nzl,ldx) are stored and re-used if available
 
@@ -207,19 +203,18 @@
      INTEGER, INTENT(IN) :: isign, ldx, ldy, nx, ny, nzl
      INTEGER, OPTIONAL, INTENT(IN) :: pl2ix(:)
      COMPLEX (DP) :: r( : )
-     INTEGER :: i, k, j, err, idir, ip, kk, void
+     INTEGER :: i, k, j, err, idir, ip, kk
      REAL(DP) :: tscale
      INTEGER, SAVE :: icurrent = 1
      INTEGER, SAVE :: dims( 4, ndims) = -1
      LOGICAL :: dofft( nfftx ), found
-     INTEGER, PARAMETER  :: stdout = 6
 
 #if defined(_OPENMP)
      INTEGER :: offset
      INTEGER :: nx_t, ny_t, nzl_t, ldx_t, ldy_t
      INTEGER  :: itid, mytid, ntids
-     INTEGER  :: omp_get_thread_num, omp_get_num_threads,omp_get_max_threads
-     EXTERNAL :: omp_get_thread_num, omp_get_num_threads, omp_get_max_threads
+     INTEGER  :: omp_get_thread_num, omp_get_num_threads
+     EXTERNAL :: omp_get_thread_num, omp_get_num_threads
 #endif
 
 #if defined(__FFTW_ALL_XY_PLANES)
@@ -269,7 +264,7 @@
         tscale = 1.0_DP / ( nx * ny )
         !
         CALL fftw_inplace_drv_2d( fw_plan_2d(ip), nzl, r(1), 1, ldx*ldy )
-        CALL ZDSCAL( ldx * ldy * nzl, tscale, r(1), 1)
+        r(1:ldx * ldy * nzl) = r(1:ldx * ldy * nzl) * tscale
         !
      ELSE IF( isign > 0 ) THEN
         !
@@ -372,7 +367,7 @@
        end do
 
        tscale = 1.0_DP / ( nx * ny )
-       CALL ZDSCAL( ldx * ldy * nzl, tscale, r(1), 1)
+       r(1:ldx * ldy * nzl) = r(1:ldx * ldy * nzl) * tscale
 
      ELSE IF( isign > 0 ) THEN
 
@@ -501,7 +496,7 @@
        call FFTW_INPLACE_DRV_3D( fw_plan(ip), 1, f(1), 1, 1 )
 
        tscale = 1.0_DP / DBLE( nx * ny * nz )
-       call ZDSCAL( nx * ny * nz, tscale, f(1), 1)
+       f(1:nx * ny * nz) = f(1:nx * ny * nz) * tscale
 
      ELSE IF( isign > 0 ) THEN
 
@@ -683,7 +678,7 @@ SUBROUTINE cfft3ds (f, nx, ny, nz, ldx, ldy, ldz, howmany, isign, &
               end do
            end do
 
-           call DSCAL (2 * ldx * ldy * nz, 1.0_DP/(nx * ny * nz), f(1+ h*howmany ), 1)
+           f(h*howmany+1:h*howmany+ldx*ldy*nz) = f(h*howmany+1:h*howmany+ldx*ldy*nz) * (1.0_DP/(nx*ny*nz))
         END DO
 
      END IF

@@ -26,11 +26,7 @@ PROGRAM do_projwfc
   USE environment,ONLY : environment_start, environment_end
   USE mp,         ONLY : mp_bcast
   USE mp_global,  ONLY : mp_startup
-  USE mp_world,   ONLY : world_comm
   USE mp_images,  ONLY : intra_image_comm
-  USE mp_pools,   ONLY : intra_pool_comm
-  USE mp_bands,   ONLY : intra_bgrp_comm, inter_bgrp_comm
-  USE command_line_options, ONLY : ndiag_
   USE spin_orb,   ONLY : lforcet
   USE wvfct,      ONLY : et, nbnd
   USE paw_variables, ONLY : okpaw
@@ -42,8 +38,6 @@ PROGRAM do_projwfc
   USE lsda_mod,   ONLY : lsda
   !
   IMPLICIT NONE
-  !
-  include 'laxlib.fh'
   !
   CHARACTER(LEN=256), EXTERNAL :: trimcheck
   !
@@ -65,10 +59,6 @@ PROGRAM do_projwfc
   ! initialise environment
   !
   CALL mp_startup ( )
-  CALL laxlib_start ( ndiag_, world_comm, intra_bgrp_comm, &
-          do_distr_diag_inside_bgrp_ = .true. )
-  CALL set_mpi_comm_4_solvers( intra_pool_comm, intra_bgrp_comm, &
-       inter_bgrp_comm )
   !
   CALL environment_start ( 'PROJWFC' )
   !
@@ -234,7 +224,6 @@ PROGRAM do_projwfc
      ENDIF
   ENDIF
   !
-  CALL laxlib_end()
   CALL environment_end ( 'PROJWFC' )
   !
   CALL stop_pp
@@ -278,7 +267,7 @@ SUBROUTINE get_et_from_gww ( nbnd, et )
   ENDIF
 END SUBROUTINE get_et_from_gww
 !
-SUBROUTINE print_lowdin ( filproj, nat, lmax_wfc, nspin, charges, charges_lm )
+SUBROUTINE print_lowdin ( nat, lmax_wfc, nspin, charges, charges_lm )
   !
   USE kinds, ONLY : dp
   USE io_global, ONLY : stdout, ionode
@@ -286,13 +275,11 @@ SUBROUTINE print_lowdin ( filproj, nat, lmax_wfc, nspin, charges, charges_lm )
   !
   IMPLICIT NONE
   !
-  CHARACTER (len=*), INTENT(IN) :: filproj
   INTEGER, INTENT(IN) :: nat, lmax_wfc, nspin
   REAL(DP), INTENT(in) :: charges (nat, 0:lmax_wfc, nspin )
   REAL(DP), INTENT(in), OPTIONAL :: charges_lm (nat, 0:lmax_wfc, 1:2*lmax_wfc+1, nspin )
   !
-  CHARACTER(len=256) :: filename
-  INTEGER :: is, l, m, na, unit
+  INTEGER :: is, l, m, na
   REAL(DP) :: totcharge(2), psum
   CHARACTER (len=1)  :: l_label(0:3)=(/'s','p','d','f'/)
   CHARACTER (len=7)  :: lm_label(1:7,1:3)=reshape( (/ &
@@ -300,16 +287,8 @@ SUBROUTINE print_lowdin ( filproj, nat, lmax_wfc, nspin, charges, charges_lm )
     'z2     ','xz     ','yz     ','x2-y2  ','xy     ','       ','       ', &
     'z3     ','xz2    ','yz2    ','zx2-zy2','xyz    ','x3-3xy2','3yx2-y3' /), (/7,3/) )
   !
-  INTEGER, EXTERNAL :: find_free_unit
-  !
-  filename = trim(filproj)//'.lowdin'
-  !
   IF ( ionode ) THEN
-     unit = find_free_unit()
-     OPEN( unit=unit, file=trim(filename), status='unknown', form='formatted')
-     !
      WRITE( stdout, '(/"Lowdin Charges: "/)')
-     WRITE( unit,   '(/"Lowdin Charges: "/)')
      !
      DO na = 1, nat
         DO is = 1, nspin
@@ -318,45 +297,32 @@ SUBROUTINE print_lowdin ( filproj, nat, lmax_wfc, nspin, charges, charges_lm )
         IF ( nspin == 1) THEN
            DO l = 0, lmax_wfc
               WRITE(stdout, 2000,advance='no') na, totcharge(1), l_label(l), charges(na,l,1)
-              WRITE(unit, 2000,advance='no') na, totcharge(1), l_label(l), charges(na,l,1)
               IF (l /= 0 .AND. present(charges_lm)) THEN
                  DO m = 1, 2*l+1
                     WRITE( stdout,'(A1,A,"=",F8.4,", ")',advance='no') &
                        l_label(l), trim(lm_label(m,l)), charges_lm(na,l,m,1)
-                    WRITE( unit,'(A1,A,"=",F8.4,", ")',advance='no') &
-                       l_label(l), trim(lm_label(m,l)), charges_lm(na,l,m,1)
                  ENDDO
               ENDIF
               WRITE(stdout,*)
-              WRITE(unit,*)
            ENDDO
         ELSEIF ( nspin == 2) THEN
            WRITE( stdout, 2000) na, totcharge(1) + totcharge(2), &
                 ( l_label(l), charges(na,l,1) + charges(na,l,2), l=0,lmax_wfc)
-           WRITE( unit, 2000) na, totcharge(1) + totcharge(2), &
-                ( l_label(l), charges(na,l,1) + charges(na,l,2), l=0,lmax_wfc)
            DO l = 0, lmax_wfc
               WRITE(stdout,2001,advance='no') totcharge(1), l_label(l), charges(na,l,1)
-              WRITE(unit,2001,advance='no') totcharge(1), l_label(l), charges(na,l,1)
               IF (l /= 0 .AND. present(charges_lm)) THEN
                  DO m = 1, 2*l+1
                     WRITE( stdout,'(A1,A,"=",F8.4,", ")',advance='no') &
-                       l_label(l), trim(lm_label(m,l)), charges_lm(na,l,m,1)
-                    WRITE( unit,'(A1,A,"=",F8.4,", ")',advance='no') &
                        l_label(l), trim(lm_label(m,l)), charges_lm(na,l,m,1)
                  ENDDO
               ENDIF
               WRITE(stdout,*)
-              WRITE(unit,*)
            ENDDO
            DO l = 0, lmax_wfc
               WRITE(stdout,2002,advance='no') totcharge(2), l_label(l), charges(na,l,2)
-              WRITE(unit,2002,advance='no') totcharge(2), l_label(l), charges(na,l,2)
               IF (l /= 0 .AND. present(charges_lm)) THEN
                  DO m = 1, 2*l+1
                     WRITE( stdout,'(A1,A,"=",F8.4,", ")',advance='no') &
-                       l_label(l), trim(lm_label(m,l)), charges_lm(na,l,m,2)
-                    WRITE( unit,'(A1,A,"=",F8.4,", ")',advance='no') &
                        l_label(l), trim(lm_label(m,l)), charges_lm(na,l,m,2)
                  ENDDO
               ENDIF
@@ -364,14 +330,11 @@ SUBROUTINE print_lowdin ( filproj, nat, lmax_wfc, nspin, charges, charges_lm )
            ENDDO
            WRITE( stdout, 2003) totcharge(1) - totcharge(2), &
                 ( l_label(l), charges(na,l,1) - charges(na,l,2), l=0,lmax_wfc)
-           WRITE( unit, 2003) totcharge(1) - totcharge(2), &
-                ( l_label(l), charges(na,l,1) - charges(na,l,2), l=0,lmax_wfc)
         ENDIF
      ENDDO
      !
      psum = SUM(charges(:,:,:)) / nelec
      WRITE( stdout, '(5x,"Spilling Parameter: ",f8.4)') 1.0d0 - psum
-     WRITE( unit, '(5x,"Spilling Parameter: ",f8.4)') 1.0d0 - psum
      !
      ! Sanchez-Portal et al., Sol. State Commun.  95, 685 (1995).
      ! The spilling parameter measures the ability of the basis provided by
@@ -379,7 +342,6 @@ SUBROUTINE print_lowdin ( filproj, nat, lmax_wfc, nspin, charges, charges_lm )
      ! by measuring how much of the subspace of the Hamiltonian
      ! eigenstates falls outside the subspace spanned by the atomic basis
      !
-     CLOSE(unit)
   END IF
 
 2000 FORMAT (5x,"Atom # ",i3,": total charge = ",f8.4,4(", ",a1," =",f8.4))
@@ -733,7 +695,7 @@ SUBROUTINE sym_proj_nc ( proj0, proj_out  )
   !
 END SUBROUTINE sym_proj_nc
 !-----------------------------------------------------------------------
-SUBROUTINE print_proj ( filproj, lmax_wfc, proj )
+SUBROUTINE print_proj ( lmax_wfc, proj )
   !-----------------------------------------------------------------------
   !
   USE kinds,      ONLY : DP
@@ -749,7 +711,6 @@ SUBROUTINE print_proj ( filproj, lmax_wfc, proj )
   USE projections,ONLY : nlmchi
   !
   IMPLICIT NONE
-  CHARACTER(len=*), INTENT(IN) :: filproj
   INTEGER, INTENT(in) :: lmax_wfc
   REAL(DP), INTENT(IN) :: proj(natomwfc,nbnd,nkstot)
   !
@@ -762,9 +723,8 @@ SUBROUTINE print_proj ( filproj, lmax_wfc, proj )
   CHARACTER (len=1) :: plus
   !
   INTERFACE 
-     SUBROUTINE print_lowdin ( filproj, nat, lmax_wfc, nspin, charges, charges_lm )
+     SUBROUTINE print_lowdin ( nat, lmax_wfc, nspin, charges, charges_lm )
        IMPORT  :: DP
-       CHARACTER(len=*), INTENT(IN) :: filproj
        INTEGER, INTENT(IN) :: nat, lmax_wfc, nspin
        REAL(DP), INTENT(in) :: charges (nat, 0:lmax_wfc, nspin )
        REAL(DP), INTENT(in), OPTIONAL :: charges_lm (nat, 0:lmax_wfc, 1:2*lmax_wfc+1, nspin )
@@ -867,13 +827,13 @@ SUBROUTINE print_proj ( filproj, lmax_wfc, proj )
         DO nwfc = 1, natomwfc
            na= nlmchi(nwfc)%na
            l = nlmchi(nwfc)%l
-     IF ( noncolin .AND. .NOT. lspinorb ) THEN
-        IF (nlmchi(nwfc)%ind<=(2*l+1)) THEN
-           current_spin = 1
+	   IF ( noncolin .AND. .NOT. lspinorb ) THEN
+	      IF (nlmchi(nwfc)%ind<=(2*l+1)) THEN
+	         current_spin = 1
               ELSE
-           current_spin = 2
+	         current_spin = 2
               ENDIF
-     END IF
+	   END IF
            charges(na,l,current_spin) = charges(na,l,current_spin) + &
                 wg (ibnd,ik) * proj (nwfc, ibnd, ik)
            IF ( nspin /= 4 ) THEN
@@ -886,10 +846,10 @@ SUBROUTINE print_proj ( filproj, lmax_wfc, proj )
   ENDDO
   !
   IF ( nspin /= 4 ) THEN
-     CALL print_lowdin ( filproj, nat, lmax_wfc, nspin, charges, charges_lm )
+     CALL print_lowdin ( nat, lmax_wfc, nspin, charges, charges_lm )
      DEALLOCATE (charges_lm)
   ELSE
-     CALL print_lowdin ( filproj, nat, lmax_wfc, nspin0, charges )
+     CALL print_lowdin ( nat, lmax_wfc, nspin0, charges )
   END IF
   DEALLOCATE (charges)
   !
@@ -905,7 +865,7 @@ SUBROUTINE force_theorem ( ef_0, filproj )
   USE basis,      ONLY : natomwfc
   USE wvfct,      ONLY : wg, et, nbnd
   USE mp,         ONLY : mp_sum
-  USE mp_pools,   ONLY : inter_pool_comm, intra_pool_comm
+  USE mp_pools,   ONLY : inter_pool_comm
   USE projections,ONLY : proj, nlmchi
   !
   !---- Force Theorem -- (AlexS)
@@ -1145,7 +1105,7 @@ SUBROUTINE projwave( filproj, lsym, lwrite_ovp )
   USE uspp,      ONLY : nkb, vkb
   USE becmod,    ONLY : bec_type, becp, calbec, allocate_bec_type, deallocate_bec_type
   USE io_files,  ONLY : prefix, restart_dir, tmp_dir
-  USE control_flags, ONLY : gamma_only
+  USE control_flags, ONLY : gamma_only, use_para_diag
   USE pw_restart_new,ONLY : read_collected_wfc
   USE wavefunctions, ONLY : evc
   !
@@ -1187,8 +1147,6 @@ SUBROUTINE projwave( filproj, lsym, lwrite_ovp )
   ! matrix distribution descriptors
   INTEGER :: nx, nrl, nrlx
   ! maximum local block dimension
-  LOGICAL :: la_para
-  ! flag for parallel linear algebra
   LOGICAL :: la_proc
   ! flag to distinguish procs involved in linear algebra
   INTEGER, ALLOCATABLE :: notcnv_ip( : )
@@ -1205,7 +1163,7 @@ SUBROUTINE projwave( filproj, lsym, lwrite_ovp )
   !
   ! fill structure nlmchi
   !
-  CALL fill_nlmchi ( natomwfc, nwfc, lmax_wfc )
+  CALL fill_nlmchi ( natomwfc, lmax_wfc )
   !
   ALLOCATE( proj (natomwfc, nbnd, nkstot) )
   !
@@ -1227,10 +1185,14 @@ SUBROUTINE projwave( filproj, lsym, lwrite_ovp )
      OPEN( unit=iunaux, file=auxname, status='unknown', form='unformatted')
   END IF
   !
+  !   Initialize parallelism for linear algebra
+  !
+  CALL set_para_diag ( natomwfc, use_para_diag )
+  !
   CALL desc_init( natomwfc, nx, la_proc, idesc, rank_ip, idesc_ip )
   CALL laxlib_getval(nproc_ortho=nproc_ortho)
-  la_para = ( nproc_ortho > 1 )
-  IF ( la_para ) THEN
+  use_para_diag = ( nproc_ortho > 1 )
+  IF ( use_para_diag ) THEN
      WRITE( stdout, &
           '(5x,"linear algebra parallelized on ",i3," procs")') nproc_ortho
      IF ( lwrite_ovp ) THEN
@@ -1243,7 +1205,7 @@ SUBROUTINE projwave( filproj, lsym, lwrite_ovp )
      WRITE( stdout, * )
      WRITE( stdout, * ) ' Problem Sizes '
      WRITE( stdout, * ) ' natomwfc = ', natomwfc
-     IF ( la_para ) WRITE( stdout, * ) ' nx       = ', nx
+     IF ( use_para_diag ) WRITE( stdout, * ) ' nx       = ', nx
      WRITE( stdout, * ) ' nbnd     = ', nbnd
      WRITE( stdout, * ) ' nkstot   = ', nkstot
      WRITE( stdout, * ) ' npwx     = ', npwx
@@ -1428,7 +1390,7 @@ SUBROUTINE projwave( filproj, lsym, lwrite_ovp )
   !
   IF (ionode) THEN
      !
-     CALL print_proj( filproj, lmax_wfc, proj )
+     CALL print_proj( lmax_wfc, proj )
      CALL write_proj_file ( filproj, proj )
      !
   END IF
@@ -1482,6 +1444,7 @@ SUBROUTINE projwave( filproj, lsym, lwrite_ovp )
   ENDIF
   !
   IF ( ionode_pool ) DEALLOCATE( proj_aux, ovps_aux )
+  CALL laxlib_end()
   !
   RETURN
   !
