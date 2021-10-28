@@ -129,18 +129,18 @@ SUBROUTINE run_pwscf( exit_status )
      CALL data_structure( gamma_only )
      CALL summary()
      CALL memory_report()
-     CALL qexsd_set_status(255)
-     CALL punch( 'config-init' )
      exit_status = 255
+     CALL qexsd_set_status( exit_status )
+     CALL punch( 'config-init' )
      RETURN
   ENDIF
   !
   CALL init_run()
   !
   IF ( check_stop_now() ) THEN
-     CALL qexsd_set_status( 255 )
-     CALL punch( 'config' )
      exit_status = 255
+     CALL qexsd_set_status( exit_status )
+     CALL punch( 'config' )
      RETURN
   ENDIF
   !
@@ -209,7 +209,8 @@ SUBROUTINE run_pwscf( exit_status )
         ! ... save restart information for the new configuration
         !
         IF ( idone <= nstep .AND. .NOT. conv_ions ) THEN
-            CALL qexsd_set_status( 255 )
+            exit_status = 255
+            CALL qexsd_set_status( exit_status )
             CALL punch( 'config-only' )
         END IF
         !
@@ -288,6 +289,15 @@ SUBROUTINE run_pwscf( exit_status )
      !
   ENDDO main_loop
   !
+  ! Set correct exit_status
+  !
+  IF ( .NOT. conv_ions .OR. optimizer_failed ) THEN
+      exit_status =  3
+  ELSE
+      ! All good
+      exit_status = 0
+   END IF
+  !
   ! ... save final data file
   !
   CALL qexsd_set_status( exit_status )
@@ -296,7 +306,6 @@ SUBROUTINE run_pwscf( exit_status )
   !
   CALL qmmm_shutdown()
   !
-  IF ( .NOT. conv_ions .OR. optimizer_failed )  exit_status =  3
   RETURN
   !
 9010 FORMAT( /,5X,'Current dimensions of program PWSCF are:', &
