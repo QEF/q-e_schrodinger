@@ -101,7 +101,7 @@ MODULE dft_par_mod
     INTEGER :: beefvdw = 0
     !! Index for vdw term of BEEF
     !
-    INTEGER, PARAMETER :: nxc=8, ncc=12, ngcx=46, ngcc=13, nmeta=6
+    INTEGER, PARAMETER :: nxc=8, ncc=12, ngcx=46, ngcc=13, nmeta=7
     CHARACTER(LEN=4) :: exc, corr, gradx, gradc, meta
     DIMENSION :: exc(0:nxc), corr(0:ncc), gradx(0:ngcx), gradc(0:ngcc), &
                  meta(0:nmeta)
@@ -121,7 +121,7 @@ MODULE dft_par_mod
     DATA gradc / 'NOGC', 'P86', 'GGC', 'BLYP', 'PBC', 'HCTH', 'NONE',&
                  'B3LP', 'PSC', 'PBE', 'xxxx', 'xxxx', 'Q2DC', 'BEEC' /
     !
-    DATA meta  / 'NONE', 'TPSS', 'M06L', 'TB09', 'META', 'SCAN', 'SCA0' /
+    DATA meta  / 'NONE', 'TPSS', 'M06L', 'TB09', 'META', 'SCAN', 'SCA0', 'xxxx' /
     !
     !
 END MODULE
