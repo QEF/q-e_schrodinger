@@ -202,7 +202,7 @@ MODULE control_ph
   !
   SAVE
   !
-  INTEGER, PARAMETER :: maxter = 100 ! maximum number of iterations
+  INTEGER, PARAMETER :: maxter = 500 ! maximum number of iterations
   INTEGER :: niter_ph,      & ! maximum number of iterations (read from input)
              nmix_ph,       & ! mixing type
              start_irr,     & ! initial representation
