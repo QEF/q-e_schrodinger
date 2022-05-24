@@ -218,7 +218,7 @@ CONTAINS
          !
          IF ( restart_id .EQ. restart_verlet ) THEN
             ! Restarting...
-            vel_defined = .TRUE.
+            vel_defined = .FALSE.
             !
             READ( UNIT = 4, FMT = * ) istep, etotold, tau_tmp(:,:), &
                tau_old(:,:), temp_new, temp_av, mass(:), total_mass, &
@@ -394,7 +394,7 @@ CONTAINS
       CALL seqopn( 4, 'md', 'FORMATTED',  is_restart )
       !
       WRITE( UNIT = 4, FMT = * ) restart_verlet
-      WRITE( UNIT = 4, FMT = * ) istep, etot, istep, tau_new(:,:), tau(:,:), &
+      WRITE( UNIT = 4, FMT = * ) istep, etot, tau_new(:,:), tau(:,:), &
          temp_new, temp_av, mass(:), total_mass, elapsed_time, tau_ref(:,:)
       !
       CLOSE( UNIT = 4, STATUS = 'KEEP' )
@@ -1743,13 +1743,11 @@ CONTAINS
       REAL(DP), INTENT(in) :: time, temp ! in ps, K
       !
       INTEGER              :: iunit, i, k
-      CHARACTER(LEN=20)    :: istep_str
       !
       iunit = find_free_unit()
-      WRITE(istep_str, '(I7.7)') istep
       !
-      OPEN(UNIT = iunit, FILE = TRIM( tmp_dir ) // TRIM( prefix ) // "." &
-         // TRIM(ADJUSTL(istep_str)) // ".mdtrj" )
+      OPEN(UNIT = iunit, FILE = TRIM( tmp_dir ) // TRIM( prefix ) // ".mdtrj", &
+         STATUS="unknown", POSITION="APPEND")
       !
       ! Time (ps), temp (K), total energy (Ry), unit cell (9 values, Ang),
       ! atom coordinates (3 * nat values, Ang)
@@ -1757,6 +1755,7 @@ CONTAINS
       WRITE(iunit, *) time, temp, etot, &
          ( ( at(i,k) * alat * bohr_radius_angs, i = 1, 3), k = 1, 3 ), &
          ( ( tau(i,k) * alat * bohr_radius_angs, i = 1, 3), k = 1, nat )
+      WRITE(iunit, *) ! new line
       !
       CLOSE(iunit)
       !
