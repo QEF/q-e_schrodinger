@@ -27,9 +27,9 @@ SUBROUTINE punch( what )
                                    create_directory
   USE control_flags,        ONLY : io_level, lscf, lxdm
   USE klist,                ONLY : nks
-  USE io_files,             ONLY : psfile, pseudo_dir
+  USE io_files,             ONLY : psfile, pseudo_dir, molfile
   USE clib_wrappers,        ONLY : f_copy
-  USE spin_orb,             ONLY : lforcet
+  USE noncollin_module,     ONLY : lforcet
   USE scf,                  ONLY : rho
   USE lsda_mod,             ONLY : nspin
   USE ions_base,            ONLY : nsp
@@ -39,6 +39,8 @@ SUBROUTINE punch( what )
   USE a2F,                  ONLY : la2F, a2Fsave
   USE wavefunctions,        ONLY : evc
   USE xdm_module,           ONLY : write_xdmdat
+  USE rism3d_facade,        ONLY : lrism3d, rism3d_write_to_restart
+  USE solvmol,              ONLY : nsolV
   !
   USE wavefunctions_gpum,   ONLY : using_evc
   !
@@ -51,11 +53,11 @@ SUBROUTINE punch( what )
   !
   LOGICAL :: exst, only_init, wf_collect
   CHARACTER(LEN=320) :: cp_source, cp_dest
-  INTEGER            :: cp_status, nt
+  INTEGER            :: cp_status, nt, isolV
   !
   !
-  WRITE( UNIT = stdout, FMT = '(/,5X,"Writing output data file ",A)' ) &
-      TRIM ( restart_dir ( ) )
+  WRITE( stdout, '(/,5X,"Writing ",A," to output data dir ",A)' ) &
+         TRIM ( what ), TRIM ( restart_dir ( ) )
   iunpun = 4
   !
   ! ...New-style I/O with xml schema and (optionally) hdf5 binaries
@@ -81,10 +83,20 @@ SUBROUTINE punch( what )
      IF ( lscf .OR. lforcet ) CALL write_scf( rho, nspin )
   ENDIF
   !
+  ! ... correlation functions of 3D-RISM.
+  ! ... do not overwrite them, in case of non-scf
+  !
+  IF ( lrism3d ) THEN
+     IF (TRIM(what) == 'all' .OR. TRIM(what) == 'config' ) THEN
+        IF ( lscf ) CALL rism3d_write_to_restart()
+     END IF
+  END IF
+  !
   IF (TRIM(what) == 'all') THEN 
      !
      ! ... copy xml file one level up (FIXME: why?),
      ! ... copy pseudopotential files into the .save directory
+     ! ... copy molecular files into the .save directory (for 3D-RISM)
      !
      IF (ionode) THEN
         !
@@ -98,6 +110,17 @@ SUBROUTINE punch( what )
            IF ( TRIM(cp_source) /= TRIM(cp_dest) ) &
                 cp_status = f_copy(cp_source, cp_dest)
         ENDDO
+        !
+        IF ( lrism3d ) THEN
+           !
+           DO isolV = 1, nsolV
+              cp_source = TRIM(pseudo_dir)//molfile(isolV)
+              cp_dest   = TRIM(restart_dir ( ) ) //molfile(isolV)
+              IF ( TRIM(cp_source) /= TRIM(cp_dest) ) &
+                   cp_status = f_copy(cp_source, cp_dest)
+           ENDDO
+           !
+        ENDIF
         !
         ! write XDM dispersion data (coefficients and vdw radii) to xdm.dat
         IF (lxdm) THEN

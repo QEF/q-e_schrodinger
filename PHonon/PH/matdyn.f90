@@ -7,33 +7,38 @@
 !
 Module ifconstants
   !
-  ! All variables read from file that need dynamical allocation
+  !! All variables read from file that need dynamical allocation.
   !
   USE kinds, ONLY: DP
-  REAL(DP), ALLOCATABLE :: frc(:,:,:,:,:,:,:), tau_blk(:,:),  zeu(:,:,:), &
-               m_loc(:,:)
-  ! frc : interatomic force constants in real space
-  ! tau_blk : atomic positions for the original cell
-  ! zeu : effective charges for the original cell
-  ! m_loc: the magnetic moments of each atom
+  !
+  REAL(DP), ALLOCATABLE :: frc(:,:,:,:,:,:,:)
+  !! interatomic force constants in real space
+  REAL(DP), ALLOCATABLE :: tau_blk(:,:)
+  !! atomic positions for the original cell
+  REAL(DP), ALLOCATABLE :: zeu(:,:,:)
+  !! effective charges for the original cell
+  REAL(DP), ALLOCATABLE :: m_loc(:,:)
+  !! the magnetic moments of each atom
   INTEGER, ALLOCATABLE  :: ityp_blk(:)
-  ! ityp_blk : atomic types for each atom of the original cell
+  !! atomic types for each atom of the original cell
   !
   CHARACTER(LEN=3), ALLOCATABLE :: atm(:)
+  !
 end Module ifconstants
+!
 !
 !---------------------------------------------------------------------
 PROGRAM matdyn
   !-----------------------------------------------------------------------
-  !  this program calculates the phonon frequencies for a list of generic
-  !  q vectors starting from the interatomic force constants generated
-  !  from the dynamical matrices as written by DFPT phonon code through
-  !  the companion program q2r
+  !! This program calculates the phonon frequencies for a list of generic
+  !! q vectors starting from the interatomic force constants generated
+  !! from the dynamical matrices as written by DFPT phonon code through
+  !! the companion program \(\texttt{q2r}\).
   !
-  !  matdyn can generate a supercell of the original cell for mass
-  !  approximation calculation. If supercell data are not specified
-  !  in input, the unit cell, lattice vectors, atom types and positions
-  !  are read from the force constant file
+  !! \(\texttt{matdyn}\) can generate a supercell of the original cell for
+  !! mass approximation calculation. If supercell data are not specified
+  !! in input, the unit cell, lattice vectors, atom types and positions
+  !! are read from the force constant file.
   !
   !  Input cards: namelist &input
   !     flfrc     file produced by q2r containing force constants (needed)
@@ -207,7 +212,7 @@ PROGRAM matdyn
   CHARACTER(LEN=6) :: int_to_char
   LOGICAL, ALLOCATABLE :: mask(:)
   INTEGER            :: npk_label, nch
-  CHARACTER(LEN=100), ALLOCATABLE :: letter(:)
+  CHARACTER(LEN=3), ALLOCATABLE :: letter(:)
   INTEGER, ALLOCATABLE :: label_list(:)
   LOGICAL :: tend, terr
   CHARACTER(LEN=256) :: input_line, buffer
@@ -437,10 +442,9 @@ PROGRAM matdyn
         CALL mp_bcast(nq, ionode_id, world_comm)
         ALLOCATE ( q(3,nq) )
         IF (.NOT.q_in_band_form) THEN
-           ALLOCATE(letter(nq))
            ALLOCATE(wq(nq))
            DO n = 1,nq
-              IF (ionode) READ (5,*) (q(i,n),i=1,3), letter(n)
+              IF (ionode) READ (5,*) (q(i,n),i=1,3)
            END DO
            CALL mp_bcast(q, ionode_id, world_comm)
            !
@@ -730,17 +734,14 @@ PROGRAM matdyn
         END DO
         CLOSE(unit=2)
 
-        IF(.NOT.dos) THEN
-           OPEN (unit=2,file=trim(flfrq)//'.gp' ,status='unknown',form='formatted')
-           pathL = 0._dp
-           WRITE(2, '(f10.6,3x,a,3x,999f10.4)')  pathL, letter(1), (freq(i,1), i=1,3*nat)
-           DO n=2, nq
-               pathL=pathL+(SQRT(SUM(  (q(:,n)-q(:,n-1))**2 )))
-               WRITE(2, '(f10.6,3x,a,3x,999f10.4)')  pathL, letter(n), (freq(i,n), i=1,3*nat)
-           END DO
-           CLOSE(unit=2)
-           DEALLOCATE(letter)
-        END IF
+        OPEN (unit=2,file=trim(flfrq)//'.gp' ,status='unknown',form='formatted')
+        pathL = 0._dp
+        WRITE(2, '(f10.6,3x,999f10.4)')  pathL,  (freq(i,1), i=1,3*nat)
+        DO n=2, nq
+           pathL=pathL+(SQRT(SUM(  (q(:,n)-q(:,n-1))**2 )))
+           WRITE(2, '(f10.6,3x,999f10.4)')  pathL,  (freq(i,n), i=1,3*nat)
+        END DO
+        CLOSE(unit=2)
 
      END IF
      !

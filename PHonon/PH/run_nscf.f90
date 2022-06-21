@@ -8,16 +8,13 @@
 !-----------------------------------------------------------------------
 SUBROUTINE run_nscf(do_band, iq)
   !-----------------------------------------------------------------------
+  !! This is the main driver of the \(\texttt{pwscf}\) program called from
+  !! the \(\texttt{PHonon}\) code.
   !
-  ! ... This is the main driver of the pwscf program called from the
-  ! ... phonon code.
-  !
-  !
-  USE control_flags,   ONLY : conv_ions
+  USE control_flags,   ONLY : conv_ions, restart, io_level
   USE basis,           ONLY : starting_wfc, starting_pot, startingconfig
   USE io_files,        ONLY : prefix, tmp_dir, wfc_dir, seqopn
   USE lsda_mod,        ONLY : nspin
-  USE control_flags,   ONLY : restart
   USE check_stop,      ONLY : check_stop_now
   USE fft_base,        ONLY : dffts, dfftp
   !!!
@@ -41,11 +38,13 @@ SUBROUTINE run_nscf(do_band, iq)
   USE lr_symm_base,    ONLY : minus_q, nsymq, invsymq
   USE control_lr,      ONLY : ethr_nscf
   USE qpoint,          ONLY : xq
-  USE noncollin_module,ONLY : noncolin
-  USE spin_orb,        ONLY : domag
+  USE noncollin_module,ONLY : noncolin, domag
   USE klist,           ONLY : qnorm, nelec
   USE el_phon,         ONLY : elph_mat
   USE ahc,             ONLY : elph_ahc
+  USE mp_images,       ONLY : intra_image_comm
+  USE mp,              ONLY : mp_barrier
+  USE rism_module,     ONLY : lrism, rism_set_restart
   !
   IMPLICIT NONE
   !
@@ -82,8 +81,6 @@ SUBROUTINE run_nscf(do_band, iq)
   !
   CALL clean_pw( .FALSE. )
   !
-  CALL close_files(.true.)
-  !
   ! From now on, work only on the _ph virtual directory
   !
   wfc_dir=tmp_dir_phq
@@ -99,6 +96,8 @@ SUBROUTINE run_nscf(do_band, iq)
   ethr_nscf      = 1.0D-9 / nelec 
   ! threshold for diagonalization ethr_nscf - should be good for all cases
   !
+  IF (lrism) CALL rism_set_restart()
+  !
   CALL fft_type_allocate ( dfftp, at, bg, gcutm,  intra_bgrp_comm, nyfft=nyfft )
   CALL fft_type_allocate ( dffts, at, bg, gcutms, intra_bgrp_comm, nyfft=nyfft)
   !
@@ -106,14 +105,14 @@ SUBROUTINE run_nscf(do_band, iq)
   !
   CALL init_run()
   !
-!!!!!!!!!!!!!!!!!!!!!!!! ACFDT TEST !!!!!!!!!!!!!!!!
+!°°°°°°°°°°°°°°°°°°°° ACFDT TEST °°°°°°°°°°°°°°°°°°°°°°°°°
   IF (acfdt_is_active) THEN
     ! ACFDT mumerical derivative test: modify the potential
     IF (acfdt_num_der) vrs(ir_point,1)=vrs(ir_point,1) + delta_vrs
   ENDIF
-!!!!!!!!!!!!!!!!!!!!!!!!END OF ACFDT TEST !!!!!!!!!!!!!!!!
+!°°°°°°°°°°°°°°°°°END OF ACFDT TEST °°°°°°°°°°°°°°°°°°°°°°
 !
-  IF (do_band) CALL non_scf_ph ( )
+  IF (do_band.and..not.elph_mat) CALL non_scf_ph ( )
 
 
   IF ( check_stop_now() ) THEN
@@ -141,7 +140,11 @@ SUBROUTINE run_nscf(do_band, iq)
   CLOSE( UNIT = 4, STATUS = 'DELETE' )
   ext_restart=.FALSE.
   !
-  CALL close_files(.true.)
+  IF (io_level > 0) THEN
+     CALL close_files(.true.)
+  ELSE
+     CALL mp_barrier( intra_image_comm )  
+  ENDIF
   !
 
   bands_computed=.TRUE.

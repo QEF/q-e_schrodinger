@@ -1,4 +1,5 @@
 set(src_pp
+    src/adduscore.f90
     src/addusdens1d.f90
     src/add_shift_cc.f90
     src/add_shift_lc.f90
@@ -6,6 +7,7 @@ set(src_pp
     src/atomic_wfc_nc_proj.f90
     src/chdens_module.f90
     src/chdens_bspline.f90
+    src/chdens_bspline_sphere.f90
     src/compute_ppsi.f90
     src/compute_sigma_avg.f90
     src/cube.f90
@@ -26,8 +28,10 @@ set(src_pp
     src/projections_mod.f90
     src/projwfc_box.f90
     src/punch_plot.f90
+    src/punch_rism.f90
     src/read_proj.f90
     src/smallgk.f90
+    src/solvdens.f90
     src/stm.f90
     src/stop_pp.f90
     src/sum_band_kin.f90
@@ -291,6 +295,21 @@ target_link_libraries(qe_pp_pw2gw_exe
         qe_upflib
         qe_mpi_fortran
         qe_xclib)
+###########################################################
+# pw2gt.x
+###########################################################
+set(src_pw2gt_x src/pw2gt.f90)
+qe_add_executable(qe_pp_pw2gt_exe ${src_pw2gt_x})
+set_target_properties(qe_pp_pw2gt_exe PROPERTIES OUTPUT_NAME pw2gt.x)
+target_link_libraries(qe_pp_pw2gt_exe
+    PRIVATE
+        qe_pw
+        qe_modules
+        qe_pp
+        qe_fftx
+        qe_upflib
+        qe_mpi_fortran
+        qe_xclib)
 
 ###########################################################
 # sumpdos.x
@@ -462,6 +481,20 @@ target_link_libraries(qe_pp_st_ef_exe
         qe_openmp_fortran)
 
 ###########################################################
+# pprism.x
+###########################################################
+set(sources src/postrism.f90)
+qe_add_executable(qe_pp_rism_exe ${sources})
+set_target_properties(qe_pp_rism_exe PROPERTIES OUTPUT_NAME pprism.x)
+target_link_libraries(qe_pp_rism_exe
+    PRIVATE
+        qe_pw
+        qe_fftx
+        qe_modules
+        qe_pp
+        qe_xclib)
+
+###########################################################
 # fermi_int_1.x
 ###########################################################
 set(src_fermi_int_1_x
@@ -478,10 +511,7 @@ target_link_libraries(qe_pp_st_ef_exe
 
 ###########################################################
 
-qe_install_targets(
-    # Libraries
-    qe_pp
-    # Executables
+set(PP_EXE_TARGETS
     qe_pp_exe
     qe_pp_opengrid_exe
     qe_pp_average_exe
@@ -499,6 +529,7 @@ qe_install_targets(
     qe_pp_wfck2r_exe
     qe_pp_initial_state_exe
     qe_pp_pw2gw_exe
+    qe_pp_pw2gt_exe
     qe_pp_sumpdos_exe
     qe_pp_epsilon_exe
     qe_pp_wannierham_exe
@@ -513,4 +544,5 @@ qe_install_targets(
     qe_pp_st_ef_exe
     qe_pp_st_dos_exe
     qe_pp_st_fermiint0_exe
-    qe_pp_st_fermiint1_exe)
+    qe_pp_st_fermiint1_exe
+    qe_pp_rism_exe)

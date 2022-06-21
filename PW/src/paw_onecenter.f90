@@ -429,7 +429,7 @@ MODULE paw_onecenter
     USE constants,              ONLY : e2, eps12
     USE lsda_mod,               ONLY : nspin
     USE atom,                   ONLY : g => rgrid
-    USE xc_lib,                 ONLY : xclib_dft_is
+    USE xc_lib,                 ONLY : xclib_dft_is, xc
     USE constants,              ONLY : fpi ! REMOVE
     !
     TYPE(paw_info), INTENT(IN) :: i
@@ -1682,11 +1682,10 @@ MODULE paw_onecenter
     !!  potential in the spherical basis. It receives as input the charge
     !!  density and its variation.
     !
-    USE spin_orb,               ONLY : domag
     USE noncollin_module,       ONLY : nspin_mag
     USE lsda_mod,               ONLY : nspin
     USE atom,                   ONLY : g => rgrid
-    USE xc_lib,                 ONLY : xclib_dft_is
+    USE xc_lib,                 ONLY : xclib_dft_is, dmxc
     !
     TYPE(paw_info), INTENT(IN) :: i
     !! atom's minimal info
@@ -1802,7 +1801,7 @@ MODULE paw_onecenter
     USE lsda_mod,               ONLY : nspin
     USE atom,                   ONLY : g => rgrid
     USE constants,              ONLY : pi,e2, eps => eps12, eps2 => eps24
-    USE xc_lib,                 ONLY : xclib_set_threshold, xc_gcx
+    USE xc_lib,                 ONLY : xclib_set_threshold, xc_gcx, dgcxc
     !
     TYPE(paw_info), INTENT(IN) :: i
     !! atom's minimal info

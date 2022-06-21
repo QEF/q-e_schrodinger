@@ -33,13 +33,19 @@ SUBROUTINE from_restart( )
    USE wave_base,             ONLY : rande_base
    USE efield_module,         ONLY : efield_berry_setup,  tefield, &
                                      efield_berry_setup2, tefield2
-   USE uspp,                  ONLY : okvan, vkb, vkb_d, nkb, nlcc_any
+   USE pseudo_base,           ONLY : vkb_d
+   USE uspp,                  ONLY : okvan, vkb, nkb, nlcc_any
    USE cp_main_variables,     ONLY : ht0, htm, lambdap, lambda, lambdam, eigr, &
                                      sfac, taub, irb, eigrb, edft, bec_bgrp, dbec, idesc, iabox, nabox
    USE time_step,             ONLY : delt
    USE fft_base,              ONLY : dfftp, dffts
    USE device_memcpy_m,       ONLY : dev_memcpy
    USE matrix_inversion
+   !
+#if defined (__ENVIRON)
+   USE plugin_flags,          ONLY : use_environ
+   USE environ_base_module,   ONLY : update_environ_ions
+#endif
    !
    IMPLICIT NONE
 
@@ -198,7 +204,9 @@ SUBROUTINE from_restart( )
    IF ( tefield  ) CALL efield_berry_setup( eigr, tau0 )
    IF ( tefield2 ) CALL efield_berry_setup2( eigr, tau0 )
    !
-   CALL plugin_init_ions( tau0 )
+#if defined (__ENVIRON)
+   IF (use_environ) CALL update_environ_ions(tau0)
+#endif
    !
    edft%eself = eself
    !

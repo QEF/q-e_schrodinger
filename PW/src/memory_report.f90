@@ -1,5 +1,5 @@
 !
-! Copyright (C) 2007-2021 Quantum ESPRESSO group
+! Copyright (C) 2001-2022 Quantum ESPRESSO group
 ! This file is distributed under the terms of the
 ! GNU General Public License. See the file `License'
 ! in the root directory of the present distribution,
@@ -15,7 +15,7 @@ SUBROUTINE memory_report()
   ! Not guaranteed to be accurate for all cases (especially exotic ones).
   ! Originally written by PG, much improved by Pietro Bonfa' with:
   ! * Detailed memory report in verbose mode
-  ! * Memory buffers for LDA+U projectors now included.
+  ! * Memory buffers for DFT+Hubbard projectors now included.
   ! * Local potential and structure factors now included
   !  (small but sometimes not negligible).
   ! * Q functions (qrad) now included.
@@ -42,7 +42,7 @@ SUBROUTINE memory_report()
   USE uspp,      ONLY : nkb, okvan
   USE atom,      ONLY : rgrid
   USE xc_lib,    ONLY : xclib_dft_is
-  USE ldaU,      ONLY : lda_plus_u, U_projection, nwfcU
+  USE ldaU,      ONLY : lda_plus_u, Hubbard_projectors, nwfcU
   USE fixed_occ, ONLY : one_atom_occupations
   USE wannier_new,ONLY: use_wannier
   USE lsda_mod,  ONLY : nspin
@@ -50,16 +50,17 @@ SUBROUTINE memory_report()
   USE uspp_data, ONLY : dq
   USE noncollin_module, ONLY : npol, nspin_mag
   USE control_flags,    ONLY: isolve, nmix, imix, gamma_only, lscf, io_level, &
-       lxdm, smallmem, tqr, iverbosity
-  USE force_mod, ONLY : lforce, lstres
+       lxdm, smallmem, tqr, iverbosity, rmm_ndim, lforce=>tprnfor, tstress
   USE ions_base, ONLY : nat, ntyp => nsp, ityp
+  USE rism3d_facade, ONLY : lrism3d, rism3t, rism3d_is_laue
   USE mp_bands,  ONLY : nproc_bgrp, nbgrp
   USE mp_pools,  ONLY : npool
   USE mp_images, ONLY : nproc_image  
   !
   IMPLICIT NONE
   !
-  INCLUDE 'laxlib.fh'
+  ! please do not capitalize (FORD rules)
+  include 'laxlib.fh'
   !
   INTEGER, PARAMETER :: MB=1024*1024
   INTEGER, PARAMETER :: GB=1024*MB
@@ -116,7 +117,7 @@ SUBROUTINE memory_report()
      ram = ram + add
   END IF
   ! Hubbard wavefunctions
-  IF ( lda_plus_u .AND. U_projection .NE. 'pseudo' ) THEN
+  IF ( lda_plus_u .AND. Hubbard_projectors .NE. 'pseudo' ) THEN
      add = complex_size * nwfcU * npol * npwx_l * nk ! also buffer 
      IF ( iverbosity > 0 ) WRITE( stdout, 1013 ) 'U proj.', add/nk/MB
      IF ( iverbosity > 0 ) WRITE( stdout, 1013 ) 'U proj. (w. buff.)', add/MB
@@ -260,6 +261,36 @@ SUBROUTINE memory_report()
   END IF 
   !=====================================================================
   !
+  !=====================================================================
+  ! RISM calculations
+  !=====================================================================
+  IF ( lrism3d ) THEN
+     IF (.NOT. rism3d_is_laue()) THEN
+        ! in case of 3D-RISM:
+        ! 1D-RISM Susceptibility
+        ram = ram + real_size * rism3t%nsite * rism3t%mp_site%nsite * rism3t%ngs
+        ! R-space
+        ram = ram + real_size * (6 * rism3t%nsite + 2) * rism3t%nr
+        ! G-space
+        ram = ram + complex_size * (3 * rism3t%nsite + 3) * rism3t%ng
+     ELSE
+        ! in case of Laue-RISM:
+        ! 1D-RISM Susceptibility
+        ram = ram + real_size * rism3t%nsite * rism3t%mp_site%nsite * (rism3t%nrzl * rism3t%ngs)
+        ! R-space
+        ram = ram + real_size * (7 * rism3t%nsite + 2) * rism3t%nr
+        ! G-space
+        ram = ram + complex_size * 2 * rism3t%ng
+        ! Laue-rep. (short-range)
+        ram = ram + complex_size * 2 * rism3t%nsite * rism3t%nrzs * rism3t%ngxy
+        ! Laue-rep. (long-range)
+        ram = ram + complex_size * (2 * rism3t%nsite + 3) * rism3t%nrzl * rism3t%ngxy
+     END IF
+  END IF
+  !=====================================================================
+  !
+  !=====================================================================
+  !
   ! compute ram_: scratch space that raises the "high watermark"
   !
   !=====================================================================
@@ -278,6 +309,7 @@ SUBROUTINE memory_report()
   !
   ! 
   IF ( isolve == 0 ) THEN
+     ! Davidson
      add = complex_size * nbndx * npol * npwx_l              ! hpsi
      ram1 = ram1 + add
      IF ( iverbosity > 0 ) WRITE( stdout, 1013 ) 'psi', add/MB
@@ -288,7 +320,36 @@ SUBROUTINE memory_report()
         IF ( iverbosity > 0 ) WRITE( stdout, 1013 ) 'spsi', add/MB 
         ram1 = ram1 + add
      END IF
+  ELSE IF ( isolve == 4 ) THEN
+     ! RMM-DIIS
+     nbnd_l = NINT( DBLE(nbnd) / nbgrp )
+     add = complex_size * nbnd_l * npol * npwx_l * rmm_ndim
+     ram1 = ram1 + add     ! phi
+     IF ( iverbosity > 0 ) WRITE( stdout, 1013 ) 'phi', add/MB
+     ram1 = ram1 + add     ! hphi
+     IF ( iverbosity > 0 ) WRITE( stdout, 1013 ) 'hphi', add/MB
+     IF ( okvan ) THEN
+        ram1 = ram1 + add  ! sphi
+        IF ( iverbosity > 0 ) WRITE( stdout, 1013 ) 'sphi', add/MB
+     END IF
+
+     add = complex_size * nbnd * npol * npwx_l
+     ram1 = ram1 + add     ! hpsi
+     IF ( iverbosity > 0 ) WRITE( stdout, 1013 ) 'hpsi', add/MB
+     IF ( okvan ) THEN
+        ram1 = ram1 + add  ! spsi
+        IF ( iverbosity > 0 ) WRITE( stdout, 1013 ) 'spsi', add/MB
+     END IF
+     ram1 = ram1 + add     ! kpsi
+     IF ( iverbosity > 0 ) WRITE( stdout, 1013 ) 'kpsi', add/MB
+     ram1 = ram1 + add     ! hkpsi
+     IF ( iverbosity > 0 ) WRITE( stdout, 1013 ) 'hkpsi', add/MB
+     IF ( okvan ) THEN
+        ram1 = ram1 + add  ! skpsi
+        IF ( iverbosity > 0 ) WRITE( stdout, 1013 ) 'skpsi', add/MB
+     END IF
   END IF
+  !
   ram_ = ram1
   !=====================================================================
   !
@@ -375,7 +436,7 @@ SUBROUTINE memory_report()
         !
         ! stress
         !
-        IF (lstres) THEN
+        IF (tstress) THEN
            !                      vg                      ylmk0,dylmk0  qmod
            ram1 = real_size *  (ngm*nspin_mag + ngm_l*( 2*lmaxq*lmaxq + 1 ) )
            !                                    qgm      aux1  aux2

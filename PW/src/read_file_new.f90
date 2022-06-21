@@ -1,5 +1,5 @@
 !
-! Copyright (C) 2016-2020 Quantum ESPRESSO group
+! Copyright (C) 2016-2022 Quantum ESPRESSO group
 ! This file is distributed under the terms of the
 ! GNU General Public License. See the file `License'
 ! in the root directory of the present distribution,
@@ -36,7 +36,7 @@ SUBROUTINE read_file()
   ! ... io_level = 1 so that a real file is opened
   !
   nwordwfc = nbnd*npwx*npol
-  io_level = 1
+  IF ( io_level /= 0 ) io_level = 1
   CALL open_buffer ( iunwfc, 'wfc', nwordwfc, io_level, exst )
   !
   ! ... read wavefunctions in collected format, write them to file
@@ -56,7 +56,7 @@ SUBROUTINE read_file()
           'read_file: Wavefunctions in collected format not available'
   END IF
   !
-  CALL close_buffer  ( iunwfc, 'KEEP' )
+  IF ( io_level /= 0 ) CALL close_buffer  ( iunwfc, 'KEEP' )
   !
 END SUBROUTINE read_file
 !
@@ -75,7 +75,7 @@ SUBROUTINE read_file_new ( needwf )
   USE gvecw,          ONLY : gcutw
   USE klist,          ONLY : nkstot, nks, xk, wk
   USE lsda_mod,       ONLY : isk, nspin
-  USE spin_orb,       ONLY : domag
+  USE noncollin_module,ONLY: domag
   USE wvfct,          ONLY : nbnd, et, wg
   USE pw_restart_new, ONLY : read_xml_file
   USE xc_lib,         ONLY : xclib_dft_is_libxc, xclib_init_libxc
@@ -152,7 +152,7 @@ SUBROUTINE post_xml_init (  )
   USE paw_onecenter,        ONLY : paw_potential
   USE dfunct,               ONLY : newd
   USE funct,                ONLY : get_dft_name
-  USE ldaU,                 ONLY : lda_plus_u, eth, init_lda_plus_u, U_projection, &
+  USE ldaU,                 ONLY : lda_plus_u, eth, init_hubbard, Hubbard_projectors, &
                                    lda_plus_u_kind
   USE esm,                  ONLY : do_comp_esm, esm_init
   USE Coul_cut_2D,          ONLY : do_cutoff_2D, cutoff_fact 
@@ -173,13 +173,16 @@ SUBROUTINE post_xml_init (  )
   USE cellmd,               ONLY : cell_factor, lmovecell
   USE wvfct,                ONLY : nbnd, nbndx, et, wg
   USE lsda_mod,             ONLY : nspin
-  USE noncollin_module,     ONLY : noncolin
-  USE spin_orb,             ONLY : lspinorb
+  USE noncollin_module,     ONLY : noncolin, lspinorb
   USE cell_base,            ONLY : at, bg, set_h_ainv
   USE symm_base,            ONLY : d1, d2, d3
   USE mp_bands,             ONLY : intra_bgrp_comm
   USE realus,               ONLY : betapointlist, generate_qpointlist, &
                                    init_realspace_vars,real_space
+  USE solvmol,              ONLY : nsolV, solVs
+  USE read_solv_module,     ONLY : read_solvents
+  USE rism_module,          ONLY : rism_tobe_alive, rism_pot3d
+  USE rism3d_facade,        ONLY : lrism3d, rism3d_initialize, rism3d_read_to_restart
   !
   IMPLICIT NONE
   !
@@ -192,6 +195,12 @@ SUBROUTINE post_xml_init (  )
   if (cell_factor == 0.d0) cell_factor = 1.D0
   nbndx = nbnd
   !
+  ! ... activate 3D-RISM
+  !
+  IF ( lrism3d ) THEN
+     CALL rism_tobe_alive()
+  END IF
+  !
   ! ... read pseudopotentials
   ! ... the following call prevents readpp from setting dft from PP files
   !
@@ -202,10 +211,9 @@ SUBROUTINE post_xml_init (  )
   !
   okpaw = ANY ( upf(1:nsp)%tpawp )
   IF ( .NOT. lspinorb ) CALL average_pp ( nsp )
-  !! average_pp must be called before init_lda_plus_u
+  !! average_pp must be called before init_hubbard
   IF ( lda_plus_u ) THEN
-     IF (lda_plus_u_kind == 2) CALL read_V
-     CALL init_lda_plus_u ( upf(1:nsp)%psd, nspin, noncolin )
+     CALL init_hubbard ( upf(1:nsp)%psd, nspin, noncolin )
   ENDIF
   !
   ! ... allocate memory for G- and R-space fft arrays (from init_run.f90)
@@ -222,6 +230,8 @@ SUBROUTINE post_xml_init (  )
   g_d    = g
   gg_d   = gg
 #endif
+  !$acc update device(mill, g)
+  !
   CALL ggens( dffts, gamma_only, at, g, gg, mill, gcutms, ngms ) 
   CALL gshells ( lmovecell ) 
   !
@@ -253,7 +263,7 @@ SUBROUTINE post_xml_init (  )
   IF (tbeta_smoothing) CALL init_us_b0(ecutwfc,intra_bgrp_comm)
   IF (tq_smoothing) CALL init_us_0(ecutrho,intra_bgrp_comm)
   CALL init_us_1(nat, ityp, omega, ngm, g, gg, intra_bgrp_comm)
-  IF ( lda_plus_U .AND. ( U_projection == 'pseudo' ) ) CALL init_q_aeps()
+  IF ( lda_plus_u .AND. ( Hubbard_projectors == 'pseudo' ) ) CALL init_q_aeps()
   CALL init_tab_atwfc(omega, intra_bgrp_comm)
   !
   CALL struc_fact( nat, tau, nsp, ityp, ngm, g, bg, dfftp%nr1, dfftp%nr2,&
@@ -270,6 +280,14 @@ SUBROUTINE post_xml_init (  )
      WRITE (stdout,'(5X,"Real space initialisation completed")')    
   ENDIF
   !
+  ! ... read info needed for 3D-RISM
+  !
+  IF ( lrism3d ) THEN
+     CALL read_solvents( without_density=.TRUE. )
+     CALL rism3d_initialize()
+     CALL rism3d_read_to_restart()
+  END IF
+  !
   ! ... recalculate the potential - FIXME: couldn't make ts-vdw work
   !
   IF ( ts_vdw) THEN
@@ -281,6 +299,12 @@ SUBROUTINE post_xml_init (  )
   !
   CALL v_of_rho( rho, rho_core, rhog_core, &
        ehart, etxc, vtxc, eth, etotefield, charge, v )
+  !
+  ! ... recalculate the solvation potential (3D-RISM)
+  !
+  IF ( lrism3d ) THEN
+     CALL rism_pot3d(rho%of_g(:, 1), v%of_r)
+  END IF
   !
   ! ... More PAW and USPP initializations
   !

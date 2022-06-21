@@ -5,7 +5,10 @@
 ! in the root directory of the present distribution,
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
+!---------------------------------------------------------------------------------
 MODULE corr_gga
+  !-------------------------------------------------------------------------------
+  !! GGA correlation functionals.
   !
   USE corr_lda, ONLY: pw, pw_spin
   !
@@ -14,13 +17,14 @@ CONTAINS
 !
 !-----------------------------------------------------------------------
 SUBROUTINE perdew86( rho, grho, sc, v1c, v2c )
-!$acc routine (perdew86) seq
   !-----------------------------------------------------------------------
   !! Perdew gradient correction on correlation: PRB 33, 8822 (1986).
   !
   USE kind_l, ONLY : DP
   !
   IMPLICIT NONE
+  !
+  !$acc routine seq
   !
   REAL(DP), INTENT(IN) :: rho, grho
   REAL(DP), INTENT(OUT) :: sc, v1c, v2c
@@ -66,13 +70,14 @@ END SUBROUTINE perdew86
 !
 !-----------------------------------------------------------------------
 SUBROUTINE ggac( rho, grho, sc, v1c, v2c )
-!$acc routine (ggac) seq
   !-----------------------------------------------------------------------
   !! Perdew-Wang GGA (PW91) correlation part
   !
   USE kind_l,    ONLY: DP
   !
   IMPLICIT NONE
+  !
+  !$acc routine seq
   !
   REAL(DP), INTENT(IN) :: rho, grho
   REAL(DP), INTENT(OUT) :: sc, v1c, v2c
@@ -145,13 +150,14 @@ END SUBROUTINE ggac
 !
 !-----------------------------------------------------------------------
 SUBROUTINE glyp( rho, grho, sc, v1c, v2c )
-!$acc routine (glyp) seq
   !-----------------------------------------------------------------------
   !! Lee Yang Parr: gradient correction part.
   !
   USE kind_l, ONLY: DP
   !
   IMPLICIT NONE
+  !
+  !$acc routine seq
   !
   REAL(DP), INTENT(IN) :: rho, grho
   REAL(DP), INTENT(OUT) :: sc, v1c, v2c
@@ -187,7 +193,6 @@ END SUBROUTINE glyp
 !
 !---------------------------------------------------------------
 SUBROUTINE pbec( rho, grho, iflag, sc, v1c, v2c )
-!$acc routine (pbec) seq
   !---------------------------------------------------------------
   !! PBE correlation (without LDA part)
   !
@@ -198,6 +203,8 @@ SUBROUTINE pbec( rho, grho, iflag, sc, v1c, v2c )
   USE kind_l,    ONLY: DP
   !
   IMPLICIT NONE
+  !
+  !$acc routine seq
   !
   INTEGER,  INTENT(IN) :: iflag
   REAL(DP), INTENT(IN) :: rho, grho
@@ -256,7 +263,6 @@ END SUBROUTINE pbec
 !
 !-----------------------------------------------------------------------
 SUBROUTINE perdew86_spin( rho, zeta, grho, sc, v1c_up, v1c_dw, v2c )
-!$acc routine (perdew86_spin) seq
   !---------------------------------------------------------------------
   !! Perdew gradient correction on correlation: PRB 33, 8822 (1986)
   !! spin-polarized case.
@@ -264,6 +270,8 @@ SUBROUTINE perdew86_spin( rho, zeta, grho, sc, v1c_up, v1c_dw, v2c )
   USE kind_l,    ONLY: DP
   !
   IMPLICIT NONE
+  !
+  !$acc routine seq
   !
   REAL(DP), INTENT(IN) :: rho
   !! the total charge density
@@ -329,13 +337,14 @@ END SUBROUTINE perdew86_spin
 !
 !-----------------------------------------------------------------------
 SUBROUTINE ggac_spin( rho, zeta, grho, sc, v1c_up, v1c_dw, v2c )
-!$acc routine (ggac_spin) seq
   !---------------------------------------------------------------------
   !! Perdew-Wang GGA (PW91) correlation part - spin-polarized
   !
   USE kind_l, ONLY: DP
   !
   IMPLICIT NONE
+  !
+  !$acc routine seq
   !
   REAL(DP), INTENT(IN) :: rho
   !! the total charge density
@@ -435,7 +444,6 @@ END SUBROUTINE ggac_spin
 !
 !-------------------------------------------------------------------
 SUBROUTINE pbec_spin( rho, zeta, grho, iflag, sc, v1c_up, v1c_dw, v2c )
-!$acc routine (pbec_spin) seq
   !-----------------------------------------------------------------
   !! PBE correlation (without LDA part) - spin-polarized.
   !
@@ -445,6 +453,8 @@ SUBROUTINE pbec_spin( rho, zeta, grho, iflag, sc, v1c_up, v1c_dw, v2c )
   USE kind_l, ONLY : DP
   !
   IMPLICIT NONE
+  !
+  !$acc routine seq
   !
   INTEGER, INTENT(IN) :: iflag
   !! see main comments
@@ -532,14 +542,16 @@ END SUBROUTINE pbec_spin
 !
 !
 !------------------------------------------------------------------------
-SUBROUTINE lsd_glyp( rho_in_up, rho_in_dw, grho_up, grho_dw, grho_ud, sc, v1c_up, v1c_dw, v2c_up, v2c_dw, v2c_ud )
-!$acc routine (lsd_glyp) seq
+SUBROUTINE lsd_glyp( rho_in_up, rho_in_dw, grho_up, grho_dw, grho_ud, sc, &
+                     v1c_up, v1c_dw, v2c_up, v2c_dw, v2c_ud )
   !----------------------------------------------------------------------
   !! Lee, Yang, Parr: gradient correction part.
   !
   USE kind_l, ONLY: DP
   !
   IMPLICIT NONE
+  !
+  !$acc routine seq
   !
   REAL(DP), INTENT(IN) :: rho_in_up, rho_in_dw
   !! the total charge density
@@ -611,13 +623,14 @@ END SUBROUTINE lsd_glyp
 !
 !---------------------------------------------------------------
 SUBROUTINE cpbe2d( rho, grho, sc, v1c, v2c )
-!$acc routine (cpbe2d) seq
   !---------------------------------------------------------------
   !! 2D correction (last term of Eq. 5, PRL 108, 126402 (2012))
   !
   USE kind_l,      ONLY: DP
   !
   IMPLICIT NONE
+  !
+  !$acc routine seq
   !
   REAL(DP), INTENT(IN)  :: rho, grho
   REAL(DP), INTENT(OUT) :: sc, v1c, v2c
@@ -629,7 +642,7 @@ SUBROUTINE cpbe2d( rho, grho, sc, v1c, v2c )
   REAL(DP), PARAMETER :: ex3=ex2+1.0_DP
   REAL(DP) :: fac1, fac2, zeta, phi, gr, rs, drsdn, akf, aks, t, dtdn, dtdgr
   REAL(DP) :: p, a, g, alpha1, beta1,beta2,beta3,beta4, dgdrs, epsc, depscdrs
-  REAL(DP) :: c, gamma1, beta, aa, cg, adddepsc, h, dhdaa, dhdt, dhdrs
+  REAL(DP) :: c, gamma1, beta, aa, cg, h, dhdaa, dhdt, dhdrs
   REAL(DP) :: epscpbe, depscpbedrs, depscpbedt, a0,a1,a2, b0,b1,b2, c0,c1,c2
   REAL(DP) :: e0,e1,e2, f0,f1,f2, g0,g1,g2, h0,h1,h2, d0,d1,d2, ff, dffdt
   REAL(DP) :: rs3d, rs2d, drs2ddrs3d, eps2d, deps2ddrs2, depsGGAdrs, depsGGAdt

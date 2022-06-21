@@ -15,8 +15,8 @@ SUBROUTINE setup_dmuxc
   USE lsda_mod,         ONLY : lsda
   USE fft_base,         ONLY : dfftp
   USE scf,              ONLY : rho, rho_core
-  USE noncollin_module, ONLY : noncolin, nspin_mag
-  USE spin_orb,         ONLY : domag
+  USE noncollin_module, ONLY : noncolin, nspin_mag, domag
+  USE xc_lib,           ONLY : dmxc
   !
   IMPLICIT NONE
   !

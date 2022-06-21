@@ -14,9 +14,9 @@ MODULE qe_drivers_lda_lsda
   !-----------------------------------------------------------------------
   !! Contains the LDA drivers of QE that calculate XC energy and potential.
   !
-  USE kind_l,      ONLY: DP
-  USE dft_par_mod, ONLY: iexch, icorr, rho_threshold_lda, exx_started, &
-                         exx_fraction, finite_size_cell_volume
+  USE kind_l,               ONLY: DP
+  USE dft_setting_params,   ONLY: iexch, icorr, rho_threshold_lda, exx_started, &
+                                  exx_fraction, finite_size_cell_volume
   USE exch_lda
   USE corr_lda
   !
@@ -88,12 +88,10 @@ SUBROUTINE xc_lda( length, rho_in, ex_out, ec_out, vx_out, vc_out )
   ntids = omp_get_num_threads()
 #endif
   !
-  !
 #if defined(_OPENACC)
-!$acc data copyin(rho_in), copyout(ex_out, vx_out, ec_out, vc_out)
+!$acc data present( rho_in, ex_out, vx_out, ec_out, vc_out )
 !$acc parallel loop
-#endif
-#if defined(_OPENMP) && !defined(_OPENACC)
+#else
 !$omp parallel if(ntids==1) default(none) &
 !$omp private( rho, rs, ex, ec, ec_, vx, vc, vc_ ) &
 !$omp shared( rho_in, length, iexch, icorr, ex_out, ec_out, vx_out, vc_out, &
@@ -257,12 +255,10 @@ SUBROUTINE xc_lda( length, rho_in, ex_out, ec_out, vx_out, vc_out )
   ENDDO
 #if defined(_OPENACC)
 !$acc end data
-#endif
-#if defined(_OPENMP) && !defined(_OPENACC)
+#else
 !$omp end do
 !$omp end parallel
 #endif
-  !
   !
   RETURN
   !
@@ -317,10 +313,9 @@ SUBROUTINE xc_lsda( length, rho_in, zeta_in, ex_out, ec_out, vx_out, vc_out )
 #endif
   !
 #if defined(_OPENACC)  
-!$acc data copyin(rho_in, zeta_in), copyout(ex_out, vx_out, ec_out, vc_out)
+!$acc data present( rho_in, zeta_in, ex_out, vx_out, ec_out, vc_out )
 !$acc parallel loop  
-#endif
-#if defined(_OPENMP) && !defined(_OPENACC)  
+#else
 !$omp parallel if(ntids==1) default(none) &
 !$omp private( rho, rs, zeta, ex, ec, ec_, vx_up, vx_dw, vc_up, &
 !$omp          vc_dw, vc_up_, vc_dw_ ) &
@@ -408,11 +403,6 @@ SUBROUTINE xc_lsda( length, rho_in, zeta_in, ex_out, ec_out, vx_out, vc_out )
      ! ... CORRELATION
      !
      SELECT CASE( icorr )
-     CASE( 0 )
-        !
-        ec = 0.0_DP
-        vc_up = 0.0_DP ; vc_dw = 0.0_DP
-        !
      CASE( 1 )
         !
         CALL pz_spin( rs, zeta, ec, vc_up, vc_dw )
@@ -477,14 +467,12 @@ SUBROUTINE xc_lsda( length, rho_in, zeta_in, ex_out, ec_out, vx_out, vc_out )
      ec_out(ir) = ec  ;  vc_out(ir,1) = vc_up  ;  vc_out(ir,2) = vc_dw
      !
   ENDDO
-#if defined(_OPENMP) && !defined(_OPENACC)
+#if defined(_OPENACC)
+!$acc end data
+#else
 !$omp end do
 !$omp end parallel
 #endif
-#if defined(_OPENACC)
-!$acc end data
-#endif
-  !
   !
   RETURN
   !

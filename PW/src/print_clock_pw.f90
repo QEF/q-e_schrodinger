@@ -22,6 +22,12 @@ SUBROUTINE print_clock_pw()
    USE ldaU,               ONLY : lda_plus_u, lda_plus_u_kind, is_hubbard_back
    USE xc_lib,             ONLY : xclib_dft_is
    USE bp,                 ONLY : lelfield
+   USE rism_module,        ONLY : rism_print_clock
+   !
+#if defined (__ENVIRON)
+   USE plugin_flags,        ONLY : use_environ
+   USE environ_base_module, ONLY : print_environ_clocks
+#endif
    !
    IMPLICIT NONE
    !
@@ -39,6 +45,7 @@ SUBROUTINE print_clock_pw()
    IF (llondon) CALL print_clock('stres_london')
    !
    WRITE( stdout, '(/5x,"Called by init_run:")' )
+   CALL print_clock( 'aceinit0' )
    CALL print_clock( 'wfcinit' )
    IF ( iverbosity > 0 ) THEN
       CALL print_clock( 'wfcinit:atomic' )
@@ -92,7 +99,8 @@ SUBROUTINE print_clock_pw()
    !
    WRITE( stdout, '(/5x,"Called by c_bands:")' )
    CALL print_clock( 'init_us_2' )
-   CALL print_clock( 'init_us_2_gpu' )
+   CALL print_clock( 'init_us_2:cpu' )
+   CALL print_clock( 'init_us_2:gpu' )
    IF ( isolve == 0 ) THEN
       CALL print_clock( 'regterg' )    ; CALL print_clock( 'cegterg' )
    ELSE  IF (isolve == 1) THEN
@@ -103,6 +111,10 @@ SUBROUTINE print_clock_pw()
       CALL print_clock( 'wfcrot' )
    ELSE  IF (isolve == 3) THEN
       CALL print_clock( 'paro_gamma' ) ; CALL print_clock( 'paro_k' )
+   ELSE IF ( isolve == 4 ) THEN
+      CALL print_clock( 'rrmmdiagg' )  ; CALL print_clock( 'crmmdiagg' )
+      CALL print_clock( 'wfcrot' )
+      CALL print_clock( 'gsorth' )
    ENDIF
    !
    IF ( iverbosity > 0)  THEN
@@ -187,6 +199,8 @@ SUBROUTINE print_clock_pw()
          CALL print_clock( 'rotHSw:ev:b5' ) ; call print_clock('rotHSw:ev:sum')
          CALL print_clock( 'rotHSw:ev:s7' ) ; CALL print_clock('rotHSw:ev:b6' ) 
       END IF
+   ELSE IF ( isolve == 4 ) THEN
+      WRITE( stdout, '(/5x,"Called by *rmmdiagg:")' )
    END IF
    !
    CALL print_clock( 'h_psi' )
@@ -226,6 +240,7 @@ SUBROUTINE print_clock_pw()
    CALL print_clock( 'fftw' )
    CALL print_clock( 'fftc' )
    CALL print_clock( 'fftcw' )
+   CALL print_clock( 'fftr' )
    CALL print_clock( 'interpolate' )
    CALL print_clock( 'davcio' )
    !    
@@ -321,7 +336,12 @@ SUBROUTINE print_clock_pw()
       call print_clock('c_phase_field')
    END IF
    !
+   CALL rism_print_clock()
+   !
    CALL plugin_clock()
+#if defined (__ENVIRON)
+   IF (use_environ) CALL print_environ_clocks()
+#endif
    !
    RETURN
    !

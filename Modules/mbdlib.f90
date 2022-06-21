@@ -22,9 +22,9 @@ MODULE libmbd_interface
   USE funct,            ONLY : get_dft_short
   USE control_flags,    ONLY : conv_elec
   USE constants,        ONLY : ry_kbar
+#if !defined(__NOMBD)
   USE mbd,              ONLY : mbd_input_t, mbd_calc_t
-  USE input_parameters, ONLY : tprnfor, tstress
-
+#endif
   IMPLICIT NONE
 
   PUBLIC:: mbd_interface, init_mbd, clean_mbd
@@ -36,8 +36,10 @@ MODULE libmbd_interface
 
   INTEGER:: na
   LOGICAL:: do_gradients
+#if !defined(__NOMBD)
   TYPE(mbd_input_t):: inp
   TYPE(mbd_calc_t):: calc
+#endif
   REAL(dp), DIMENSION(:), ALLOCATABLE:: ratios
   REAL(dp), DIMENSION(:,:), ALLOCATABLE:: mbd_gradient
   INTEGER:: code, ierr, my_rank, total
@@ -48,16 +50,17 @@ MODULE libmbd_interface
 !#############################################################
 ! This subroutine sets up the library before the first call
 !#############################################################
-SUBROUTINE init_mbd ( nks_start, nk1, nk2, nk3, k1, k2, k3 )
+SUBROUTINE init_mbd ( nks_start, nk1, nk2, nk3, k1, k2, k3, tprnfor, tstress )
   !
   INTEGER, INTENT(IN) :: nks_start, nk1, nk2, nk3, k1, k2, k3
+  LOGICAL, INTENT(IN) :: tprnfor, tstress
   !
   ! Allocation of variables that depend on the number of atoms
   !
+#if !defined(__NOMBD)
   ALLOCATE(inp%atom_types(nat))
   !
   EmbdvdW  = 0.0_dp
-  !
   do_gradients = tprnfor .OR. tstress
   IF ( do_gradients ) THEN
      !
@@ -87,9 +90,9 @@ SUBROUTINE init_mbd ( nks_start, nk1, nk2, nk3, k1, k2, k3 )
     IF ( nks_start == 0 ) THEN
       ! K-point mesh
       inp%k_grid = [nk1, nk2, nk3]
-      !
       inp%k_grid_shift = 0.5_DP
-      IF (k1 .EQ. k2 .AND. k2 .EQ. k3 .AND. k3 .EQ. 0) &
+      !
+      IF (k1 .EQ. 0 .AND. k2 .EQ. 0 .AND. k3 .EQ. 0) &
         CALL infomsg('mbdlib','k-point shift ignored')
       !
     ELSE
@@ -100,7 +103,7 @@ SUBROUTINE init_mbd ( nks_start, nk1, nk2, nk3, k1, k2, k3 )
   ENDIF
   !
   WRITE(stdout, '(5x,"mbdlib: K-point grid set to ",3I3,", shift: ",F4.2)') &
-        inp%k_grid, inp%k_grid_shift
+          inp%k_grid, inp%k_grid_shift
   !
   select case (TRIM(get_dft_short()))  ! An empirical factor needs to be set based on the functiona
   CASE ('PBE')
@@ -122,7 +125,7 @@ SUBROUTINE init_mbd ( nks_start, nk1, nk2, nk3, k1, k2, k3 )
 &  error, please check your system carefully.', 1 )
     STOP
   ENDIF
-
+#endif
 
   END SUBROUTINE init_mbd
 
@@ -132,6 +135,7 @@ SUBROUTINE init_mbd ( nks_start, nk1, nk2, nk3, k1, k2, k3 )
     
   SUBROUTINE mbd_interface()
 
+#if !defined(__NOMBD)
   IF (.NOT.conv_elec) RETURN ! Wavefunction derivatives are still in progress,
 !for now we only can add correction for converged wavefunction
  CALL infomsg('mbdlib','MBD wavefunction derivatives not yet supported. '//&
@@ -163,6 +167,7 @@ SUBROUTINE init_mbd ( nks_start, nk1, nk2, nk3, k1, k2, k3 )
   ENDIF
 
   RETURN
+#endif
   END SUBROUTINE mbd_interface
 
 !#############################################################
@@ -172,12 +177,14 @@ SUBROUTINE init_mbd ( nks_start, nk1, nk2, nk3, k1, k2, k3 )
   SUBROUTINE clean_mbd()
   IMPLICIT NONE
 
+#if !defined(__NOMBD)
   CALL calc%destroy()
   IF(ALLOCATED(inp%atom_types)) DEALLOCATE(inp%atom_types)
   IF(ALLOCATED(ratios)) DEALLOCATE(ratios)
   IF(ALLOCATED(mbd_gradient)) DEALLOCATE(mbd_gradient)
   IF(ALLOCATED(veff_pub)) DEALLOCATE(veff_pub)
   IF(ALLOCATED(vfree_pub)) DEALLOCATE(vfree_pub)
+#endif
 
   END SUBROUTINE clean_mbd
 END MODULE libmbd_interface

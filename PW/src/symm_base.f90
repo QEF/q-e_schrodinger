@@ -498,8 +498,8 @@ CONTAINS
               sym(irot) = checksym ( irot, nat, ityp, xau, xau, ft_ )
               IF (sym(irot)) THEN
                  fractional_translations = .FALSE.
-                 WRITE( stdout, '(5x,"Found symmetry operation: I + (",&
-                &   3f8.4, ")",/,5x,"This is a supercell,", &
+                 WRITE( stdout, '(5x,"Found identity + (",&
+                &   3f8.4, ") symmetry",/,5x,"This is a supercell,", &
                 &   " fractional translations are disabled")') ft_
                  GOTO 10
               ENDIF
@@ -537,7 +537,7 @@ CONTAINS
                  ft_(:) = rau(:,na) - xau(:,nb) - NINT( rau(:,na) - xau(:,nb) )
                  !
                  ! ... ft_ is in crystal axis and is a valid fractional translation
-                 ! only if ft_(i)=0 or ft_(i)=1/n, with n=2,3,4,
+                 ! only if ft_(i)=0 or ft_(i)=1/n, with n=2,3,4,6
                  !
                  DO i = 1, 3
                     IF ( ABS (ft_(i)) > eps2 ) THEN

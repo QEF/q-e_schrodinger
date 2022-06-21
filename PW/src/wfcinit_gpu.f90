@@ -1,5 +1,5 @@
 !
-! Copyright (C) 2001-2013 Quantum ESPRESSO group
+! Copyright (C) 2001-2022 Quantum ESPRESSO group
 ! This file is distributed under the terms of the
 ! GNU General Public License. See the file `License'
 ! in the root directory of the present distribution,
@@ -17,15 +17,15 @@ SUBROUTINE wfcinit_gpu()
   USE io_global,            ONLY : stdout, ionode, ionode_id
   USE basis,                ONLY : natomwfc, starting_wfc
   USE bp,                   ONLY : lelfield
-  USE klist,                ONLY : xk, nks, ngk, igk_k_d
+  USE klist,                ONLY : xk, nks, ngk, igk_k
   USE control_flags,        ONLY : io_level, lscf
   USE fixed_occ,            ONLY : one_atom_occupations
-  USE ldaU,                 ONLY : lda_plus_u, U_projection, wfcU, lda_plus_u_kind
+  USE ldaU,                 ONLY : lda_plus_u, Hubbard_projectors, wfcU, lda_plus_u_kind
   USE lsda_mod,             ONLY : lsda, current_spin, isk
   USE io_files,             ONLY : nwordwfc, nwordwfcU, iunhub, iunwfc,&
                                    diropn, xmlfile, restart_dir
   USE buffers,              ONLY : open_buffer, close_buffer, get_buffer, save_buffer
-  USE uspp,                 ONLY : nkb, vkb, vkb_d, using_vkb_d
+  USE uspp,                 ONLY : nkb, vkb
   USE wavefunctions,        ONLY : evc
   USE wvfct,                ONLY : nbnd, current_k
   USE wannier_new,          ONLY : use_wannier
@@ -36,6 +36,7 @@ SUBROUTINE wfcinit_gpu()
   USE qes_types_module,     ONLY : output_type
   USE qes_libs_module,      ONLY : qes_reset
   USE wavefunctions_gpum,   ONLY : using_evc_d, using_evc
+  USE uspp_init,            ONLY : init_us_2
   !
   IMPLICIT NONE
   !
@@ -85,9 +86,18 @@ SUBROUTINE wfcinit_gpu()
      IF ( twfcollect_file ) THEN
         !
         DO ik = 1, nks
-           CALL read_collected_wfc ( dirname, ik, evc )
+           CALL read_collected_wfc ( dirname, ik, evc, "wfc", ierr )
+           IF ( ierr /= 0 ) GO TO 10
            CALL save_buffer ( evc, nwordwfc, iunwfc, ik )
         END DO
+        !
+10      IF ( ierr /= 0 ) THEN
+           WRITE( stdout, '(5X,"Wavefunctions not found or not readable, ", &
+                & "recomputing them from scratch" )' )
+           CALL close_buffer(iunwfc, 'delete')
+           CALL open_buffer(iunwfc,'wfc', nwordwfc, io_level, exst_mem, exst_file)
+           starting_wfc = 'atomic+random'
+        END IF
         !
      ELSE IF ( exst_sum /= 0 ) THEN
         !
@@ -169,12 +179,11 @@ SUBROUTINE wfcinit_gpu()
      !
      ! ... More Hpsi initialization: nonlocal pseudopotential projectors |beta>
      !
-     IF ( nkb > 0 ) CALL using_vkb_d(1)
-     IF ( nkb > 0 ) CALL init_us_2_gpu( ngk(ik), igk_k_d(1,ik), xk(1,ik), vkb_d )
+     IF (nkb > 0 ) CALL init_us_2( ngk(ik), igk_k(1,ik), xk(1,ik), vkb, .true. )
      !
      ! ... Needed for DFT+U
      !
-     IF ( nks > 1 .AND. lda_plus_u .AND. (U_projection .NE. 'pseudo') ) &
+     IF ( nks > 1 .AND. lda_plus_u .AND. (Hubbard_projectors .NE. 'pseudo') ) &
         CALL get_buffer( wfcU, nwordwfcU, iunhub, ik )
      !
      ! DFT+U+V: calculate the phase factor at a given k point
@@ -228,6 +237,7 @@ SUBROUTINE init_wfc_gpu ( ik )
   USE wavefunctions_gpum,   ONLY : evc_d, using_evc_d
   USE wvfct_gpum,           ONLY : et_d, using_et_d
   USE becmod_subs_gpum,     ONLY : using_becp_auto, using_becp_d_auto
+  USE control_flags,        ONLY : lscf
   !
   IMPLICIT NONE
   !
@@ -375,7 +385,7 @@ SUBROUTINE init_wfc_gpu ( ik )
   !
   ! ... subspace diagonalization (calls Hpsi)
   !
-  IF ( xclib_dft_is('hybrid')  ) CALL stop_exx()
+  IF ( xclib_dft_is('hybrid') .and. lscf  ) CALL stop_exx()
   CALL start_clock_gpu( 'wfcinit:wfcrot' ); !write(*,*) 'start wfcinit:wfcrot' ; FLUSH(6)
   CALL using_evc_d(2)  ! rotate_wfc_gpu (..., evc_d, etatom_d) -> evc : out (not specified)
   CALL rotate_wfc_gpu ( npwx, ngk(ik), n_starting_wfc, gstart, nbnd, wfcatom_d, npol, okvan, evc_d, etatom_d )

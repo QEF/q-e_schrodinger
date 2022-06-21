@@ -2941,8 +2941,8 @@ SUBROUTINE mp_type_create_cplx_column_section(dummy, start, length, stride, myty
 #if defined(__MPI)
   INTEGER :: ierr
   !
-  CALL MPI_TYPE_CREATE_SUBARRAY(1, stride, length, start, MPI_ORDER_FORTRAN,&
-                                MPI_DOUBLE_COMPLEX, mytype, ierr)
+  CALL MPI_TYPE_CREATE_SUBARRAY(1, [stride], [length], [start], &
+          MPI_ORDER_FORTRAN, MPI_DOUBLE_COMPLEX, mytype, ierr)
   IF (ierr/=0) CALL mp_stop( 8081 )
   CALL MPI_Type_commit(mytype, ierr)
   IF (ierr/=0) CALL mp_stop( 8082 )
@@ -2963,8 +2963,8 @@ SUBROUTINE mp_type_create_real_column_section(dummy, start, length, stride, myty
 #if defined(__MPI)
   INTEGER :: ierr
   !
-  CALL MPI_TYPE_CREATE_SUBARRAY(1, stride, length, start, MPI_ORDER_FORTRAN,&
-                                MPI_DOUBLE_PRECISION, mytype, ierr)
+  CALL MPI_TYPE_CREATE_SUBARRAY(1, [stride], [length], [start], &
+          MPI_ORDER_FORTRAN, MPI_DOUBLE_PRECISION, mytype, ierr)
   IF (ierr/=0) CALL mp_stop( 8083 )
   CALL MPI_Type_commit(mytype, ierr)
   IF (ierr/=0) CALL mp_stop( 8084 )
@@ -4839,7 +4839,7 @@ END SUBROUTINE mp_type_free
 #if  defined(__GPU_MPI)
         msglen = size(msg_d)
         ierr = cudaDeviceSynchronize()            ! This syncs __GPU_MPI
-        CALL reduce_base_real_to_gpu( 2 * msglen, msg_d, res_h, gid, -1 )
+        CALL reduce_base_real_to_gpu( 2 * msglen, msg_d, res_d, gid, -1 )
         RETURN ! Sync not needed after MPI call
 #else
         ALLOCATE( msg_h, source=msg_d )           ! This syncs __MPI case
@@ -6115,8 +6115,8 @@ END SUBROUTINE mp_type_free
 #if defined(__MPI)
          INTEGER :: ierr
          !
-         CALL MPI_TYPE_CREATE_SUBARRAY(1, stride, length, start, MPI_ORDER_FORTRAN,&
-                                       MPI_DOUBLE_COMPLEX, mytype, ierr)
+         CALL MPI_TYPE_CREATE_SUBARRAY(1, [stride], [length], [start], &
+                 MPI_ORDER_FORTRAN, MPI_DOUBLE_COMPLEX, mytype, ierr)
          IF (ierr/=0) CALL mp_stop( 8081 )
          CALL MPI_Type_commit(mytype, ierr)
          IF (ierr/=0) CALL mp_stop( 8082 )
@@ -6137,8 +6137,8 @@ END SUBROUTINE mp_type_free
 #if defined(__MPI)
          INTEGER :: ierr
          !
-         CALL MPI_TYPE_CREATE_SUBARRAY(1, stride, length, start, MPI_ORDER_FORTRAN,&
-                                       MPI_DOUBLE_PRECISION, mytype, ierr)
+         CALL MPI_TYPE_CREATE_SUBARRAY(1, [stride], [length], [start], &
+                 MPI_ORDER_FORTRAN, MPI_DOUBLE_PRECISION, mytype, ierr)
          IF (ierr/=0) CALL mp_stop( 8083 )
          CALL MPI_Type_commit(mytype, ierr)
          IF (ierr/=0) CALL mp_stop( 8084 )

@@ -33,6 +33,7 @@ default :
 	@echo '  xspectra     X-ray core-hole spectroscopy calculations'
 	@echo '  couple       Library interface for coupling to external codes'
 	@echo '  epw          Electron-Phonon Coupling with Wannier functions'
+	@echo '  kcw          KCW code: implementation of Koopmans functionals in primitive cell'
 	@echo '  gui          Graphical User Interface'
 	@echo '  all          same as "make pwall cp ld1 tddfpt xspectra hp"'
 	@echo ' '
@@ -70,7 +71,7 @@ pw : pwlibs
 	if test -d PW ; then \
 	( cd PW ; $(MAKE) TLDEPS= all || exit 1) ; fi
 
-cp : bindir libs mods
+cp : bindir mods
 	if test -d CPV ; then \
 	( cd CPV ; $(MAKE) TLDEPS= all || exit 1) ; fi
 
@@ -112,7 +113,7 @@ gipaw : pwlibs
 d3q : phlibs
 	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
-ld1 : bindir libs mods
+ld1 : bindir mods
 	if test -d atomic ; then \
 	( cd atomic ; $(MAKE) TLDEPS= all || exit 1 ) ; fi
 
@@ -137,33 +138,39 @@ travis : pwall epw
 	if test -d test-suite ; then \
 	( cd test-suite ; make run-travis || exit 1 ) ; fi
 
-gui :
+kcw : pwlibs lrmods pp w90
+	if test -d KCW ; then \
+	( cd KCW ; $(MAKE) all || exit 1 ) ; fi
+
+gui : bindir
 	@if test -d GUI/PWgui ; then \
 	    cd GUI/PWgui ; \
 	    $(MAKE) TLDEPS= init; \
 	    echo ; \
-	    echo "  PWgui has been built in ./GUI/PWgui/. You may try it either as:  "; \
+	    echo "  ------------------------------------------------------------"; \
+	    echo "  PWgui was built in ./GUI/PWgui/ and a link was made in bin/."; \
+	    echo "  ------------------------------------------------------------"; \
+	    echo "  Try it either as:  "; \
 	    echo "         ./GUI/PWgui/pwgui" ; \
 	    echo "     or"; \
-	    echo "         cd ./GUI/PWgui";\
-	    echo "         ./pwgui" ; \
+	    echo "         ./bin/pwgui";\
 	    echo ; \
 	else \
 	    echo ; \
-	    echo "  Sorry, gui works only for git sources !!!" ; \
+	    echo "  Sorry, GUI/PWgui directory does not exist !" ; \
 	    echo ; \
 	fi
 
 pwall : pw neb ph pp pwcond acfdt
 
-all   : pwall cp ld1 tddfpt hp xspectra gwl 
+all   : pwall cp ld1 tddfpt hp xspectra gwl kcw
 
 ###########################################################
 # Auxiliary targets used by main targets:
 # compile modules, libraries, directory for binaries, etc
 ###########################################################
 
-pwlibs: bindir libs mods libks_solvers dftd3
+pwlibs: bindir mods libks_solvers dftd3
 	if test -d PW ; then \
 	( cd PW ; $(MAKE) pw-lib || exit 1) ; fi
 
@@ -186,10 +193,10 @@ pw4gwwlib : phlibs
 mods : libfox libutil libla libfft libupf libmbd librxc
 	( cd Modules ; $(MAKE) TLDEPS= all || exit 1 )
 
-libks_solvers : libs libutil libla
+libks_solvers : libutil libla
 	( cd KS_Solvers ; $(MAKE) TLDEPS= all || exit 1 )
 
-libla : liblapack libutil libcuda
+libla : $(LAPACK) libutil libcuda
 	( cd LAXlib ; $(MAKE) TLDEPS= all || exit 1 )
 
 libfft : 
@@ -201,11 +208,8 @@ librxc :
 libutil : 
 	( cd UtilXlib ; $(MAKE) TLDEPS= all || exit 1 )
 
-libupf : libfox libutil libcuda
+libupf : libutil libcuda
 	( cd upflib ; $(MAKE) TLDEPS= all || exit 1 )
-
-libs :
-	( cd clib ; $(MAKE) TLDEPS= all || exit 1 )
 
 lrmods : mods pwlibs
 	( cd LR_Modules ; $(MAKE) TLDEPS= all || exit 1 )
@@ -236,13 +240,13 @@ libmbd:
 # plugins
 #########################################################
 
-w90: bindir liblapack
+w90: bindir $(LAPACK)
 	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
-want: liblapack
+want: $(LAPACK)
 	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
-yambo: liblapack
+yambo: $(LAPACK)
 	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
 
 #########################################################
@@ -287,9 +291,9 @@ clean :
 	for dir in \
 		CPV LAXlib FFTXlib XClib UtilXlib upflib Modules PP PW EPW KS_Solvers \
 		NEB ACFDT COUPLE GWW XSpectra PWCOND dft-d3 \
-		atomic clib LR_Modules upflib \
+		atomic LR_Modules upflib \
 		dev-tools extlibs Environ TDDFPT PHonon HP GWW Doc GUI \
-		QEHeat \
+		QEHeat KCW \
 	; do \
 	    if test -d $$dir ; then \
 		( cd $$dir ; \
@@ -310,10 +314,12 @@ veryclean : clean
 	- rm -f espresso.tar.gz
 	- rm -rf make.inc
 	- rm -rf FoX
+	- rm -rf MBD 
 # remove everything not in the original distribution
 distclean : veryclean
 	- cd pseudo; ./clean_ps ; cd -
-	( cd install ; $(MAKE) -f plugins_makefile $@ || exit 1 )
+	- (cd install ; $(MAKE) -f plugins_makefile $@)
+	- git submodule deinit --all --force # place deinit at the very end such that makefiles clean up as much as possible.
 
 tar :
 	@if test -f espresso.tar.gz ; then /bin/rm espresso.tar.gz ; fi
@@ -355,10 +361,10 @@ tar-qe-modes :
 # "latex2html" and "convert" (from Image-Magick) are needed.
 doc : 
 	if test -d Doc ; then \
-	( cd Doc ; $(MAKE) VERSION=6.6 TLDEPS= all ) ; fi
+	( cd Doc ; $(MAKE) TLDEPS= all ) ; fi
 	for dir in */Doc; do \
 	( if test -f $$dir/Makefile ; then \
-	( cd $$dir; $(MAKE) VERSION=6.6 TLDEPS= all ) ; fi ) ;  done
+	( cd $$dir; $(MAKE) TLDEPS= all ) ; fi ) ;  done
 
 doc_clean :
 	if test -d Doc ; then \

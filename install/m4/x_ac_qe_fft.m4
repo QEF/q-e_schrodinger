@@ -137,6 +137,7 @@ if test "$fft_libs" = ""; then
                                fft_libs="$try_loption $LIBS", , -lm)
                     if test "$have_fft" -eq 0
                     then
+		      unset ac_cv_search_dfftw_execute_dft
                       AC_SEARCH_LIBS(dfftw_execute_dft, fftw3_omp, have_fft=1
                                  fft_libs="$try_loption $LIBS -lfftw3", , -lfftw3 -lm)
                     fi 
@@ -147,12 +148,14 @@ if test "$fft_libs" = ""; then
 
                   if test "$have_fft" -eq 1
                   then
+                        AC_LANG_PUSH([Fortran]) 
+                        AC_FC_SRCEXT(f90) 
                         try_dflags="$try_dflags -D__FFTW3"
                         try_incdir="$FFTW_INCLUDE $FFTW_INC $INCLUDE_PATH $CPATH $FPATH"
                         orig_fflags="$FFLAGS"
                         for inc in $try_incdir
                         do
-                           FFLAGS="$orig_fflags -I$inc -ffree-form"
+                           FFLAGS="$orig_fflags -I$inc"
                            AC_COMPILE_IFELSE([use iso_c_binding
 include "fftw3.f03"
 end],have_fft_include=1,)
@@ -163,6 +166,7 @@ end],have_fft_include=1,)
                            fi
                         done
                         FFLAGS="$orig_fflags"
+                        AC_LANG_POP([Fortran]) 
                         break
                   fi
 
@@ -182,10 +186,6 @@ else
    # you will need to set the proper include directory in FFTW_INCLUDE 
    
    echo "using FFT_LIBS with no testing ... "
-   # I suspect next 3 lines are useless in practice, should be deleted - PG
-   if test -n "$FFT_INCLUDE" ; then :
-      try_iflags="$try_iflags -I$FFT_INCLUDE"
-   fi
    if test -n "$FFTW_INCLUDE" ; then :
       try_dflags="$try_dflags -D__FFTW3"
       try_iflags="$try_iflags -I$FFTW_INCLUDE"

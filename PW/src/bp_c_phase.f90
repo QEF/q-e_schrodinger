@@ -144,9 +144,10 @@
 !#                                                                            #!
 !##############################################################################!
 !#     Updated by Ronald Cohen, Carnegie Institution, 2019
-!#     To make sure average over strings is done so that each straing is 
+!#     To make sure average over strings is done so that each string is 
 !#     on the same branch cut. Also computations are kept as phases as long 
 !#     as possible before converting to polarization lattice
+!#     modulus corrected 5/2022
 
 
 !======================================================================!
@@ -166,7 +167,7 @@ SUBROUTINE c_phase
    USE constants,            ONLY : pi, tpi
    USE gvect,                ONLY : ngm, g, gcutm, ngm_g, ig_l2g
    USE fft_base,             ONLY : dfftp
-   USE uspp,                 ONLY : nkb, vkb, okvan, using_vkb
+   USE uspp,                 ONLY : nkb, vkb, okvan
    USE uspp_param,           ONLY : upf, lmaxq, nbetam, nh, nhm
    USE lsda_mod,             ONLY : nspin
    USE klist,                ONLY : nelec, degauss, nks, xk, wk, igk_k, ngk
@@ -175,13 +176,13 @@ SUBROUTINE c_phase
    USE bp,                   ONLY : gdir, nppstr, mapgm_global, pdl_tot
    USE becmod,               ONLY : calbec, bec_type, allocate_bec_type, &
                                     deallocate_bec_type
-   USE noncollin_module,     ONLY : noncolin, npol, nspin_lsda
-   USE spin_orb,             ONLY : lspinorb
+   USE noncollin_module,     ONLY : noncolin, npol, nspin_lsda, lspinorb
    USE mp_bands,             ONLY : intra_bgrp_comm, nproc_bgrp
    USE mp,                   ONLY : mp_sum
    USE qes_libs_module,      ONLY : qes_reset
    USE qexsd_init,           ONLY : qexsd_init_berryPhaseOutput,  qexsd_bp_obj
    USE wavefunctions_gpum,   ONLY : using_evc
+   USE uspp_init,            ONLY : init_us_2 
 
 !  --- Avoid implicit definitions ---
    IMPLICIT NONE
@@ -235,7 +236,6 @@ SUBROUTINE c_phase
    INTEGER :: npw1
    INTEGER :: npw0
    INTEGER :: nstring
-   INTEGER :: nbnd_occ
    INTEGER :: nt
    INTEGER, ALLOCATABLE :: map_g(:)
    LOGICAL :: lodd
@@ -453,10 +453,8 @@ SUBROUTINE c_phase
    DO is=1,nspin_lsda
 
       ! l_cal(n) = .true./.false. if n-th state is occupied/empty
-      nbnd_occ=0
       DO nb = 1, nbnd
          l_cal(nb) = (wg(nb,1+nks*(is-1)/2) > eps)
-         IF (l_cal(nb)) nbnd_occ = nbnd_occ + 1
       END DO
 
 !     --- Start loop over orthogonal k-points ---
@@ -483,7 +481,6 @@ SUBROUTINE c_phase
                igk0(:) = igk_k(:,kpoint-1)
                CALL get_buffer (psi,nwordwfc,iunwfc,kpoint-1)
                if (okvan) then
-                  CALL using_vkb(1)
                   CALL init_us_2(npw0,igk0,xk(1,kpoint-1),vkb)
                   CALL calbec(npw0, vkb, psi, becp0)
                endif
@@ -494,7 +491,6 @@ SUBROUTINE c_phase
                   CALL get_buffer(evc,nwordwfc,iunwfc,kpoint)
                   CALL using_evc(1)
                   if (okvan) then
-                     CALL using_vkb(1)
                      CALL init_us_2(npw1,igk1,xk(1,kpoint),vkb)
                      CALL calbec(npw1, vkb, evc, becp_bp)
                   endif
@@ -505,7 +501,6 @@ SUBROUTINE c_phase
                   CALL get_buffer(evc,nwordwfc,iunwfc,kstart)
                   CALL using_evc(1)
                   if (okvan) then
-                     CALL using_vkb(1)
                      CALL init_us_2(npw1,igk1,xk(1,kstart),vkb)
                      CALL calbec(npw1, vkb, evc, becp_bp)
                   endif
@@ -764,14 +759,12 @@ SUBROUTINE c_phase
         dtheta=atan2(AIMAG(cphik(istring)), DBLE(cphik(istring)))
         phik(istring)=theta0+dtheta
      end do
-!REC First you need to multiply phase by two if only summed over 1 set of bands for non-spin-polarized case NO--summed below
-!     if(nspin_lsda.eq.1)phik(1:istring)=2d0*phik(1:istring)        
-!REC Second you need to take mod so phase is -Pi to Pi
+!REC you need to take mod so phase is -Pi to Pi
       DO kort=1,nkort
         istring=kort+(is-1)*nkort
         phik(istring)=phik(istring)-tpi*nint(phik(istring)/tpi)
      enddo
-!REC Third you need to fix jumps before you take average
+!REC  you need to fix jumps before you take average
      t1=phik(1)/tpi
       DO kort=1,nkort
         istring=kort+(is-1)*nkort
@@ -803,11 +796,12 @@ SUBROUTINE c_phase
 !  -------------------------------------------------------------------------   !
    pdl_elec_up=phiup/tpi
    pdl_elec_dw=phidw/tpi
-   pdl_elec_tot=pdl_elec_up+pdl_elec_dw
-!  you need to do mod again!
-   pdl_elec_tot=pdl_elec_tot-nint(pdl_elec_tot)
+!  you need to do mod again! Mod depends on spin
+! nspin=1 -2Pi to 2Pi
+! nspin>1 -Pi to Pi
    pdl_elec_up=pdl_elec_up-nint(pdl_elec_up)
    pdl_elec_dw=pdl_elec_dw-nint(pdl_elec_dw)
+   pdl_elec_tot=pdl_elec_up+pdl_elec_dw
   
 !  -------------------------------------------------------------------------   !
 !                              ionic polarization                              !
@@ -837,8 +831,6 @@ SUBROUTINE c_phase
    ENDDO
 !  --- Add up the phases modulo 2 iff the ionic charges are even numbers ---
 
-   !REC You don't need a correction for jumps for the ionic part
-   ! This doesn't do anything since there is not an average but a sum
    pdl_ion_tot=SUM(pdl_ion(1:nat))
    IF (lodd) THEN
       pdl_ion_tot=pdl_ion_tot-1.0d0*nint(pdl_ion_tot/1.0d0)

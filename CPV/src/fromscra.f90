@@ -29,7 +29,8 @@ SUBROUTINE from_scratch( )
     USE energies,             ONLY : entropy, eself, enl, ekin, enthal, etot, ekincm
     USE energies,             ONLY : dft_energy_type, debug_energies
     USE dener,                ONLY : denl, denl6, dekin6, detot
-    USE uspp,                 ONLY : vkb, vkb_d, becsum, deeq, nkb, okvan, nlcc_any
+    USE pseudo_base,          ONLY : vkb_d
+    USE uspp,                 ONLY : vkb, becsum, deeq, nkb, okvan, nlcc_any
     USE io_global,            ONLY : stdout, ionode
     USE core,                 ONLY : rhoc
     USE gvecw,                ONLY : ngw
@@ -60,6 +61,11 @@ SUBROUTINE from_scratch( )
     USE mp,                   ONLY : mp_sum, mp_barrier
     USE matrix_inversion
     USE device_memcpy_m,        ONLY : dev_memcpy
+
+#if defined (__ENVIRON)
+    USE plugin_flags,         ONLY : use_environ
+    USE environ_base_module,  ONLY : update_environ_ions
+#endif
 
     !
     IMPLICIT NONE
@@ -124,7 +130,9 @@ SUBROUTINE from_scratch( )
     !
     !     pass ions informations to plugins
     !
-    CALL plugin_init_ions( tau0 )
+#if defined (__ENVIRON)
+    IF (use_environ) CALL update_environ_ions(tau0)
+#endif
     !
     !     wfc initialization with random numbers
     !     
