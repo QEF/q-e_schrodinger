@@ -1055,7 +1055,7 @@ SUBROUTINE read_b_g_z_file()
         !
         INQUIRE (file = filename, exist = exst)
         !
-        IF (.not.exst) CALL errore("read_b_g_z_file", "Error reading file",1)
+        IF (.not.exst) CALL errore("read_b_g_z_file", "Error reading file: " // trim(filename), 1)
         !
         OPEN (158, file = filename, form = 'formatted', status = 'old')
         ! 

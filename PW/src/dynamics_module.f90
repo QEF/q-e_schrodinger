@@ -1768,42 +1768,52 @@ CONTAINS
       !
       USE io_files,  ONLY : prefix, seqopn
       USE ions_base, ONLY : nat, tau
-      USE io_global, ONLY : ionode
+      USE io_global, ONLY : ionode, ionode_id
+      USE mp,        ONLY : mp_bcast
+      USE mp_images, ONLY : intra_image_comm
       !
       IMPLICIT NONE
       !
       LOGICAL  :: is_restart = .FALSE.
       INTEGER  :: restart_id = 0
-      REAL(DP) :: etotold
+      REAL(DP) :: etotold = 0.0_DP
       REAL(DP) :: tau_tmp(3, nat)
       INTEGER  :: istep
       !
-      CALL seqopn( 4, 'md', 'FORMATTED', is_restart )
-      !
-      IF ( is_restart ) THEN
+      ! Try to read restart file on the ionode only
+      IF ( ionode ) THEN
          !
-         READ( UNIT = 4, FMT = * ) restart_id
+         CALL seqopn( 4, 'md', 'FORMATTED', is_restart )
          !
-         IF ( restart_id .EQ. restart_verlet ) THEN
+         IF ( is_restart ) THEN
             !
-            READ( UNIT = 4, FMT = * ) istep, etotold, tau_tmp(:,:)
+            READ( UNIT = 4, FMT = * ) restart_id
             !
-            IF ( SUM ( (tau_tmp(:,1:nat)-tau(:,1:nat))**2 ) > eps8 ) THEN
-               tau(:, 1:nat) = tau_tmp(:, 1:nat)
+            IF ( restart_id .EQ. restart_verlet ) THEN
                !
-               IF ( ionode ) WRITE( stdout, '(/5X,"Atomic positions read &
-                  from:", /,5X,A)') TRIM(prefix) // ".md"
+               READ( UNIT = 4, FMT = * ) istep, etotold, tau_tmp(:,:)
+               !
+               IF ( SUM ( (tau_tmp(:,1:nat)-tau(:,1:nat))**2 ) > eps8 ) THEN
+                  !
+                  tau(:, 1:nat) = tau_tmp(:, 1:nat)
+                  !
+                  WRITE( stdout, '(/5X,"Atomic positions read from:", &
+                     /,5X,A)') TRIM(prefix) // ".md"
+               END IF
+               !
             END IF
             !
+            CLOSE( UNIT = 4 )
+            !
+         ELSE
+            !
+            CLOSE( UNIT = 4, STATUS = 'DELETE' )
+            !
          END IF
-         !
-         CLOSE( UNIT = 4 )
-         !
-      ELSE
-         !
-         CLOSE( UNIT = 4, STATUS = 'DELETE' )
-         !
+      !
       END IF
+      !
+      CALL mp_bcast( tau, ionode_id, intra_image_comm )
       !
    END SUBROUTINE verlet_read_tau_from_conf
    !
