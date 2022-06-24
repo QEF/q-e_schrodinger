@@ -84,6 +84,7 @@ program dynmat
   !
   integer, parameter :: ntypx = 10
   character(len=256):: fildyn, filout, filmol, filxsf, fileig
+  character(len=256) :: prefix, filspm, filvib
   character(len=3) :: atm(ntypx)
   character(len=10) :: asr
   logical :: lread, gamma, loto_2d
@@ -98,7 +99,8 @@ program dynmat
   integer :: ibrav, nqs
   integer, allocatable :: itau(:)
   namelist /input/ amass, asr, axis, fildyn, filout, filmol, filxsf, &
-                   fileig, lperm, lplasma, q, loto_2d, remove_interaction_blocks 
+                   fileig, lperm, lplasma, q, loto_2d, &
+                   remove_interaction_blocks, prefix, filspm, filvib
   !
   ! code is parallel-compatible but not parallel
   !
@@ -113,6 +115,9 @@ program dynmat
   filout='dynmat.out'
   filmol='dynmat.mold'
   filxsf='dynmat.axsf'
+  prefix=' '
+  filspm=' '
+  filvib=' '
   fileig=' '
   amass(:)=0.0d0
   q(:)=0.0d0
@@ -134,6 +139,13 @@ program dynmat
   CALL mp_bcast(fileig,ionode_id, world_comm)
   CALL mp_bcast(filxsf,ionode_id, world_comm)
   CALL mp_bcast(q,ionode_id, world_comm)
+  CALL mp_bcast(prefix,ionode_id, world_comm)
+  CALL mp_bcast(filspm,ionode_id, world_comm)
+  CALL mp_bcast(filvib,ionode_id, world_comm)
+  !
+  IF ( trim( prefix ) /= ' ' ) THEN
+     fildyn = trim(prefix) // '.save/' //trim(fildyn)
+  END IF
   !
   IF (ionode) inquire(file=fildyn,exist=lread)
   CALL mp_bcast(lread, ionode_id, world_comm)
@@ -222,6 +234,18 @@ program dynmat
                WRITE(6,'(5x,a)') 'BEWARE: phonon contribution to &
                & permittivity computed with TO-LO splitting'
         ENDIF
+        !
+        IF (filspm .ne. ' ') THEN
+           OPEN (unit=16,file=TRIM(filspm),status='unknown',form='formatted')
+           CALL writespm (nat, w2, z, zstar, 16)
+           CLOSE (unit=16)
+        ENDIF
+        IF (filvib .ne. ' ') THEN
+           OPEN (unit=17,file=TRIM(filvib),status='unknown',form='formatted')
+           CALL writevib (nat, ntyp, amass, ityp, q_, w2, z, zstar, 17)
+           CLOSE (unit=17)
+        ENDIF
+        !
      ENDIF
   ENDIF
   !
