@@ -406,6 +406,9 @@ CONTAINS
       WRITE( UNIT = 4, FMT = * ) istep, etot, tau_new(:,:), tau(:,:), &
          temp_new, temp_av, mass(:), total_mass, elapsed_time, tau_ref(:,:)
       !
+      ! Mark successful writing of the file. D as in Done.
+      WRITE( UNIT = 4, FMT = "(A)") "D"
+      !
       CLOSE( UNIT = 4, STATUS = 'KEEP' )
       !
       CALL dump_trajectory_frame( elapsed_time, temperature )
