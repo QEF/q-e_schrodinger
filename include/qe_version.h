@@ -7,4 +7,4 @@
 !
 ! global version number
 !
-CHARACTER (LEN=12) :: version_number = '7.1_2022-4'
+CHARACTER (LEN=12) :: version_number = '7.1_2023-2'
