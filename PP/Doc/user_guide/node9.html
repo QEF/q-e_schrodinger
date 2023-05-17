@@ -1,0 +1,159 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>4.4 Projection over atomic states, DOS, projected band structure</TITLE>
+<META NAME="description" CONTENT="4.4 Projection over atomic states, DOS, projected band structure">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node10.html">
+<LINK REL="previous" HREF="node8.html">
+<LINK REL="next" HREF="node10.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node10.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node5.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node8.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html70"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node10.html">4.5 Color plot of the</A>
+<B> Up:</B> <A
+ HREF="node5.html">4 Usage</A>
+<B> Previous:</B> <A
+ HREF="node8.html">4.3 Band structure, Fermi surface</A>
+ &nbsp; <B>  <A ID="tex2html71"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A ID="SECTION00054000000000000000">
+4.4 Projection over atomic states, DOS, projected band structure</A>
+</H2>
+
+<P>
+The code <TT>projwfc.x</TT> calculates projections of wavefunctions
+over atomic orbitals. The atomic wavefunctions are those contained
+in the pseudopotential file(s). The Löwdin population analysis (similar to
+Mulliken analysis) is presently implemented. The projected DOS (or PDOS:
+the DOS projected onto atomic orbitals) can also be calculated and written
+to file(s). More details on the input data are found in file
+<TT>PP/Doc/INPUT_PROJWFC.*</TT>. The ordering of the various 
+angular momentum components (defined in routine <TT>ylmr2.f90</TT>)
+is as follows:
+<!-- MATH
+ $P_{0,0}(t)$
+ -->
+<I>P</I><SUB>0, 0</SUB>(<I>t</I>), <!-- MATH
+ $P_{1,0}(t)$
+ -->
+<I>P</I><SUB>1, 0</SUB>(<I>t</I>), <!-- MATH
+ $P_{1,1}(t)cos\phi$
+ -->
+<I>P</I><SUB>1, 1</SUB>(<I>t</I>)<I>cosφ</I>, <!-- MATH
+ $P_{1,1}(t)sin\phi$
+ -->
+<I>P</I><SUB>1, 1</SUB>(<I>t</I>)<I>sinφ</I>,
+ <!-- MATH
+ $P_{2,0}(t)$
+ -->
+<I>P</I><SUB>2, 0</SUB>(<I>t</I>), <!-- MATH
+ $P_{2,1}(t)cos\phi$
+ -->
+<I>P</I><SUB>2, 1</SUB>(<I>t</I>)<I>cosφ</I>, <!-- MATH
+ $P_{2,1}(t)sin\phi$
+ -->
+<I>P</I><SUB>2, 1</SUB>(<I>t</I>)<I>sinφ</I>, 
+ <!-- MATH
+ $P_{2,2}(t)cos2\phi$
+ -->
+<I>P</I><SUB>2, 2</SUB>(<I>t</I>)<I>cos</I>2<I>φ</I>, <!-- MATH
+ $P_{2,2}(t)sin2\phi$
+ -->
+<I>P</I><SUB>2, 2</SUB>(<I>t</I>)<I>sin</I>2<I>φ</I>
+and so on, where <I>P</I><SUB>l, m</SUB>=Legendre Polynomials, 
+<!-- MATH
+ $t = cos\theta = z/r$
+ -->
+<I>t</I> = <I>cosθ</I> = <I>z</I>/<I>r</I>, <!-- MATH
+ $\phi= atan(y /x)$
+ -->
+<I>φ</I> = <I>atan</I>(<I>y</I>/<I>x</I>).
+
+<P>
+Data produced by code <TT>projwfc.x</TT> can be further 
+analysed using auxiliary codes <TT>sumpdos.x</TT> (sums selected PDOS
+by specifying the names of files containing the desired PDOS: type 
+<TT>sumpdos.x -h</TT> or look into the source code for more details) 
+and <TT>plotproj.x</TT> . A more sophisticated tools is the script
+<TT>PP/tools/sum_states.py</TT>, by Julen Larrucea: documentation in
+<TT>http://larrucea.eu/sum_states-py-2/</TT>.
+
+<P>
+The total electronic DOS can also be calculated by code <TT>dos.x</TT>,
+whose complete input documentation is in <TT>PP/Doc/INPUT_DOS.*</TT>
+See Example 02 for total and projected electronic DOS calculations,
+-and for projected band structure;
+see Example 03 for projected and local DOS calculations.
+
+<P>
+The DOS projected over <EM>molecular</EM> states (e.g. for a molecule on
+a surface system) can be computed using code <TT>molecularpdos.x</TT>
+(courtesy of Guido Fratesi). See file <TT>PP/Doc/INPUT_MOLDOS.*</TT>
+for input documentation and directory <TT>PP/examples/MolDos_example/</TT> for
+an example.
+
+<P>
+The calculation of magnetic anisotropy using the Force Theorem is described
+in the following paper:
+https://journals.aps.org/prb/abstract/10.1103/PhysRevB.90.205409. An
+example and a README can be found in <TT>PP/examples/ForceTheorem_example/</TT>
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A
+ HREF="node10.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node5.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node8.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html70"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node10.html">4.5 Color plot of the</A>
+<B> Up:</B> <A
+ HREF="node5.html">4 Usage</A>
+<B> Previous:</B> <A
+ HREF="node8.html">4.3 Band structure, Fermi surface</A>
+ &nbsp; <B>  <A ID="tex2html71"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

@@ -35,7 +35,6 @@ lapack_clean:
 ###################################
 
 libfox:
-	$(call update_submodule,external,fox)
 	if test ! -d ../FoX ; then \
   cd $(TOPDIR)/external/fox; \
     ./configure --prefix=$(TOPDIR)/FoX FC=$(F90) FCFLAGS="$(FOX_FLAGS)"; \
@@ -63,7 +62,6 @@ libcuda : $(addprefix libcuda_,$(CUDA_EXTLIBS))
 
 CUDA_PATH := $(if $(GPU_ARCH),$(CUDA_PATH),no)
 libcuda_devxlib :
-	$(call update_submodule,external,devxlib)
 	cd $(TOPDIR)/external/devxlib/src; \
 	ln -fs $(TOPDIR)/make.inc ../; \
 	$(MAKE) all; \
@@ -83,7 +81,6 @@ libcuda_devxlib_veryclean:
 ###################################
 
 libmbd:
-	$(call update_submodule,external,mbd)
 	if test ! -d ../MBD; then \
         mkdir ../MBD; \
         cd $(TOPDIR)/external/mbd/src; \

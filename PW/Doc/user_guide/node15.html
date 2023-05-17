@@ -1,0 +1,268 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>4.1 Execution time</TITLE>
+<META NAME="description" CONTENT="4.1 Execution time">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node16.html">
+<LINK REL="previous" HREF="node14.html">
+<LINK REL="next" HREF="node16.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node16.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node14.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node14.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html187"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node16.html">4.2 Memory requirements</A>
+<B> Up:</B> <A
+ HREF="node14.html">4 Performances</A>
+<B> Previous:</B> <A
+ HREF="node14.html">4 Performances</A>
+ &nbsp; <B>  <A ID="tex2html188"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A ID="SECTION00051000000000000000">
+4.1 Execution time</A>
+</H2>
+
+<P>
+The following is a rough estimate of the complexity of a plain
+scf calculation with <TT>pw.x</TT>, for NCPP. USPP and PAW 
+give raise additional terms to be calculated, that may add from a 
+few percent 
+up to 30-40% to execution time. For phonon calculations, each of the
+3<I>N</I><SUB>at</SUB> modes requires a time of the same order of magnitude of
+self-consistent calculation in the same system (possibly times a small multiple). 
+For <TT>cp.x</TT>, each time step takes something in the order of
+<!-- MATH
+ $T_h + T_{orth} + T_{sub}$
+ -->
+<I>T</I><SUB>h</SUB> + <I>T</I><SUB>orth</SUB> + <I>T</I><SUB>sub</SUB> defined below.
+
+<P>
+The time required for the self-consistent solution at fixed ionic
+positions, <I>T</I><SUB>scf</SUB> , is:
+<P><!-- MATH
+ \begin{displaymath}
+T_{scf} = N_{iter} T_{iter} + T_{init}
+\end{displaymath}
+ -->
+</P>
+<DIV ALIGN="CENTER">
+<I>T</I><SUB>scf</SUB> = <I>N</I><SUB>iter</SUB><I>T</I><SUB>iter</SUB> + <I>T</I><SUB>init</SUB>
+</DIV><P></P>
+where <I>N</I><SUB>iter</SUB> = number of self-consistency iterations (<TT>niter</TT>), 
+<I>T</I><SUB>iter</SUB> =
+time for a single iteration, <I>T</I><SUB>init</SUB> = initialization time
+(usually much smaller than the first term).
+
+<P>
+The time required for a single self-consistency iteration <I>T</I><SUB>iter</SUB> is:
+<P><!-- MATH
+ \begin{displaymath}
+T_{iter} = N_k T_{diag} +T_{rho} + T_{scf}
+\end{displaymath}
+ -->
+</P>
+<DIV ALIGN="CENTER">
+<I>T</I><SUB>iter</SUB> = <I>N</I><SUB>k</SUB><I>T</I><SUB>diag</SUB> + <I>T</I><SUB>rho</SUB> + <I>T</I><SUB>scf</SUB>
+</DIV><P></P>
+where <I>N</I><SUB>k</SUB> = number of k-points, <I>T</I><SUB>diag</SUB> = time per 
+Hamiltonian iterative diagonalization, <I>T</I><SUB>rho</SUB> = time for charge density 
+calculation, <I>T</I><SUB>scf</SUB> = time for Hartree and XC potential
+calculation.
+
+<P>
+The time for a Hamiltonian iterative diagonalization <I>T</I><SUB>diag</SUB> is:
+<P><!-- MATH
+ \begin{displaymath}
+T_{diag} = N_h T_h + T_{orth} + T_{sub}
+\end{displaymath}
+ -->
+</P>
+<DIV ALIGN="CENTER">
+<I>T</I><SUB>diag</SUB> = <I>N</I><SUB>h</SUB><I>T</I><SUB>h</SUB> + <I>T</I><SUB>orth</SUB> + <I>T</I><SUB>sub</SUB>
+</DIV><P></P>
+where <I>N</I><SUB>h</SUB> = number of <I>Hψ</I> products needed by iterative diagonalization,
+<I>T</I><SUB>h</SUB> = time per <I>Hψ</I> product, <I>T</I><SUB>orth</SUB> = CPU time for 
+orthonormalization, <I>T</I><SUB>sub</SUB> = CPU time for subspace diagonalization.
+
+<P>
+The time <I>T</I><SUB>h</SUB> required for a <I>Hψ</I> product is
+<P><!-- MATH
+ \begin{displaymath}
+T_h = a_1 M N + a_2 M N_1 N_2 N_3 log(N_1 N_2 N_3 ) + a_3 M P N.
+\end{displaymath}
+ -->
+</P>
+<DIV ALIGN="CENTER">
+<I>T</I><SUB>h</SUB> = <I>a</I><SUB>1</SUB><I>MN</I> + <I>a</I><SUB>2</SUB><I>MN</I><SUB>1</SUB><I>N</I><SUB>2</SUB><I>N</I><SUB>3</SUB><I>log</I>(<I>N</I><SUB>1</SUB><I>N</I><SUB>2</SUB><I>N</I><SUB>3</SUB>) + <I>a</I><SUB>3</SUB><I>MPN</I>.
+</DIV><P></P>
+The first term comes from the kinetic term and is usually much smaller
+than the others. The second and third terms come respectively from local
+and nonlocal potential. <!-- MATH
+ $a_1, a_2, a_3$
+ -->
+<I>a</I><SUB>1</SUB>, <I>a</I><SUB>2</SUB>, <I>a</I><SUB>3</SUB> are prefactors (i.e.
+small numbers <!-- MATH
+ ${\cal O}(1)$
+ -->
+<IMG
+ STYLE="height: 1.69ex; vertical-align: -0.10ex; " SRC="img3.png"
+ ALT="$\cal {O}$">(1)), <I>M</I> = number of valence
+bands (<TT>nbnd</TT>), <I>N</I> = number of PW (basis set dimension: <TT>npw</TT>), <!-- MATH
+ $N_1, N_2, N_3$
+ -->
+<I>N</I><SUB>1</SUB>, <I>N</I><SUB>2</SUB>, <I>N</I><SUB>3</SUB> =
+dimensions of the FFT grid for wavefunctions (<TT>nr1s</TT>, <TT>nr2s</TT>,
+<TT>nr3s</TT>; <!-- MATH
+ $N_1 N_2 N_3 \sim 8N$
+ -->
+<I>N</I><SUB>1</SUB><I>N</I><SUB>2</SUB><I>N</I><SUB>3</SUB>∼8<I>N</I> ), 
+P = number of pseudopotential projectors, summed on all atoms, on all values of the
+angular momentum <I>l</I>, and <!-- MATH
+ $m = 1, . . . , 2l + 1$
+ -->
+<I>m</I> = 1,..., 2<I>l</I> + 1.
+
+<P>
+The time <I>T</I><SUB>orth</SUB> required by orthonormalization is
+<P><!-- MATH
+ \begin{displaymath}
+T_{orth} = b_1 N M_x^2
+\end{displaymath}
+ -->
+</P>
+<DIV ALIGN="CENTER">
+<I>T</I><SUB>orth</SUB> = <I>b</I><SUB>1</SUB><I>NM</I><SUB>x</SUB><SUP>2</SUP>
+</DIV><P></P>
+and the time <I>T</I><SUB>sub</SUB> required by subspace diagonalization is
+<P><!-- MATH
+ \begin{displaymath}
+T_{sub} = b_2 M_x^3
+\end{displaymath}
+ -->
+</P>
+<DIV ALIGN="CENTER">
+<I>T</I><SUB>sub</SUB> = <I>b</I><SUB>2</SUB><I>M</I><SUB>x</SUB><SUP>3</SUP>
+</DIV><P></P>
+where <I>b</I><SUB>1</SUB> and <I>b</I><SUB>2</SUB> are prefactors, <I>M</I><SUB>x</SUB> = number of trial wavefunctions 
+(this will vary between <I>M</I> and 2÷4<I>M</I>, depending on the algorithm).
+
+<P>
+The time <I>T</I><SUB>rho</SUB> for the calculation of charge density from wavefunctions is
+<P><!-- MATH
+ \begin{displaymath}
+T_{rho} = c_1 M N_{r1} N_{r2}N_{r3} log(N_{r1} N_{r2} N_{r3}) +
+            c_2 M N_{r1} N_{r2} N_{r3} + T_{us}
+\end{displaymath}
+ -->
+</P>
+<DIV ALIGN="CENTER">
+<I>T</I><SUB>rho</SUB> = <I>c</I><SUB>1</SUB><I>MN</I><SUB>r1</SUB><I>N</I><SUB>r2</SUB><I>N</I><SUB>r3</SUB><I>log</I>(<I>N</I><SUB>r1</SUB><I>N</I><SUB>r2</SUB><I>N</I><SUB>r3</SUB>) + <I>c</I><SUB>2</SUB><I>MN</I><SUB>r1</SUB><I>N</I><SUB>r2</SUB><I>N</I><SUB>r3</SUB> + <I>T</I><SUB>us</SUB>
+</DIV><P></P>
+where <!-- MATH
+ $c_1, c_2, c_3$
+ -->
+<I>c</I><SUB>1</SUB>, <I>c</I><SUB>2</SUB>, <I>c</I><SUB>3</SUB> are prefactors, <!-- MATH
+ $N_{r1}, N_{r2}, N_{r3}$
+ -->
+<I>N</I><SUB>r1</SUB>, <I>N</I><SUB>r2</SUB>, <I>N</I><SUB>r3</SUB> =
+dimensions of the FFT grid for charge density (<TT>nr1</TT>,
+<TT>nr2</TT>, <TT>nr3</TT>; <!-- MATH
+ $N_{r1} N_{r2} N_{r3} \sim 8N_g$
+ -->
+<I>N</I><SUB>r1</SUB><I>N</I><SUB>r2</SUB><I>N</I><SUB>r3</SUB>∼8<I>N</I><SUB>g</SUB>,
+where <I>N</I><SUB>g</SUB> = number of G-vectors for the charge density,
+<TT>ngm</TT>), and 
+<I>T</I><SUB>us</SUB> = time required by PAW/USPPs contribution (if any).
+Note that for NCPPs the FFT grids for charge and
+wavefunctions are the same.
+
+<P>
+The time <I>T</I><SUB>scf</SUB> for calculation of potential from charge density is
+<P><!-- MATH
+ \begin{displaymath}
+T_{scf} = d_2 N_{r1} N_{r2} N_{r3} + d_3 N_{r1} N_{r2} N_{r3}
+            log(N_{r1} N_{r2} N_{r3} )
+\end{displaymath}
+ -->
+</P>
+<DIV ALIGN="CENTER">
+<I>T</I><SUB>scf</SUB> = <I>d</I><SUB>2</SUB><I>N</I><SUB>r1</SUB><I>N</I><SUB>r2</SUB><I>N</I><SUB>r3</SUB> + <I>d</I><SUB>3</SUB><I>N</I><SUB>r1</SUB><I>N</I><SUB>r2</SUB><I>N</I><SUB>r3</SUB><I>log</I>(<I>N</I><SUB>r1</SUB><I>N</I><SUB>r2</SUB><I>N</I><SUB>r3</SUB>)
+</DIV><P></P>
+where <I>d</I><SUB>1</SUB>, <I>d</I><SUB>2</SUB> are prefactors.
+
+<P>
+For hybrid DFTs, the dominant term is by far the calculation of the 
+nonlocal (<I>V</I><SUB>x</SUB><I>ψ</I>) product, taking as much as
+<P><!-- MATH
+ \begin{displaymath}
+T_{exx} = e N_k N_q M^2 N_1 N_2N_3 log(N_1 N_2 N_3)
+\end{displaymath}
+ -->
+</P>
+<DIV ALIGN="CENTER">
+<I>T</I><SUB>exx</SUB> = <I>eN</I><SUB>k</SUB><I>N</I><SUB>q</SUB><I>M</I><SUP>2</SUP><I>N</I><SUB>1</SUB><I>N</I><SUB>2</SUB><I>N</I><SUB>3</SUB><I>log</I>(<I>N</I><SUB>1</SUB><I>N</I><SUB>2</SUB><I>N</I><SUB>3</SUB>)
+</DIV><P></P>
+where <I>N</I><SUB>q</SUB> is the number of points in the <I>k</I> + <I>q</I> grid, determined by
+options <TT>nqx1,nqx2,nqx3</TT>, <I>e</I> is a prefactor.
+
+<P>
+The above estimates are for serial execution. In parallel execution,
+each contribution may scale in a different manner with the number of processors (see below).
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A
+ HREF="node16.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node14.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node14.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html187"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node16.html">4.2 Memory requirements</A>
+<B> Up:</B> <A
+ HREF="node14.html">4 Performances</A>
+<B> Previous:</B> <A
+ HREF="node14.html">4 Performances</A>
+ &nbsp; <B>  <A ID="tex2html188"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

@@ -1,0 +1,497 @@
+!
+! Copyright (C) 2002-2018 Quantum ESPRESSO group
+! This file is distributed under the terms of the
+! GNU General Public License. See the file `License'
+! in the root directory of the present distribution,
+! or http://www.gnu.org/copyleft/gpl.txt .
+!
+! Utility functions to perform memcpy and memset on the device with CUDA Fortran
+! cuf_memXXX contain a CUF KERNEL to perform the selected operation
+! cu_memcpy contain also wrappers for cuda_memcpy (sync and async) functions
+!
+#include<device_macros.h>
+!
+!=======================================
+!
+{%- for t in types %}
+{%- for p in kinds[t] %}
+{%- for d in range(1,dimensions+1) %}
+subroutine {{p.name}}_dev_memcpy_{{t[0]|lower}}{{d}}d(array_out, array_in, &
+                                            {% for dd in range(d) -%}
+                                            {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, &
+                                            {% endif %}{% endfor %} )
+    use iso_fortran_env
+    implicit none
+    !
+    {{t}}({{p.val}}), intent(inout) :: array_out({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+    {{t}}({{p.val}}), intent(in)    :: array_in({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "range%s(2)"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+#if defined(__CUDA)
+    attributes(device) :: array_out, array_in
+#endif
+    !
+{%- for dd in range(d) %}
+    integer :: i{{dd+1}}, d{{dd+1}}s, d{{dd+1}}e
+    integer :: lbound{{dd+1}}_, range{{dd+1}}_(2)
+{%- endfor %}
+    !
+{%- for dd in range(d) %}
+    lbound{{dd+1}}_=1
+    if (present(lbound{{dd+1}})) lbound{{dd+1}}_=lbound{{dd+1}} 
+    range{{dd+1}}_=(/1,size(array_out, {{dd+1}})/)
+    if (present(range{{dd+1}})) range{{dd+1}}_=range{{dd+1}} 
+    !
+    ! the lower bound of the assumed shape array passed to the subroutine is 1
+    ! lbound and range instead refer to the indexing in the parent caller.
+    d{{dd+1}}s = range{{dd+1}}_(1) -lbound{{dd+1}}_ +1
+    d{{dd+1}}e = range{{dd+1}}_(2) -lbound{{dd+1}}_ +1
+    !
+{%- endfor %}
+    !
+    !$cuf kernel do({{d}})
+{%- for dd in range(d,0,-1) %}
+    do i{{dd}} = d{{dd}}s, d{{dd}}e
+{%- endfor %}
+        array_out( {%- for dd in range(d) %}i{{dd+1}}{% if not loop.last %}, {%- endif %} {%- endfor %} ) = array_in( {%- for dd in range(d) %}i{{dd+1}}{% if not loop.last %}, {%- endif %} {%- endfor %} )
+{%- for dd in range(d) %}
+    enddo
+{%- endfor %}
+    !
+end subroutine {{p.name}}_dev_memcpy_{{t[0]|lower}}{{d}}d
+!
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+!
+!======================
+!
+{%- for t in types %}
+{%- for p in kinds[t] %}
+{%- for d in range(1,dimensions+1) %}
+subroutine {{p.name}}_dev_memset_{{t[0]|lower}}{{d}}d(array_out, val, & 
+                                            {% for dd in range(d) %} 
+                                            {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, &
+                                            {%- endif %}{% endfor %} )
+    use iso_fortran_env
+    implicit none
+    !
+    {{t}}({{p.val}}), intent(inout) :: array_out({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+    {{t}}({{p.val}}), intent(in)    :: val
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "range%s(2)"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+#if defined(__CUDA)
+    attributes(device) :: array_out
+#endif
+    !
+{%- for dd in range(d) %}
+    integer :: i{{dd+1}}, d{{dd+1}}s, d{{dd+1}}e
+    integer :: lbound{{dd+1}}_, range{{dd+1}}_(2)
+{%- endfor %}
+    !
+{%- for dd in range(d) %}
+    lbound{{dd+1}}_=1
+    if (present(lbound{{dd+1}})) lbound{{dd+1}}_=lbound{{dd+1}} 
+    range{{dd+1}}_=(/1,size(array_out, {{dd+1}})/)
+    if (present(range{{dd+1}})) range{{dd+1}}_=range{{dd+1}} 
+    !
+    d{{dd+1}}s = range{{dd+1}}_(1) -lbound{{dd+1}}_ +1
+    d{{dd+1}}e = range{{dd+1}}_(2) -lbound{{dd+1}}_ +1
+    !
+{%- endfor %}
+    !
+    !$cuf kernel do({{d}})
+{%- for dd in range(d,0,-1) %}
+    do i{{dd}} = d{{dd}}s, d{{dd}}e
+{%- endfor %}
+        array_out( {%- for dd in range(d) %}i{{dd+1}}{% if not loop.last %}, {%- endif %} {%- endfor %} ) = val
+{%- for dd in range(d) %}
+    enddo
+{%- endfor %}
+    !
+end subroutine {{p.name}}_dev_memset_{{t[0]|lower}}{{d}}d
+!
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+!
+!=======================================
+!
+#if defined(__HAVE_DEVICE)
+!
+{%- for t in types %}
+{%- for p in kinds[t] %}
+{%- for d in range(1,dimensions+1) %}
+subroutine {{p.name}}_dev_memcpy_h2h_{{t[0]|lower}}{{d}}d(array_out, array_in, &
+                                            {% for dd in range(d) -%}
+                                            {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, &
+                                            {% endif %}{% endfor %} )
+    use iso_fortran_env
+    implicit none
+    !
+    {{t}}({{p.val}}), intent(inout) :: array_out({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+    {{t}}({{p.val}}), intent(in)    :: array_in({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "range%s(2)"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+    !
+{%- for dd in range(d) %}
+    integer :: i{{dd+1}}, d{{dd+1}}s, d{{dd+1}}e
+    integer :: lbound{{dd+1}}_, range{{dd+1}}_(2)
+{%- endfor %}
+    !
+{%- for dd in range(d) %}
+    lbound{{dd+1}}_=1
+    if (present(lbound{{dd+1}})) lbound{{dd+1}}_=lbound{{dd+1}} 
+    range{{dd+1}}_=(/1,size(array_out, {{dd+1}})/)
+    if (present(range{{dd+1}})) range{{dd+1}}_=range{{dd+1}} 
+    !
+    ! the lower bound of the assumed shape array passed to the subroutine is 1
+    ! lbound and range instead refer to the indexing in the parent caller.
+    d{{dd+1}}s = range{{dd+1}}_(1) -lbound{{dd+1}}_ +1
+    d{{dd+1}}e = range{{dd+1}}_(2) -lbound{{dd+1}}_ +1
+    !
+{%- endfor %}
+    !
+{%- for dd in range(d,0,-1) %}
+    do i{{dd}} = d{{dd}}s, d{{dd}}e
+{%- endfor %}
+        array_out( {%- for dd in range(d) %}i{{dd+1}}{% if not loop.last %}, {%- endif %} {%- endfor %} ) = array_in( {%- for dd in range(d) %}i{{dd+1}}{% if not loop.last %}, {%- endif %} {%- endfor %} )
+{%- for dd in range(d) %}
+    enddo
+{%- endfor %}
+    !
+end subroutine {{p.name}}_dev_memcpy_h2h_{{t[0]|lower}}{{d}}d
+!
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+!
+!======================
+!
+{%- for t in types %}
+{%- for p in kinds[t] %}
+{%- for d in range(1,dimensions+1) %}
+subroutine {{p.name}}_dev_memset_h_{{t[0]|lower}}{{d}}d(array_out, val, & 
+                                            {% for dd in range(d) %} 
+                                            {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, &
+                                            {%- endif %}{% endfor %} )
+    use iso_fortran_env
+    implicit none
+    !
+    {{t}}({{p.val}}), intent(inout) :: array_out({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+    {{t}}({{p.val}}), intent(in)    :: val
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "range%s(2)"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+    !
+{%- for dd in range(d) %}
+    integer :: i{{dd+1}}, d{{dd+1}}s, d{{dd+1}}e
+    integer :: lbound{{dd+1}}_, range{{dd+1}}_(2)
+{%- endfor %}
+    !
+{%- for dd in range(d) %}
+    lbound{{dd+1}}_=1
+    if (present(lbound{{dd+1}})) lbound{{dd+1}}_=lbound{{dd+1}} 
+    range{{dd+1}}_=(/1,size(array_out, {{dd+1}})/)
+    if (present(range{{dd+1}})) range{{dd+1}}_=range{{dd+1}} 
+    !
+    d{{dd+1}}s = range{{dd+1}}_(1) -lbound{{dd+1}}_ +1
+    d{{dd+1}}e = range{{dd+1}}_(2) -lbound{{dd+1}}_ +1
+    !
+{%- endfor %}
+    !
+{%- for dd in range(d,0,-1) %}
+    do i{{dd}} = d{{dd}}s, d{{dd}}e
+{%- endfor %}
+        array_out( {%- for dd in range(d) %}i{{dd+1}}{% if not loop.last %}, {%- endif %} {%- endfor %} ) = val
+{%- for dd in range(d) %}
+    enddo
+{%- endfor %}
+    !
+end subroutine {{p.name}}_dev_memset_h_{{t[0]|lower}}{{d}}d
+!
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+#endif
+!
+!======================
+#if defined(__HAVE_DEVICE)
+!
+{%- for t in types %}
+{%- for p in kinds[t] %}
+{%- for d in range(1,dimensions+1) %}
+subroutine {{p.name}}_memcpy_h2d_{{t[0]|lower}}{{d}}d(array_out, array_in, &
+                                             {% for dd in range(d) -%} 
+                                             {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }} {% if not loop.last %}, &
+                                             {% endif %}{% endfor %} )
+#if defined(__CUDA)
+    use cudafor
+#endif
+    use iso_fortran_env
+    implicit none
+    !
+    {{t}}({{p.val}}), intent(inout) :: array_out({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+    {{t}}({{p.val}}), intent(in)    :: array_in({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "range%s(2)"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+#if defined(__CUDA)
+    attributes(device) :: array_out
+    integer :: ierr = 0
+#endif
+    !
+{%- for dd in range(d) %}
+    integer :: d{{dd+1}}_start, d{{dd+1}}_end, d{{dd+1}}_size, d{{dd+1}}_ld
+    integer :: lbound{{dd+1}}_, range{{dd+1}}_(2)
+{%- endfor %}
+    !
+{%- for dd in range(d) %}
+    lbound{{dd+1}}_=1
+    if (present(lbound{{dd+1}})) lbound{{dd+1}}_=lbound{{dd+1}} 
+    range{{dd+1}}_=(/1,size(array_out, {{dd+1}})/)
+    if (present(range{{dd+1}})) range{{dd+1}}_=range{{dd+1}} 
+    !
+    d{{dd+1}}_start = range{{dd+1}}_(1) -lbound{{dd+1}}_ +1
+    d{{dd+1}}_end   = range{{dd+1}}_(2) -lbound{{dd+1}}_ +1
+    d{{dd+1}}_size  = range{{dd+1}}_(2) -range{{dd+1}}_(1) + 1
+    d{{dd+1}}_ld    = size(array_out, {{dd+1}})
+{%- endfor %}
+    !
+#if defined(__CUDA)
+{%- if d==1 %}
+    ierr = cudaMemcpy( array_out(d1_start), array_in(d1_start), d1_size, cudaMemcpyHostToDevice )
+{%- elif d==2 %}
+    ierr = cudaMemcpy2D( array_out(d1_start, d2_start) , d1_ld, array_in(d1_start, d2_start), d1_ld, d1_size, d2_size )
+{%- elif d>=3 %}
+    !call dxlib_errore('cu_memsync_','{{d}}D arrays not implemented yet',1)
+    array_out({% for dd in range(d)%}d{{dd+1}}_start:d{{dd+1}}_end{% if not loop.last %},{%- endif %}{%endfor%}) = &
+              array_in({% for dd in range(d)%}d{{dd+1}}_start:d{{dd+1}}_end{% if not loop.last %},{%- endif %}{%endfor%})
+{%- endif %}
+    if ( ierr /= 0) call dxlib_errore("{{p.name}}_memcpy_h2d_{{t[0]|lower}}{{d}}d",cudaGetErrorString(ierr),ierr)
+#else
+    array_out({% for dd in range(d)%}d{{dd+1}}_start:d{{dd+1}}_end{% if not loop.last %},{%- endif %}{%endfor%}) = &
+              array_in({% for dd in range(d)%}d{{dd+1}}_start:d{{dd+1}}_end{% if not loop.last %},{%- endif %}{%endfor%})
+#endif
+    !
+end subroutine {{p.name}}_memcpy_h2d_{{t[0]|lower}}{{d}}d
+!
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+!
+#endif
+!
+!======================
+!
+#if defined(__HAVE_DEVICE)
+!
+{%- for t in types %}
+{%- for p in kinds[t] %}
+{%- for d in range(1,dimensions+1) %}
+subroutine {{p.name}}_memcpy_d2h_{{t[0]|lower}}{{d}}d(array_out, array_in, &
+                                             {% for dd in range(d) -%} 
+                                             {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }} {% if not loop.last %}, &
+                                             {% endif %}{% endfor %} )
+#if defined(__CUDA)
+    use cudafor
+#endif
+    use iso_fortran_env
+    implicit none
+    !
+    {{t}}({{p.val}}), intent(inout) :: array_out({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+    {{t}}({{p.val}}), intent(in)    :: array_in({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "range%s(2)"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+#if defined(__CUDA)
+    attributes(device) :: array_in
+    integer :: ierr = 0
+#endif
+    !
+{%- for dd in range(d) %}
+    integer :: d{{dd+1}}_start, d{{dd+1}}_end, d{{dd+1}}_size, d{{dd+1}}_ld
+    integer :: lbound{{dd+1}}_, range{{dd+1}}_(2)
+{%- endfor %}
+    !
+{%- for dd in range(d) %}
+    lbound{{dd+1}}_=1
+    if (present(lbound{{dd+1}})) lbound{{dd+1}}_=lbound{{dd+1}} 
+    range{{dd+1}}_=(/1,size(array_out, {{dd+1}})/)
+    if (present(range{{dd+1}})) range{{dd+1}}_=range{{dd+1}} 
+    !
+    d{{dd+1}}_start = range{{dd+1}}_(1) -lbound{{dd+1}}_ +1
+    d{{dd+1}}_end   = range{{dd+1}}_(2) -lbound{{dd+1}}_ +1
+    d{{dd+1}}_size  = range{{dd+1}}_(2) -range{{dd+1}}_(1) + 1
+    d{{dd+1}}_ld    = size(array_out, {{dd+1}})
+{%- endfor %}
+    !
+#if defined(__CUDA)
+{%- if d==1 %}
+    ierr = cudaMemcpy( array_out(d1_start), array_in(d1_start), d1_size, cudaMemcpyDeviceToHost )
+{%- elif d==2 %}
+    ierr = cudaMemcpy2D( array_out(d1_start, d2_start) , d1_ld, array_in(d1_start, d2_start), d1_ld, d1_size, d2_size )
+{%- elif d>=3 %}
+    array_out({% for dd in range(d)%}d{{dd+1}}_start:d{{dd+1}}_end{% if not loop.last %},{%- endif %}{%endfor%}) = &
+              array_in({% for dd in range(d)%}d{{dd+1}}_start:d{{dd+1}}_end{% if not loop.last %},{%- endif %}{%endfor%})
+{%- endif %}
+    if ( ierr /= 0) call dxlib_errore("{{p.name}}_memcpy_d2h_{{t[0]|lower}}{{d}}d",cudaGetErrorString(ierr),ierr)
+#else
+    array_out({% for dd in range(d)%}d{{dd+1}}_start:d{{dd+1}}_end{% if not loop.last %},{%- endif %}{%endfor%}) = &
+              array_in({% for dd in range(d)%}d{{dd+1}}_start:d{{dd+1}}_end{% if not loop.last %},{%- endif %}{%endfor%})
+#endif
+    !
+end subroutine {{p.name}}_memcpy_d2h_{{t[0]|lower}}{{d}}d
+!
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+!
+#endif
+!======================
+!
+#if defined(__HAVE_DEVICE)
+!
+{%- for t in types %}
+{%- for p in kinds[t] %}
+{%- for d in range(1,dimensions+1) %}
+subroutine {{p.name}}_memcpy_h2d_async_{{t[0]|lower}}{{d}}d(array_out, array_in, stream, &
+                                             {% for dd in range(d) -%} 
+                                             {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }} {% if not loop.last %}, &
+                                             {% endif %}{% endfor %} )
+#if defined(__CUDA)
+    use cudafor
+#endif
+    use iso_fortran_env
+    implicit none
+    !
+    {{t}}({{p.val}}), intent(inout) :: array_out({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+    {{t}}({{p.val}}), intent(in)    :: array_in({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+#if defined(__CUDA)
+    integer(kind=cuda_Stream_Kind), intent(in) :: stream
+#else
+    integer, intent(in) :: stream
+#endif
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "range%s(2)"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+#if defined(__CUDA)
+    attributes(device) :: array_out
+    integer :: ierr = 0
+#endif
+    !
+{%- for dd in range(d) %}
+    integer :: d{{dd+1}}_start, d{{dd+1}}_end, d{{dd+1}}_size, d{{dd+1}}_ld
+    integer :: lbound{{dd+1}}_, range{{dd+1}}_(2)
+{%- endfor %}
+    !
+{%- for dd in range(d) %}
+    lbound{{dd+1}}_=1
+    if (present(lbound{{dd+1}})) lbound{{dd+1}}_=lbound{{dd+1}} 
+    range{{dd+1}}_=(/1,size(array_out, {{dd+1}})/)
+    if (present(range{{dd+1}})) range{{dd+1}}_=range{{dd+1}} 
+    !
+    d{{dd+1}}_start = range{{dd+1}}_(1) -lbound{{dd+1}}_ +1
+    d{{dd+1}}_end   = range{{dd+1}}_(2) -lbound{{dd+1}}_ +1
+    d{{dd+1}}_size  = range{{dd+1}}_(2) -range{{dd+1}}_(1) + 1
+    d{{dd+1}}_ld    = size(array_out, {{dd+1}})
+{%- endfor %}
+    !
+#if defined(__CUDA)
+    ierr = CudaMemcpyAsync(array_out, array_in, &
+                           count={% for dd in range(d)%}d{{dd+1}}_size{% if not loop.last %}*{%- endif %}{%endfor%},&
+                           kdir=cudaMemcpyDeviceToHost,stream=stream)
+    if ( ierr /= 0) call dxlib_errore("{{p.name}}_memcpy_h2d_async_{{t[0]|lower}}{{d}}d",cudaGetErrorString(ierr),ierr)
+#else
+    array_out({% for dd in range(d)%}d{{dd+1}}_start:d{{dd+1}}_end{% if not loop.last %},{%- endif %}{%endfor%}) = &
+              array_in({% for dd in range(d)%}d{{dd+1}}_start:d{{dd+1}}_end{% if not loop.last %},{%- endif %}{%endfor%})
+#endif
+    !
+end subroutine {{p.name}}_memcpy_h2d_async_{{t[0]|lower}}{{d}}d
+!
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+!
+#endif
+!
+!======================
+!
+subroutine dev_stream_sync(stream)
+#if defined(__CUDA)
+    use cudafor
+#endif
+    implicit none
+#if defined(__CUDA)
+    integer(kind=cuda_Stream_Kind), intent(in) :: stream
+    integer :: ierr
+    ierr = CudaStreamSynchronize(stream)
+#else
+    integer, intent(in) :: stream
+    return
+#endif
+end subroutine dev_stream_sync
+!
+!======================
+!
+!
+{%- for t in types %}
+{%- for p in kinds[t] %}
+{%- for d in range(1,dimensions+1) %}
+subroutine {{p.name}}_memcpy_d2h_async_{{t[0]|lower}}{{d}}d(array_out, array_in, stream, &
+                                             {% for dd in range(d) -%} 
+                                             {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }} {% if not loop.last %}, &
+                                             {% endif %}{% endfor %} )
+#if defined(__CUDA)
+    use cudafor
+#endif
+    use iso_fortran_env
+    implicit none
+    !
+    {{t}}({{p.val}}), intent(inout) :: array_out({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+    {{t}}({{p.val}}), intent(in)    :: array_in({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+#if defined(__CUDA)
+    integer(kind=cuda_Stream_Kind), intent(in) :: stream
+#else
+    integer, intent(in) :: stream
+#endif
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "range%s(2)"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+#if defined(__CUDA)
+    attributes(device) :: array_in
+    integer :: ierr = 0
+#endif
+    !
+{%- for dd in range(d) %}
+    integer :: d{{dd+1}}_start, d{{dd+1}}_end, d{{dd+1}}_size, d{{dd+1}}_ld
+    integer :: lbound{{dd+1}}_, range{{dd+1}}_(2)
+{%- endfor %}
+    !
+{%- for dd in range(d) %}
+    lbound{{dd+1}}_=1
+    if (present(lbound{{dd+1}})) lbound{{dd+1}}_=lbound{{dd+1}} 
+    range{{dd+1}}_=(/1,size(array_out, {{dd+1}})/)
+    if (present(range{{dd+1}})) range{{dd+1}}_=range{{dd+1}} 
+    !
+    d{{dd+1}}_start = range{{dd+1}}_(1) -lbound{{dd+1}}_ +1
+    d{{dd+1}}_end   = range{{dd+1}}_(2) -lbound{{dd+1}}_ +1
+    d{{dd+1}}_size  = range{{dd+1}}_(2) -range{{dd+1}}_(1) + 1
+    d{{dd+1}}_ld    = size(array_out, {{dd+1}})
+{%- endfor %}
+    !
+#if defined(__CUDA)
+!    ierr = CudaMemcpyAsync(array_out({% for dd in range(d)%}d{{dd+1}}_start:d{{dd+1}}_end{% if not loop.last %},{%- endif %}{%endfor%}),&
+!                           array_in({% for dd in range(d)%}d{{dd+1}}_start:d{{dd+1}}_end{% if not loop.last %},{%- endif %}{%endfor%}),&
+!                           count={% for dd in range(d)%}d{{dd+1}}_size{% if not loop.last %}*{%- endif %}{%endfor%},&
+!                           kdir=cudaMemcpyHostToDevice,stream=stream)
+    ierr = CudaMemcpyAsync(array_out, array_in, &
+                           count={% for dd in range(d)%}d{{dd+1}}_size{% if not loop.last %}*{%- endif %}{%endfor%},&
+                           kdir=cudaMemcpyHostToDevice,stream=stream)
+    if ( ierr /= 0) call dxlib_errore("{{p.name}}_memcpy_d2h_async_{{t[0]|lower}}{{d}}d",cudaGetErrorString(ierr),ierr)
+#else
+    array_out({% for dd in range(d)%}d{{dd+1}}_start:d{{dd+1}}_end{% if not loop.last %},{%- endif %}{%endfor%}) = &
+              array_in({% for dd in range(d)%}d{{dd+1}}_start:d{{dd+1}}_end{% if not loop.last %},{%- endif %}{%endfor%})
+#endif
+    !
+end subroutine {{p.name}}_memcpy_d2h_async_{{t[0]|lower}}{{d}}d
+!
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+

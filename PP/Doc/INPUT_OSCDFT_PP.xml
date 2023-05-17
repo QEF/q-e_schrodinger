@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="input_xx.xsl"?>
+<!-- FILE AUTOMATICALLY CREATED: DO NOT EDIT, CHANGES WILL BE LOST -->
+    
+<input_description distribution="Quantum ESPRESSO" package="PWscf" program="oscdft_pp.x" >
+   <toc>
+   </toc>
+   <intro>
+<b>Input data format:</b> { } = optional, [ ] = it depends, | = or
+
+<b>Purpose of oscdft_pp.x:</b>
+This calculates the occupation numbers, eigenvectors, and matrices as a post-processing
+program. <b>REQUIRES</b> the oscdft.in file in the same working directory as where the
+oscdft_pp.x command is ran.
+
+<b>Structure of the input data:</b>
+===============================================================================
+
+    &amp;OSCDFT_PP_NAMELIST
+      ...
+    /
+   </intro>
+   <namelist name="OSCDFT_PP_NAMELIST" >
+      <var name="prefix" type="CHARACTER" >
+         <status> REQUIRED
+         </status>
+         <info>
+prefix of the pw.x calculation.
+         </info>
+      </var>
+      <var name="outdir" type="CHARACTER" >
+         <status> REQUIRED
+         </status>
+         <info>
+directory containing the input data, i.e. the same as in pw.x
+         </info>
+      </var>
+   </namelist>
+</input_description>

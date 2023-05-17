@@ -1,0 +1,37 @@
+# Explicit dependencies for compilable files
+CUDA.o: CUDA.F90 \
+	cuda_runtime_h.o \
+	cuda_h.o
+cuda_h.o: cuda_h.F90 \
+	cuda_unknowns.o
+cuda_runtime_h.o: cuda_runtime_h.F90 \
+	cuda_unknowns.o
+cuda_unknowns.o: cuda_unknowns.F90
+OpenCL.o: OpenCL.F90
+# Variables for each filetype's object files
+
+PYF95_MAKEDEPEND_OBJECTS_hdr= 
+
+
+PYF95_MAKEDEPEND_OBJECTS_f= 
+
+
+PYF95_MAKEDEPEND_OBJECTS_h= 
+
+
+PYF95_MAKEDEPEND_OBJECTS_F= 
+
+
+PYF95_MAKEDEPEND_OBJECTS_f90= 
+
+
+PYF95_MAKEDEPEND_OBJECTS_F90=  \
+	CUDA.o \
+	cuda_h.o \
+	cuda_runtime_h.o \
+	cuda_unknowns.o \
+	OpenCL.o
+
+
+PYF95_MAKEDEPEND_OBJECTS_inc= 
+

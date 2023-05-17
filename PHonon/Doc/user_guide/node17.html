@@ -1,0 +1,147 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>5 Parallelism</TITLE>
+<META NAME="description" CONTENT="5 Parallelism">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node18.html">
+<LINK REL="previous" HREF="node7.html">
+<LINK REL="next" HREF="node18.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node18.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="user_guide.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node16.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html90"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node18.html">6 Troubleshooting</A>
+<B> Up:</B> <A
+ HREF="user_guide.html">User's Guide for the PHonon</A>
+<B> Previous:</B> <A
+ HREF="node16.html">4.9 Calculation of phonon-renormalization of</A>
+ &nbsp; <B>  <A ID="tex2html91"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H1><A ID="SECTION00060000000000000000"></A>
+<A ID="Sec:para"></A>
+<BR>
+5 Parallelism
+</H1>
+
+<P>
+We refer to the corresponding section of the <TT>PWscf</TT> guide for
+an explanation of how parallelism works. 
+
+<P>
+<TT>ph.x</TT> may take advantage of MPI parallelization on images, plane waves (PW) 
+and on <B>k</B>-points (``pools''). Currently all other MPI and explicit 
+OpenMP parallelizations have very limited to nonexistent implementation.
+<TT>phcg.x</TT> implements only PW parallelization.
+All other codes may be launched in parallel, but will execute 
+on a single processor.
+
+<P>
+In  ``image'' parallelization, processors can be divided into different 
+``images", corresponding to one (or more than one) ``irrep'' or <B>q</B>
+vectors. Images are loosely coupled: processors communicate
+between different images only once in a while, so image parallelization
+is suitable for cheap communication hardware (e.g. Gigabit Ethernet).
+Image parallelization is activated by specifying the option 
+<TT>-nimage N</TT> to <TT>ph.x</TT>. Inside an image, PW and <B>k</B>-point 
+parallelization can be performed: for instance,
+<PRE>
+   mpirun -np 64 ph.x -ni 8 -nk 2 ...
+</PRE>
+will run 8 images on 8 processors each, subdivided into 2 pools 
+of 4 processors for <B>k</B>-point parallelization. In order 
+to run the <TT>ph.x</TT> code with these flags the <TT>pw.x</TT> run has to be run with:
+<PRE>
+   mpirun -np 8 pw.x -nk 2 ...
+</PRE>
+without any <TT>-nimage</TT> flag. 
+After the phonon calculation with images the dynmical matrices of 
+<B>q</B>-vectors calculated in different images are not present in the
+working directory. To obtain them you need to run 
+<TT>ph.x</TT> again with:
+<PRE>
+   mpirun -np 8 ph.x -nk 2 ...
+</PRE>
+and the <TT>recover=.true.</TT> flag. This scheme is quite automatic and
+does not require any additional work by the user, but it wastes some 
+CPU time because all images stops when the image that requires the 
+largest amount of time finishes the calculation. Load balancing 
+between images is still at
+an experimental stage. You can look into the routine <TT>image_q_irr</TT> 
+inside <TT>PHonon/PH/check_initial_status</TT> to see the present
+algorithm for work distribution and modify it if you think that
+you can improve the load balancing.
+
+<P>
+A different paradigm is the usage of the GRID concept, instead of MPI,
+to achieve parallelization over irreps and  <B>q</B> vectors.
+Complete phonon dispersion calculation can be quite long and
+expensive, but it can be split into a number of semi-independent
+calculations, using options <TT>start_q</TT>, <TT>last_q</TT>,
+<TT>start_irr</TT>, <TT>last_irr</TT>. An example on how to
+distribute the calculations and collect the results can be found
+in <TT>examples/GRID_example</TT>. Reference:
+<BR><I>Calculation of Phonon Dispersions on the GRID using Quantum
+     ESPRESSO</I>,
+     R. di Meo, A. Dal Corso, P. Giannozzi, and S. Cozzini, in
+     <I>Chemistry and Material Science Applications on Grid Infrastructures</I>,
+     editors: S. Cozzini, A. Laganà, ICTP Lecture Notes Series,
+     Vol. 24, pp.165-183 (2009).
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A
+ HREF="node18.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="user_guide.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node16.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html90"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node18.html">6 Troubleshooting</A>
+<B> Up:</B> <A
+ HREF="user_guide.html">User's Guide for the PHonon</A>
+<B> Previous:</B> <A
+ HREF="node16.html">4.9 Calculation of phonon-renormalization of</A>
+ &nbsp; <B>  <A ID="tex2html91"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>4.5 Calculation of electron-phonon interaction coefficients with the tetrahedron method</TITLE>
+<META NAME="description" CONTENT="4.5 Calculation of electron-phonon interaction coefficients with the tetrahedron method">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node13.html">
+<LINK REL="previous" HREF="node11.html">
+<LINK REL="next" HREF="node13.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node13.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node11.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html80"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node13.html">4.6 Phonons for two-dimensional crystals</A>
+<B> Up:</B> <A
+ HREF="node7.html">4 Using PHonon</A>
+<B> Previous:</B> <A
+ HREF="node11.html">4.4 DFPT with the tetrahedron</A>
+ &nbsp; <B>  <A ID="tex2html81"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A ID="SECTION00055000000000000000">
+4.5 Calculation of electron-phonon interaction coefficients with the tetrahedron method</A>
+</H2>
+
+<P>
+When you perform a calculation of electron-phonon interaction coefficients 
+with the tetrahedron method,
+you have to use an offset <I>q</I>-point grid in order to avoid a singularity 
+at <I>q</I> = <I>Γ</I>; you can perform this calculation as follows:
+
+<P>
+
+<OL>
+<LI>Run <TT>pw.x</TT> with <code>occupation = "tetrahedra_opt"</code> and <code>K_POINT automatic</code>.
+</LI>
+<LI>Run <TT>ph.x</TT> with <code>lshift_q = .true.</code> and <code>electron_phonon = ""</code> (or unset it)
+    to generate the dynamical matrix and
+    the deformation potential (in <code>_ph*/{prefix}_q*/</code>) of each <I>q</I>.
+</LI>
+<LI>Run <TT>ph.x</TT> with <code>electron_phonon = "lambda_tetra"</code>.
+    You should use a denser <I>k</I> grid by setting <code>nk1</code>, <code>nk2</code>, and <code>nk3</code>.
+    Then <code>lambda*.dat</code> are generated; they contain <!-- MATH
+ $\lambda_{q \nu}$
+ -->
+<I>λ</I><SUB>q<I>ν</I></SUB>.
+</LI>
+<LI>Run <code>alpha2f.x</code> with an input file as follows:
+<PRE>
+&amp;INPUTPH
+! The same as that for the electron-phonon calculation with ph.x
+ :
+/
+&amp;INPUTA2F
+  nfreq = Number of frequency-points for a2F(omega), 
+/
+</PRE>
+Then <I>λ</I>, and <!-- MATH
+ $\omega_{\ln}$
+ -->
+<I>ω</I><SUB>ln</SUB> are computed and they are printed to the standard output.
+<!-- MATH
+ $\alpha^2F(\omega)$
+ -->
+<I>α</I><SUP>2</SUP><I>F</I>(<I>ω</I>) and (partial) phonon-DOS are also computed;
+they are printed to a file <I>prefix</I><code>.a2F.dat</code>.
+</LI>
+</OL>
+
+<P>
+There is an example in <code>PHonon/example/tetra_example/</code>.
+
+<P>
+<BR><HR>
+
+</BODY>
+</HTML>

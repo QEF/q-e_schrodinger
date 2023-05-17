@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="input_xx.xsl"?>
+<!-- FILE AUTOMATICALLY CREATED: DO NOT EDIT, CHANGES WILL BE LOST -->
+    
+<input_description distribution="Quantum ESPRESSO" package="CP" program="cppp.x" >
+   <toc>
+   </toc>
+   <intro>
+=============================================================================
+                            CP Post-Processing code (cppp.x)
+=============================================================================
+
+The cppp.x code is an utility that can be used to extract data from the CP
+restart and CP trajectory files.
+
+INPUT:
+=====
+
+the program read the input parameters from the standard input or from
+any other file specified through the usual &quot;-input&quot; command line flag.
+The input parameters, in the input file, should be specified in the inputpp
+namelist follow:
+
+&amp;INPUTPP
+  ...
+  cppp_input_parameter
+  ...
+/
+   </intro>
+   <namelist name="INPUTPP" >
+      <var name="prefix" type="CHARACTER" >
+         <default> &apos;cp&apos;
+         </default>
+         <info>
+basename prepended to cp.x output filenames: cp.evp, cp.pos ....
+         </info>
+      </var>
+      <var name="fileout" type="CHARACTER" >
+         <default> &apos;out&apos;
+         </default>
+         <info>
+basename of the cppp.x output files
+         </info>
+      </var>
+      <var name="output" type="CHARACTER" >
+         <default> &apos;xsf&apos;
+         </default>
+         <info>
+a string describing the output format to be performed,
+allowed values: &apos;xsf&apos;, &apos;xyz&apos;
+
+    xsf     xcrysden format
+    xyz     XMOL format
+         </info>
+      </var>
+      <var name="outdir" type="CHARACTER" >
+         <default> &apos;./&apos;
+         </default>
+         <info>
+directory containing the CP trajectory files (.evp .pos .cel ...)
+and restart files ( .save ) to be processed
+         </info>
+      </var>
+      <var name="lcharge" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+OBSOLETE - no longer implemented. Use &quot;pp.x&quot; instead.
+         </info>
+      </var>
+      <var name="lforces" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+This logical flag control the processing of forces.
+
+    .TRUE.  extract forces from trajectory files and write
+            them to xcrysden file
+
+    .FALSE. do not process forces
+         </info>
+      </var>
+      <var name="ldynamics" type="LOGICAL" >
+         <default> .true.
+         </default>
+         <info>
+This logical flag control the processing of atoms trajectory.
+
+    .TRUE.  process CP trajectory files and generate a trajectory
+            file for xcrysden (.axsf)
+
+    .FALSE. do not process trajectory
+         </info>
+      </var>
+      <var name="lpdb" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+This logical flag control the generation of a pdb file.
+
+    .TRUE.  generate a pdb file containing positions and cell
+            of the simulated system
+
+    .FALSE. do not generate pdb file
+         </info>
+      </var>
+      <var name="lrotation" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+This logical flag control the rotation of the cell
+
+    .TRUE.  rotate the system cell in space in order to have
+            the a lattice parameter laying on the x axis,
+            the b lattice parameter laying on the xy plane
+
+    .FALSE. do not rotate cell
+         </info>
+      </var>
+      <vargroup type="INTEGER" >
+         <var name="np1" >
+         </var>
+         <var name="np2" >
+         </var>
+         <var name="np3" >
+         </var>
+         <default> 1
+         </default>
+         <info>
+Number of replicas of atomic positions along cell parameters.
+CURRENTLY DISABLED
+
+If np1, np2, np3 are 1 or not specified, cppp.x does not
+replicate atomic positions in space.
+
+If np1, np2, np3 are &gt; 1 cppp.x replicates the atomic
+positions used in the simulation np1 times along &quot;a&quot;,
+np2 times along &quot;b&quot;, np3 times along &quot;c&quot;.
+         </info>
+      </vargroup>
+      <var name="nframes" type="INTEGER" >
+         <default> 1
+         </default>
+         <info>
+number of MD step to be read to build the trajectory
+CURRENTLY MUST BE &gt; 1
+         </info>
+      </var>
+      <var name="ndr" type="INTEGER" >
+         <default> 51
+         </default>
+         <info>
+CP restart file number to post process
+         </info>
+      </var>
+      <dimension name="atomic_number" start="1" end="ntyp" type="INTEGER" >
+         <default> 1
+         </default>
+         <info>
+Specify the atomic number of the species in CP trajectory and
+restart file.
+
+atomic_number(1)  specify the atomic number of the first specie
+atomic_number(2)  specify the atomic number of the second specie
+....
+         </info>
+      </dimension>
+   </namelist>
+</input_description>

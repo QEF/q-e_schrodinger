@@ -1,0 +1,436 @@
+!
+! Copyright (C) 2002-2018 Quantum ESPRESSO group
+! This file is distributed under the terms of the
+! GNU General Public License. See the file `License'
+! in the root directory of the present distribution,
+! or http://www.gnu.org/copyleft/gpl.txt .
+!
+! Auxiliary functions
+!
+#include<device_macros.h>
+!
+!=======================================
+!
+{% set t='complex' %}
+{%- for p in precision %}
+{%- for d in range(1,dimensions+1) %}
+subroutine {{p.name}}_dev_conjg_{{t[0]|lower}}{{d}}d(array_inout, &
+                                   {% for dd in range(d) %} 
+                                   {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, &
+                                   {%- endif %}{% endfor %} )
+    implicit none
+    !
+    integer, parameter :: PRCSN = {{p.val}}
+    {{t}}(PRCSN), intent(inout) :: array_inout({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "range%s(2)"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "lbound%s"  |format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+#if defined(__CUDA)
+    attributes(device) :: array_inout
+#endif
+    !
+{%- for dd in range(d) %}
+    integer :: i{{dd+1}}, d{{dd+1}}s, d{{dd+1}}e
+    integer :: lbound{{dd+1}}_, range{{dd+1}}_(2)
+{%- endfor %}
+    !
+{%- for dd in range(d) %}
+    lbound{{dd+1}}_=1
+    if (present(lbound{{dd+1}})) lbound{{dd+1}}_=lbound{{dd+1}} 
+    range{{dd+1}}_=(/1,size(array_inout, {{dd+1}})/)
+    if (present(range{{dd+1}})) range{{dd+1}}_=range{{dd+1}} 
+    !
+    d{{dd+1}}s = range{{dd+1}}_(1) -lbound{{dd+1}}_ +1
+    d{{dd+1}}e = range{{dd+1}}_(2) -lbound{{dd+1}}_ +1
+    !
+{%- endfor %}
+    !
+    !$cuf kernel do({{d}})
+{%- for dd in range(d,0,-1) %}
+    do i{{dd}} = d{{dd}}s, d{{dd}}e
+{%- endfor %}
+        array_inout( {%- for dd in range(d) %}i{{dd+1}}{% if not loop.last %}, {%- endif %} {%- endfor %} ) = &
+            conjg (  array_inout ( {%- for dd in range(d) %}i{{dd+1}}{% if not loop.last %}, {%- endif %} {%- endfor %} ) )
+{%- for dd in range(d) %}
+    enddo
+{%- endfor %}
+    !
+end subroutine {{p.name}}_dev_conjg_{{t[0]|lower}}{{d}}d
+!
+{%- endfor %}
+{%- endfor %}
+!
+!=======================================
+!
+#if defined(__HAVE_DEVICE)
+!
+{% set t='complex' %}
+{%- for p in precision %}
+{%- for d in range(1,dimensions+1) %}
+subroutine {{p.name}}_dev_conjg_h_{{t[0]|lower}}{{d}}d(array_inout, &
+                                   {% for dd in range(d) %} 
+                                   {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, &
+                                   {%- endif %}{% endfor %} )
+    implicit none
+    !
+    integer, parameter :: PRCSN = {{p.val}}
+    {{t}}(PRCSN), intent(inout) :: array_inout({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "range%s(2)"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "lbound%s"  |format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+    !
+{%- for dd in range(d) %}
+    integer :: i{{dd+1}}, d{{dd+1}}s, d{{dd+1}}e
+    integer :: lbound{{dd+1}}_, range{{dd+1}}_(2)
+{%- endfor %}
+    !
+{%- for dd in range(d) %}
+    lbound{{dd+1}}_=1
+    if (present(lbound{{dd+1}})) lbound{{dd+1}}_=lbound{{dd+1}} 
+    range{{dd+1}}_=(/1,size(array_inout, {{dd+1}})/)
+    if (present(range{{dd+1}})) range{{dd+1}}_=range{{dd+1}} 
+    !
+    d{{dd+1}}s = range{{dd+1}}_(1) -lbound{{dd+1}}_ +1
+    d{{dd+1}}e = range{{dd+1}}_(2) -lbound{{dd+1}}_ +1
+    !
+{%- endfor %}
+    !
+{%- for dd in range(d,0,-1) %}
+    do i{{dd}} = d{{dd}}s, d{{dd}}e
+{%- endfor %}
+        array_inout( {%- for dd in range(d) %}i{{dd+1}}{% if not loop.last %}, {%- endif %} {%- endfor %} ) = &
+            conjg (  array_inout ( {%- for dd in range(d) %}i{{dd+1}}{% if not loop.last %}, {%- endif %} {%- endfor %} ) )
+{%- for dd in range(d) %}
+    enddo
+{%- endfor %}
+    !
+end subroutine {{p.name}}_dev_conjg_h_{{t[0]|lower}}{{d}}d
+!
+{%- endfor %}
+{%- endfor %}
+!
+#endif
+
+subroutine dxlib_errore( calling_routine, message, ierr )
+    implicit none
+    character(len=*), intent(in) :: calling_routine, message
+    ! the name of the calling calling_routine
+    ! the output message
+    integer,          intent(in) :: ierr
+    !
+    print *, trim(calling_routine), trim(message), ierr
+    !
+end subroutine dxlib_errore
+!
+!======================
+!
+{% set d=1 %}
+{%- for p in precision %}
+{%- for t in types %}
+subroutine {{p.name}}_dev_vec_upd_remap_{{t[0]|lower}}{{d}}d(ndim, vout, v1, map1, scal)
+    implicit none
+    !   
+    integer, parameter :: PRCSN = {{p.val}}
+    integer,      intent(in)    :: ndim
+    {{t}}(PRCSN), intent(inout) :: vout({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %}) 
+    {{t}}(PRCSN), intent(in)    :: v1({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %}) 
+    integer,      intent(in)    :: map1({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %}) 
+    {{t}}(PRCSN), optional, intent(in)    :: scal
+#if defined(__CUDA)
+    attributes(device) :: vout, v1, map1
+#endif
+    integer :: i
+    !   
+    if (present(scal)) then
+      !$cuf kernel do(1)
+      do i = 1, ndim
+          vout(i) = v1(map1(i))*scal
+      enddo
+    else
+      !$cuf kernel do(1)
+      do i = 1, ndim
+          vout(i) = v1(map1(i))
+      enddo
+    endif
+end subroutine {{p.name}}_dev_vec_upd_remap_{{t[0]|lower}}{{d}}d
+!
+{%- endfor %}
+{%- endfor %}
+!
+!======================
+!
+{% set d=1 %}
+{%- for p in precision %}
+{%- for t in types %}
+subroutine {{p.name}}_dev_vec_upd_v_remap_v_{{t[0]|lower}}{{d}}d(ndim, vout, v1, map1, v2, scal)
+    implicit none
+    !   
+    integer, parameter :: PRCSN = {{p.val}}
+    integer,      intent(in)    :: ndim
+    {{t}}(PRCSN), intent(inout) :: vout({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %}) 
+    {{t}}(PRCSN), intent(in)    :: v1({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %}) 
+    integer,      intent(in)    :: map1({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %}) 
+    {{t}}(PRCSN), intent(in)    :: v2({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %}) 
+    {{t}}(PRCSN), optional, intent(in)    :: scal
+#if defined(__CUDA)
+    attributes(device) :: vout, v1, v2, map1
+#endif
+    integer :: i
+    !   
+    if (present(scal)) then
+      !$cuf kernel do(1)
+      do i = 1, ndim
+          vout(i) = v1(map1(i))*v2(i)*scal
+      enddo
+    else
+      !$cuf kernel do(1)
+      do i = 1, ndim
+          vout(i) = v1(map1(i))*v2(i)
+      enddo
+    endif
+end subroutine {{p.name}}_dev_vec_upd_v_remap_v_{{t[0]|lower}}{{d}}d
+!
+{%- endfor %}
+{%- endfor %}
+!
+!======================
+!
+{% set d=1 %}
+{% set t= "complex" %}
+{%- for p in precision %}
+subroutine {{p.name}}_dev_vec_upd_v_remap_v_x_{{t[0]|lower}}{{d}}d(ndim, vout, v1,op1, map1, v2,op2, scal)
+    implicit none
+    !   
+    integer, parameter :: PRCSN = {{p.val}}
+    integer,      intent(in)    :: ndim
+    {{t}}(PRCSN), intent(inout) :: vout({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %}) 
+    {{t}}(PRCSN), intent(in)    :: v1({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %}) 
+    integer,      intent(in)    :: map1({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %}) 
+    {{t}}(PRCSN), intent(in)    :: v2({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %}) 
+    character(1), intent(in)    :: op1, op2
+    {{t}}(PRCSN), optional, intent(in)    :: scal
+#if defined(__CUDA)
+    attributes(device) :: vout, v1, v2, map1
+#endif
+    integer :: i
+    !   
+    if (op1=="N".and.op2=="N") then
+       if (present(scal)) then
+         !$cuf kernel do(1)
+         do i = 1, ndim
+             vout(i) = v1(map1(i))*v2(i)*scal
+         enddo
+       else
+         !$cuf kernel do(1)
+         do i = 1, ndim
+             vout(i) = v1(map1(i))*v2(i)
+         enddo
+       endif
+    elseif (op1=="C".and.op2=="N") then
+       if (present(scal)) then
+         !$cuf kernel do(1)
+         do i = 1, ndim
+             vout(i) = conjg(v1(map1(i)))*v2(i)*scal
+         enddo
+       else
+         !$cuf kernel do(1)
+         do i = 1, ndim
+             vout(i) = conjg(v1(map1(i)))*v2(i)
+         enddo
+       endif
+    elseif (op1=="N".and.op2=="C") then
+       if (present(scal)) then
+         !$cuf kernel do(1)
+         do i = 1, ndim
+             vout(i) = v1(map1(i))*conjg(v2(i))*scal
+         enddo
+       else
+         !$cuf kernel do(1)
+         do i = 1, ndim
+             vout(i) = v1(map1(i))*conjg(v2(i))
+         enddo
+       endif
+    elseif (op1=="N".and.op2=="C") then
+       if (present(scal)) then
+         !$cuf kernel do(1)
+         do i = 1, ndim
+             vout(i) = conjg(v1(map1(i)))*conjg(v2(i))*scal
+         enddo
+       else
+         !$cuf kernel do(1)
+         do i = 1, ndim
+             vout(i) = conjg(v1(map1(i)))*conjg(v2(i))
+         enddo
+       endif
+    else
+      call dxlib_errore("{{p.name}}_dev_vec_upd_v_remap_v_x_{{t[0]|lower}}{{d}}d","invalid op1/op2",10)
+    endif
+    !
+end subroutine {{p.name}}_dev_vec_upd_v_remap_v_x_{{t[0]|lower}}{{d}}d
+!
+{%- endfor %}
+!
+!======================
+!
+{%- macro decorate(label) -%}
+   {%- if label == "begin" -%}
+#ifndef __CUDA
+         !$omp parallel do default(shared), private(i,j), collapse(2)
+#else
+         !$cuf kernel do(2)
+#endif
+   {%- endif%}
+   {%- if label == "end" -%}
+   {%- endif%}
+{%- endmacro -%}
+
+{% set d=2 %}
+{%- for p in precision %}
+{%- for t in types %}
+subroutine {{p.name}}_dev_mat_upd_dMd_{{t[0]|lower}}{{d}}d(ndim1, ndim2, mat, v1,op1, v2,op2, scal)
+    !
+    ! performs: mat(i,j) = scal * op1(v1(i)) * mat(i,j) * op2(v2(j))
+    ! op = 'N', 'R', 'C',       'RC'
+    !       x   1/x  conjg(x)   conjg(1/x)
+    implicit none
+    !   
+    integer, parameter :: PRCSN = {{p.val}}
+    integer,      intent(in)    :: ndim1,ndim2
+    {{t}}(PRCSN), intent(inout) :: mat(:,:)
+    {{t}}(PRCSN), intent(in)    :: v1(:)
+    {{t}}(PRCSN), intent(in)    :: v2(:)
+    character(1), intent(in)    :: op1, op2
+    {{t}}(PRCSN), optional, intent(in)  :: scal
+#if defined(__CUDA)
+    attributes(device) :: mat, v1, v2
+#endif
+    integer :: i,j
+    !   
+    if (op1=="N".and.op2=="N") then
+       if (present(scal)) then
+{{decorate('begin')}}
+         do j = 1, ndim2
+         do i = 1, ndim1
+             mat(i,j) = scal * v1(i) * mat(i,j) * v2(j)
+         enddo
+         enddo
+{{decorate('end')}}
+       else
+{{decorate('begin')}}
+         do j = 1, ndim2
+         do i = 1, ndim1
+             mat(i,j) = v1(i) * mat(i,j) * v2(j)
+         enddo
+         enddo
+{{decorate('end')}}
+       endif
+    elseif (op1=="R".and.op2=="R") then
+       if (present(scal)) then
+{{decorate('begin')}}
+         do j = 1, ndim2
+         do i = 1, ndim1
+             mat(i,j) = scal / v1(i) * mat(i,j) / v2(j)
+         enddo
+         enddo
+{{decorate('end')}}
+       else
+{{decorate('begin')}}
+         do j = 1, ndim2
+         do i = 1, ndim1
+             mat(i,j) = mat(i,j) /v1(i) / v2(j)
+         enddo
+         enddo
+{{decorate('end')}}
+       endif
+{%- if t == "complex" %}
+    elseif (op1=="C".and.op2=="C") then
+       if (present(scal)) then
+{{decorate('begin')}}
+         do j = 1, ndim2
+         do i = 1, ndim1
+             mat(i,j) = scal * conjg(v1(i)) * mat(i,j) * conjg(v2(j))
+         enddo
+         enddo
+{{decorate('end')}}
+       else
+{{decorate('begin')}}
+         do j = 1, ndim2
+         do i = 1, ndim1
+             mat(i,j) = conjg(v1(i)) * mat(i,j) * conjg(v2(j))
+         enddo
+         enddo
+{{decorate('end')}}
+       endif
+{%- endif %}
+    else
+      call dxlib_errore("{{p.name}}_mat_upd_dMd_{{t[0]|lower}}{{d}}d","invalid op1/op2",10)
+    endif
+    !
+end subroutine {{p.name}}_dev_mat_upd_dMd_{{t[0]|lower}}{{d}}d
+!
+{%- endfor %}
+{%- endfor %}
+!
+!======================
+!
+{%- for t in types %}
+{%- for p in precision %}
+{%- for d in range(1,dimensions+1) %}
+subroutine {{p.name}}_dev_mem_addscal_{{t[0]|lower}}{{d}}d(array_out, array_in, scal, &
+                                            {% for dd in range(d) -%}
+                                            {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, &
+                                            {% endif %}{% endfor %} )
+    use iso_fortran_env
+    implicit none
+    !
+    {{t}}({{p.val}}), intent(inout) :: array_out({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+    {{t}}({{p.val}}), intent(in)    :: array_in({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+    {{t}}({{p.val}}), optional, intent(in) :: scal
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "range%s(2)"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+    integer, optional, intent(in) :: {% for dd in range(d) %} {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+#if defined(__CUDA)
+    attributes(device) :: array_out, array_in
+#endif
+    !
+{%-  if 'complex' in t|lower %}
+    {{t}}({{p.val}}) :: scal_ = (1.0, 0.0)
+{%- else %}
+    {{t}}({{p.val}}) :: scal_ = 1.0
+{%- endif -%}
+{%- for dd in range(d) %}
+    integer :: i{{dd+1}}, d{{dd+1}}s, d{{dd+1}}e
+    integer :: lbound{{dd+1}}_, range{{dd+1}}_(2)
+{%- endfor %}
+    !
+{%- for dd in range(d) %}
+    lbound{{dd+1}}_=1
+    if (present(lbound{{dd+1}})) lbound{{dd+1}}_=lbound{{dd+1}} 
+    range{{dd+1}}_=(/1,size(array_out, {{dd+1}})/)
+    if (present(range{{dd+1}})) range{{dd+1}}_=range{{dd+1}} 
+    !
+    ! the lower bound of the assumed shape array passed to the subroutine is 1
+    ! lbound and range instead refer to the indexing in the parent caller.
+    d{{dd+1}}s = range{{dd+1}}_(1) -lbound{{dd+1}}_ +1
+    d{{dd+1}}e = range{{dd+1}}_(2) -lbound{{dd+1}}_ +1
+    !
+{%- endfor %}
+    !
+    if (present(scal)) scal_=scal
+    !
+    !$cuf kernel do({{d}})
+{%- for dd in range(d,0,-1) %}
+    do i{{dd}} = d{{dd}}s, d{{dd}}e
+{%- endfor %}
+        array_out( {%- for dd in range(d) %}i{{dd+1}}{% if not loop.last %}, {%- endif %} {%- endfor %} ) = &
+            array_out( {%- for dd in range(d) %}i{{dd+1}}{% if not loop.last %}, {%- endif %} {%- endfor %} ) + &
+            scal_*array_in( {%- for dd in range(d) %}i{{dd+1}}{% if not loop.last %}, {%- endif %} {%- endfor %} )
+{%- for dd in range(d) %}
+    enddo
+{%- endfor %}
+    !
+end subroutine {{p.name}}_dev_mem_addscal_{{t[0]|lower}}{{d}}d
+!
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+!
+!======================
+!

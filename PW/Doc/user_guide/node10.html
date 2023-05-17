@@ -1,0 +1,276 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>3.3 Electronic structure calculations</TITLE>
+<META NAME="description" CONTENT="3.3 Electronic structure calculations">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node11.html">
+<LINK REL="previous" HREF="node9.html">
+<LINK REL="next" HREF="node11.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node11.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node9.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html146"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node11.html">3.4 Optimization and dynamics</A>
+<B> Up:</B> <A
+ HREF="node7.html">3 Using PWscf</A>
+<B> Previous:</B> <A
+ HREF="node9.html">3.2 Data files</A>
+ &nbsp; <B>  <A ID="tex2html147"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A ID="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><UL>
+<LI><A ID="tex2html148"
+  HREF="node10.html#SECTION00043010000000000000">3.3.0.1 Single-point (fixed-ion) SCF calculation</A>
+<LI><A ID="tex2html149"
+  HREF="node10.html#SECTION00043020000000000000">3.3.0.2 Band structure calculation</A>
+<LI><A ID="tex2html150"
+  HREF="node10.html#SECTION00043030000000000000">3.3.0.3 Noncollinear magnetization, spin-orbit interactions</A>
+<LI><A ID="tex2html151"
+  HREF="node10.html#SECTION00043040000000000000">3.3.0.4 DFT+U</A>
+<LI><A ID="tex2html152"
+  HREF="node10.html#SECTION00043050000000000000">3.3.0.5 Dispersion Interactions (DFT-D)</A>
+<LI><A ID="tex2html153"
+  HREF="node10.html#SECTION00043060000000000000">3.3.0.6 Hartree-Fock and Hybrid functionals</A>
+<LI><A ID="tex2html154"
+  HREF="node10.html#SECTION00043070000000000000">3.3.0.7 Dispersion interaction with non-local functional (vdW-DF)</A>
+<LI><A ID="tex2html155"
+  HREF="node10.html#SECTION00043080000000000000">3.3.0.8 Polarization via Berry Phase</A>
+<LI><A ID="tex2html156"
+  HREF="node10.html#SECTION00043090000000000000">3.3.0.9 Finite electric fields</A>
+<LI><A ID="tex2html157"
+  HREF="node10.html#SECTION000430100000000000000">3.3.0.10 Orbital magnetization</A>
+</UL></UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H2><A ID="SECTION00043000000000000000">
+3.3 Electronic structure calculations</A>
+</H2>
+
+<H4><A ID="SECTION00043010000000000000">
+3.3.0.1 Single-point (fixed-ion) SCF calculation</A>
+</H4> 
+Set <TT>calculation='scf'</TT> (this is actually the default).
+Namelists &amp;IONS and &amp;CELL will be ignored. For LSDA spin-polarized 
+calculations (that is: with a fixed quantization axis for magnetization),
+set <TT>nspin=2</TT>. Note that the number of k-points will be internally
+doubled (one set of k-points for spin-up, one set for spin-down).
+See example 1 (that is: <TT>PW/examples/example01</TT>).
+
+<P>
+
+<H4><A ID="SECTION00043020000000000000">
+3.3.0.2 Band structure calculation</A>
+</H4>
+First perform a SCF calculation as above;
+then do a non-SCF calculation (at fixed potential, computed in the
+previous step) with the desired k-point grid and  number <TT>nbnd</TT>
+of bands. 
+Use <TT>calculation='bands'</TT> if you are interested in calculating
+only the Kohn-Sham states for the given set of k-points
+(e.g. along symmetry lines: see for instance
+<TT>http://www.cryst.ehu.es/cryst/get_kvec.html</TT>). Specify instead
+<TT>calculation='nscf'</TT> if you are interested in further processing 
+of the results of non-SCF calculations (for instance, in DOS calculations).
+In the latter case, you should specify a uniform grid of points.
+For DOS calculations you should choose <TT>occupations='tetrahedra'</TT>, 
+together with an automatically generated uniform k-point grid 
+(card K_POINTS with option ``automatic'').
+Specify <TT>nosym=.true.</TT> to avoid generation of additional k-points in
+low-symmetry cases. Variables <TT>prefix</TT> and <TT>outdir</TT>, which
+determine
+the names of input or output files, should be the same in the two runs.
+See examples 1, 6, 7.
+
+<P>
+NOTA BENE: in non-scf calculations, the atomic positions are read by
+default from the data file of the scf step, not from input.
+
+<P>
+
+<H4><A ID="SECTION00043030000000000000">
+3.3.0.3 Noncollinear magnetization, spin-orbit interactions</A>
+</H4>
+
+<P>
+The following input variables are relevant for noncollinear and
+spin-orbit calculations: 
+<BLOCKQUOTE>
+<TT>noncolin</TT>
+<BR>      <TT>lspinorb</TT>
+<BR>      <TT>starting_magnetization</TT> (one for each type of atoms)
+
+</BLOCKQUOTE>
+To make a spin-orbit calculation both <TT>noncolin</TT> and
+<TT>lspinorb</TT> must be true. Furthermore you must use fully
+relativistic pseudopotentials at least for one atom. If all
+pseudopotentials are scalar-relativistic, the calculation is
+noncollinear but there is no spin-orbit coupling.
+
+<P>
+If <TT>starting_magnetization</TT> is set to zero (or not given) 
+the code makes a spin-orbit calculation without spin magnetization 
+(it assumes that time reversal symmetry holds and it does not calculate 
+the magnetization). The states are still two-component spinors but the
+total magnetization is zero. 
+
+<P>
+If <TT>starting_magnetization</TT> is different from zero, the code makes a 
+noncollinear spin polarized calculation with spin-orbit interaction. The 
+final spin magnetization might be zero or different from zero depending 
+on the system. Note that the code will look only for symmetries that leave
+the starting magnetization unchanged.
+
+<P>
+See example 6 for noncollinear magnetism, example 7 (and references
+quoted therein) for spin-orbit interactions.
+
+<P>
+
+<H4><A ID="SECTION00043040000000000000">
+3.3.0.4 DFT+U</A>
+</H4>
+DFT+U (formerly known as LDA+U) calculation can be
+performed within a simplified rotationally invariant form 
+of the <I>U</I> Hubbard correction. Note that for all atoms having 
+a <I>U</I> value there should be an item in function
+<TT>Modules/set_hubbard_l.f90</TT> and one in 
+subroutine <TT>PW/src/tabd.f90</TT>, defining respectively
+the angular momentum and the occupancy of the orbitals with
+the Hubbard correction. If your Hubbard-corrected atoms are not
+there, you need to edit these files and to recompile.
+
+<P>
+See example 8 and its README.
+
+<P>
+
+<H4><A ID="SECTION00043050000000000000">
+3.3.0.5 Dispersion Interactions (DFT-D)</A>
+</H4>
+For DFT-D (DFT + semiempirical dispersion interactions), see the
+description of input variable <TT>vdw_corr</TT> and related
+input variables; sample input files can be found in
+<TT>test-suite/pw_vdw/vdw-d*.in</TT>. For DFT-D2, see also the
+comments in source file <TT>Modules/mm_dispersion.f90</TT>.
+For DFT-D3, see the README in the <TT>dft-d3/</TT> directory.
+
+<P>
+
+<H4><A ID="SECTION00043060000000000000">
+3.3.0.6 Hartree-Fock and Hybrid functionals</A>
+</H4>
+
+<P>
+Hybrid functionals do not require anything special to be done,
+but note that: 1) they are much slower than plain GGA calculations,
+2) non-scf and band calculations are not presently implemented, and
+3) there are no pseudopotentials generated for hybrid functionals.
+See <TT>EXX_example/</TT> and its README file, and tests
+<TT>pw_b3lyp</TT>, <TT>pw_pbe</TT>, <TT>pw_hse</TT>.
+
+<P>
+
+<H4><A ID="SECTION00043070000000000000">
+3.3.0.7 Dispersion interaction with non-local functional (vdW-DF)</A>
+</H4>
+See example <TT>vdwDF_example</TT>, references quoted in file
+<TT>README</TT> therein, tests <TT>pw_vdW</TT>.
+
+<P>
+
+<H4><A ID="SECTION00043080000000000000">
+3.3.0.8 Polarization via Berry Phase</A>
+</H4>
+See example 4, its file README,  the documentation in the header of 
+<TT>PW/src/bp_c_phase.f90</TT>. 
+
+<P>
+
+<H4><A ID="SECTION00043090000000000000">
+3.3.0.9 Finite electric fields</A>
+</H4>
+There are two different implementations of macroscopic electric fields
+in <TT>pw.x</TT>: via an external sawtooth potential (input variable
+<TT>tefield=.true.</TT>) and via the modern theory of polarizability
+(<TT>lelfield=.true.</TT>).
+The former is useful for surfaces, especially in conjunction
+with dipolar corrections (<TT>dipfield=.true.</TT>):
+see the web page &ndash; courtesy Christoph Wolf &ndash;
+<TT>https://christoph-wolf.at/tag/dipfield</TT>, and 
+<TT>PP/examples/dipole_example</TT> for an example of application. 
+Electric fields via modern theory of polarization are documented in
+example 10. The exact meaning of the related variables, for both
+cases, is explained in the general input documentation.
+
+<P>
+
+<H4><A ID="SECTION000430100000000000000">
+3.3.0.10 Orbital magnetization</A>
+</H4>
+Modern theory of orbital magnetization [Phys. Rev. Lett. 95, 137205 (2005)]
+for insulators. The calculation is performed by setting 
+input variable <TT>lorbm=.true.</TT> in nscf run. If finite electric field 
+is present (<TT>lelfield=.true.</TT>) only Kubo terms are computed
+[see New J. Phys. 12, 053032 (2010) for details].
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A
+ HREF="node11.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node9.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html146"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node11.html">3.4 Optimization and dynamics</A>
+<B> Up:</B> <A
+ HREF="node7.html">3 Using PWscf</A>
+<B> Previous:</B> <A
+ HREF="node9.html">3.2 Data files</A>
+ &nbsp; <B>  <A ID="tex2html147"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

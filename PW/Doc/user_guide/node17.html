@@ -1,0 +1,77 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>4.3 File space requirements</TITLE>
+<META NAME="description" CONTENT="4.3 File space requirements">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node18.html">
+<LINK REL="previous" HREF="node16.html">
+<LINK REL="next" HREF="node18.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node18.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node14.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node16.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html191"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node18.html">4.4 Parallelization issues</A>
+<B> Up:</B> <A
+ HREF="node14.html">4 Performances</A>
+<B> Previous:</B> <A
+ HREF="node16.html">4.2 Memory requirements</A>
+ &nbsp; <B>  <A ID="tex2html192"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A ID="SECTION00053000000000000000">
+4.3 File space requirements</A>
+</H2>
+
+<P>
+A typical <TT>pw.x</TT> run will require an amount of temporary disk space in the
+order of O double precision complex numbers:
+<P><!-- MATH
+ \begin{displaymath}
+O = N_k M N + q N_{r1} N_{r2}N_{r3}
+\end{displaymath}
+ -->
+</P>
+<DIV ALIGN="CENTER">
+<I>O</I> = <I>N</I><SUB>k</SUB><I>MN</I> + <I>qN</I><SUB>r1</SUB><I>N</I><SUB>r2</SUB><I>N</I><SUB>r3</SUB>
+</DIV><P></P>
+where <!-- MATH
+ $q = 2\times$
+ -->
+<I>q</I> = 2× <TT>mixing_ndim</TT> (number of iterations used in 
+self-consistency, default value = 8) if <TT>disk_io</TT> is set to 'high'; q = 0 
+otherwise.
+
+<P>
+<BR><HR>
+
+</BODY>
+</HTML>

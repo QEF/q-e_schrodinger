@@ -1,0 +1,187 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>4.4 Parallelization issues</TITLE>
+<META NAME="description" CONTENT="4.4 Parallelization issues">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node19.html">
+<LINK REL="previous" HREF="node17.html">
+<LINK REL="next" HREF="node19.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node19.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node14.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node17.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html193"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node19.html">4.5 Understanding the time report</A>
+<B> Up:</B> <A
+ HREF="node14.html">4 Performances</A>
+<B> Previous:</B> <A
+ HREF="node17.html">4.3 File space requirements</A>
+ &nbsp; <B>  <A ID="tex2html194"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A ID="SECTION00054000000000000000"></A>
+<A ID="SubSec:badpara"></A>
+<BR>
+4.4 Parallelization issues
+</H2>
+
+<P>
+<TT>pw.x</TT> can run in principle on any number of processors.
+The effectiveness of parallelization is ultimately judged by the 
+''scaling'', i.e. how the time needed to perform a job scales
+ with the number of processors, and depends upon:
+
+<UL>
+<LI>the size and type of the system under study;
+</LI>
+<LI>the judicious choice of the various levels of parallelization 
+(detailed in Sec.<A HREF="#SubSec:badpara">4.4</A>);
+</LI>
+<LI>the availability of fast interprocess communications (or lack of it).
+</LI>
+</UL>
+Ideally one would like to have linear scaling, i.e. <!-- MATH
+ $T \sim T_0/N_p$
+ -->
+<I>T</I>∼<I>T</I><SUB>0</SUB>/<I>N</I><SUB>p</SUB> for 
+<I>N</I><SUB>p</SUB> processors, where <I>T</I><SUB>0</SUB> is the estimated time for serial execution.
+ In addition, one would like to have linear scaling of
+the RAM per processor: <!-- MATH
+ $O_N \sim O_0/N_p$
+ -->
+<I>O</I><SUB>N</SUB>∼<I>O</I><SUB>0</SUB>/<I>N</I><SUB>p</SUB>, so that large-memory systems
+fit into the RAM of each processor.
+
+<P>
+Parallelization on k-points:
+
+<UL>
+<LI>guarantees (almost) linear scaling if the number of k-points
+is a multiple of the number of pools;
+</LI>
+<LI>requires little communications (suitable for ethernet communications);
+</LI>
+<LI>reduces the required memory per processor by distributing wavefunctions
+(but not other quantities like the charge density). Does not hold if you set 
+  <TT>disk_io='high'</TT>.
+</LI>
+</UL>
+Parallelization on PWs:
+
+<UL>
+<LI>yields good to very good scaling, especially if the number of processors
+in a pool is a divisor of <I>N</I><SUB>3</SUB> and <I>N</I><SUB>r3</SUB> (the dimensions along the z-axis 
+of the FFT grids, <TT>nr3</TT> and <TT>nr3s</TT>, which coincide for NCPPs);
+</LI>
+<LI>requires heavy communications (suitable for Gigabit ethernet up to 
+4, 8 CPUs at most, specialized communication hardware needed for 8 or more
+processors );
+</LI>
+<LI>yields almost linear reduction of memory per processor with the number
+of processors in the pool.
+</LI>
+</UL>
+
+<P>
+A note on scaling: optimal serial performances are achieved when the data are
+as much as possible kept into the cache. As a side effect, PW
+parallelization may yield superlinear (better than linear) scaling,
+thanks to the increase in serial speed coming from the reduction of data size 
+(making it easier for the machine to keep data in the cache).
+
+<P>
+VERY IMPORTANT: For each system there is an optimal range of number of processors on which to 
+run the job.  A too large number of processors will yield performance 
+degradation. If the size of pools is especially delicate: <I>N</I><SUB>p</SUB> should not 
+exceed <I>N</I><SUB>3</SUB> and <I>N</I><SUB>r3</SUB>, and should ideally be no larger than
+<!-- MATH
+ $1/2\div1/4 N_3$
+ -->
+1/2÷1/4<I>N</I><SUB>3</SUB> and/or <I>N</I><SUB>r3</SUB>. In order to increase scalability,
+it is often convenient to 
+further subdivide a pool of processors into ''task groups''.
+When the number of processors exceeds the number of FFT planes, 
+data can be redistributed to "task groups" so that each group 
+can process several wavefunctions at the same time.
+
+<P>
+The optimal number of processors for "linear-algebra"
+parallelization, taking care of multiplication and diagonalization 
+of <I>M</I>×<I>M</I> matrices, should be determined by observing the
+performances of <TT>cdiagh/rdiagh</TT> (<TT>pw.x</TT>) or <TT>ortho</TT> (<TT>cp.x</TT>)
+for different numbers of processors in the linear-algebra group
+(must be a square integer).
+
+<P>
+Actual parallel performances will also depend on the available software 
+(MPI libraries) and on the available communication hardware. For
+PC clusters, OpenMPI (<TT>http://www.openmpi.org/</TT>) seems to yield better 
+performances than other implementations (info by Kostantin Kudin). 
+Note however that you need a decent communication hardware (at least 
+Gigabit ethernet) in order to have acceptable performances with 
+PW parallelization. Do not expect good scaling with cheap hardware: 
+PW calculations are by no means an "embarrassing parallel" problem.
+
+<P>
+Also note that multiprocessor motherboards for Intel Pentium CPUs typically 
+have just one memory bus for all processors. This dramatically
+slows down any code doing massive access to memory (as most codes 
+in the Q<SMALL>UANTUM </SMALL>ESPRESSO distribution do) that runs on processors of the same
+motherboard.
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A
+ HREF="node19.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node14.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node17.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html193"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node19.html">4.5 Understanding the time report</A>
+<B> Up:</B> <A
+ HREF="node14.html">4 Performances</A>
+<B> Previous:</B> <A
+ HREF="node17.html">4.3 File space requirements</A>
+ &nbsp; <B>  <A ID="tex2html194"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

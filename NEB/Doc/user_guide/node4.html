@@ -1,0 +1,99 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>3 Compilation</TITLE>
+<META NAME="description" CONTENT="3 Compilation">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node6.html">
+<LINK REL="previous" HREF="node3.html">
+<LINK REL="next" HREF="node5.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node5.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="user_guide.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node3.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html26"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node5.html">3.1 Running examples</A>
+<B> Up:</B> <A
+ HREF="user_guide.html">User's Guide for The Quantum</A>
+<B> Previous:</B> <A
+ HREF="node3.html">2 People and terms of</A>
+ &nbsp; <B>  <A ID="tex2html27"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H1><A ID="SECTION00040000000000000000">
+3 Compilation</A>
+</H1>
+
+<P>
+<TT>PWneb</TT> is a package of Q<SMALL>UANTUM </SMALL>ESPRESSO and requires package <TT>PWscf</TT> for
+compilation.
+For instruction on how to download and compile Q<SMALL>UANTUM </SMALL>ESPRESSO, please refer 
+to the general Users' Guide, available in file <TT>Doc/user_guide.pdf</TT>
+under the main Q<SMALL>UANTUM </SMALL>ESPRESSO directory, or in web site 
+<TT>http://www.quantum-espresso.org</TT>.
+
+<P>
+Once Q<SMALL>UANTUM </SMALL>ESPRESSO is correctly configured, <TT>PWneb</TT> can be automatically 
+downloaded, unpacked and compiled by
+just typing <TT>make neb</TT>, from the main Q<SMALL>UANTUM </SMALL>ESPRESSO directory.
+<TT>make neb</TT> will produce 
+the following codes in <TT>NEB/src</TT>:
+
+<UL>
+<LI><TT>neb.x</TT>: calculates reaction barriers and pathways using NEB.
+</LI>
+<LI><TT>path_interpolation.x</TT>: generates a reaction path (a set of points
+in the configuration space of the atomic system, called ``images''), by
+ interpolating the supplied path. The new path can have a 
+ different number of images than the old one and the initial and final 
+ images of the new path can differ from the original ones.
+ The utility <TT>path_interpolation.sh</TT> in the <TT>tools/</TT>
+ directory shows how to use the code.
+</LI>
+</UL>
+
+<P>
+Symlinks to executable programs will be placed in the
+<TT>bin/</TT> subdirectory of the main Q<SMALL>UANTUM </SMALL>ESPRESSO  directory.
+
+<P>
+<BR><HR>
+<!--Table of Child-Links-->
+<A ID="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A ID="tex2html28"
+  HREF="node5.html">3.1 Running examples</A>
+</UL>
+<!--End of Table of Child-Links-->
+<BR><HR>
+
+</BODY>
+</HTML>

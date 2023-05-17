@@ -1,0 +1,182 @@
+
+#include<device_macros.h>
+!
+interface dev_conjg
+    !
+{% set t='COMPLEX' %}
+{%- for p in precision %}
+{%- for d in range(1,dimensions+1) %}
+    subroutine {{p.name}}_dev_conjg_{{t[0]|lower}}{{d}}d(array_inout, &
+                                   {% for dd in range(d) %}
+                                   {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, &
+                                   {%- endif %}{% endfor %} )
+       implicit none
+       !
+       integer, parameter :: PRCSN = {{p.val}}
+       {{t}}(PRCSN), intent(inout) :: array_inout({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+       integer, optional, intent(in) :: {% for dd in range(d) %} {{ "range%s(2)"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+       integer, optional, intent(in) :: {% for dd in range(d) %} {{ "lbound%s"  |format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+#if defined(__CUDA)
+       attributes(device) :: array_inout
+#endif
+       !
+    end subroutine {{p.name}}_dev_conjg_{{t[0]|lower}}{{d}}d
+    !
+{%- endfor %}
+{%- endfor %}
+    !
+#if defined(__HAVE_DEVICE)
+    !
+{%- for p in precision %}
+{%- for d in range(1,dimensions+1) %}
+    subroutine {{p.name}}_dev_conjg_h_{{t[0]|lower}}{{d}}d(array_inout, &
+                                   {% for dd in range(d) %}
+                                   {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, &
+                                   {%- endif %}{% endfor %} )
+       implicit none
+       !
+       integer, parameter :: PRCSN = {{p.val}}
+       {{t}}(PRCSN), intent(inout) :: array_inout({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+       integer, optional, intent(in) :: {% for dd in range(d) %} {{ "range%s(2)"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+       integer, optional, intent(in) :: {% for dd in range(d) %} {{ "lbound%s"  |format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+       !
+    end subroutine {{p.name}}_dev_conjg_h_{{t[0]|lower}}{{d}}d
+    !
+{%- endfor %}
+{%- endfor %}
+    !
+#endif
+    !
+end interface dev_conjg
+
+interface dev_vec_upd_remap
+    !
+{% set d=1 %}
+{%- for p in precision %}
+{%- for t in types %}
+    subroutine {{p.name}}_dev_vec_upd_remap_v_{{t[0]|lower}}{{d}}d(ndim, vout, v1, map1, v2, scal)
+       implicit none
+       !   
+       integer, parameter :: PRCSN = {{p.val}}
+       integer,      intent(in)    :: ndim
+       {{t}}(PRCSN), intent(inout) :: vout({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %}) 
+       {{t}}(PRCSN), intent(in)    :: v1({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %}) 
+       integer,      intent(in)    :: map1({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %}) 
+       {{t}}(PRCSN), intent(in)    :: v2({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %}) 
+       {{t}}(PRCSN), optional, intent(in)    :: scal
+#if defined(__CUDA)
+       attributes(device) :: vout, v1, v2, map1
+#endif
+       !
+    end subroutine {{p.name}}_dev_vec_upd_remap_v_{{t[0]|lower}}{{d}}d
+    !
+{%- endfor %}
+{%- endfor %}
+    !
+end interface dev_vec_upd_remap
+
+interface dev_vec_upd_v_remap_v
+    !
+{% set d=1 %}
+{%- for p in precision %}
+{%- for t in types %}
+    subroutine {{p.name}}_dev_vec_upd_v_remap_v_{{t[0]|lower}}{{d}}d(ndim, vout, v1, map1, v2, scal)
+       implicit none
+       !   
+       integer, parameter :: PRCSN = {{p.val}}
+       integer,      intent(in)    :: ndim
+       {{t}}(PRCSN), intent(inout) :: vout({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+       {{t}}(PRCSN), intent(in)    :: v1({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+       integer,      intent(in)    :: map1({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+       {{t}}(PRCSN), intent(in)    :: v2({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+       {{t}}(PRCSN), optional, intent(in)    :: scal
+#if defined(__CUDA)
+       attributes(device) :: vout, v1, v2, map1
+#endif
+    !
+    end subroutine {{p.name}}_dev_vec_upd_v_remap_v_{{t[0]|lower}}{{d}}d
+    !
+{%- endfor %}
+{%- endfor %}
+    !
+{% set d=1 %}
+{% set t= "complex" %}
+{%- for p in precision %}
+    subroutine {{p.name}}_dev_vec_upd_v_remap_v_x_{{t[0]|lower}}{{d}}d(ndim, vout, v1,op1, map1, v2,op2, scal)
+       implicit none
+       !   
+       integer, parameter :: PRCSN = {{p.val}}
+       integer,      intent(in)    :: ndim
+       {{t}}(PRCSN), intent(inout) :: vout({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+       {{t}}(PRCSN), intent(in)    :: v1({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+       integer,      intent(in)    :: map1({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+       {{t}}(PRCSN), intent(in)    :: v2({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+       character(1), intent(in)    :: op1, op2
+       {{t}}(PRCSN), optional, intent(in)    :: scal
+#if defined(__CUDA)
+       attributes(device) :: vout, v1, v2, map1
+#endif
+       !
+    end subroutine {{p.name}}_dev_vec_upd_v_remap_v_x_{{t[0]|lower}}{{d}}d
+    !
+{%- endfor %}
+    !
+end interface dev_vec_upd_v_remap_v
+
+interface dev_mat_upd_dMd
+    !
+{% set d=2 %}
+{%- for p in precision %}
+{%- for t in types %}
+    subroutine {{p.name}}_dev_mat_upd_dMd_{{t[0]|lower}}{{d}}d(ndim1, ndim2, mat, v1,op1, v2,op2, scal)
+       !   
+       ! performs: mat(i,j) = scal * op1(v1(i)) * mat(i,j) * op2(v2(j))
+       ! op = 'N', 'R', 'C',       'RC'
+       !       x   1/x  conjg(x)   conjg(1/x)
+       implicit none
+       !   
+       integer, parameter :: PRCSN = {{p.val}}
+       integer,      intent(in)    :: ndim1,ndim2
+       {{t}}(PRCSN), intent(inout) :: mat(:,:)
+       {{t}}(PRCSN), intent(in)    :: v1(:)
+       {{t}}(PRCSN), intent(in)    :: v2(:)
+       character(1), intent(in)    :: op1, op2 
+       {{t}}(PRCSN), optional, intent(in)  :: scal
+#if defined(__CUDA)
+       attributes(device) :: mat, v1, v2
+#endif
+       !
+    end subroutine {{p.name}}_dev_mat_upd_dMd_{{t[0]|lower}}{{d}}d
+    !
+{%- endfor %}
+{%- endfor %}
+    !
+end interface dev_mat_upd_dMd
+
+interface dev_mem_addscal
+    !
+{%- for t in types %}
+{%- for p in precision %}
+{%- for d in range(1,dimensions+1) %}
+    subroutine {{p.name}}_dev_mem_addscal_{{t[0]|lower}}{{d}}d(array_out, array_in, scal, &
+                                                {% for dd in range(d) -%}
+                                                {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, &
+                                                {% endif %}{% endfor %} )
+        use iso_fortran_env
+        implicit none
+        !
+        {{t}}({{p.val}}), intent(inout) :: array_out({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+        {{t}}({{p.val}}), intent(in)    :: array_in({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+        {{t}}({{p.val}}), optional, intent(in) :: scal
+        integer, optional, intent(in) :: {% for dd in range(d) %} {{ "range%s(2)"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+        integer, optional, intent(in) :: {% for dd in range(d) %} {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+#if defined(__CUDA)
+        attributes(device) :: array_out, array_in
+#endif
+    end subroutine {{p.name}}_dev_mem_addscal_{{t[0]|lower}}{{d}}d
+    !
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+    !
+end interface dev_mem_addscal

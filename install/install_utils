@@ -47,20 +47,20 @@ endef
 
 define update_submodule
   @(echo initializing $(1)/$(2) submodule ...)
-  #@(if test ! `command -v git` ; then echo "git not found. Please make sure git is installed."; exit 1; fi)
-  #@(if test -d $(TOPDIR)/.git ; then \
-  #    cd $(TOPDIR) && git submodule update --depth 1 -- $(1)/$(2) && cd -; \
-  #  else \
-  #    if test -e $(TOPDIR)/$(1)/$(2)/.git ; then \
-  #      echo "  $(1)/$(2)/.git exists. Skipping initialization."; \
-  #      echo "  If you would like to force a reinitializaton, remove $(1)/$(2) subdirectory."; \
-  #    else \
-  #      RECORD_HASH=`grep $(2) $(TOPDIR)/$(1)/submodule_commit_hash_records | awk '{print $$1}'`; \
-  #      SUBMODULE_URL=`git config --file $(TOPDIR)/.gitmodules --get submodule.$(1)/$(2).URL`; \
-  #      git init $(TOPDIR)/$(1)/$(2) ; cd $(TOPDIR)/$(1)/$(2) ; \
-  #      git remote add origin $${SUBMODULE_URL} ; \
-  #      git fetch --depth 1 origin $${RECORD_HASH} ; \
-  #      git checkout -b recorded_HEAD FETCH_HEAD; \
-  #    fi; \
-  #  fi)
+  @(if test ! `command -v git` ; then echo "git not found. Please make sure git is installed."; exit 1; fi)
+  @(if test -d $(TOPDIR)/.git ; then \
+      cd $(TOPDIR) && git submodule update --depth 1 -- $(1)/$(2) && cd -; \
+    else \
+      if test -e $(TOPDIR)/$(1)/$(2)/.git ; then \
+        echo "  $(1)/$(2)/.git exists. Skipping initialization."; \
+        echo "  If you would like to force a reinitializaton, remove $(1)/$(2) subdirectory."; \
+      else \
+        RECORD_HASH=`grep $(2) $(TOPDIR)/$(1)/submodule_commit_hash_records | awk '{print $$1}'`; \
+        SUBMODULE_URL=`git config --file $(TOPDIR)/.gitmodules --get submodule.$(1)/$(2).URL`; \
+        git init $(TOPDIR)/$(1)/$(2) ; cd $(TOPDIR)/$(1)/$(2) ; \
+        git remote add origin $${SUBMODULE_URL} ; \
+        git fetch --depth 1 origin $${RECORD_HASH} ; \
+        git checkout -b recorded_HEAD FETCH_HEAD; \
+      fi; \
+    fi)
 endef

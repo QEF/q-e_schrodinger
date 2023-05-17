@@ -1,0 +1,131 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>4.5 Color plot of the Fermi velocity and the orbital character on Fermi surfaces</TITLE>
+<META NAME="description" CONTENT="4.5 Color plot of the Fermi velocity and the orbital character on Fermi surfaces">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node11.html">
+<LINK REL="previous" HREF="node9.html">
+<LINK REL="next" HREF="node11.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node11.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node5.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node9.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html72"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node11.html">4.6 Wannier functions</A>
+<B> Up:</B> <A
+ HREF="node5.html">4 Usage</A>
+<B> Previous:</B> <A
+ HREF="node9.html">4.4 Projection over atomic states,</A>
+ &nbsp; <B>  <A ID="tex2html73"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A ID="SECTION00055000000000000000">
+4.5 Color plot of the Fermi velocity and the orbital character
+  on Fermi surfaces</A>
+</H2>
+
+<P>
+You can plot any quantity on Fermi surfaces as a color plot 
+by using <code>fermisurfer</code> program<A ID="tex2html1"
+  HREF="footnode.html#foot120"><SUP>1</SUP></A>.
+<code>fermi_velocity.x</code> and <code>fermi_proj.x</code> are used 
+to generate an input file for <code>fermisurfer</code> from the output
+of <TT>pw.x</TT>or <code>projwfc.x</code>.
+
+<P>
+<code>fermi_velocity.x</code> generates a color-plot of Fermi velocity.
+You use it as follows:
+
+<OL>
+<LI>Run <TT>pw.x</TT>with <code>K_POINT automatic</code>.
+</LI>
+<LI>Run 
+<PRE>
+$ fermi_velocity.x -in {pw.x input file}
+</PRE>  
+</LI>
+<LI><code>vfermi.frmsf</code> is generated
+</LI>
+</OL>
+
+<P>
+<code>fermi_proj.x</code> generates a color plot of an orbital character.
+You use it as follows:
+
+<OL>
+<LI>Run <TT>pw.x</TT>with <code>K_POINT automatic</code>.
+</LI>
+<LI>Run <code>projwfc.x</code> just to generate <code>{prefix}.save/atomic_proj.*</code>.
+</LI>
+<LI>Run 
+<PRE>
+$ fermi_proj.x -in {input file}
+</PRE>
+Input-file format is as follows:
+<PRE>
+&amp;PROJWFC
+ {The same as the input of projwfc.x}
+/
+{Number of target wavefunctions}
+{Index of target WFC1} {Index of target WFC2} {Index of target WFC3} ...
+</PRE>
+It generates 
+<!-- MATH
+ $\sum_{i=1}^{n_{\rm target}} |\langle \varphi_{{\rm target}(i)}^{\rm atom}|\varphi_{n k} \rangle|^2$
+ -->
+<IMG
+ STYLE="height: 2.51ex; vertical-align: -0.63ex; " SRC="img2.png"
+ ALT="$\sum_{{i=1}}^{{n_{\rm target}}}$">|〈<IMG
+ STYLE="height: 2.86ex; vertical-align: -1.03ex; " SRC="img3.png"
+ ALT="$\varphi_{{{\rm target}(i)}}^{{\rm atom}}$">|<IMG
+ STYLE="height: 1.69ex; vertical-align: -0.67ex; " SRC="img4.png"
+ ALT="$\varphi_{{n k}}^{}$">〉|<SUP>2</SUP>, 
+where <I>n</I><SUB>s</SUB> and <!-- MATH
+ ${\rm target}(i)$
+ -->
+<I>target</I>(<I>i</I>) are
+the number of the target wavefunctions
+and the indices of target wavefunctions, respectively.
+</LI>
+<LI>The above quantity is written into <code>"proj.frmsf"</code>,
+  which can be read by FermiSurfer program.
+</LI>
+</OL>
+
+<P>
+There is an example of <code>fermi_velocity.x</code> and <code>fermi_proj.x</code>
+in <code>fermisurf_example/</code>.
+
+<P>
+<BR><HR>
+
+</BODY>
+</HTML>

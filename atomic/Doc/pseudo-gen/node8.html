@@ -1,0 +1,272 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>2.2 Type of pseudization</TITLE>
+<META NAME="description" CONTENT="2.2 Type of pseudization">
+<META NAME="keywords" CONTENT="pseudo-gen">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="pseudo-gen.css">
+
+<LINK REL="next" HREF="node9.html">
+<LINK REL="previous" HREF="node7.html">
+<LINK REL="next" HREF="node9.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node9.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node6.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html98"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node9.html">2.3 Generating the pseudopotential</A>
+<B> Up:</B> <A
+ HREF="node6.html">2 Step-by-step Pseudopotential generation</A>
+<B> Previous:</B> <A
+ HREF="node7.html">2.1 Choosing the generation parameters</A>
+ &nbsp; <B>  <A ID="tex2html99"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A ID="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A ID="tex2html100"
+  HREF="node8.html#SECTION00032100000000000000">2.2.1 Pseudization energies</A>
+<LI><A ID="tex2html101"
+  HREF="node8.html#SECTION00032200000000000000">2.2.2 Pseudization radii</A>
+<LI><A ID="tex2html102"
+  HREF="node8.html#SECTION00032300000000000000">2.2.3 Choosing the local potential</A>
+</UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H2><A ID="SECTION00032000000000000000"></A>
+<A ID="pseudization"></A>
+<BR>
+2.2 Type of pseudization
+</H2><EM>
+The <TT>atomic</TT> package implements two different NC pseudization 
+algorithms, both claiming to yield optimally smooth PP's:
+</EM>
+<UL>
+<LI>Troullier-Martins [<A
+ HREF="node21.html#TM">7</A>] (TM) 
+</LI>
+<LI>Rappe-Rabe-Kaxiras-Joannopoulos [<A
+ HREF="node21.html#RRKJ">9</A>] (RRKJ).
+</LI>
+</UL><EM>
+Both algorithms replace atomic orbitals in the core region 
+with smooth nodeless pseudo-orbitals. The TM method uses an
+exponential of a polynomial (see Appendix B); the RRKJ method 
+uses three or four Bessel functions for the pseudo-orbitals in
+the core region. The former is very robust. The latter may 
+occasionally fail to produce the required nodeless pseudo-orbital.
+If this happens, first try to force the usage of four Bessel functions
+(this is achieved by setting a  small nonzero value of 
+the charge density at the origin, variable <TT>rho0</TT>:
+unfortunately it works only for <I>s</I> states).
+</EM>
+<P>
+<EM>Second-row elements N, O, F, 3<I>d</I> transition metals, rare earths, 
+are typically ``hard'' atoms, i.e. described by NC PP's requiring
+a high PW cutoff. These atoms are characterized by 2<I>p</I> (N, O, F), 
+3<I>d</I> (transition metals), 4<I>f</I> (rare earths) valence states with no 
+orthogonalization to core states of the same <I>l</I> and no nodes.
+In addition, as mentioned in Secs.<A HREF="node7.html#ValCore">2.1.2</A> and <A HREF="node7.html#RefConf">2.1.3</A>, 
+there are case in which you may be forced to include semicore states
+in valence, thus making the PP hard (or even harder).  
+In all such cases, one should consider 
+<EM>ultrasoft</EM> pseudization, unless there is a good reason to stick
+to NC-PP's. For the specific case of rare earths, however, remember 
+that the problem of DFT reliability preempts the (tough) problem of 
+generating a PP. With US-PP's one can give up the NC requirement
+and get much softer PP's, at the price of introducing an augmentation 
+charge that compensates for the missing charge. 
+</EM>
+<P>
+<EM>Currently, the <TT>atomic</TT> package generates US-PP's on top of
+a ``hard'' NC-PP. In order to ensure sufficient transferability, 
+at least two states per angular momentum <I>l</I> are required. 
+</EM>
+<P>
+<H3><A ID="SECTION00032100000000000000"></A>
+<A ID="pseudiz"></A>
+<BR>
+2.2.1 Pseudization energies
+</H3><EM>
+If you stick to single-projector PP's (one potential per angular momentum 
+<I>l</I>, i.e. one projector per <I>l</I> in the separable form), the choice of the 
+electronic configuration automatically determines the reference states
+to pseudize: for each <I>l</I>, the bound valence eigenstate is pseudized
+at the corresponding eigenvalue. If no bound valence eigenstate exists,
+one has to select a reference energy. The choice is rather arbitrary:
+you may try something between than other valence bound state energies
+and zero. 
+</EM>
+<P>
+<EM>If you have semicore states in valence, remember that for each <I>l</I>
+only the state with lowest <I>n</I> can be used to generate a single-projector
+PP. The <TT>atomic</TT> package requires that you explicitly specify the 
+configuration for unscreening in the ``test'' configuration:
+see the detailed input documentation.
+</EM>
+<P>
+<EM>It is possible to generate PP's by pseudizing atomic waves,
+i.e. regular solutions of the radial Kohn-Sham equation, at any
+energy. More than one such atomic waves of different energy can be
+pseudized for the same <I>l</I>, resulting in a PP with more than one 
+projector per <I>l</I> (directly produced in the separable form). Note
+however that the implementation of multiple-projector PP's is
+correct for US pseudization: NC pseudization is not properly done
+(a generalized norm-conservation requirement is not accounted for).
+US pseudization is achieved by
+setting different NC and US pseudization radii (see Sec.<A HREF="#radii">2.2.2</A>),
+</EM>
+<P>
+<H3><A ID="SECTION00032200000000000000"></A>
+<A ID="radii"></A>
+<BR>
+2.2.2 Pseudization radii
+</H3>
+<P>
+<EM>For NC pseudization, one has to choose, for each state to be pseudized,
+a NC pseudization radius <I>r</I><SUB>c</SUB>, at which the AE orbital and the 
+corresponding NC-PP orbital match, with continuous first derivative 
+at <I>r</I> = <I>r</I><SUB>c</SUB>. For bound states, <I>r</I><SUB>c</SUB> is typically at the outermost peak or 
+somewhat larger. The larger the <I>r</I><SUB>c</SUB>, the softer the potential 
+(less PW needed in the calculations), but also the less transferable.
+The <I>r</I><SUB>c</SUB> may differ for different <I>l</I>; as a rule, one should avoid large
+differences between the <I>r</I><SUB>c</SUB>'s, but this is not always possible. Also,
+the <I>r</I><SUB>c</SUB> cannot be smaller than the outermost node.
+</EM>
+<P>
+<EM>A big problem in NC-PP's is how strike a compromise between softness
+and transferability, especially for difficult elements. The basic question:
+``how much should I push <I>r</I><SUB>c</SUB> outwards in order to have reasonable results 
+with a reasonable PW cutoff''. has no clear-cut answer. The choice of <I>r</I><SUB>c</SUB> 
+at the outermost maximum for ``difficult'' elements (those described in 
+Sec.<A HREF="#pseudiz">2.2.1</A>): typically 0.7-0.8 a.u, even less for 4<I>f</I> electrons, 
+yields very hard PP's 
+(more than 100 Ry needed in practical calculations). With a little bit of 
+experience one can say that for second-row (2<I>p</I>) elements, <!-- MATH
+ $r_c=1.1-1.2$
+ -->
+<I>r</I><SUB>c</SUB> = 1.1 - 1.2 
+will yield reasonably good results for 50-70 Ry PW kinetic energy cutoff; 
+for 3<I>d</I> transition metals, the same <I>r</I><SUB>c</SUB> will require &gt; 80 Ry cutoff
+(highest <I>l</I> have slower convergence for the same <I>r</I><SUB>c</SUB>). The above
+estimates are for TM pseudization. RRKJ pseudization will yield an
+estimate of the required cutoff.
+</EM>
+<P>
+<EM>For multiple-projectors PP's, the <I>r</I><SUB>c</SUB> of unbound states may be chosen 
+in the same range as for bound states. Use small <I>r</I><SUB>c</SUB> and don't try to 
+push them outwards: the
+US pseudization will take care of softness. US pseudization radii can 
+be chosen much larger than NC ones (e.g. 1.3÷ 1.5 a.u. for second-row
+2<I>p</I> elements, 1.7÷ 2.2 a.u. for 3<I>d</I> transition metals), but do not
+forget that the sum of the <I>r</I><SUB>c</SUB> of two atoms should not exceed the typical
+bond length of those atoms.
+</EM>
+<P>
+<EM>Note that it is the hardest atom that determines the PW cutoff in a
+solid or molecule. Do not waste time trying to find optimally soft 
+PP's for element X if element Y is harder then element X.
+</EM>
+<P>
+<H3><A ID="SECTION00032300000000000000">
+2.2.3 Choosing the local potential</A>
+</H3>
+<P>
+<EM>As explained in Sec. <A HREF="node7.html#RefConf">2.1.3</A>, note 1, one needs in principle
+angular momentum channels in PP's up to <I>l</I><SUB>c</SUB> + 1. In the semilocal
+form, the choice of a ''local'', <I>l</I>-independent potential is natural
+and affects only seldom-important PW components with <I>l</I> &gt; <I>l</I><SUB>c</SUB>.
+In PW calculations, however, a separable, fully nonlocal form &ndash; 
+one in which the PP's is written as a local potential plus pr
+ojectors &ndash; is used.
+An arbitrary function can be added to the local potential and 
+subtracted to all <I>l</I> components. Generally one exploits this 
+arbitrariness to remove one <I>l</I> component using it as local potential.
+The separable form can be either obtained by the Kleinman-Bylander
+projection [<A
+ HREF="node21.html#KB">10</A>] applied to single-projector PP's, or directly 
+produced using Vanderbilt's procedure [<A
+ HREF="node21.html#van">2</A>] (for single-projector
+PP's the two approaches are equivalent).
+</EM>
+<P>
+<EM>Unfortunately the separable form is not guaranteed to have the
+correct ground state (unlike the semilocal form, which, by construction,
+has the correct ground states): ``ghost'' states, having the wrong number 
+of nodes, 
+can appear among the occupied states or close to them, making the 
+PP completely useless. This problem may show up in US-PP's as well.
+</EM>
+<P>
+<EM>The freedom in choosing the local part can (and usually must) be used 
+in order to avoid the appearance of ghosts. For PW calculations it is 
+convenient to choose as local part the highest <I>l</I>, because this removes
+more projectors (2<I>l</I> + 1 per atom) than for low <I>l</I>. According to Murphy's 
+law, this is also the choice that more often gives raise to problems, 
+and one is forced to use a different <I>l</I>. Another possibility is to generate 
+a local potential by pseudizing the AE potential.
+</EM>
+<P>
+<EM>Note that ghosts may not be visible to atomic codes based on radial
+integration, since the algorithm discards states with the wrong number 
+of nodes. Difficult convergence or mysterious errors are almost invariably
+a sign tha there is something wrong with our PP. 
+A simple and safe way to check for the presence of a ghost is to diagonalize 
+the Kohn-Sham hamiltonian in a basis set of spherical Bessel functions. 
+This can be done together with transferability tests
+(see Sec.<A HREF="node10.html#trans">2.4</A>)
+</EM>
+<P><HR>
+<!--Navigation Panel-->
+<A
+ HREF="node9.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node6.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html98"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node9.html">2.3 Generating the pseudopotential</A>
+<B> Up:</B> <A
+ HREF="node6.html">2 Step-by-step Pseudopotential generation</A>
+<B> Previous:</B> <A
+ HREF="node7.html">2.1 Choosing the generation parameters</A>
+ &nbsp; <B>  <A ID="tex2html99"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

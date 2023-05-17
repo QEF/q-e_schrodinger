@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="input_xx.xsl"?>
+<!-- FILE AUTOMATICALLY CREATED: DO NOT EDIT, CHANGES WILL BE LOST -->
+    
+<input_description distribution="Quantum ESPRESSO" package="PWscf" program="band_interpolation.x" >
+   <toc>
+   </toc>
+   <intro>
+<b>Purpose of band_interpolation.x:</b>
+  This contains four band energies interpolation methods,
+  to be advantageously (but not necessarly) used for EXX band structure computations.
+
+  The PP/src/band_interpolation.x post-processing subprogram reads the band energies
+  stored in the pwscf.xml file after an SCF calculation on a uniform Monkhorst-Pack grid,
+  and interpolates the eigenvalues to an arbitrary set of k-points provided in input.
+
+  The workflow is just:
+
+        (1) do an SCF on a uniform grid
+        (2) call the interpolator from the folder in which the pwscf.xml
+             file is present (band_interpolation.x &lt; input)
+
+  For large EXX calculations the first step can be splitted in two substeps:
+
+        (1) do an SCF calculation on a uniform grid with occupied bands only
+        (2) do a NSCF (or Bands) calculation on the same uniform grid adding virtual orbitals
+        (3) call the interpolator from the folder in which the pwscf.xml file is present
+
+  Four interpolation methods have been included (see <ref>method</ref>).
+
+  The interpolated band structure in eV units is written in a file named [method].dat
+  (e.g. fourier-diff.dat for the fourier-diff method) that is plottable with Grace or Gnuplot
+  (e.g. xmgrace -nxy fourier-diff.dat)
+
+<b>Structure of the input data:</b>
+============================
+
+   <b>&amp;INTERPOLATION</b>
+     ...
+   <b>/</b>
+
+   [ <b>ROUGHNESS</b>
+        RoughN
+        &apos;automatic&apos; or RoughC(1) RoughC(2) RoughC(3) ... RoughC(RoughN) ]
+
+   [ <b>USER_STARS</b>
+        NUser
+        vec_X vec_Y vec_Z ]
+
+   <b>K_POINTS</b> { tpiba_b }
+      nks
+      xk_x, xk_y, xk_z,  wk
+   </intro>
+   <namelist name="INTERPOLATION" >
+      <var name="method" type="CHARACTER" >
+         <default> &apos;fourier-diff&apos;
+         </default>
+         <info> The interpolation method to be used
+         </info>
+         <options>
+            <info> Available options are:
+            </info>
+            <opt val="'fourier-diff'" >
+band energies, as functions of k, are expanded in reciprocal space using a Star function basis set
+(algorithm from Pickett W. E., Krakauer H., Allen P. B., Phys. Rev. B, vol. 38, issue 4, page 2721, 1988,
+ <link>https://link.aps.org/doi/10.1103/PhysRevB.38.2721</link> ).
+WARNING: The pwscf.xml file must be generated with <ref>nosym</ref> == .false. .
+            </opt>
+            <opt val="'fourier'" >
+band energies, as functions of k, are expanded in reciprocal space using a Star function basis set
+(algorithm from D. D. Koelling, J. H. Wood, J. Comput. Phys., 67, 253-262 (1986).
+ <link>https://ui.adsabs.harvard.edu/abs/1986JCoPh..67..253K</link> ).
+WARNING: The pwscf.xml file must be generated with <ref>nosym</ref> == .false. .
+            </opt>
+            <opt val="'idw'" >
+inverse distance weighting interpolation with Shepard metric
+(ACM 68: Proceedings of the 1968 23rd ACM national conference, January 1968, Pages 517–524,
+ <link>https://doi.org/10.1145/800186.810616</link> ).
+WARNING: The pwscf.xml file must be generated with <ref>nosym</ref> == .true. .
+WARNING: This method is REALLY simple and provides only a very rough estimate of the band structure.
+            </opt>
+            <opt val="'idw-sphere'" >
+inverse distance weighting interpolation inside a sphere of given radius.
+WARNING: The pwscf.xml file must be generated with <ref>nosym</ref> == .true. .
+WARNING: This method is REALLY simple and provides only a very rough estimate of the band structure.
+            </opt>
+         </options>
+      </var>
+      <var name="miller_max" type="INTEGER" >
+         <default> 6
+         </default>
+         <info>
+The maximum Miller index used to automatically generate the set of symmetry inequivalent Star vectors
+                  (only for <ref>method</ref> == &apos;fourier-diff&apos; or &apos;fourier&apos;)
+         </info>
+      </var>
+      <var name="check_periodicity" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+If .TRUE. a (time consuming) step is performed, to check whether all the Star functions have
+                  the correct lattice periodicity (only for <ref>method</ref> == &apos;fourier-diff&apos; or &apos;fourier&apos;) .
+
+                  For automatically generated Star functions this should never occur by construction, and the program
+                  will stop and exit in case one Star function with wrong periodicity is found (useful for
+                  debugging and program sanity check).
+
+                  If additional user-defined Star vectors are specified (see optional card <ref>USER_STARS</ref>),
+                  the program will print a WARNING in case one Star function with wrong periodicity is found.
+         </info>
+      </var>
+      <var name="p_metric" type="INTEGER" >
+         <default> 2
+         </default>
+         <info> The exponent of the distance in the IDW method ( only for <ref>method</ref> == &apos;idw&apos; or &apos;idw-sphere&apos;)
+         </info>
+      </var>
+      <var name="scale_sphere" type="INTEGER" >
+         <default> 4.0d0
+         </default>
+         <info>
+The search radius for <ref>method</ref> == &apos;idw-sphere&apos;, is Rmin * scale_sphere, where Rmin is the
+                  minimum distance found between the uniform grid of k-points.
+
+                  If scale_sphere is too small, some k-points of the path might not see enough uniform grid points
+                  to average energies, whereas for large values the method becomes equal to <ref>method</ref> == &apos;idw&apos;.
+         </info>
+      </var>
+   </namelist>
+   <card name="ROUGHNESS" >
+      <label> Optional card, used only if <ref>method</ref> == &apos;fourier-diff&apos;, or &apos;fourier&apos;, ignored otherwise!
+      </label>
+      <message>
+This card can be used to change the roughness functional that is minimized
+                 in the <ref>method</ref> == &apos;fourier-diff&apos; and &apos;fourier&apos;.
+                 In case <ref>method</ref> == &apos;fourier-diff&apos;, or &apos;fourier&apos; and card ROUGHNESS is not specified the default
+                 roughness will be used with <ref>RoughN</ref> == 1 and <ref>RoughC</ref>(1) == 1.0d0.
+      </message>
+      <syntax>
+         <line>
+            <var name="RoughN" type="INTEGER" >
+               <default> 1
+               </default>
+               <info> Number of terms included in the roughness functional
+               </info>
+            </var>
+         </line>
+         <table name="RoughC" >
+            <cols start="1" end="RoughN" >
+               <rowgroup type="REAL" >
+                  <default> 1.0d0
+                  </default>
+                  <info>
+Coefficients for the terms included in the roughness functional.
+                                They can be explicitely given or &apos;automatic&apos; can be specified instead of numbers
+                                to use default coefficients.
+                  </info>
+                  <row name="RoughC" >
+                  </row>
+               </rowgroup>
+            </cols>
+         </table>
+      </syntax>
+   </card>
+   <card name="USER_STARS" >
+      <label> Optional card, used only if <ref>method</ref> == &apos;fourier-diff&apos;, or &apos;fourier&apos;, ignored otherwise !
+      </label>
+      <syntax>
+         <line>
+            <var name="NUser" type="INTEGER" >
+               <default> 0
+               </default>
+               <info> Number of supplied additional Star vectors.
+               </info>
+            </var>
+         </line>
+         <table name="kpoints" >
+            <rows start="1" end="NUser" >
+               <colgroup type="REAL" >
+                  <col name="vec_x" >
+                  </col>
+                  <col name="vec_y" >
+                  </col>
+                  <col name="vec_z" >
+                  </col>
+                  <info>
+Additional user-defined Star vectors that are added to the
+automatically generated ones to augment the Star functions
+basis set.
+You might also want to check <ref>check_periodicity</ref> when providing
+user-defined Star vectors.
+                  </info>
+               </colgroup>
+            </rows>
+         </table>
+      </syntax>
+   </card>
+   <card name="K_POINTS" >
+      <flag name="kpoint_type" use="optional" >
+         <enum> tpiba_b
+         </enum>
+         <default> none
+         </default>
+         <options>
+            <info>
+All K_POINTS options other than tpiba_b have been disabled in the interpolation.
+            </info>
+            <opt val="tpiba_b" >
+Used for band-structure plots.
+See Doc/brillouin_zones.pdf for usage of BZ labels;
+otherwise, k-points are in units of  2 pi/a.
+nks points specify nks-1 lines in reciprocal space.
+Every couple of points identifies the initial and
+final point of a line. pw.x generates N intermediate
+points of the line where N is the weight of the first point.
+            </opt>
+         </options>
+      </flag>
+      <choose>
+         <when test="tpiba_b" >
+            <syntax flag=" tpiba_b " >
+               <line>
+                  <var name="nks" type="INTEGER" >
+                     <info> Number of supplied special k-points.
+                     </info>
+                  </var>
+               </line>
+               <table name="kpoints" >
+                  <rows start="1" end="nks" >
+                     <colgroup type="REAL" >
+                        <col name="xk_x" >
+                        </col>
+                        <col name="xk_y" >
+                        </col>
+                        <col name="xk_z" >
+                        </col>
+                        <col name="wk" >
+                        </col>
+                        <info>
+Special k-points (xk_x/y/z) in the irreducible Brillouin Zone
+(IBZ) of the lattice (with all symmetries) and weights (wk)
+See the literature for lists of special points and
+the corresponding weights.
+
+If the symmetry is lower than the full symmetry
+of the lattice, additional points with appropriate
+weights are generated. Notice that such procedure
+assumes that ONLY k-points in the IBZ are provided in input
+                        </info>
+                     </colgroup>
+                  </rows>
+               </table>
+            </syntax>
+         </when>
+      </choose>
+   </card>
+</input_description>

@@ -1,0 +1,76 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>4.9 Calculation of phonon-renormalization of electron bands</TITLE>
+<META NAME="description" CONTENT="4.9 Calculation of phonon-renormalization of electron bands">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="previous" HREF="node15.html">
+<LINK REL="next" HREF="node17.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node17.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node15.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html88"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node17.html">5 Parallelism</A>
+<B> Up:</B> <A
+ HREF="node7.html">4 Using PHonon</A>
+<B> Previous:</B> <A
+ HREF="node15.html">4.8 Fourier interpolation of phonon</A>
+ &nbsp; <B>  <A ID="tex2html89"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A ID="SECTION00059000000000000000">
+4.9 Calculation of phonon-renormalization of electron bands</A>
+</H2>
+The phonon-induced renormalization of electron bands can be computed using <TT>PHonon</TT>.
+After SCF, PHONON, and NSCF calculations, one can run <TT>ph.x</TT> with the
+<TT>electron_phonon=`ahc'</TT> option, which generates binary files containing
+quantities required for the calculation of electron self-energy.
+Then, a <TT>postahc.x</TT> run reads these binary files and compute the
+phonon-induced electron self-energy at a given temperature.
+
+<P>
+For more details, see the <code>PHonon/Doc/dfpt_self_energy.pdf</code> file.
+
+<P>
+Also, there is an example in <code>PHonon/example/example19/</code>.
+
+<P>
+Implementation of this functionality in Q<SMALL>UANTUM </SMALL>ESPRESSO is described in the following
+paper:
+
+<P>
+J.-M.&nbsp;Lihm and C.-H.&nbsp;Park, Phys. Rev. B <B>101</B>, 121102 (2020).
+
+<P>
+<BR><HR>
+
+</BODY>
+</HTML>

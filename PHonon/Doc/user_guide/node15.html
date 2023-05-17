@@ -1,0 +1,121 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>4.8 Fourier interpolation of phonon potential</TITLE>
+<META NAME="description" CONTENT="4.8 Fourier interpolation of phonon potential">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node16.html">
+<LINK REL="previous" HREF="node14.html">
+<LINK REL="next" HREF="node16.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node16.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node14.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html86"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node16.html">4.9 Calculation of phonon-renormalization of</A>
+<B> Up:</B> <A
+ HREF="node7.html">4 Using PHonon</A>
+<B> Previous:</B> <A
+ HREF="node14.html">4.7 Phonons from DFPT+U</A>
+ &nbsp; <B>  <A ID="tex2html87"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A ID="SECTION00058000000000000000">
+4.8 Fourier interpolation of phonon potential</A>
+</H2>
+
+<P>
+The potential perturbation caused by the displacement of a single atom is
+spatially localized. Hence, the phonon potential can be interpolated from
+<I>q</I> points on a coarse grid to other <I>q</I> points using Fourier interpolation.
+To use this functionality, first, one shoud run a <TT>ph.x</TT> calculation for <I>q</I>
+points on a regular coarse grid.
+Then, a <TT>dvscf_q2r.x</TT> run performs an inverse Fourier
+transformation of the phonon potentials from a <I>q</I> grid to a real-space
+supercell. Finally, by specifying <TT>ldvscf_interpolation=.true.</TT> in
+<TT>ph.x</TT>, the phonon potentials are Fourier transformed to given <I>q</I> points.
+
+<P>
+For insulators, the nonanalytic long-ranged dipole part of the potential needs
+to be subtracted and added before and after the interpolation, respectively.
+This treatment is activated by specifying <TT>do_long_range=.true.</TT> in the
+input files of <TT>dvscf_q2r.x</TT> and <TT>ph.x</TT>.
+
+<P>
+Due to numerical inaccuracies, the calculated Born effective charges may not
+add up to zero, violating the charge neutrality condition. This error may lead
+to nonphysical polar divergence of the phonon potential for <I>q</I> points close
+to <I>Γ</I>, even in IR-inactive materials. To avoid this problem, one can
+specify <TT>do_charge_neutral=.true.</TT> in the input files of
+<TT>dvscf_q2r.x</TT> and <TT>ph.x</TT>. Then, the phonon potentials and the Born
+effective charges are renormalized by enforcing the charge neutrality condition,
+following the scheme of S.&nbsp; Ponce et al, J. Chem. Phys. (2015).
+
+<P>
+The Fourier interpolation of phonon potential is proposed and described in the
+following papers:
+
+<P>
+A.&nbsp;Eiguren and C.&nbsp;Ambrosch-Draxl, Phys. Rev. B <B>78</B>, 045124 (2008);
+
+<P>
+S.&nbsp; Ponce et al, J. Chem. Phys. <B>143</B>, 102813 (2015);
+
+<P>
+X.&nbsp;Gonze et al, Comput. Phys. Commun., <B>248</B>, 107042 (2020).
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A
+ HREF="node16.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node14.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html86"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node16.html">4.9 Calculation of phonon-renormalization of</A>
+<B> Up:</B> <A
+ HREF="node7.html">4 Using PHonon</A>
+<B> Previous:</B> <A
+ HREF="node14.html">4.7 Phonons from DFPT+U</A>
+ &nbsp; <B>  <A ID="tex2html87"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

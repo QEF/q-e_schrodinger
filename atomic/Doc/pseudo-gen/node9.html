@@ -1,0 +1,117 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>2.3 Generating the pseudopotential</TITLE>
+<META NAME="description" CONTENT="2.3 Generating the pseudopotential">
+<META NAME="keywords" CONTENT="pseudo-gen">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="pseudo-gen.css">
+
+<LINK REL="next" HREF="node10.html">
+<LINK REL="previous" HREF="node8.html">
+<LINK REL="next" HREF="node10.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node10.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node6.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node8.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html103"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node10.html">2.4 Checking for transferability</A>
+<B> Up:</B> <A
+ HREF="node6.html">2 Step-by-step Pseudopotential generation</A>
+<B> Previous:</B> <A
+ HREF="node8.html">2.2 Type of pseudization</A>
+ &nbsp; <B>  <A ID="tex2html104"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A ID="SECTION00033000000000000000">
+2.3 Generating the pseudopotential</A>
+</H2>
+<P>
+<EM>As a first step, one can generate AE Kohn-Sham orbitals and one-electron 
+levels for the reference configuration. This is done by using executable
+<TT>ld1.x</TT>. You must specify in the input data:
+</EM>
+<BLOCKQUOTE><EM>atomic symbol,
+<BR>
+electronic reference configuration,
+<BR>
+exchange-correlation functional (default is LDA).
+</EM></BLOCKQUOTE><EM>
+A complete description of the input is contained in the documentation.
+For accurate AE results in heavy atoms, you may want to specify a denser 
+radial grid in <I>r</I>-space than the default one. The default grid should
+however be good enough for PP generation.
+</EM>
+<P>
+<EM>Before you proceed, it is a good idea to verify that the atomic data
+you just produced actually make sense. Some kind souls have posted on
+the web a complete set of reference atomic data :
+</EM>
+<BLOCKQUOTE><EM><TT>http://physics.nist.gov/PhysRefData/DFTdata/ </TT>
+</EM></BLOCKQUOTE><EM>
+These data have been obtained with the Vosko-Wilk-Nusair functional,
+that for the unpolarized case is very similar to the Perdew-Zunger 
+LDA functional (this is hte LDA default).
+</EM>
+<P>
+<EM>The generation step is also done by program <TT>ld1.x</TT>.
+One has to supply, in addition to AE data: 
+</EM>
+<BLOCKQUOTE><EM>a list of orbitals to be pseudized, with pseudization energies and radii,
+<BR>
+the filename where the newly generated PP is written,
+</EM></BLOCKQUOTE><EM>
+plus a number of other optional parameters, 
+fully described in the documentation.
+</EM>
+<P><HR>
+<!--Navigation Panel-->
+<A
+ HREF="node10.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node6.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node8.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html103"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node10.html">2.4 Checking for transferability</A>
+<B> Up:</B> <A
+ HREF="node6.html">2 Step-by-step Pseudopotential generation</A>
+<B> Previous:</B> <A
+ HREF="node8.html">2.2 Type of pseudization</A>
+ &nbsp; <B>  <A ID="tex2html104"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

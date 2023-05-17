@@ -1,0 +1,140 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>3 Using PWscf</TITLE>
+<META NAME="description" CONTENT="3 Using PWscf">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node14.html">
+<LINK REL="previous" HREF="node6.html">
+<LINK REL="next" HREF="node8.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node8.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="user_guide.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node6.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html115"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node8.html">3.1 Input data</A>
+<B> Up:</B> <A
+ HREF="user_guide.html">User's Guide for the PWscf</A>
+<B> Previous:</B> <A
+ HREF="node6.html">2 Compilation</A>
+ &nbsp; <B>  <A ID="tex2html116"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H1><A ID="SECTION00040000000000000000">
+3 Using <TT>PWscf</TT></A>
+</H1>
+
+<P>
+Input files for <TT>pw.x</TT> may be either written by hand 
+or produced via the <TT>PWgui</TT> graphical interface by Anton Kokalj, 
+included in the Q<SMALL>UANTUM </SMALL>ESPRESSO distribution. See <TT>PWgui-x.y.z/INSTALL</TT>
+(where x.y.z is the version number) for more info on <TT>PWgui</TT>, 
+or <TT>GUI/README</TT> if you are using sources from the repository.
+
+<P>
+You may take the tests (in <TT>test-suite/</TT>) and examples
+(in <TT>PW/examples/</TT>) distributed with Q<SMALL>UANTUM </SMALL>ESPRESSO as templates for
+writing your own input files. You may find input files (typically
+with names ending with <TT>.in</TT>) either in <TT>test-suite/pw_*/</TT>
+or in the various <TT>PW/examples/*/results/</TT> subdirectories,
+after you have run the examples. All examples contain a README file.
+
+<P>
+<BR><HR>
+<!--Table of Child-Links-->
+<A ID="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A ID="tex2html117"
+  HREF="node8.html">3.1 Input data</A>
+<LI><A ID="tex2html118"
+  HREF="node9.html">3.2 Data files</A>
+<LI><A ID="tex2html119"
+  HREF="node10.html">3.3 Electronic structure calculations</A>
+<UL>
+<LI><A ID="tex2html120"
+  HREF="node10.html#SECTION00043010000000000000">3.3.0.1 Single-point (fixed-ion) SCF calculation</A>
+<LI><A ID="tex2html121"
+  HREF="node10.html#SECTION00043020000000000000">3.3.0.2 Band structure calculation</A>
+<LI><A ID="tex2html122"
+  HREF="node10.html#SECTION00043030000000000000">3.3.0.3 Noncollinear magnetization, spin-orbit interactions</A>
+<LI><A ID="tex2html123"
+  HREF="node10.html#SECTION00043040000000000000">3.3.0.4 DFT+U</A>
+<LI><A ID="tex2html124"
+  HREF="node10.html#SECTION00043050000000000000">3.3.0.5 Dispersion Interactions (DFT-D)</A>
+<LI><A ID="tex2html125"
+  HREF="node10.html#SECTION00043060000000000000">3.3.0.6 Hartree-Fock and Hybrid functionals</A>
+<LI><A ID="tex2html126"
+  HREF="node10.html#SECTION00043070000000000000">3.3.0.7 Dispersion interaction with non-local functional (vdW-DF)</A>
+<LI><A ID="tex2html127"
+  HREF="node10.html#SECTION00043080000000000000">3.3.0.8 Polarization via Berry Phase</A>
+<LI><A ID="tex2html128"
+  HREF="node10.html#SECTION00043090000000000000">3.3.0.9 Finite electric fields</A>
+<LI><A ID="tex2html129"
+  HREF="node10.html#SECTION000430100000000000000">3.3.0.10 Orbital magnetization</A>
+</UL>
+<BR>
+<LI><A ID="tex2html130"
+  HREF="node11.html">3.4 Optimization and dynamics</A>
+<UL>
+<LI><A ID="tex2html131"
+  HREF="node11.html#SECTION00044010000000000000">3.4.0.1 Structural optimization</A>
+<LI><A ID="tex2html132"
+  HREF="node11.html#SECTION00044020000000000000">3.4.0.2 Molecular Dynamics</A>
+<LI><A ID="tex2html133"
+  HREF="node11.html#SECTION00044030000000000000">3.4.0.3 Variable-cell optimization</A>
+<LI><A ID="tex2html134"
+  HREF="node11.html#SECTION00044040000000000000">3.4.0.4 Variable-cell molecular dynamics</A>
+</UL>
+<BR>
+<LI><A ID="tex2html135"
+  HREF="node12.html">3.5 Direct interface with <TT>CASINO</TT></A>
+<UL>
+<LI><A ID="tex2html136"
+  HREF="node12.html#SECTION00045010000000000000">3.5.0.1 Practicalities</A>
+<LI><A ID="tex2html137"
+  HREF="node12.html#SECTION00045020000000000000">3.5.0.2 How to generate <TT>xwfn.data</TT> files with <TT>PWscf</TT></A>
+</UL>
+<BR>
+<LI><A ID="tex2html138"
+  HREF="node13.html">3.6 Socket interface with i-PI</A>
+<UL>
+<LI><A ID="tex2html139"
+  HREF="node13.html#SECTION00046010000000000000">3.6.0.1 Practicalities</A>
+<LI><A ID="tex2html140"
+  HREF="node13.html#SECTION00046020000000000000">3.6.0.2 How to use the i-PI inteface</A>
+<LI><A ID="tex2html141"
+  HREF="node13.html#SECTION00046030000000000000">3.6.0.3 Advanced i-PI usage</A>
+</UL></UL>
+<!--End of Table of Child-Links-->
+<BR><HR>
+
+</BODY>
+</HTML>

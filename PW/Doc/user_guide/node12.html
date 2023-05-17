@@ -1,0 +1,244 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>3.5 Direct interface with CASINO</TITLE>
+<META NAME="description" CONTENT="3.5 Direct interface with CASINO">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node13.html">
+<LINK REL="previous" HREF="node11.html">
+<LINK REL="next" HREF="node13.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node13.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node11.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html164"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node13.html">3.6 Socket interface with i-PI</A>
+<B> Up:</B> <A
+ HREF="node7.html">3 Using PWscf</A>
+<B> Previous:</B> <A
+ HREF="node11.html">3.4 Optimization and dynamics</A>
+ &nbsp; <B>  <A ID="tex2html165"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A ID="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><UL>
+<LI><A ID="tex2html166"
+  HREF="node12.html#SECTION00045010000000000000">3.5.0.1 Practicalities</A>
+<LI><A ID="tex2html167"
+  HREF="node12.html#SECTION00045020000000000000">3.5.0.2 How to generate <TT>xwfn.data</TT> files with <TT>PWscf</TT></A>
+</UL></UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H2><A ID="SECTION00045000000000000000"></A> <A ID="pw2casino_info"></A>
+<BR>
+3.5 Direct interface with <TT>CASINO</TT>
+</H2>
+
+<P>
+<TT>PWscf</TT> supports the Quantum Monte Carlo program CASINO directly.
+For more information on the <TT>CASINO</TT> code,
+see <TT>https://vallico.net/casinoqmc</TT>. 
+<TT>CASINO</TT> may take the output of <TT>PWSCF</TT> and
+'improve it' giving considerably more accurate total energies and other
+quantities than DFT is capable of.
+
+<P>
+<TT>PWscf</TT> users wishing to learn how to use CASINO may like to attend one
+of the annual <TT>CASINO</TT> summer schools in Mike Towler's "Apuan Alps Centre
+for Physics" in Tuscany, Italy. More information can be found at <TT>http://www.vallico.net/tti/tti.html</TT> 
+
+<H4><A ID="SECTION00045010000000000000">
+3.5.0.1 Practicalities</A>
+</H4>
+The interface between <TT>PWscf</TT> and <TT>CASINO</TT> is provided through a file with a
+standard format containing geometry, basis set, and orbital coefficients, which
+<TT>PWscf</TT> will produce on demand. For SCF calculations, the name of this file may
+be <TT>pwfn.data</TT>, <TT>bwfn.data</TT> or <TT>bwfn.data.b1</TT> depending on user requests (see below).
+If the files are produced from an MD run, the files have a suffix <TT>.0001</TT>, <TT>.0002</TT>,
+<TT>.0003</TT> etc.  corresponding to the sequence of timesteps.
+
+<P>
+<TT>CASINO</TT> support is implemented by three routines in the <TT>PW</TT> directory of the
+espresso distribution: 
+
+<UL>
+<LI><TT>pw2casino.f90</TT> : the main routine     
+</LI>
+<LI><TT>pw2casino_write.f90</TT> : writes the <TT>CASINO</TT> <TT>xwfn.data</TT> file in various formats
+</LI>
+<LI><TT>pw2blip.f90</TT> : does the plane-wave to blip conversion, if requested
+</LI>
+</UL>
+Relevant behavior of <TT>PWscf</TT> may be modified through an optional auxiliary input 
+file, named <TT>pw2casino.dat</TT> (see below).
+
+<P>
+
+<H4><A ID="SECTION00045020000000000000">
+3.5.0.2 How to generate <TT>xwfn.data</TT> files with <TT>PWscf</TT></A>
+</H4>
+Use the '-pw2casino' option when invoking <TT>pw.x</TT>, e.g.: 
+<PRE>
+pw.x -pw2casino &lt; input_file &gt; output_file
+</PRE>
+The <TT>xfwn.data</TT> file will then be generated automatically. 
+
+<P>
+<TT>PWscf</TT> is capable of doing the plane wave to blip conversion directly (the
+'blip' utility provided in the <TT>CASINO</TT> distribution is not required) and so by
+default, <TT>PWscf</TT> produces the 'binary blip wave function' file <TT>bwfn.data.b1</TT>
+
+<P>
+Various options may be modified by providing a file <TT>pw2casino.dat</TT> in <TT>outdir</TT>
+with the following format: 
+<PRE>
+&amp;inputpp
+blip_convert=.true.
+blip_binary=.true.
+blip_single_prec=.false.
+blip_multiplicity=1.d0
+n_points_for_test=0
+/
+</PRE>
+Some or all of the 5 keywords may be provided, in any order. The default
+values are as given above (and these are used if the <TT>pw2casino.dat</TT> file is
+not present.
+
+<P>
+The meanings of the keywords are as follows: 
+<DL>
+<DT><STRONG>blip_convert</STRONG></DT>
+<DD>: reexpand the converged plane-wave orbitals in localized blip 
+functions prior to writing the <TT>CASINO</TT> wave function file. This is almost
+always done, since wave functions expanded in blips are considerably more
+efficient in quantum Monte Carlo calculations. If <TT>blip_convert=.false.</TT>
+a pwfn.data file is produced (orbitals expanded in plane waves); if 
+<TT>blip_convert=.true.</TT>, either a <TT>bwfn.data file</TT> or a <TT>bwfn.data.b1</TT> file is 
+produced, depending on the value of <TT>blip_binary</TT> (see below).
+
+<P>
+</DD>
+<DT><STRONG>blip_binary</STRONG></DT>
+<DD>: if true, and if <TT>blip_convert</TT> is also true, write the blip wave function
+as an unformatted binary <TT>bwfn.data.b1</TT> file. This is much smaller than
+the formatted <TT>bwfn.data</TT> file, but is not generally portable across
+all machines.
+
+<P>
+</DD>
+<DT><STRONG>blip_single_prec</STRONG></DT>
+<DD>: if <TT>.false.</TT> the orbital coefficients in <TT>bwfn.data(.b1)</TT> are written out in double
+precision; if the user runs into hardware limits <TT>blip_single_prec</TT> can be
+set to <TT>.true.</TT> in which case the coefficients are written in single
+precision, reducing the memory and disk requirements at the cost of a small
+amount of accuracy..
+
+<P>
+</DD>
+<DT><STRONG>blip_multiplicity</STRONG></DT>
+<DD>: the quality of the blip expansion (i.e., the fineness of the blip grid) can be
+improved by increasing the grid multiplicity parameter given by this keyword.
+Increasing the grid multiplicity results in a greater number of blip
+coefficients and therefore larger memory requirements and file size, but the
+CPU time should be unchanged. For very accurate work, one may want to 
+experiment with grid multiplicity larger that 1.0. Note, however, that it 
+might be more efficient to keep the grid multiplicity to 1.0 and increase the 
+plane wave cutoff instead.
+
+<P>
+</DD>
+<DT><STRONG>n_points_for_test</STRONG></DT>
+<DD>: if this is set to a positive integer greater than zero, <TT>PWscf</TT> will sample 
+the wave function, the Laplacian and the gradient at a large number of
+random points in the simulation cell and compute the overlap of the
+blip orbitals with the original plane-wave orbitals:
+<P><!-- MATH
+ \begin{displaymath}
+\alpha = {<BW|PW> \over  \sqrt{<BW|BW><PW|PW>}}
+\end{displaymath}
+ -->
+</P>
+<DIV ALIGN="CENTER">
+<I>α</I> = <IMG
+ STYLE="height: 6.59ex; vertical-align: -3.27ex; " SRC="img2.png"
+ ALT="$\displaystyle {&lt;BW\vert PW&gt; \over \sqrt{&lt;BW\vert BW&gt;&lt;PW\vert PW&gt;}}$">
+</DIV><P></P>
+The closer <I>α</I> is to 1, the better the blip representation.  By increasing
+<TT>blip_multiplicity</TT>, or by increasing the plane-wave cutoff, one ought to be 
+able to make <I>α</I> as close to 1 as desired. The number of random points used 
+is given by <TT>n_points_for_test</TT>.
+</DD>
+</DL>
+
+<P>
+Finally, note that DFT trial wave functions produced by <TT>PWSCF</TT>
+must be generated using the same pseudopotential as in the subsequent QMC 
+calculation. This requires the use of tools to switch between the different 
+file formats used by the two codes.
+
+<P>
+<TT>CASINO</TT> uses the `<TT>CASINO</TT> tabulated format', <TT>PWSCF</TT> 
+uses the UPF format. See <TT>upflib/README.md</TT> for instructions on how
+to convert between these formats.
+
+<P>
+An alternative converter `casinogon' is included in the <TT>CASINO</TT> distribution which produces the deprecated GON format but which can be useful when using non-standard grids.
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A
+ HREF="node13.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node11.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html164"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node13.html">3.6 Socket interface with i-PI</A>
+<B> Up:</B> <A
+ HREF="node7.html">3 Using PWscf</A>
+<B> Previous:</B> <A
+ HREF="node11.html">3.4 Optimization and dynamics</A>
+ &nbsp; <B>  <A ID="tex2html165"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

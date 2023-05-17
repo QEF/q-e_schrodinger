@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="input_xx.xsl"?>
+<!-- FILE AUTOMATICALLY CREATED: DO NOT EDIT, CHANGES WILL BE LOST -->
+    
+<input_description distribution="Quantum ESPRESSO" package="PWscf" program="pw2gw.x" >
+   <toc>
+   </toc>
+   <intro>
+<b>Purpose of pw2gw.x:</b>
+   Optical properties in single-particle approach (Fermi Golden Rule).
+   Interface with GW and excitonic codes.
+
+   The code computes and writes (&quot;matrixelements&quot; file) the optical matrix elemenents in the
+   dipole approximation.
+
+   The code computes the imaginary part of the dielectric tensor xx, yy and zz (&quot;epsX.dat&quot;, &quot;epsY.dat&quot;,
+   &quot;epsZ.dat&quot;) and the average (&quot;epsTOT.dat&quot;)
+
+<b>Structure of the input data:</b>
+============================
+
+   <b>&amp;INPUTPP</b>
+     ...
+   <b>/</b>
+   </intro>
+   <namelist name="INPUTPP" >
+      <var name="prefix" type="STRING" >
+         <status> MANDATORY
+         </status>
+         <info>
+the first part of the name of all the file written by the code
+should be equal to the value given in the main calculations.
+         </info>
+      </var>
+      <var name="outdir" type="STRING" >
+         <default> &quot;./&quot;
+         </default>
+         <info>
+the scratch directory where the massive data-files are written
+         </info>
+      </var>
+      <var name="what" type="STRING" >
+         <default> &quot;gw&quot;
+         </default>
+         <info>
+&quot;gw&quot; : Calculate dipole optical matrix elements (use for norm-conserving pseudopotentials)
+and imaginary part of the dielectric function.
+
+&quot;gmaps&quot;: write g-maps for each processor in a file &quot;fort.&apos;100 + processor number&apos;&quot;
+         </info>
+      </var>
+      <var name="qplda" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+if .TRUE. write the interface file &quot;QPLDA&quot; to GW and BSE codes (chisig, dpforexc).
+         </info>
+      </var>
+      <var name="vxcdiag" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+if .TRUE. calculates the expectation value of the exchange and correlation potential
+on all the Kohn-Sham states and write it into the &quot;vxcdiag.dat&quot; file.
+         </info>
+      </var>
+      <var name="vkb" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+    if .TRUE. use Kleyman-Bylander projectors to write additional informatio into fort.15 file
+(Still in development)
+         </info>
+      </var>
+      <var name="Emin" type="REAL" >
+         <default> 0.0
+         </default>
+         <info>
+Starting photon energy for which the dielectric function is calculated (in eV)
+         </info>
+      </var>
+      <var name="Emax" type="REAL" >
+         <default> 30.0
+         </default>
+         <info>
+Highest photon energy for which the dielectric function is calculated (in eV)
+         </info>
+      </var>
+      <var name="DeltaE" type="REAL" >
+         <default> 0.05
+         </default>
+         <info>
+Energy step with which the dielectric function is calculated (in eV)
+         </info>
+      </var>
+   </namelist>
+</input_description>

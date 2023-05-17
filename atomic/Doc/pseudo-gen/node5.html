@@ -1,0 +1,130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>1.3 Pseudopotential generation, in general</TITLE>
+<META NAME="description" CONTENT="1.3 Pseudopotential generation, in general">
+<META NAME="keywords" CONTENT="pseudo-gen">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="pseudo-gen.css">
+
+<LINK REL="previous" HREF="node4.html">
+<LINK REL="next" HREF="node6.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node6.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node2.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node4.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html77"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node6.html">2 Step-by-step Pseudopotential generation</A>
+<B> Up:</B> <A
+ HREF="node2.html">1 Introduction</A>
+<B> Previous:</B> <A
+ HREF="node4.html">1.2 About similar work</A>
+ &nbsp; <B>  <A ID="tex2html78"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A ID="SECTION00023000000000000000">
+1.3 Pseudopotential generation, in general</A>
+</H2>
+<P>
+<EM>In the following I am assuming that the basic PP theory 
+is known to the reader. Otherwise, see 
+Refs.[<A
+ HREF="node21.html#NC">1</A>,<A
+ HREF="node21.html#BHS">4</A>,<A
+ HREF="node21.html#TM">7</A>,<A
+ HREF="node21.html#fhi98PP">8</A>,<A
+ HREF="node21.html#RRKJ">9</A>] and references quoted 
+therein for NC-PP's; Refs.[<A
+ HREF="node21.html#van">2</A>,<A
+ HREF="node21.html#PAW">3</A>] for US-PP's and PAWsets. 
+I am also assuming that the generated PP's are to be used
+in separable form [<A
+ HREF="node21.html#KB">10</A>] with a plane-wave (PW) basis set.
+</EM>
+<P>
+<EM>The PP generation is a three-step process. First, one generates
+atomic levels and orbitals with Density-functional theory (DFT). 
+Second, from atomic results one generates the PP. Third, one checks 
+whether the reesulting PP is actually working. If not, one tries again in 
+a different way.
+</EM>
+<P>
+<EM>The first step is invariably done assuming a spherically symmetric
+self-consistent Hamiltonian, so that all elementary quantum mechanics 
+results for the atom apply. The atomic state is defined by the
+"electronic configuration", one-electron states are defined by a
+principal quantum number and by the angular momentum and are obtained
+by solving a self-consistent radial Schrödinger-like (Kohn-Sham)
+equation.
+</EM>
+<P>
+<EM>The second step exists in many variants. One can generate ``traditional'' 
+single-projector NC-PP's; multiple-projector US-PP's, or PAW sets.
+The crucial step is in all cases the generation of smooth
+``pseudo-orbitals''  from atomic all-electron (AE) orbitals. 
+Two popular pseudization
+methods are presently implemented: Troullier-Martins [<A
+ HREF="node21.html#TM">7</A>]
+and Rappe-Rabe-Kaxiras-Joannopoulos [<A
+ HREF="node21.html#RRKJ">9</A>] (RRKJ).
+</EM>
+<P>
+<EM>The second and third steps are closer to cooking than to science. 
+There is a
+large arbitrariness in the preceding step that one would like to 
+exploit in order to get the "best" PP, but there is no well-defined
+way to do this. Moreover one is often forced to strike a compromise
+between transferability (thus accuracy) and hardness (i.e. computer 
+time). These two steps are the main focus of these notes.
+</EM>
+<P><HR>
+<!--Navigation Panel-->
+<A
+ HREF="node6.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node2.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node4.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html77"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node6.html">2 Step-by-step Pseudopotential generation</A>
+<B> Up:</B> <A
+ HREF="node2.html">1 Introduction</A>
+<B> Previous:</B> <A
+ HREF="node4.html">1.2 About similar work</A>
+ &nbsp; <B>  <A ID="tex2html78"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

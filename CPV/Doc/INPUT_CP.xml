@@ -1,0 +1,2313 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="input_xx.xsl"?>
+<!-- FILE AUTOMATICALLY CREATED: DO NOT EDIT, CHANGES WILL BE LOST -->
+    
+<input_description distribution="Quantum ESPRESSO" package="CP" program="cp.x" >
+   <toc>
+   </toc>
+   <intro>
+Input data format: { } = optional, [ ] = it depends, | = or
+
+All quantities whose dimensions are not explicitly specified are in
+HARTREE ATOMIC UNITS. Charge is &quot;number&quot; charge (i.e. not multiplied
+by e); potentials are in energy units (i.e. they are multiplied by e)
+
+<b>BEWARE:</b> TABS, CRLF, ANY OTHER STRANGE CHARACTER, ARE A SOURCES OF TROUBLE
+<b>USE</b> ONLY PLAIN ASCII TEXT FILES (CHECK THE FILE TYPE WITH UNIX COMMAND &quot;file&quot;)
+
+Namelists must appear in the order given below.
+Comment lines in namelists can be introduced by a &quot;!&quot;, exactly as in
+fortran code. Comments lines in ``cards&apos;&apos; can be introduced by
+either a &quot;!&quot; or a &quot;#&quot; character in the first position of a line.
+Do not start any line in ``cards&apos;&apos; with a &quot;/&quot; character.
+Leave a space between card names and card options, e.g.
+ATOMIC_POSITIONS (bohr), not ATOMIC_POSITIONS(bohr)
+
+Structure of the input data:
+===============================================================================
+
+&amp;CONTROL
+  ...
+/
+
+&amp;SYSTEM
+ ...
+/
+
+&amp;ELECTRONS
+...
+/
+
+[ &amp;IONS
+  ...
+ / ]
+
+[ &amp;CELL
+  ...
+ / ]
+
+[ &amp;WANNIER
+  ...
+ / ]
+
+ATOMIC_SPECIES
+ X  Mass_X  PseudoPot_X
+ Y  Mass_Y  PseudoPot_Y
+ Z  Mass_Z  PseudoPot_Z
+
+ATOMIC_POSITIONS { alat | bohr | crystal | angstrom }
+  X 0.0  0.0  0.0  {if_pos(1) if_pos(2) if_pos(3)}
+  Y 0.5  0.0  0.0
+  Z O.0  0.2  0.2
+
+[ CELL_PARAMETERS { alat | bohr | angstrom }
+   v1(1) v1(2) v1(3)
+   v2(1) v2(2) v2(3)
+   v3(1) v3(2) v3(3) ]
+
+[ OCCUPATIONS
+   f_inp1(1)  f_inp1(2)  f_inp1(3) ... f_inp1(10)
+   f_inp1(11) f_inp1(12) ... f_inp1(nbnd)
+ [ f_inp2(1)  f_inp2(2)  f_inp2(3) ... f_inp2(10)
+   f_inp2(11) f_inp2(12) ... f_inp2(nbnd) ] ]
+
+[ CONSTRAINTS
+   nconstr  { constr_tol }
+   constr_type(.)   constr(1,.)   constr(2,.) [ constr(3,.)   constr(4,.) ] { constr_target(.) } ]
+
+[ ATOMIC_FORCES
+   label_1 Fx(1) Fy(1) Fz(1)
+   .....
+   label_n Fx(n) Fy(n) Fz(n) ]
+   </intro>
+   <namelist name="CONTROL" >
+      <var name="calculation" type="CHARACTER" >
+         <default> &apos;cp&apos;
+         </default>
+         <info>
+a string describing the task to be performed:
+   &apos;cp&apos;,
+   &apos;scf&apos;,
+   &apos;nscf&apos;,
+   &apos;relax&apos;,
+   &apos;vc-relax&apos;,
+   &apos;vc-cp&apos;,
+   &apos;cp-wf&apos;,
+   &apos;vc-cp-wf&apos;
+
+   (vc = variable-cell).
+   (wf = Wannier functions).
+         </info>
+      </var>
+      <var name="title" type="CHARACTER" >
+         <default> &apos;MD Simulation &apos;
+         </default>
+         <info>
+reprinted on output.
+         </info>
+      </var>
+      <var name="verbosity" type="CHARACTER" >
+         <default> &apos;low&apos;
+         </default>
+         <info>
+In order of decreasing verbose output:
+ &apos;debug&apos; | &apos;high&apos; | &apos;medium&apos; | &apos;low&apos;,&apos;default&apos; | &apos;minimal&apos;
+         </info>
+      </var>
+      <var name="isave" type="INTEGER" >
+         <see> ndr
+         </see>
+         <see> ndw
+         </see>
+         <default> 100
+         </default>
+         <info>
+Number of steps between successive savings of
+information needed to restart the run.
+         </info>
+      </var>
+      <var name="restart_mode" type="CHARACTER" >
+         <default> &apos;restart&apos;
+         </default>
+         <info>
+&apos;from_scratch&apos;   : from scratch
+&apos;restart&apos;        : from previous interrupted run
+&apos;reset_counters&apos; : continue a previous simulation,
+                   performs  &quot;nstep&quot; new steps, resetting
+                   the counter and averages
+         </info>
+      </var>
+      <var name="nstep" type="INTEGER" >
+         <info>
+number of Car-Parrinello steps performed in this run
+         </info>
+         <default>
+50
+         </default>
+      </var>
+      <var name="iprint" type="INTEGER" >
+         <default> 10
+         </default>
+         <info>
+Number of steps between successive writings of relevant physical quantities
+to files named as &quot;prefix.???&quot; depending on &quot;prefix&quot; parameter.
+In the standard output relevant quantities are written every 10*iprint steps.
+         </info>
+      </var>
+      <var name="tstress" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+Write stress tensor to standard output each &quot;iprint&quot; steps.
+It is set to .TRUE. automatically if calculation=&apos;vc-relax&apos;
+         </info>
+      </var>
+      <var name="tprnfor" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+print forces. Set to .TRUE. when ions are moving.
+         </info>
+      </var>
+      <var name="dt" type="REAL" >
+         <default> 1.D0
+         </default>
+         <info>
+time step for molecular dynamics, in Hartree atomic units
+(1 a.u.=2.4189 * 10^-17 s : beware, PW code use
+ Rydberg atomic units, twice that much!!!)
+         </info>
+      </var>
+      <var name="outdir" type="CHARACTER" >
+         <default>
+value of the ESPRESSO_TMPDIR environment variable if set;
+current directory (&apos;./&apos;) otherwise
+         </default>
+         <info>
+input, temporary, trajectories and output files are found
+in this directory.
+         </info>
+      </var>
+      <var name="saverho" type="LOGICAL" >
+         <info>
+This flag controls the saving of charge density in CP codes:
+If  .TRUE.        save charge density to restart dir,
+If .FALSE. do not save charge density.
+         </info>
+      </var>
+      <var name="prefix" type="CHARACTER" >
+         <default> &apos;cp&apos;
+         </default>
+         <info>
+prepended to input/output filenames and restart folders:
+  prefix.pos : atomic positions
+  prefix.vel : atomic velocities
+  prefix.for : atomic forces
+  prefix.cel : cell parameters
+  prefix.str : stress tensors
+  prefix.evp : energies
+  prefix.hrs : Hirshfeld effective volumes (ts-vdw)
+  prefix.eig : eigen values
+  prefix.nos : Nose-Hoover variables
+  prefix.spr : spread of Wannier orbitals
+  prefix.wfc : center of Wannier orbitals
+  prefix.ncg : number of Poisson CG steps (PBE0)
+  prefix_ndw.save/ : write restart folder
+  prefix_ndr.save/ : read restart folder
+where ndr and ndw are the integers number described below
+         </info>
+      </var>
+      <var name="ndr" type="INTEGER" >
+         <default> 50
+         </default>
+         <info>
+The restart files are read from the folder
+  outdir/prefix_ndr.save/
+where outdir, prefix and ndr are the input variables described
+in this document
+         </info>
+      </var>
+      <var name="ndw" type="INTEGER" >
+         <default> 50
+         </default>
+         <info>
+The restart files are write in the folder
+  outdir/prefix_ndw.save/
+where outdir, prefix and ndw are the input variables described
+in this document
+         </info>
+      </var>
+      <var name="tabps" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+.true. to compute the volume and/or the surface of an isolated
+system for finite pressure/finite surface tension calculations
+(<a href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.94.145501">PRL 94, 145501 (2005)</a>; JCP 124, 074103 (2006)).
+         </info>
+      </var>
+      <var name="max_seconds" type="REAL" >
+         <default> 1.D+7, or 150 days, i.e. no time limit
+         </default>
+         <info>
+jobs stops after max_seconds CPU time. Used to prevent
+a hard kill from the queuing system.
+         </info>
+      </var>
+      <var name="etot_conv_thr" type="REAL" >
+         <default> 1.0D-4
+         </default>
+         <info>
+convergence threshold on total energy (a.u) for ionic
+minimization: the convergence criterion is satisfied
+when the total energy changes less than etot_conv_thr
+between two consecutive scf steps.
+See also forc_conv_thr - both criteria must be satisfied
+         </info>
+      </var>
+      <var name="forc_conv_thr" type="REAL" >
+         <default> 1.0D-3
+         </default>
+         <info>
+convergence threshold on forces (a.u) for ionic
+minimization: the convergence criterion is satisfied
+when all components of all forces are smaller than
+forc_conv_thr.
+See also etot_conv_thr - both criteria must be satisfied
+         </info>
+      </var>
+      <var name="ekin_conv_thr" type="REAL" >
+         <default> 1.0D-6
+         </default>
+         <info>
+convergence criterion for electron minimization:
+convergence is achieved when &quot;ekin &lt; ekin_conv_thr&quot;.
+See also etot_conv_thr - both criteria must be satisfied.
+         </info>
+      </var>
+      <var name="disk_io" type="CHARACTER" >
+         <default> &apos;default&apos;
+         </default>
+         <info>
+&apos;high&apos;: CP code will write Kohn-Sham wfc files and additional
+        information in data-file.xml in order to restart
+        with a PW calculation or to use postprocessing tools.
+        If disk_io is not set to &apos;high&apos;, the data file
+        written by CP will not be readable by PW or PostProc.
+         </info>
+      </var>
+      <var name="memory" type="CHARACTER" >
+         <default> &apos;default&apos;
+         </default>
+         <info>
+&apos;small&apos;: NO LONGER IMPLEMENTED SINCE v.6.3
+         memory-saving tricks are implemented. Currently:
+         - the G-vectors are sorted only locally, not globally
+         - they are not collected and written to file
+         For large systems, the memory and time gain is sizable
+         but the resulting data files are not portable - use it
+         only if you do not need to re-read the data file
+         </info>
+      </var>
+      <var name="pseudo_dir" type="CHARACTER" >
+         <default>
+value of the $ESPRESSO_PSEUDO environment variable if set;
+&apos;$HOME/espresso/pseudo/&apos; otherwise
+         </default>
+         <info>
+directory containing pseudopotential files
+         </info>
+      </var>
+      <var name="tefield" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+If .TRUE. a homogeneous finite electric field described
+through the modern theory of the polarization is applied.
+         </info>
+      </var>
+   </namelist>
+   <namelist name="SYSTEM" >
+      <var name="ibrav" type="INTEGER" >
+         <status> REQUIRED
+         </status>
+         <info>
+  Bravais-lattice index. If ibrav /= 0, specify EITHER
+  [ celldm(1)-celldm(6) ] OR [ A,B,C,cosAB,cosAC,cosBC ]
+  but NOT both. The lattice parameter &quot;alat&quot; is set to
+  alat = celldm(1) (in a.u.) or alat = A (in Angstrom);
+  see below for the other parameters.
+  For ibrav=0 specify the lattice vectors in CELL_PARAMETER,
+  optionally the lattice parameter alat = celldm(1) (in a.u.)
+  or = A (in Angstrom), or else it is taken from CELL_PARAMETERS
+
+ibrav      structure                   celldm(2)-celldm(6)
+                                     or: b,c,cosbc,cosac,cosab
+  0          free
+      crystal axis provided in input: see card CELL_PARAMETERS
+
+  1          cubic P (sc)
+      v1 = a(1,0,0),  v2 = a(0,1,0),  v3 = a(0,0,1)
+
+  2          cubic F (fcc)
+      v1 = (a/2)(-1,0,1),  v2 = (a/2)(0,1,1), v3 = (a/2)(-1,1,0)
+
+  3          cubic I (bcc)
+      v1 = (a/2)(1,1,1),  v2 = (a/2)(-1,1,1),  v3 = (a/2)(-1,-1,1)
+ -3          cubic I (bcc), more symmetric axis:
+      v1 = (a/2)(-1,1,1), v2 = (a/2)(1,-1,1),  v3 = (a/2)(1,1,-1)
+
+  4          Hexagonal and Trigonal P        celldm(3)=c/a
+      v1 = a(1,0,0),  v2 = a(-1/2,sqrt(3)/2,0),  v3 = a(0,0,c/a)
+
+  5          Trigonal R, 3fold axis c        celldm(4)=cos(gamma)
+      The crystallographic vectors form a three-fold star around
+      the z-axis, the primitive cell is a simple rhombohedron:
+      v1 = a(tx,-ty,tz),   v2 = a(0,2ty,tz),   v3 = a(-tx,-ty,tz)
+      where c=cos(gamma) is the cosine of the angle gamma between
+      any pair of crystallographic vectors, tx, ty, tz are:
+        tx=sqrt((1-c)/2), ty=sqrt((1-c)/6), tz=sqrt((1+2c)/3)
+ -5          Trigonal R, 3fold axis &lt;111&gt;    celldm(4)=cos(gamma)
+      The crystallographic vectors form a three-fold star around
+      &lt;111&gt;. Defining a&apos; = a/sqrt(3) :
+      v1 = a&apos; (u,v,v),   v2 = a&apos; (v,u,v),   v3 = a&apos; (v,v,u)
+      where u and v are defined as
+        u = tz - 2*sqrt(2)*ty,  v = tz + sqrt(2)*ty
+      and tx, ty, tz as for case ibrav=5
+      Note: if you prefer x,y,z as axis in the cubic limit,
+            set  u = tz + 2*sqrt(2)*ty,  v = tz - sqrt(2)*ty
+            See also the note in Modules/latgen.f90
+
+  6          Tetragonal P (st)               celldm(3)=c/a
+      v1 = a(1,0,0),  v2 = a(0,1,0),  v3 = a(0,0,c/a)
+
+  7          Tetragonal I (bct)              celldm(3)=c/a
+      v1=(a/2)(1,-1,c/a),  v2=(a/2)(1,1,c/a),  v3=(a/2)(-1,-1,c/a)
+
+  8          Orthorhombic P                  celldm(2)=b/a
+                                             celldm(3)=c/a
+      v1 = (a,0,0),  v2 = (0,b,0), v3 = (0,0,c)
+
+  9          Orthorhombic base-centered(bco) celldm(2)=b/a
+                                             celldm(3)=c/a
+      v1 = (a/2, b/2,0),  v2 = (-a/2,b/2,0),  v3 = (0,0,c)
+ -9          as 9, alternate description
+      v1 = (a/2,-b/2,0),  v2 = (a/2, b/2,0),  v3 = (0,0,c)
+
+ 10          Orthorhombic face-centered      celldm(2)=b/a
+                                             celldm(3)=c/a
+      v1 = (a/2,0,c/2),  v2 = (a/2,b/2,0),  v3 = (0,b/2,c/2)
+
+ 11          Orthorhombic body-centered      celldm(2)=b/a
+                                             celldm(3)=c/a
+      v1=(a/2,b/2,c/2),  v2=(-a/2,b/2,c/2),  v3=(-a/2,-b/2,c/2)
+
+ 12          Monoclinic P, unique axis c     celldm(2)=b/a
+                                             celldm(3)=c/a,
+                                             celldm(4)=cos(ab)
+      v1=(a,0,0), v2=(b*cos(gamma),b*sin(gamma),0),  v3 = (0,0,c)
+      where gamma is the angle between axis a and b.
+-12          Monoclinic P, unique axis b     celldm(2)=b/a
+                                             celldm(3)=c/a,
+                                             celldm(5)=cos(ac)
+      v1 = (a,0,0), v2 = (0,b,0), v3 = (c*cos(beta),0,c*sin(beta))
+      where beta is the angle between axis a and c
+
+ 13          Monoclinic base-centered        celldm(2)=b/a
+                                             celldm(3)=c/a,
+                                             celldm(4)=cos(gamma)
+      v1 = (  a/2,         0,                -c/2),
+      v2 = (b*cos(gamma), b*sin(gamma),       0  ),
+      v3 = (  a/2,         0,                 c/2),
+      where gamma=angle between axis a and b projected on xy plane
+
+-13          Monoclinic base-centered        celldm(2)=b/a
+             (unique axis b)                 celldm(3)=c/a,
+                                             celldm(5)=cos(beta)
+      v1 = (  a/2,       b/2,             0),
+      v2 = ( -a/2,       b/2,             0),
+      v3 = (c*cos(beta),   0,   c*sin(beta)),
+      where beta=angle between axis a and c projected on xz plane
+ IMPORTANT NOTICE: until QE v.6.4.1, axis for ibrav=-13 had a
+ different definition: v1(old) = v2(now), v2(old) = -v1(now)
+
+ 14          Triclinic                       celldm(2)= b/a,
+                                             celldm(3)= c/a,
+                                             celldm(4)= cos(bc),
+                                             celldm(5)= cos(ac),
+                                             celldm(6)= cos(ab)
+      v1 = (a, 0, 0),
+      v2 = (b*cos(gamma), b*sin(gamma), 0)
+      v3 = (c*cos(beta),  c*(cos(alpha)-cos(beta)cos(gamma))/sin(gamma),
+           c*sqrt( 1 + 2*cos(alpha)cos(beta)cos(gamma)
+                     - cos(alpha)^2-cos(beta)^2-cos(gamma)^2 )/sin(gamma) )
+  where alpha is the angle between axis b and c
+         beta is the angle between axis a and c
+        gamma is the angle between axis a and b
+         </info>
+      </var>
+      <group>
+         <label> Either:
+         </label>
+         <dimension name="celldm" start="1" end="6" type="REAL" >
+            <see> ibrav
+            </see>
+            <info>
+Crystallographic constants - see the &quot;ibrav&quot; variable.
+Specify either these OR A,B,C,cosAB,cosBC,cosAC NOT both.
+Only needed values (depending on &quot;ibrav&quot;) must be specified
+alat = celldm(1) is the lattice parameter &quot;a&quot; (in BOHR)
+If ibrav=0, only celldm(1) is used if present;
+cell vectors are read from card CELL_PARAMETERS
+            </info>
+         </dimension>
+         <label> Or:
+         </label>
+         <vargroup type="REAL" >
+            <var name="A" >
+            </var>
+            <var name="B" >
+            </var>
+            <var name="C" >
+            </var>
+            <var name="cosAB" >
+            </var>
+            <var name="cosAC" >
+            </var>
+            <var name="cosBC" >
+            </var>
+            <info>
+Traditional crystallographic constants: a,b,c in ANGSTROM
+  cosAB = cosine of the angle between axis a and b (gamma)
+  cosAC = cosine of the angle between axis a and c (beta)
+  cosBC = cosine of the angle between axis b and c (alpha)
+The axis are chosen according to the value of &quot;ibrav&quot;.
+Specify either these OR &quot;celldm&quot; but NOT both.
+Only needed values (depending on &quot;ibrav&quot;) must be specified
+The lattice parameter alat = A (in ANGSTROM )
+If ibrav = 0, only A is used if present;
+cell vectors are read from card CELL_PARAMETERS
+            </info>
+         </vargroup>
+      </group>
+      <var name="nat" type="INTEGER" >
+         <status> REQUIRED
+         </status>
+         <info>
+number of atoms in the unit cell
+         </info>
+      </var>
+      <var name="ntyp" type="INTEGER" >
+         <status> REQUIRED
+         </status>
+         <info>
+number of types of atoms in the unit cell
+         </info>
+      </var>
+      <var name="nbnd" type="INTEGER" >
+         <default>
+for an insulator, nbnd = number of valence bands
+(nbnd = # of electrons /2);
+for a metal, 20% more (minimum 4 more)
+         </default>
+         <info>
+number of electronic states (bands) to be calculated.
+Note that in spin-polarized calculations the number of
+k-point, not the number of bands per k-point, is doubled
+         </info>
+      </var>
+      <var name="tot_charge" type="REAL" >
+         <default> 0.0
+         </default>
+         <info>
+total charge of the system. Useful for simulations with charged cells.
+By default the unit cell is assumed to be neutral (tot_charge=0).
+tot_charge=+1 means one electron missing from the system,
+tot_charge=-1 means one additional electron, and so on.
+
+In a periodic calculation a compensating jellium background is
+inserted to remove divergences if the cell is not neutral.
+         </info>
+      </var>
+      <var name="tot_magnetization" type="REAL" >
+         <default> -1 [unspecified]
+         </default>
+         <info>
+total majority spin charge - minority spin charge.
+Used to impose a specific total electronic magnetization.
+If unspecified, the tot_magnetization variable is ignored
+and the electronic magnetization is determined by the
+occupation numbers (see card OCCUPATIONS) read from input.
+         </info>
+      </var>
+      <var name="ecutwfc" type="REAL" >
+         <status> REQUIRED
+         </status>
+         <info>
+kinetic energy cutoff (Ry) for wavefunctions
+         </info>
+      </var>
+      <var name="ecutrho" type="REAL" >
+         <default> 4 * ecutwfc
+         </default>
+         <info>
+kinetic energy cutoff (Ry) for charge density and potential
+For norm-conserving pseudopotential you should stick to the
+default value, you can reduce it by a little but it will
+introduce noise especially on forces and stress.
+If there are ultrasoft PP, a larger value than the default is
+often desirable (ecutrho = 8 to 12 times ecutwfc, typically).
+PAW datasets can often be used at 4*ecutwfc, but it depends
+on the shape of augmentation charge: testing is mandatory.
+The use of gradient-corrected functional, especially in cells
+with vacuum, or for pseudopotential without non-linear core
+correction, usually requires an higher values of ecutrho
+to be accurately converged.
+         </info>
+      </var>
+      <vargroup type="INTEGER" >
+         <see> ecutrho
+         </see>
+         <var name="nr1" >
+         </var>
+         <var name="nr2" >
+         </var>
+         <var name="nr3" >
+         </var>
+         <info>
+three-dimensional FFT mesh (hard grid) for charge
+density (and scf potential). If not specified
+the grid is calculated based on the cutoff for
+charge density.
+         </info>
+      </vargroup>
+      <vargroup type="INTEGER" >
+         <var name="nr1s" >
+         </var>
+         <var name="nr2s" >
+         </var>
+         <var name="nr3s" >
+         </var>
+         <info>
+three-dimensional mesh for wavefunction FFT and for the smooth
+part of charge density ( smooth grid ).
+Coincides with nr1, nr2, nr3 if ecutrho = 4 * ecutwfc ( default )
+         </info>
+      </vargroup>
+      <vargroup type="INTEGER" >
+         <var name="nr1b" >
+         </var>
+         <var name="nr2b" >
+         </var>
+         <var name="nr3b" >
+         </var>
+         <info>
+dimensions of the &quot;box&quot; grid for Ultrasoft pseudopotentials
+must be specified if Ultrasoft PP are present
+         </info>
+      </vargroup>
+      <var name="occupations" type="CHARACTER" >
+         <info>
+a string describing the occupation of the electronic states.
+Allowed values are &apos;fixed&apos; (default) and &apos;ensemble&apos;.
+In the case of conjugate gradient style of minimization
+of the electronic states, if occupations is set to &apos;ensemble&apos;,
+this allows ensemble DFT calculations for metallic systems.
+         </info>
+      </var>
+      <var name="degauss" type="REAL" >
+         <default> 0.D0 Ha
+         </default>
+         <info>
+parameter for the smearing function, only used for ensemble DFT
+calculations. Hartree atomic units
+         </info>
+      </var>
+      <var name="smearing" type="CHARACTER" >
+         <info>
+a string describing the kind of occupations for electronic states
+in the case of ensemble DFT (occupations == &apos;ensemble&apos; );
+possible values are: &apos;gaussian&apos;, &apos;fermi-dirac&apos;, &apos;hermite-delta&apos;,
+&apos;gaussian-splines&apos;, &apos;cold-smearing&apos;, &apos;marzari-vanderbilt&apos;, &apos;0&apos;, &apos;-1&apos;.
+Warning: only &apos;gaussian&apos; is tested.
+         </info>
+      </var>
+      <var name="nspin" type="INTEGER" >
+         <default> 1
+         </default>
+         <info>
+nspin = 1 :  non-polarized calculation (default)
+
+nspin = 2 :  spin-polarized calculation, LSDA
+             (magnetization along z axis)
+         </info>
+      </var>
+      <var name="ecfixed" type="REAL" >
+         <default> 0.0
+         </default>
+         <see> q2sigma
+         </see>
+      </var>
+      <var name="qcutz" type="REAL" >
+         <default> 0.0
+         </default>
+         <see> q2sigma
+         </see>
+      </var>
+      <var name="q2sigma" type="REAL" >
+         <default> 0.1
+         </default>
+         <info>
+ecfixed, qcutz, q2sigma:  parameters for modified functional to be
+used in variable-cell molecular dynamics (or in stress calculation).
+&quot;ecfixed&quot; is the value (in Rydberg) of the constant-cutoff;
+&quot;qcutz&quot; and &quot;q2sigma&quot; are the height and the width (in Rydberg)
+of the energy step for reciprocal vectors whose square modulus
+is greater than &quot;ecfixed&quot;. In the kinetic energy, G^2 is
+replaced by G^2 + qcutz * (1 + erf ( (G^2 - ecfixed)/q2sigma) )
+See: M. Bernasconi et al, J. Phys. Chem. Solids 56, 501 (1995)
+         </info>
+      </var>
+      <var name="input_dft" type="CHARACTER" >
+         <default> read from pseudopotential files
+         </default>
+         <info>
+Exchange-correlation functional: eg &apos;PBE&apos;, &apos;BLYP&apos; etc
+See Modules/funct.f90 for allowed values.
+Overrides the value read from pseudopotential files.
+Use with care and if you know what you are doing!
+
+Use &apos;PBE0&apos; to perform hybrid functional calculation using Wannier functions.
+Allowed calculation: &apos;cp-wf&apos; and &apos;vc-cp-wf&apos;
+See CP specific user manual for further guidance (or in CPV/Doc/user_guide.tex)
+and examples in CPV/examples/EXX-wf-example.
+Also see related keywords starting with exx_.
+         </info>
+      </var>
+      <var name="exx_fraction" type="REAL" >
+         <default> it depends on the specified functional
+         </default>
+         <info>
+            Fraction of EXX for hybrid functional calculations. In the case of
+            input_dft=&apos;PBE0&apos;, the default value is 0.25. This entry overrides
+the default (as well as the restart file) value of a given functional.
+         </info>
+      </var>
+      <var name="lda_plus_u" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+lda_plus_u = .TRUE. enables calculation with LDA+U
+                  (&quot;rotationally invariant&quot;). See also Hubbard_U.
+                  Anisimov, Zaanen, and Andersen, <a href="https://journals.aps.org/prb/abstract/10.1103/PhysRevB.44.943">PRB 44, 943 (1991)</a>;
+                  Anisimov et al., <a href="https://journals.aps.org/prb/abstract/10.1103/PhysRevB.48.16929">PRB 48, 16929 (1993)</a>;
+                  Liechtenstein, Anisimov, and Zaanen, <a href="https://journals.aps.org/prb/abstract/10.1103/PhysRevB.52.R5467">PRB 52, R5467 (1994)</a>;
+                  Cococcioni and de Gironcoli, <a href="https://journals.aps.org/prb/abstract/10.1103/PhysRevB.71.035105">PRB 71, 035105 (2005)</a>.
+         </info>
+      </var>
+      <dimension name="Hubbard_U" start="1" end="ntyp" type="REAL" >
+         <default> 0.D0 for all species
+         </default>
+         <status>
+LDA+U works only for a few selected elements. Modify
+CPV/ldaU.f90 if you plan to use LDA+U with an
+element that is not configured there.
+         </status>
+         <info>
+Hubbard_U(i): parameter U (in eV) for LDA+U calculations.
+Currently only the simpler, one-parameter LDA+U is
+implemented (no &quot;alpha&quot; or &quot;J&quot; terms)
+         </info>
+      </dimension>
+      <var name="vdw_corr" type="CHARACTER" >
+         <default> &apos;none&apos;
+         </default>
+         <info>
+Type of Van der Waals correction. Allowed values:
+
+   &apos;grimme-d2&apos;, &apos;Grimme-D2&apos;, &apos;DFT-D&apos;, &apos;dft-d&apos;: semiempirical Grimme&apos;s DFT-D2.
+    Optional variables: &quot;london_s6&quot;, &quot;london_rcut&quot;
+    S. Grimme, J. Comp. Chem. 27, 1787 (2006),
+    V. Barone et al., J. Comp. Chem. 30, 934 (2009).
+
+    &apos;TS&apos;, &apos;ts&apos;, &apos;ts-vdw&apos;, &apos;ts-vdW&apos;, &apos;tkatchenko-scheffler&apos;: Tkatchenko-Scheffler
+     dispersion corrections with first-principle derived C6 coefficients
+     Optional variables: &quot;ts_vdw_econv_thr&quot;, &quot;ts_vdw_isolated&quot;
+     See A. Tkatchenko and M. Scheffler, Phys. Rev. Lett. 102, 073005 (2009)
+
+    &apos;XDM&apos;, &apos;xdm&apos;: Exchange-hole dipole-moment model. Optional variables: &quot;xdm_a1&quot;, &quot;xdm_a2&quot;
+     (implemented in PW only)
+     A. D. Becke and E. R. Johnson, J. Chem. Phys. 127, 154108 (2007)
+      A. Otero de la Roza, E. R. Johnson, J. Chem. Phys. 136, 174109 (2012)
+
+Note that non-local functionals (eg vdw-DF) are NOT specified here but in &quot;input_dft&quot;
+         </info>
+      </var>
+      <var name="london_s6" type="REAL" >
+         <default> 0.75
+         </default>
+         <info>
+global scaling parameter for DFT-D. Default is good for PBE.
+         </info>
+      </var>
+      <var name="london_rcut" type="REAL" >
+         <default> 200
+         </default>
+         <info>
+cutoff radius (a.u.) for dispersion interactions
+         </info>
+      </var>
+      <var name="ts_vdw" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+OBSOLESCENT, same as vdw_corr=&apos;TS&apos;
+         </info>
+      </var>
+      <var name="ts_vdw_econv_thr" type="REAL" >
+         <default> 1.D-6
+         </default>
+         <info>
+Optional: controls the convergence of the vdW energy (and forces). The default value
+is a safe choice, likely too safe, but you do not gain much in increasing it
+         </info>
+      </var>
+      <var name="ts_vdw_isolated" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+Optional: set it to .TRUE. when computing the Tkatchenko-Scheffler vdW energy
+for an isolated (non-periodic) system.
+         </info>
+      </var>
+      <var name="assume_isolated" type="CHARACTER" >
+         <default> &apos;none&apos;
+         </default>
+         <info>
+        Used to perform calculation assuming the system to be
+        isolated (a molecule of a clustr in a 3D supercell).
+
+        Currently available choices:
+
+        &apos;none&apos; (default): regular periodic calculation w/o any correction.
+
+        &apos;makov-payne&apos;, &apos;m-p&apos;, &apos;mp&apos; : the Makov-Payne correction to the
+                 total energy is computed.
+                 Theory:
+                 G.Makov, and M.C.Payne,
+                 &quot;Periodic boundary conditions in ab initio
+                 calculations&quot; , Phys.Rev.B 51, 4014 (1995)
+
+
+var nextffield -type INTEGER {
+  default { 0 }
+  info {
+      Number of activated external ionic force fields.
+      See Doc/ExternalForceFields.tex for further explanation and parameterizations
+  }
+}
+         </info>
+      </var>
+   </namelist>
+   <namelist name="ELECTRONS" >
+      <var name="electron_maxstep" type="INTEGER" >
+         <default> 100
+         </default>
+         <info>
+maximum number of iterations in a scf step
+         </info>
+      </var>
+      <var name="electron_dynamics" type="CHARACTER" >
+         <default> &apos;none&apos;
+         </default>
+         <info>
+set how electrons should be moved
+&apos;none&apos;    : electronic degrees of freedom (d.o.f.) are kept fixed
+&apos;sd&apos;      : steepest descent algorithm is used to minimize
+          electronic d.o.f.
+&apos;damp&apos;    : damped dynamics is used to propagate electronic d.o.f.
+&apos;verlet&apos;  : standard Verlet algorithm is used to propagate
+          electronic d.o.f.
+&apos;cg&apos;      : conjugate gradient is used to converge the
+          wavefunction at each ionic step. &apos;cg&apos; can be used
+          interchangeably with &apos;verlet&apos; for a couple of ionic
+          steps in order to &quot;cool down&quot; the electrons and
+          return them back to the Born-Oppenheimer surface.
+          Then &apos;verlet&apos; can be restarted again. This procedure
+          is useful when electronic adiabaticity in CP is lost
+          yet the ionic velocities need to be preserved.
+         </info>
+      </var>
+      <var name="conv_thr" type="REAL" >
+         <default> 1.D-6
+         </default>
+         <info>
+Convergence threshold for selfconsistency:
+estimated energy error &lt; conv_thr
+         </info>
+      </var>
+      <var name="niter_cg_restart" type="INTEGER" >
+         <default> 20
+         </default>
+         <info>
+frequency in iterations for which the conjugate-gradient algorithm
+for electronic relaxation is restarted
+         </info>
+      </var>
+      <var name="efield" type="REAL" >
+         <default> 0.D0
+         </default>
+         <info>
+Amplitude of the finite electric field (in a.u.;
+1 a.u. = 51.4220632*10^10 V/m). Used only if tefield=.TRUE.
+         </info>
+      </var>
+      <var name="epol" type="INTEGER" >
+         <default> 3
+         </default>
+         <info>
+direction of the finite electric field (only if tefield == .TRUE.)
+In the case of a PARALLEL calculation only the case epol==3
+is implemented
+         </info>
+      </var>
+      <var name="emass" type="REAL" >
+         <default> 400.D0
+         </default>
+         <info>
+effective electron mass in the CP Lagrangian, in atomic units
+( 1 a.u. of mass = 1/1822.9 a.m.u. = 9.10939 * 10^-31 kg )
+         </info>
+      </var>
+      <var name="emass_cutoff" type="REAL" >
+         <default> 2.5D0
+         </default>
+         <info>
+mass cut-off (in Rydberg) for the Fourier acceleration
+effective mass is rescaled for &quot;G&quot; vector components with
+kinetic energy above &quot;emass_cutoff&quot;
+         </info>
+      </var>
+      <var name="orthogonalization" type="CHARACTER" >
+         <default> &apos;ortho&apos;
+         </default>
+         <info>
+selects the orthonormalization method for electronic wave
+functions
+&apos;ortho&apos;        : use iterative algorithm - if it doesn&apos;t converge,
+                 reduce the timestep, or use options ortho_max
+                 and ortho_eps, or use Gram-Schmidt instead just
+                 to start the simulation
+&apos;Gram-Schmidt&apos; : use Gram-Schmidt algorithm - to be used ONLY in
+                 the first few steps.
+                 YIELDS INCORRECT ENERGIES AND EIGENVALUES.
+         </info>
+      </var>
+      <var name="ortho_eps" type="REAL" >
+         <default> 1.D-8
+         </default>
+         <info>
+tolerance for iterative orthonormalization
+meaningful only if orthogonalization = &apos;ortho&apos;
+         </info>
+      </var>
+      <var name="ortho_max" type="INTEGER" >
+         <default> 300
+         </default>
+         <info>
+maximum number of iterations for orthonormalization
+meaningful only if orthogonalization = &apos;ortho&apos;
+         </info>
+      </var>
+      <var name="ortho_para" type="INTEGER" >
+         <default> 0
+         </default>
+         <status> OBSOLETE: use command-line option &quot; -nd XX&quot; instead
+         </status>
+         <info>
+
+         </info>
+      </var>
+      <var name="electron_damping" type="REAL" >
+         <default> 0.1D0
+         </default>
+         <info>
+damping frequency times delta t, optimal values could be
+calculated with the formula :
+         SQRT( 0.5 * LOG( ( E1 - E2 ) / ( E2 - E3 ) ) )
+where E1, E2, E3 are successive values of the DFT total energy
+in a steepest descent simulations.
+meaningful only if &quot; electron_dynamics = &apos;damp&apos; &quot;
+         </info>
+      </var>
+      <var name="electron_velocities" type="CHARACTER" >
+         <info>
+&apos;zero&apos;      : restart setting electronic velocities to zero
+&apos;default&apos;   : restart using electronic velocities of the
+            previous run
+&apos;change_step&apos; : restart simulation using electronic velocities of the
+            previous run, with rescaling due to the timestep change.
+            specify the old step via <ref>tolp</ref> as in
+            tolp = &apos;old_time_step_value&apos; in au.
+            Note that you may want to specify
+            <ref>ion_velocities</ref> = &apos;change_step&apos;
+         </info>
+      </var>
+      <var name="electron_temperature" type="CHARACTER" >
+         <default> &apos;not_controlled&apos;
+         </default>
+         <info>
+&apos;nose&apos;            : control electronic temperature using Nose
+                  thermostat. See also &quot;fnosee&quot; and &quot;ekincw&quot;.
+&apos;rescaling&apos;       : control electronic temperature via velocities
+                  rescaling.
+&apos;not_controlled&apos;  : electronic temperature is not controlled.
+         </info>
+      </var>
+      <var name="ekincw" type="REAL" >
+         <default> 0.001D0
+         </default>
+         <info>
+value of the average kinetic energy (in atomic units) forced
+by the temperature control
+meaningful only with &quot; electron_temperature /= &apos;not_controlled&apos; &quot;
+         </info>
+      </var>
+      <var name="fnosee" type="REAL" >
+         <default> 1.D0
+         </default>
+         <info>
+oscillation frequency of the nose thermostat (in terahertz)
+meaningful only with &quot; electron_temperature = &apos;nose&apos; &quot;
+         </info>
+      </var>
+      <var name="startingwfc" type="CHARACTER" >
+         <default> &apos;random&apos;
+         </default>
+         <info>
+&apos;atomic&apos;: start from superposition of atomic orbitals
+          (not yet implemented)
+
+
+&apos;random&apos;: start from random wfcs. See &quot;ampre&quot;.
+         </info>
+      </var>
+      <var name="tcg" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+if .TRUE. perform a conjugate gradient minimization of the
+electronic states for every ionic step.
+It requires Gram-Schmidt orthogonalization of the electronic
+states.
+         </info>
+      </var>
+      <var name="maxiter" type="INTEGER" >
+         <default> 100
+         </default>
+         <info>
+maximum number of conjugate gradient iterations for
+conjugate gradient minimizations of electronic states
+         </info>
+      </var>
+      <var name="passop" type="REAL" >
+         <default> 0.3D0
+         </default>
+         <info>
+small step used in the  conjugate gradient minimization
+of the electronic states.
+         </info>
+      </var>
+      <var name="pre_state" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+if .TRUE. perform the precondition of the CG gradient
+using the kinetic energy of the state.
+         </info>
+      </var>
+      <var name="n_inner" type="INTEGER" >
+         <default> 2
+         </default>
+         <info>
+number of internal cycles for every conjugate gradient
+iteration only for ensemble DFT
+         </info>
+      </var>
+      <var name="niter_cold_restart" type="INTEGER" >
+         <default> 1
+         </default>
+         <info>
+frequency in iterations at which a full inner cycle, only
+for cold smearing, is performed
+         </info>
+      </var>
+      <var name="lambda_cold" type="REAL" >
+         <default> 0.03D0
+         </default>
+         <info>
+step for inner cycle with cold smearing, used when a not full
+cycle is performed
+         </info>
+      </var>
+      <var name="grease" type="REAL" >
+         <default> 1.D0
+         </default>
+         <info>
+a number &lt;= 1, very close to 1: the damping in electronic
+damped dynamics is multiplied at each time step by &quot;grease&quot;
+(avoids overdamping close to convergence: Obsolete ?)
+grease = 1 : normal damped dynamics
+         </info>
+      </var>
+      <var name="ampre" type="REAL" >
+         <default> 0.D0
+         </default>
+         <info>
+amplitude of the randomization ( allowed values: 0.0 - 1.0 )
+meaningful only if &quot; startingwfc = &apos;random&apos; &quot;
+         </info>
+      </var>
+   </namelist>
+   <namelist name="IONS" >
+      <label>
+input this namelist only if calculation = &apos;cp&apos;, &apos;relax&apos;, &apos;vc-relax&apos;, &apos;vc-cp&apos;, &apos;cp-wf&apos;, &apos;vc-cp-wf&apos;
+      </label>
+      <var name="ion_dynamics" type="CHARACTER" >
+         <info>
+ Specify the type of ionic dynamics.
+
+ For constrained dynamics or constrained optimisations add the
+ CONSTRAINTS card (when the card is present the SHAKE algorithm is
+                   automatically used).
+&apos;none&apos;    : ions are kept fixed
+&apos;sd&apos;      : steepest descent algorithm is used to minimize ionic
+            configuration
+&apos;cg&apos;      : conjugate gradient algorithm is used to minimize ionic
+            configuration
+&apos;damp&apos;    : damped dynamics is used to propagate ions
+&apos;verlet&apos;  : standard Verlet algorithm is used to propagate ions
+         </info>
+      </var>
+      <var name="ion_positions" type="CHARACTER" >
+         <default> &apos;default&apos;
+         </default>
+         <info>
+&apos;default &apos;  : if restarting, use atomic positions read from the
+              restart file; in all other cases, use atomic
+              positions from standard input.
+
+&apos;from_input&apos; : restart the simulation with atomic positions read
+              from standard input, even if restarting.
+         </info>
+      </var>
+      <var name="ion_velocities" type="CHARACTER" >
+         <default> &apos;default&apos;
+         </default>
+         <see> tempw
+         </see>
+         <info>
+initial ionic velocities
+&apos;default&apos;     : restart the simulation with atomic velocities read
+                from the restart file
+&apos;change_step&apos; : restart the simulation with atomic velocities read
+                from the restart file, with rescaling due to the
+                timestep change, specify the old step via <ref>tolp</ref>
+                as in tolp = &apos;old_time_step_value&apos; in au.
+                Note that you may want to specify
+                electron_velocities = &apos;change_step&apos;
+&apos;random&apos;      : start the simulation with random atomic velocities
+                (see also variable <ref>tempw</ref>)
+&apos;from_input&apos;  : restart the simulation with atomic velocities read
+                from standard input - see card &apos;ATOMIC_VELOCITIES&apos;
+                BEWARE: tested only with electrons_dynamics=&apos;cg&apos;
+&apos;zero&apos;        : restart the simulation with atomic velocities set
+                to zero
+         </info>
+      </var>
+      <var name="ion_damping" type="REAL" >
+         <default> 0.2D0
+         </default>
+         <info>
+damping frequency times delta t, optimal values could be
+  calculated with the formula :
+  SQRT( 0.5 * LOG( ( E1 - E2 ) / ( E2 - E3 ) ) )
+  where E1, E2, E3 are successive values of the DFT total energy
+  in a steepest descent simulations.
+  meaningful only if &quot; ion_dynamics = &apos;damp&apos; &quot;
+         </info>
+      </var>
+      <dimension name="ion_radius" start="1" end="ntyp" type="REAL" >
+         <default> 0.5 a.u. for all species
+         </default>
+         <info>
+ion_radius(i): pseudo-atomic radius of the i-th atomic species
+used in Ewald summation. Typical values: between 0.5 and 2.
+Results should NOT depend upon such parameters if their values
+are properly chosen. See also &quot;iesr&quot;.
+         </info>
+      </dimension>
+      <var name="iesr" type="INTEGER" >
+         <default> 1
+         </default>
+         <info>
+The real-space contribution to the Ewald summation is performed
+on iesr*iesr*iesr cells. Typically iesr=1 is sufficient to have
+converged results.
+         </info>
+      </var>
+      <var name="ion_nstepe" type="INTEGER" >
+         <default> 1
+         </default>
+         <info>
+number of electronic steps per ionic step.
+         </info>
+      </var>
+      <var name="remove_rigid_rot" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+This keyword is useful when simulating the dynamics and/or the
+thermodynamics of an isolated system. If set to true the total
+torque of the internal forces is set to zero by adding new forces
+that compensate the spurious interaction with the periodic
+images. This allows for the use of smaller supercells.
+
+BEWARE: since the potential energy is no longer consistent with
+the forces (it still contains the spurious interaction with the
+repeated images), the total energy is not conserved anymore.
+However the dynamical and thermodynamical properties should be
+in closer agreement with those of an isolated system.
+Also the final energy of a structural relaxation will be higher,
+but the relaxation itself should be faster.
+         </info>
+      </var>
+      <var name="ion_temperature" type="CHARACTER" >
+         <default> &apos;not_controlled&apos;
+         </default>
+         <info>
+&apos;nose&apos;           : control ionic temperature using Nose-Hoover
+                   thermostat  see parameters &quot;fnosep&quot;, &quot;tempw&quot;,
+                   &quot;nhpcl&quot;, &quot;ndega&quot;, &quot;nhptyp&quot;
+&apos;rescaling&apos;      : control ionic temperature via velocities
+                   rescaling. see parameter &quot;tolp&quot;
+&apos;not_controlled&apos; : ionic temperature is not controlled
+         </info>
+      </var>
+      <var name="tempw" type="REAL" >
+         <default> 300.D0
+         </default>
+         <info>
+value of the ionic temperature (in Kelvin) forced by the
+temperature control.
+meaningful only with &quot; ion_temperature /= &apos;not_controlled&apos; &quot;
+or when the initial velocities are set to &apos;random&apos;
+&quot;ndega&quot; controls number of degrees of freedom used in
+temperature calculation
+         </info>
+      </var>
+      <var name="fnosep" type="REAL" >
+         <default> 1.D0
+         </default>
+         <info>
+oscillation frequency of the nose thermostat (in terahertz)
+[note that 3 terahertz = 100 cm^-1]
+meaningful only with &quot; ion_temperature = &apos;nose&apos; &quot;
+for Nose-Hoover chain one can set frequencies of all thermostats
+( fnosep = X Y Z etc. ) If only first is set, the defaults for
+the others will be same.
+         </info>
+      </var>
+      <var name="tolp" type="REAL" >
+         <default> 100.D0
+         </default>
+         <info>
+tolerance (in Kelvin) of the rescaling. When ionic temperature
+differs from &quot;tempw&quot; more than &quot;tolp&quot; apply rescaling.
+meaningful only with <ref>ion_temperature</ref> = &apos;rescaling&apos;
+or with <ref>ion_velocities</ref>=&apos;change_step&apos;, where it specifies
+the old timestep
+         </info>
+      </var>
+      <var name="nhpcl" type="INTEGER" >
+         <default> 1
+         </default>
+         <info>
+number of thermostats in the Nose-Hoover chain
+currently maximum allowed is 4
+         </info>
+      </var>
+      <var name="nhptyp" type="INTEGER" >
+         <default> 0
+         </default>
+         <info>
+type of the &quot;massive&quot; Nose-Hoover chain thermostat
+nhptyp=1 uses a NH chain per each atomic type
+nhptyp=2 uses a NH chain per atom, this one is useful
+for extremely rapid equipartitioning (equilibration is a
+different beast)
+nhptyp=3 together with nhgrp allows fine grained thermostat
+control
+NOTE: if using more than 1 thermostat per system there will
+be a common thermostat added on top of them all, to disable
+this common thermostat specify nhptyp=-X instead of nhptyp=X
+         </info>
+      </var>
+      <dimension name="nhgrp" start="1" end="ntyp" type="INTEGER" >
+         <default> 0
+         </default>
+         <info>
+specifies which thermostat group to use for given atomic type
+when &gt;0 assigns all the atoms in this type to thermostat
+labeled nhgrp(i), when =0 each atom in the type gets its own
+thermostat. Finally, when &lt;0, then this atomic type will have
+temperature &quot;not controlled&quot;. Example: HCOOLi, with types H (1), C(2), O(3), Li(4);
+setting nhgrp={2 2 0 -1} will add a common thermostat for both H &amp; C,
+one thermostat per each O (2 in total), and a non-updated thermostat
+for Li which will effectively make temperature for Li &quot;not controlled&quot;
+         </info>
+      </dimension>
+      <dimension name="fnhscl" start="1" end="ntyp" type="REAL" >
+         <default> (Nat_{total}-1)/Nat_{total}
+         </default>
+         <info>
+these are the scaling factors to be used together with nhptyp=3 and nhgrp(i)
+in order to take care of possible reduction in the degrees of freedom due to
+constraints. Suppose that with the previous example HCOOLi, C-H bond is
+constrained. Then, these 2 atoms will have 5 degrees of freedom in total instead
+of 6, and one can set fnhscl={5/6 5/6 1. 1.}. This way the target kinetic energy
+for H&amp;C will become 6(kT/2)*5/6 = 5(kT/2). This option is to be used for
+simulations with many constraints, such as rigid water with something else in there
+         </info>
+      </dimension>
+      <var name="ndega" type="INTEGER" >
+         <default> 0
+         </default>
+         <info>
+number of degrees of freedom used for temperature calculation
+ndega &lt;= 0 sets the number of degrees of freedom to
+[3*nat-abs(ndega)], ndega &gt; 0 is used as the target number
+         </info>
+      </var>
+      <dimension name="tranp" start="1" end="ntyp" type="LOGICAL" >
+         <see> amprp
+         </see>
+         <default> .false.
+         </default>
+         <info>
+If .TRUE. randomize ionic positions for the
+atomic type corresponding to the index.
+         </info>
+      </dimension>
+      <dimension name="amprp" start="1" end="ntyp" type="REAL" >
+         <see> amprp
+         </see>
+         <default> 0.D0
+         </default>
+         <info>
+amplitude of the randomization for the atomic type corresponding
+to the index i ( allowed values: 0.0 - 1.0 ).
+meaningful only if &quot; tranp(i) = .TRUE.&quot;.
+         </info>
+      </dimension>
+      <var name="greasp" type="REAL" >
+         <default> 1.D0
+         </default>
+         <info>
+same as &quot;grease&quot;, for ionic damped dynamics.
+         </info>
+      </var>
+   </namelist>
+   <namelist name="CELL" >
+      <label>
+input this namelist only if calculation = &apos;vc-relax&apos;, &apos;vc-cp&apos;, &apos;vc-cp-wf&apos;
+      </label>
+      <var name="cell_parameters" type="CHARACTER" >
+         <info>
+&apos;default&apos;      : restart the simulation with cell parameters read
+               from the restart file or &quot;celldm&quot; if
+               &quot;restart = &apos;from_scratch&apos;&quot;
+&apos;from_input&apos;   : restart the simulation with cell parameters
+               from standard input.
+               ( see the card &apos;CELL_PARAMETERS&apos; )
+         </info>
+      </var>
+      <var name="cell_dynamics" type="CHARACTER" >
+         <default>
+&apos;pr&apos;      if <ref>calculation</ref> = &apos;vc-md&apos;, &apos;vc&apos;cp&apos;, &apos;vc-cp-wf&apos;;
+                     &apos;damp-pr&apos; if  <ref>calculation</ref> = &apos;vc-relax&apos;;
+                     &apos;none&apos;    otherwise
+         </default>
+         <info>
+set how cell should be moved
+&apos;none&apos;      : cell is kept fixed
+&apos;sd&apos;        : steepest descent algorithm is used to optimise the
+              cell
+&apos;damp-pr&apos;   : damped dynamics is used to optimise the cell
+              ( Parrinello-Rahman method ).
+&apos;pr&apos;        : standard Verlet algorithm is used to propagate
+              the cell ( Parrinello-Rahman method ).
+         </info>
+      </var>
+      <var name="cell_velocities" type="CHARACTER" >
+         <info>
+&apos;zero&apos;      : restart setting cell velocity to zero
+&apos;default&apos;   : restart using cell velocity of the previous run
+         </info>
+      </var>
+      <var name="cell_damping" type="REAL" >
+         <default> 0.1D0
+         </default>
+         <info>
+damping frequency times delta t, optimal values could be
+calculated with the formula :
+         SQRT( 0.5 * LOG( ( E1 - E2 ) / ( E2 - E3 ) ) )
+where E1, E2, E3 are successive values of the DFT total energy
+in a steepest descent simulations.
+meaningful only if &quot; cell_dynamics = &apos;damp&apos; &quot;
+         </info>
+      </var>
+      <var name="press" type="REAL" >
+         <default> 0.D0
+         </default>
+         <info>
+Target pressure [KBar] in a variable-cell md or relaxation run.
+         </info>
+      </var>
+      <var name="wmass" type="REAL" >
+         <default>
+0.75*Tot_Mass/pi**2 for Parrinello-Rahman MD;
+0.75*Tot_Mass/pi**2/Omega**(2/3) for Wentzcovitch MD
+         </default>
+         <info>
+Fictitious cell mass [amu] for variable-cell simulations
+(both &apos;vc-md&apos; and &apos;vc-relax&apos;)
+         </info>
+      </var>
+      <var name="cell_factor" type="REAL" >
+         <default> 1.2D0
+         </default>
+         <info>
+Used in the construction of the pseudopotential tables.
+It should exceed the maximum linear contraction of the
+cell during a simulation.
+         </info>
+      </var>
+      <var name="cell_temperature" type="CHARACTER" >
+         <default> &apos;not_controlled&apos;
+         </default>
+         <info>
+&apos;nose&apos;            : control cell temperature using Nose thermostat
+                    see parameters &quot;fnoseh&quot; and &quot;temph&quot;.
+&apos;rescaling&apos;       : control cell temperature via velocities
+                    rescaling.
+&apos;not_controlled&apos;  : cell temperature is not controlled.
+         </info>
+      </var>
+      <var name="temph" type="REAL" >
+         <default> 0.D0
+         </default>
+         <info>
+value of the cell temperature (in ???) forced
+by the temperature control.
+meaningful only with &quot; cell_temperature /= &apos;not_controlled&apos; &quot;
+         </info>
+      </var>
+      <var name="fnoseh" type="REAL" >
+         <default> 1.D0
+         </default>
+         <info>
+oscillation frequency of the nose thermostat (in terahertz)
+meaningful only with &quot; cell_temperature = &apos;nose&apos; &quot;
+         </info>
+      </var>
+      <var name="greash" type="REAL" >
+         <default> 1.D0
+         </default>
+         <info>
+same as &quot;grease&quot;, for cell damped dynamics
+         </info>
+      </var>
+      <var name="cell_dofree" type="CHARACTER" >
+         <default> &apos;all&apos;
+         </default>
+         <info>
+Select which of the cell parameters should be moved:
+
+all     = all axis and angles are moved
+x       = only the x component of axis 1 (v1_x) is moved
+y       = only the y component of axis 2 (v2_y) is moved
+z       = only the z component of axis 3 (v3_z) is moved
+xy      = only v1_x and v2_y are moved
+xz      = only v1_x and v3_z are moved
+yz      = only v2_y and v3_z are moved
+xyz     = only v1_x, v2_y, v3_z are moved
+shape   = all axis and angles, keeping the volume fixed
+2Dxy    = only x and y components are allowed to change
+2Dshape = as above, keeping the area in xy plane fixed
+volume  = isotropic variations of v1_x, v2_y, v3_z, keeping
+          the shape fixed. Should be used only with ibrav=1.
+         </info>
+      </var>
+   </namelist>
+   <namelist name="PRESS_AI" >
+      <label>
+input this namelist only when tabps = .true.
+      </label>
+      <var name="abivol" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+.true. for finite pressure calculations
+         </info>
+      </var>
+      <var name="abisur" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+.true. for finite surface tension calculations
+         </info>
+      </var>
+      <var name="P_ext" type="REAL" >
+         <default> 0.D0
+         </default>
+         <info>
+external pressure in GPa
+         </info>
+      </var>
+      <var name="pvar" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+.true. for variable pressure calculations
+pressure changes linearly with time:
+Delta_P = (P_fin - P_in)/nstep
+         </info>
+      </var>
+      <var name="P_in" type="REAL" >
+         <default> 0.D0
+         </default>
+         <info>
+only if pvar = .true.
+initial value of the external pressure (GPa)
+         </info>
+      </var>
+      <var name="P_fin" type="REAL" >
+         <default> 0.D0
+         </default>
+         <info>
+only if pvar = .true.
+final value of the external pressure (GPa)
+         </info>
+      </var>
+      <var name="Surf_t" type="REAL" >
+         <default> 0.D0
+         </default>
+         <info>
+Surface tension (in a.u.; typical values 1.d-4 - 1.d-3)
+         </info>
+      </var>
+      <var name="rho_thr" type="REAL" >
+         <default> 0.D0
+         </default>
+         <info>
+threshold parameter which defines the electronic charge density
+isosurface to compute the &apos;quantum&apos; volume of the system
+(typical values: 1.d-4 - 1.d-3)
+(corresponds to alpha in <a href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.94.145501">PRL 94 145501 (2005)</a>)
+         </info>
+      </var>
+      <var name="dthr" type="REAL" >
+         <default> 0.D0
+         </default>
+         <info>
+thikness of the external skin of the electronic charge density
+used to compute the &apos;quantum&apos; surface
+(typical values: 1.d-4 - 1.d-3; 50% to 100% of rho_thr)
+(corresponds to Delta in <a href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.94.145501">PRL 94 145501 (2005)</a>)
+         </info>
+      </var>
+   </namelist>
+   <namelist name="WANNIER" >
+      <label>
+only if calculation = &apos;cp-wf&apos;, &apos;vc-cp-wf&apos;
+      </label>
+      <message>
+Output files used by Wannier Function options are the following
+
+      fort.21: Used only when calwf=5, contains the full list of g-vecs.
+      fort.22: Used Only when calwf=5, contains the coeffs. corresponding
+               to the g-vectors in fort.21
+      fort.24: Used with calwf=3,contains the average spread
+      fort.25: Used with calwf=3, contains the individual Wannier
+               Function Spread of each state
+      fort.26: Used with calwf=3, contains the wannier centers along a
+               trajectory.
+      fort.27: Used with calwf=3 and 4,  contains some general runtime
+               information from ddyn, the subroutine that actually
+               does the localization of the orbitals.
+      fort.28: Used only if efield=.TRUE. , contains the polarization
+               contribution to the total energy.
+
+Also, The center of mass is fixed during the Molecular Dynamics.
+
+BEWARE : THIS WILL ONLY WORK IF THE NUMBER OF PROCESSORS IS LESS THAN OR
+         EQUAL TO THE NUMBER OF STATES.
+
+Nota Bene 1:   For calwf = 5, wffort is not used. The
+               Wannier/Wave(function) coefficients are written to unit 22
+               and the corresponding g-vectors (basis vectors) are
+               written to unit 21. This option gives the g-vecs and
+               their coeffs. in reciprocal space, and the coeffs. are
+               complex. You will have to convert them to real space
+               if you want to plot them for visualization. calwf=1 gives
+               the orbital densities in real space, and this is usually
+               good enough for visualization.
+      </message>
+      <var name="wf_efield" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+If dynamics will be done in the presence of a field
+         </info>
+      </var>
+      <var name="wf_switch" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+Whether to turn on the field adiabatically (adiabatic switch)
+if true, then nbeg is set to 0.
+         </info>
+      </var>
+      <var name="sw_len" type="INTEGER" >
+         <default> 1
+         </default>
+         <info>
+No. of iterations over which the field will be turned on
+to its final value. Starting value is 0.0
+If sw_len &lt; 0, then it is set to 1.
+If you want to just optimize structures on the presence of a
+field, then you may set this to 1 and run a regular geometry
+optimization.
+         </info>
+      </var>
+      <vargroup type="REAL" >
+         <see> 0.D0
+         </see>
+         <var name="efx0" >
+         </var>
+         <var name="efy0" >
+         </var>
+         <var name="efz0" >
+         </var>
+         <info>
+Initial values of the field along x, y, and z directions
+         </info>
+      </vargroup>
+      <vargroup type="REAL" >
+         <see> 0.D0
+         </see>
+         <var name="efx1" >
+         </var>
+         <var name="efy1" >
+         </var>
+         <var name="efz1" >
+         </var>
+         <info>
+Final values of the field along x, y, and z directions
+         </info>
+      </vargroup>
+      <var name="wfsd" type="INTEGER" >
+         <default> 1
+         </default>
+         <info>
+Localization algorithm for Wannier function calculation:
+wfsd=1  Damped Dynamics
+wfsd=2  Steepest-Descent / Conjugate-Gradient
+wfsd=3  Jocobi Rotation
+Remember, this is consistent with all the calwf options
+as well as the tolw (see below).
+Not a good idea to Wannier dynamics with this if you are
+using restart=&apos;from_scratch&apos; option, since the spreads
+converge fast in the beginning and ortho goes bananas.
+         </info>
+      </var>
+      <var name="wfdt" type="REAL" >
+         <default> 5.D0
+         </default>
+         <info>
+The minimum step size to take in the SD/CG direction
+         </info>
+      </var>
+      <var name="maxwfdt" type="REAL" >
+         <default> 0.3D0
+         </default>
+         <info>
+The maximum step size to take in the SD/CG direction
+The code calculates an optimum step size, but that may be
+either too small (takes forever to converge)  or too large
+(code goes crazy) . This option keeps the step size between
+wfdt and maxwfdt. In my experience 0.1 and 0.5 work quite
+well. (but don&apos;t blame me if it doesn&apos;t work for you)
+         </info>
+      </var>
+      <var name="nit" type="INTEGER" >
+         <default> 10
+         </default>
+         <info>
+Number of iterations to do for Wannier convergence.
+         </info>
+      </var>
+      <var name="nsd" type="INTEGER" >
+         <default> 10
+         </default>
+         <info>
+Out of a total of NIT iterations, NSD will be Steepest-Descent
+and ( nit - nsd ) will be Conjugate-Gradient.
+         </info>
+      </var>
+      <var name="wf_q" type="REAL" >
+         <default> 1500.D0
+         </default>
+         <info>
+Fictitious mass of the A matrix used for obtaining
+maximally localized Wannier functions. The unitary
+transformation matrix U is written as exp(A) where
+A is a anti-hermitian matrix. The Damped-Dynamics is performed
+in terms of the A matrix, and then U is computed from A.
+Usually a value between 1500 and 2500 works fine, but should
+be tested.
+         </info>
+      </var>
+      <var name="wf_friction" type="REAL" >
+         <default> 0.3D0
+         </default>
+         <info>
+Damping coefficient for Damped-Dynamics.
+         </info>
+      </var>
+      <var name="nsteps" type="INTEGER" >
+         <default> 20
+         </default>
+         <info>
+Number of Damped-Dynamics steps to be performed per CP
+iteration.
+         </info>
+      </var>
+      <var name="tolw" type="REAL" >
+         <default> 1.D-8
+         </default>
+         <info>
+Convergence criterion for localization.
+         </info>
+      </var>
+      <var name="adapt" type="LOGICAL" >
+         <default> .true.
+         </default>
+         <info>
+Whether to adapt the damping parameter dynamically.
+         </info>
+      </var>
+      <var name="calwf" type="INTEGER" >
+         <default> 3
+         </default>
+         <info>
+Wannier Function Options, can be 1,2,3,4,5
+
+1. Output the Wannier function density, nwf and wffort
+   are used for this option. see below.
+2. Output the Overlap matrix O_i,j=&lt;w_i|exp{iGr}|w_j&gt;. O is
+   written to unit 38. For details on how O is constructed,
+   see below.
+3. Perform nsteps of Wannier dynamics per CP iteration, the
+   orbitals are now Wannier Functions, not Kohn-Sham orbitals.
+   This is a Unitary transformation of the occupied subspace
+   and does not leave the CP Lagrangian invariant. Expectation
+   values remain the same. So you will **NOT** have a constant
+   of motion during the run. Don&apos;t freak out, its normal.
+4. This option starts for the KS states and does 1 CP iteration
+   and nsteps of Damped-Dynamics to generate  maximally
+   localized wannier functions. Its useful when you have the
+   converged KS groundstate and want to get to the converged
+   Wannier function groundstate in 1 CP Iteration.
+5. This option is similar to calwf 1, except that the output is
+   the Wannier function/wavefunction, and not the orbital
+   density. See nwf below.
+         </info>
+      </var>
+      <var name="nwf" type="INTEGER" >
+         <default> 0
+         </default>
+         <info>
+This option is used with calwf 1 and calwf 5. with calwf=1,
+it tells the code how many Orbital densities are to be
+output. With calwf=5, set this to 1(i.e calwf=5 only writes
+one state during one run. so if you want 10 states, you have
+to run the code 10 times). With calwf=1, you can print many
+orbital densities in a single run.
+See also the PLOT_WANNIER card for specifying the states to
+be printed.
+         </info>
+      </var>
+      <var name="wffort" type="INTEGER" >
+         <default> 40
+         </default>
+         <info>
+This tells the code where to dump the orbital densities. Used
+ only with CALWF=1. for e.g. if you want to print 2 orbital
+ densities, set calwf=1, nwf=2 and wffort to an appropriate
+ number (e.g. 40) then the first orbital density will be
+ output to fort.40, the second to fort.41 and so on. Note that
+ in the current implementation, the following units are used
+ 21,22,24,25,26,27,28,38,39,77,78 and whatever you define as
+ ndr and ndw. so use number other than these.
+         </info>
+      </var>
+      <var name="writev" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+Output the charge density (g-space) and the list of g-vectors
+This is useful if you want to reconstruct the electrostatic
+potential using the Poisson equation. If .TRUE. then the
+code will output the g-space charge density and the list
+if G-vectors, and STOP.
+Charge density is written to : CH_DEN_G_PARA.ispin (1 or 2
+depending on the number of spin types) or CH_DEN_G_SERL.ispin
+depending on if the code is being run in parallel or serial
+G-vectors are written to G_PARA or G_SERL.
+         </info>
+      </var>
+      <var name="exx_neigh" type="INTEGER" >
+         <default> 60
+         </default>
+         <info>
+An initial guess on the maximum number of neighboring (overlapping) MLWFs.
+         </info>
+      </var>
+      <var name="exx_dis_cutoff" type="REAL" >
+         <default> 8.0
+         </default>
+         <info>
+Radial cutoff distance (in bohr) for including overlapping MLWF pairs
+in EXX calculations.
+See J. Chem. Theory Comput. 16, 3757–3785 (2020).
+         </info>
+      </var>
+      <var name="exx_poisson_eps" type="REAL" >
+         <default> 1.0D-6
+         </default>
+         <info>
+Poisson solver convergence criterion during computation of the EXX potential.
+         </info>
+      </var>
+      <var name="exx_use_cube_domain" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <info>
+Use cubic instead of spherical subdomains as local supports during computation
+of the EXX potential. If set to .TRUE., the spherical domain
+radii (exx_ps_rcut_self, exx_ps_rcut_pair, exx_me_rcut_self, exx_me_rcut_pair)
+will be treated as half of the side length of the cubic subdomain.
+         </info>
+      </var>
+      <var name="exx_ps_rcut_self" type="REAL" >
+         <default> 6.0
+         </default>
+         <info>
+Radial cutoff distance (in bohr) to compute the self EXX energy.
+This distance determines the radius of the Poisson sphere centered at
+a given MLWF center, and should be large enough to cover
+the majority of the MLWF charge density.
+See J. Chem. Theory Comput. 16, 3757–3785 (2020).
+         </info>
+         <see> exx_use_cube_domain
+         </see>
+      </var>
+      <var name="exx_ps_rcut_pair" type="REAL" >
+         <default> 5.0
+         </default>
+         <info>
+Radial cutoff distance (in bohr) to compute the pair EXX energy.
+This distance determines the radius of the Poisson sphere centered at
+the midpoint of two overlapping MLWFs, and should be
+large enough to cover the majority of the MLWF product density.
+This parameter can generally be chosen as smaller than exx_ps_rcut_self.
+See J. Chem. Theory Comput. 16, 3757–3785 (2020).
+         </info>
+         <see> exx_use_cube_domain
+         </see>
+      </var>
+      <var name="exx_me_rcut_self" type="REAL" >
+         <default> 10.0
+         </default>
+         <info>
+Radial cutoff distance (in bohr) for the multipole-expansion sphere
+centered at a given MLWF center.
+The far-field self EXX potential in this sphere is generated with a
+multipole expansion of the MLWF charge density.
+This parameter must be larger than exx_ps_rcut_self by at least 3
+real-space grid point spacings.
+See J. Chem. Theory Comput. 16, 3757–3785 (2020).
+         </info>
+         <see> exx_use_cube_domain
+         </see>
+      </var>
+      <var name="exx_me_rcut_pair" type="REAL" >
+         <default> 7.0
+         </default>
+         <info>
+Radial cutoff distance (in bohr) for the multipole-expansion sphere
+centered at the midpoint of two overlapping MLWFs.
+The far-field pair EXX potential in this sphere is generated with
+a multipole expansion of the MLWF product density.
+This parameter must be larger than exx_ps_rcut_pair by at least 3
+real-space grid point spacings. Also, this parameter can generally
+be chosen as smaller than exx_me_rcut_self.
+See J. Chem. Theory Comput. 16, 3757–3785 (2020).
+         </info>
+         <see> exx_use_cube_domain
+         </see>
+      </var>
+   </namelist>
+   <card name="ATOMIC_SPECIES" >
+      <syntax>
+         <table name="atomic_species" >
+            <rows start="1" end="ntyp" >
+               <col name="X" type="CHARACTER" >
+                  <info>
+label of the atom. Acceptable syntax:
+chemical symbol X (1 or 2 characters, case-insensitive)
+or chemical symbol plus a number or a letter, as in
+&quot;Xn&quot; (e.g. Fe1) or &quot;X_*&quot; or &quot;X-*&quot; (e.g. C1, C_h;
+max total length cannot exceed 3 characters)
+                  </info>
+               </col>
+               <col name="Mass_X" type="REAL" >
+                  <info>
+mass of the atomic species [amu: mass of C = 12]
+not used if calculation=&apos;scf&apos;, &apos;nscf&apos;, &apos;bands&apos;
+                  </info>
+               </col>
+               <col name="PseudoPot_X" type="CHARACTER" >
+                  <info>
+File containing PP for this species.
+
+The pseudopotential file is assumed to be in the new UPF format.
+If it doesn&apos;t work, the pseudopotential format is determined by
+the file name:
+
+*.vdb or *.van     Vanderbilt US pseudopotential code
+*.RRKJ3            Andrea Dal Corso&apos;s code (old format)
+none of the above  old PWscf norm-conserving format
+                  </info>
+               </col>
+            </rows>
+         </table>
+      </syntax>
+   </card>
+   <card name="ATOMIC_POSITIONS" >
+      <flag name="atompos_unit" use="optional" >
+         <enum> alat | bohr | angstrom | crystal
+         </enum>
+         <default> (DEPRECATED) bohr
+         </default>
+         <info>
+alat    : atomic positions are in cartesian coordinates,
+          in units of the lattice parameter (either
+          celldm(1) or A).
+
+bohr    : atomic positions are in cartesian coordinate,
+          in atomic units (i.e. Bohr).
+          If no option is specified, &apos;bohr&apos; is assumed;
+          not specifying units is DEPRECATED and will no
+          longer be allowed in the future
+
+angstrom: atomic positions are in cartesian coordinates,
+          in Angstrom
+
+crystal : atomic positions are in crystal coordinates, i.e.
+          in relative coordinates of the primitive lattice
+          vectors as defined either in card CELL_PARAMETERS
+          or via the ibrav + celldm / a,b,c... variables
+         </info>
+      </flag>
+      <choose>
+         <when test="calculation == 'bands' OR calculation == 'nscf'" >
+            <message>
+Specified atomic positions will be IGNORED and those from the
+previous scf calculation will be used instead !!!
+            </message>
+         </when>
+         <elsewhen>
+            <syntax>
+               <table name="atomic_coordinates" >
+                  <rows start="1" end="nat" >
+                     <col name="X" type="CHARACTER" >
+                        <info> label of the atom as specified in ATOMIC_SPECIES
+                        </info>
+                     </col>
+                     <colgroup type="REAL" >
+                        <info> atomic positions
+                        </info>
+                        <col name="x" >
+                        </col>
+                        <col name="y" >
+                        </col>
+                        <col name="z" >
+                        </col>
+                     </colgroup>
+                     <optional>
+                        <colgroup type="INTEGER" >
+                           <info>
+component i of the force for this atom is multiplied by if_pos(i),
+which must be either 0 or 1.  Used to keep selected atoms and/or
+selected components fixed in MD dynamics or
+structural optimization run.
+                           </info>
+                           <default> 1
+                           </default>
+                           <col name="if_pos(1)" >
+                           </col>
+                           <col name="if_pos(2)" >
+                           </col>
+                           <col name="if_pos(3)" >
+                           </col>
+                        </colgroup>
+                     </optional>
+                  </rows>
+               </table>
+            </syntax>
+         </elsewhen>
+      </choose>
+   </card>
+   <card name="ATOMIC_VELOCITIES" >
+      <label>
+Optional card, reads velocities from standard input
+      </label>
+      <message>
+when starting with <ref>ion_velocities</ref> = &quot;from_input&quot; it is convenient
+to perform a few steps (~5-10) with a small time step (0.5 a.u.).
+The velocities must be expressed using the same length units
+indicated in the card <ref>ATOMIC_POSITIONS</ref>, divided by time
+in atomic units.
+      </message>
+      <syntax>
+         <table name="atomic_velocities" >
+            <rows start="1" end="nat" >
+               <col name="V" type="CHARACTER" >
+                  <info> label of the atom as specified in <ref>ATOMIC_SPECIES</ref>
+                  </info>
+               </col>
+               <colgroup type="REAL" >
+                  <info> atomic velocities along <i>x,</i> <i>y</i> and <i>z</i> direction
+                  </info>
+                  <col name="vx" >
+                  </col>
+                  <col name="vy" >
+                  </col>
+                  <col name="vz" >
+                  </col>
+               </colgroup>
+            </rows>
+         </table>
+      </syntax>
+   </card>
+   <card name="CELL_PARAMETERS" >
+      <flag name="lattice_type" use="optional" >
+         <enum> bohr | angstrom | alat
+         </enum>
+         <info>
+&apos;bohr&apos;/&apos;angstrom&apos;: lattice vectors in bohr radii / angstrom.
+&apos;alat&apos; / nothing specified: lattice vectors in units or the
+lattice parameter (either celldm(1) or a). Not specifing
+units is DEPRECATED and will not be allowed in the future.
+If nothing specified and no lattice parameter specified,
+&apos;bohr&apos; is assumed - DEPRECATED, will no longer be allowed
+         </info>
+      </flag>
+      <label>
+Optional card, needed only if ibrav = 0 is specified, ignored otherwise !
+      </label>
+      <syntax>
+         <table name="lattice" >
+            <cols start="1" end="3" >
+               <rowgroup type="REAL" >
+                  <info>
+Crystal lattice vectors:
+    v1(1)  v1(2)  v1(3)    ... 1st lattice vector
+    v2(1)  v2(2)  v2(3)    ... 2nd lattice vector
+    v3(1)  v3(2)  v3(3)    ... 3rd lattice vector
+                  </info>
+                  <row name="v1" >
+                  </row>
+                  <row name="v2" >
+                  </row>
+                  <row name="v3" >
+                  </row>
+               </rowgroup>
+            </cols>
+         </table>
+      </syntax>
+   </card>
+   <card name="REF_CELL_PARAMETERS" >
+      <flag name="lattice_type" use="optional" >
+         <enum> bohr | angstrom
+         </enum>
+         <info>
+bohr / angstrom: reference cell parameters in bohr radii / angstrom.
+
+To mimic a constant effective planewave kinetic energy (ecfixed) during a
+variable-cell calculation, the specified reference cell has to be large enough
+such that the individual cell vector lengths of the fluctuating cell do not
+exceed the corresponding reference lattice vector lengths during the entire
+calculation. The cost of the calculation will increase with the increasing
+size of the reference cell. The user must test for the proper reference cell
+parameters.
+
+The reference cell parameters should be used in conjunction with q2sigma,
+qcutz, and ecfixed. See q2sigma for more information about mimicking constant
+effective planewave kinetic energy (ecfixed) during variable-cell calculations.
+
+The reference cell parameters should be chosen as an isotropic scaling of the
+initial cell of the system. This means that the reference cell should have
+the same shape as the initial simulatoin cell. The reference cell parameters should
+NOT be changed throughout a given simulatoin. Typically, 2%-10% scaling of
+the unit cell vectors are sufficient. However, the cell fluctuations depend on
+the system and the thermodynamic conditions. So again user must test for the proper
+choice of reference cell parameters.
+         </info>
+      </flag>
+      <label>
+      Optional card, needed only if one wants to do variable cell calculations accurately.
+The reference cell generates additional buffer planewaves.
+      </label>
+      <syntax>
+         <table name="lattice" >
+            <cols start="1" end="3" >
+               <rowgroup type="REAL" >
+                  <info>
+REF_CELL_PARAMETERS { bohr | angstrom }
+v1(1)  v1(2)  v1(3)    ... 1st reference lattice vector
+v2(1)  v2(2)  v2(3)    ... 2nd reference lattice vector
+v3(1)  v3(2)  v3(3)    ... 3rd reference lattice vector
+                  </info>
+                  <row name="v1" >
+                  </row>
+                  <row name="v2" >
+                  </row>
+                  <row name="v3" >
+                  </row>
+               </rowgroup>
+            </cols>
+         </table>
+      </syntax>
+   </card>
+   <card name="CONSTRAINTS" >
+      <label>
+Optional card, used for constrained dynamics or constrained optimisations
+      </label>
+      <message>
+When this card is present the SHAKE algorithm is automatically used.
+      </message>
+      <syntax>
+         <line>
+            <var name="nconstr" type="INTEGER" >
+               <info> Number of constraints.
+               </info>
+            </var>
+            <optional>
+               <var name="constr_tol" type="REAL" >
+                  <info> Tolerance for keeping the constraints satisfied.
+                  </info>
+               </var>
+            </optional>
+         </line>
+         <table name="constraints_table" >
+            <rows start="1" end="nconstr" >
+               <col name="constr_type" type="CHARACTER" >
+                  <info>
+Type of constrain :
+
+&apos;type_coord&apos;      : constraint on global coordination-number, i.e. the
+                    average number of atoms of type B surrounding the
+                    atoms of type A. The coordination is defined by
+                    using a Fermi-Dirac.
+                    (four indexes must be specified).
+
+&apos;atom_coord&apos;      : constraint on local coordination-number, i.e. the
+                    average number of atoms of type A surrounding a
+                    specific atom. The coordination is defined by
+                    using a Fermi-Dirac.
+                    (four indexes must be specified).
+
+&apos;distance&apos;        : constraint on interatomic distance
+                    (two atom indexes must be specified).
+
+&apos;planar_angle&apos;    : constraint on planar angle
+                    (three atom indexes must be specified).
+
+&apos;torsional_angle&apos; : constraint on torsional angle
+                    (four atom indexes must be specified).
+
+&apos;bennett_proj&apos;    : constraint on the projection onto a given direction
+                    of the vector defined by the position of one atom
+                    minus the center of mass of the others.
+                    ( Ch.H. Bennett in Diffusion in Solids, Recent
+                      Developments, Ed. by A.S. Nowick and J.J. Burton,
+                      New York 1975 ).
+                  </info>
+               </col>
+               <colgroup>
+                  <col name="constr(1)" >
+                  </col>
+                  <col name="constr(2)" >
+                  </col>
+                  <conditional>
+                     <col name="constr(3)" >
+                     </col>
+                     <col name="constr(4)" >
+                     </col>
+                  </conditional>
+                  <info>
+                      These variables have different meanings
+                      for different constraint types:
+
+                     &apos;type_coord&apos; : constr(1) is the first index of the
+                                    atomic type involved
+                                    constr(2) is the second index of the
+                                    atomic type involved
+                                    constr(3) is the cut-off radius for
+                                    estimating the coordination
+                                    constr(4) is a smoothing parameter
+
+                     &apos;atom_coord&apos; : constr(1) is the atom index of the
+                                    atom with constrained coordination
+                                    constr(2) is the index of the atomic
+                                    type involved in the coordination
+                                    constr(3) is the cut-off radius for
+                                    estimating the coordination
+                                    constr(4) is a smoothing parameter
+
+                       &apos;distance&apos; : atoms indices object of the
+                                    constraint, as they appear in
+                                    the &apos;ATOMIC_POSITION&apos; CARD
+
+&apos;planar_angle&apos;, &apos;torsional_angle&apos; : atoms indices object of the
+                                    constraint, as they appear in the
+                                    &apos;ATOMIC_POSITION&apos; CARD (beware the
+                                    order)
+
+                   &apos;bennett_proj&apos; : constr(1) is the index of the atom
+                                    whose position is constrained.
+                                    constr(2:4) are the three coordinates
+                                    of the vector that specifies the
+                                    constraint direction.
+                  </info>
+               </colgroup>
+               <optional>
+                  <col name="constr_target" type="REAL" >
+                     <info>
+Target for the constrain ( angles are specified in degrees ).
+This variable is optional.
+                     </info>
+                  </col>
+               </optional>
+            </rows>
+         </table>
+      </syntax>
+   </card>
+   <card name="OCCUPATIONS" >
+      <label> Optional card, used only if occupations = &apos;from_input&apos;, ignored otherwise !
+      </label>
+      <syntax>
+         <table name="occupations_table" >
+            <cols start="1" end="nbnd" >
+               <row name="f_inp1" type="REAL" >
+                  <info>
+Occupations of individual states (MAX 10 PER LINE).
+For spin-polarized calculations, these are majority spin states.
+                  </info>
+               </row>
+               <conditional>
+                  <row name="f_inp2" type="REAL" >
+                     <info>
+Occupations of minority spin states (MAX 10 PER LINE)
+To be specified only for spin-polarized calculations.
+                     </info>
+                  </row>
+               </conditional>
+            </cols>
+         </table>
+      </syntax>
+   </card>
+   <card name="ATOMIC_FORCES" >
+      <label> Optional card used to specify external forces acting on atoms
+      </label>
+      <syntax>
+         <table name="atomic_forces" >
+            <rows start="1" end="nat" >
+               <col name="X" type="CHARACTER" >
+                  <info> label of the atom as specified in ATOMIC_SPECIES
+                  </info>
+               </col>
+               <colgroup type="REAL" >
+                  <info>
+external force on atom X (cartesian components, Ha/a.u. units)
+                  </info>
+                  <col name="fx" >
+                  </col>
+                  <col name="fy" >
+                  </col>
+                  <col name="fz" >
+                  </col>
+               </colgroup>
+            </rows>
+         </table>
+      </syntax>
+   </card>
+   <card name="PLOT_WANNIER" >
+      <label>
+Optional card, indices of the states that have to be printed (only for calf=1 and calf=5).
+      </label>
+      <syntax>
+         <table name="state_index" >
+            <rows start="1" end="nwf" >
+               <col name="iwf" type="INTEGER" >
+                  <info>
+These are the indices of the states that you want to output.
+Also used with calwf = 1 and 5. If calwf = 1, then you need
+nwf indices here (each in a new line). If CALWF=5, then just
+one index in needed.
+                  </info>
+               </col>
+            </rows>
+         </table>
+      </syntax>
+   </card>
+   <supercard name="AUTOPILOT" endtag="ENDRULES" >
+      <message>
+Optional card, changes some variables on the fly of the calculation.
+
+Notice that the rules has to be ordered in with time step and the
+<b>AUTOPILOT</b> card has to be terminated with the <b>ENDRULES</b> keyword.
+
+To set up a rule, one can add the scheduled steps with <b>on_step</b> and
+separate the corresponding change in parameters with a column.
+
+<i>A simple example:</i>
+
+<b>AUTOPILOT</b>
+    <b>on_step</b> =  31  : <ref>dt</ref>               = 5.0
+    <b>on_step</b> =  91  : <ref>iprint</ref>           = 100
+    <b>on_step</b> =  91  : <ref>isave</ref>            = 100
+    <b>on_step</b> = 191  : <ref>ion_dynamics</ref>     = &apos;damp&apos;
+    <b>on_step</b> = 191  : <ref>electron_damping</ref> = 0.00
+    <b>on_step</b> = 691  : <ref>ion_temperature</ref>  = &apos;nose&apos;
+    <b>on_step</b> = 691  : <ref>tempw</ref>            = 150.0
+<b>ENDRULES</b>
+      </message>
+      <keyword name="on_step" >
+      </keyword>
+   </supercard>
+</input_description>

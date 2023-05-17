@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="input_xx.xsl"?>
+<!-- FILE AUTOMATICALLY CREATED: DO NOT EDIT, CHANGES WILL BE LOST -->
+    
+<input_description distribution="Quantum ESPRESSO" package="PWscf" program="d3hess.x" >
+   <toc>
+   </toc>
+   <intro>
+<b>Purpose of d3hess.x:</b>
+  This is a post processing program to compute second derivatives of D3 dispersion in QE.
+
+  The d3hess.x program should be run after an scf or relax calculation.
+  It reads the molecular geometry from the xml file in the outdir and save
+  the second derivatives matrix in a file on the disk.
+  Afterwords, phonon reads the file and add the D3 Hessian matrix to the dynamical matrix with the proper phase (q),
+  to include dispersion effects on vibrational frequencies.
+
+  The workflow is just:
+
+        (1) do an SCF
+        (2) run d3hess
+        (3) run phonon
+
+  Please note that filhess in d3hess input and dftd3_hess in phonon input, if given, should match.
+
+<b>Structure of the input data:</b>
+============================
+
+   <b>&amp;INPUT</b>
+     ...
+   <b>/</b>
+   </intro>
+   <namelist name="INPUT" >
+      <var name="prefix" type="CHARACTER" >
+         <default> &apos;pwscf&apos;
+         </default>
+         <info>
+prefix of input file produced by pw.x
+(wavefunctions are not needed)
+         </info>
+      </var>
+      <var name="outdir" type="CHARACTER" >
+         <info>
+directory containing the input data, i.e. the same as in pw.x
+         </info>
+         <default>
+value of the <tt>ESPRESSO_TMPDIR</tt> environment variable if set;
+current directory (&apos;./&apos;) otherwise
+         </default>
+      </var>
+      <var name="filhess" type="CHARACTER" >
+         <default> &apos;prefix.hess&apos;
+         </default>
+         <info>
+output file where the D3 hessian matrix is written
+(should match dftd3_hess keyword in phonon calculation)
+         </info>
+      </var>
+      <var name="step" type="REAL" >
+         <info> step for numerical differentiation in a.u.
+         </info>
+         <default> 1.d-3
+         </default>
+      </var>
+   </namelist>
+</input_description>

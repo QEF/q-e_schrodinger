@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="input_xx.xsl"?>
 <!-- FILE AUTOMATICALLY CREATED: DO NOT EDIT, CHANGES WILL BE LOST -->
     
-<input_description distribution="Quantum Espresso" package="PWscf" program="hp.x" >
+<input_description distribution="Quantum ESPRESSO" package="PWscf" program="hp.x" >
    <toc>
    </toc>
    <intro>
@@ -93,6 +93,18 @@ without performing any calculation. For DFT+U+V, it also
 determines the indices of inter-site couples.
          </info>
       </var>
+      <var name="determine_q_mesh_only" type="LOGICAL" >
+         <default> .false.
+         </default>
+         <see> perturb_only_atom
+         </see>
+         <info>
+If .true. determines the number of q points
+for a given perturbed atom and exits smoothly.
+This keyword can be used only if perturb_only_atom
+is set to .true.
+         </info>
+      </var>
       <var name="find_atpert" type="INTEGER" >
          <default> 1
          </default>
@@ -110,6 +122,7 @@ Method for searching of atoms which must be perturbed.
     there are using symmetry. Atoms which have the
     same type but are not equivalent by symmetry will
     be distinguished in this case.
+4 = Perturb all Hubbard atoms (the most expensive option)
          </info>
       </var>
       <var name="docc_thr" type="REAL" >
@@ -281,7 +294,7 @@ Number of nearest neighbors of every Hubbard atom which
 will be considered when writting Hubbard V parameters to
 the file parameters.out, which can be used in the
 subsequent DFT+U+V calculation. This keyword is used only
-when lda_plus_u_kind = 2 (post-processing stage).
+for DFT+U+V (post-processing stage).
          </info>
       </var>
       <var name="lmin" type="INTEGER" >
@@ -293,7 +306,7 @@ atoms starting from which (and up to the maximum l in the
 system) Hubbard V will be written to the file parameters.out.
 <ref>lmin</ref> refers to the orbital quantum number of the atom
 corresponding to the first site-index in Hubbard_V(:,:,:).
-This keyword is used only when lda_plus_u_kind = 2 and only
+This keyword is used only for DFT+U+V and only
 in the post-processing stage. Example: <ref>lmin</ref>=1 corresponds to
 writing to file V between e.g. oxygen (with p states) and its
 neighbors, and including V between transition metals (with d
@@ -306,8 +319,8 @@ latter will be written to parameters.out.
          </default>
          <info>
 Maximum distance (in Bohr) between two atoms to search
-neighbors (used only at the postprocessing step when
-lda_plus_u_kind = 2). This keyword is useful when there
+neighbors (used only at the postprocessing step for
+DFT+U+V). This keyword is useful when there
 are e.g. defects in the system.
          </info>
       </var>

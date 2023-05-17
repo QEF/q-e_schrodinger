@@ -1,0 +1,204 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>3.6 Socket interface with i-PI</TITLE>
+<META NAME="description" CONTENT="3.6 Socket interface with i-PI">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="previous" HREF="node12.html">
+<LINK REL="next" HREF="node14.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node14.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node12.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html168"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node14.html">4 Performances</A>
+<B> Up:</B> <A
+ HREF="node7.html">3 Using PWscf</A>
+<B> Previous:</B> <A
+ HREF="node12.html">3.5 Direct interface with CASINO</A>
+ &nbsp; <B>  <A ID="tex2html169"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A ID="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><UL>
+<LI><A ID="tex2html170"
+  HREF="node13.html#SECTION00046010000000000000">3.6.0.1 Practicalities</A>
+<LI><A ID="tex2html171"
+  HREF="node13.html#SECTION00046020000000000000">3.6.0.2 How to use the i-PI inteface</A>
+<LI><A ID="tex2html172"
+  HREF="node13.html#SECTION00046030000000000000">3.6.0.3 Advanced i-PI usage</A>
+</UL></UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H2><A ID="SECTION00046000000000000000">
+3.6 Socket interface with i-PI</A>
+</H2>
+
+<P>
+The i-PI universal force engine performs advanced Molecular Dynamics
+(MD) (such as Path Integral Molecular Dynamics, Thermodynamic
+Integration, Suzuki-Chin path integral, Multiple Time Step molecular
+dynamics) and other force related computations (see <kbd><A ID="tex2html1"
+  HREF="ipi-code.org">ipi-code.org</A></kbd>for more information about i-PI).  
+
+<P>
+<TT>PWscf</TT> users wishing to learn how to use i-PI should refer to the i-PI website.
+
+<P>
+
+<H4><A ID="SECTION00046010000000000000">
+3.6.0.1 Practicalities</A>
+</H4>
+The communication between <TT>PWscf</TT> and i-PI relies on a socket
+interface. This allows running i-PI and <TT>PWscf</TT> on different computers
+provided that the two computers have an Internet
+connection. Basically, i-PI works as a server waiting for a connection
+of a suitable software (for example <TT>PWscf</TT>). When this happens, i-PI
+injects atomic positions and cell parameters into the software, that
+will return forces and stress tensor to i-PI.  
+
+<P>
+The file containing the interface is <code>run_driver.f90</code>. The files
+<code>socket.c</code> and <code>fsocket.f90</code> provide the necessary
+infrastructure to the socket interface.  
+
+<P>
+
+<H4><A ID="SECTION00046020000000000000">
+3.6.0.2 How to use the i-PI inteface</A>
+</H4>
+Since the communication goes through the Internet, the
+<TT>PWscf</TT> instance needs to know the address of the i-PI server that can
+be specified with the command line option <code>--ipi</code> (or
+<code>-ipi</code>) followed by the address of the computer running i-PI and
+the port number where i-PI is listening, e.g. 
+<PRE>
+pw.x --ipi localhost:3142 -in pw.input &gt; pw.out
+</PRE>
+If i-PI and <TT>PWscf</TT> are running on the same machine, a UNIX socket is
+preferable since allows faster communications, e.g.  
+<PRE>
+pw.x --ipi socketname:UNIX -in pw.input &gt; pw.out
+</PRE>
+In the last case, <code>UNIX</code> is a keyword that tells to <TT>PWscf</TT> to
+look for an UNIX socket connection instead of an INET one. More
+extensive examples and tutorials can be found at <kbd><A ID="tex2html2"
+  HREF="ipi-code.org">ipi-code.org</A></kbd>. 
+
+<P>
+The <TT>PWscf</TT> input file must contain all the information to
+perform a single point calculation (<code>calculation = "scf"</code>) which
+are also used to initialize the <TT>PWscf</TT> run. Thus, it is important
+that the <TT>PWscf</TT> input contains atomic positions and cell parameters
+which are as close as possible to those specified in the i-PI input. 
+
+<P>
+
+<H4><A ID="SECTION00046030000000000000">
+3.6.0.3 Advanced i-PI usage</A>
+</H4>
+
+<P>
+For more advanced users, calculation flags can be changed 
+on-the-fly by parsing a single binary-encoded integer to QE through 
+the i-PI socket. That gives users the flexibility to define what 
+properties to be calculated. For example, if only a single SCF cycle 
+is needed, traditionally <code>run_driver.f90</code> would be set to 
+calculate not only the potential energy, but also forces, stresses 
+and initialize g-vectors. With the binary-integer encoded flags, now
+one can turn flags on and off as necessary to speed up their code flow.
+
+<P>
+The sequence of flags that is currently accepted is: SCF, 
+forces, stresses, variable-cell and ensembles. The latter is only
+available if QE has been compiled against BEEF-vdW XC. For a SCF and
+forces-only calculation, that would corresponds to a <code>11000</code> 
+sequence, which has a <code>24</code> decimal representation. The QE side
+of the i-PI socket expects the equivalent-decimal<code>+1</code>; therefore, 
+for a <code>11000</code> calculation, the integer <code>25</code> would have to be 
+parsed to the <code>driver_init</code> subroutine in <code>run_driver.f90</code>. If
+any number less-than or equal-to <code>1</code> is parsed to QE, it falls back
+to its standard i-PI mode.
+
+<P>
+Currently, the QE i-PI interface can only reside in
+three different states: "NEEDINIT", "READY" or "HAVEDATA". Whenever 
+the socket sends a "STATUS" message to QE, it responds back with its 
+current status. A simple calculation sequence of events would be: (1) an
+"STATUS" message is received, QE sends back "NEEDINIT", (2) an "INIT"
+message is received, QE waits for three data packets, (i) an integer
+that identifies the client on the other side of the socket, (ii) the flag-encoded integer
+mentioned above, which can be used to change calculation 
+settings, and (iii) an initialization string. QE then changes its status
+to "READY". (3) The server sends a "POSDATA" message and QE then expects 
+a sequence of variables depending on the calculation settings; the default 
+being: a 3-by-3 matrix with cell and 3-by-3 marix with its inverse (if 
+<code>lmovecell</code> is <code>.TRUE.</code>) and a (# of atoms)-by-3 position matrix. QE 
+proceeds and computes all active properties (e.g. SCF, forces, stresses, 
+etc.) and change its status to "HAVEDATA" and expects a (4) "GETFORCE"
+message from the socket. Once it is received, (5) QE sends back (i) a
+float with the potential energy, (ii) an integer with the total number of
+atoms, (iii) a (# of atoms)-by-3 matrix with forces (if <code>lforce</code> is
+<code>.TRUE.</code>), (iv) a 9-element-virial tensor (if <code>lstres</code> is
+<code>.TRUE.</code>). QE goes back to "NEEDINIT" status. The other side of socket
+should be able to compute new positions and cell coordinates (if <code>lmovecell</code>
+is <code>.TRUE.</code>) and start the cycle again from (1).
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A
+ HREF="node14.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node12.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html168"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node14.html">4 Performances</A>
+<B> Up:</B> <A
+ HREF="node7.html">3 Using PWscf</A>
+<B> Previous:</B> <A
+ HREF="node12.html">3.5 Direct interface with CASINO</A>
+ &nbsp; <B>  <A ID="tex2html169"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

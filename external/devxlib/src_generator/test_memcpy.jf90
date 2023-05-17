@@ -1,0 +1,208 @@
+!
+! Copyright (C) 2002-2018 Quantum ESPRESSO group
+! This file is distributed under the terms of the
+! GNU General Public License. See the file `License'
+! in the root directory of the present distribution,
+! or http://www.gnu.org/copyleft/gpl.txt .
+!
+! dev_util memcpy test
+!
+#include<device_macros.h>
+!
+program test_memcpy
+  !
+  ! This program tests the routines and interfaces related to
+  ! device_util.
+  !
+  use timer_m
+  use iso_fortran_env
+  implicit none
+
+#include "device_memcpy_interf.f90"
+#include "device_auxfunc_interf.f90"
+
+  real(real64), parameter :: thr=1.0d-6
+  integer,      parameter :: nranks={{dimensions}}
+  integer :: ndim(nranks)
+  integer :: vrange(2,nranks)
+  integer :: vlbound(nranks)
+  real(real64):: t0,t1
+  integer :: npass,nfail
+
+
+{%- for t in types %}
+{%- for p in kinds[t] %}
+{%- for d in range(1,dimensions+1) %}
+  {{t}}({{p.val}}), allocatable :: A_hst1__{{p.name}}_{{t[0]|lower}}{{d}}d({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+  {{t}}({{p.val}}), allocatable :: A_hst2__{{p.name}}_{{t[0]|lower}}{{d}}d({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+  {{t}}({{p.val}}), allocatable :: A_hst3__{{p.name}}_{{t[0]|lower}}{{d}}d({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+  {{t}}({{p.val}}), allocatable :: A_dev1__{{p.name}}_{{t[0]|lower}}{{d}}d({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+  {{t}}({{p.val}}), allocatable :: A_dev2__{{p.name}}_{{t[0]|lower}}{{d}}d({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+#if defined(__CUDA)
+  attributes(device) :: A_dev1__{{p.name}}_{{t[0]|lower}}{{d}}d, A_dev2__{{p.name}}_{{t[0]|lower}}{{d}}d
+#endif
+  {% if t=="complex" or t=="integer" %}
+  real({{p.val}}), allocatable :: A_rtmp__{{p.name}}_{{d}}d({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+  {% endif %}
+{% endfor %}
+{% endfor %}
+{% endfor %}
+  
+  integer :: i,ierr
+  !integer :: {% for dd in range(1,dimensions+1) %}i{{dd}}{% if not loop.last %}, {%- endif %} {% endfor %}
+  integer :: {% for dd in range(1,dimensions+1) %}ndim{{dd}}{% if not loop.last %}, {%- endif %} {% endfor %}
+  integer :: {% for dd in range(1,dimensions+1) %}lbound{{dd}}{% if not loop.last %}, {%- endif %} {% endfor %}
+  integer :: {% for dd in range(1,dimensions+1) %}range{{dd}}(2){% if not loop.last %}, {%- endif %} {% endfor %}
+  integer :: {% for dd in range(1,dimensions+1) %}bound{{dd}}(2){% if not loop.last %}, {%- endif %} {% endfor %}
+  character(256) :: arg, str
+
+!
+!============================
+! get dims
+!============================
+!
+  ! defaults
+  ndim(:)=100
+  vrange(1,:)=1
+  vrange(2,:)=ndim
+  vlbound(:)=1
+
+  i=0
+  do
+    call get_command_argument(i, arg)
+    if (len_trim(arg) == 0) exit
+    !
+    select case (trim(arg))
+    case("-h","--help")
+      write(0,"(a)") "Usage: "
+      write(0,"(a)") "   ./test_memcpy.x [--dims <vals>] [--range <vals>] [--lbound <vals>]"
+      stop
+    end select
+    !
+    i = i+1
+    call get_command_argument(i, str)
+    if (len_trim(str) == 0) exit
+    !
+    select case (trim(arg))
+    case("-dims","--dims")
+      read(str,*,iostat=ierr) ndim(:)
+      if (ierr/=0) STOP "reading cmd-line args: dims"
+    case("-range","--range")
+      read(str,*,iostat=ierr) vrange(:,:)
+      if (ierr/=0) STOP "reading cmd-line args: range"
+    case("-lbound","--lbound")
+      read(str,*,iostat=ierr) vlbound(:)
+      if (ierr/=0) STOP "reading cmd-line args: lbound"
+    end select
+  enddo
+  !
+  write(0,"(/,a,/)") "Running test_util.x with params: "
+  write(0,"(3x,a,10i5)") "  ndim: ", ndim(:)
+  write(0,"(3x,a,10i5)") "lbound: ", vlbound(:)
+  do i = 1, nranks
+     write(0,"(3x,a,i2,3x,10i5)") " range: ", i, vrange(:,i)
+  enddo
+  write(0,"()")
+  !
+  npass=0
+  nfail=0
+
+{% for d in range(1,dimensions+1) %}
+  ndim{{d}}=ndim({{d}})
+  lbound{{d}}=vlbound({{d}})
+  range{{d}}=vrange(:,{{d}})
+  bound{{d}}(1)=lbound{{d}}
+  bound{{d}}(2)=lbound{{d}}+ndim{{d}}-1
+{%- endfor %}
+
+!
+!============================
+! check memcpy
+!============================
+!
+
+{%- for t in types %}
+{%- for p in kinds[t] %}
+{%- for d in range(1,dimensions+1) %}
+  !
+  !=====================
+  write(0,"(/,3x,a)") "checking {{p.name}}_{{t[0]|lower}}{{d}}d ..." 
+  t0=wallclock()
+  !
+  ! allocations
+  allocate( A_hst1__{{p.name}}_{{t[0]|lower}}{{d}}d({% for dd in range(d)%}bound{{dd+1}}(1):bound{{dd+1}}(2){% if not loop.last %},{%- endif %}{%endfor%}) )
+  allocate( A_hst2__{{p.name}}_{{t[0]|lower}}{{d}}d({% for dd in range(d)%}bound{{dd+1}}(1):bound{{dd+1}}(2){% if not loop.last %},{%- endif %}{%endfor%}) )
+  allocate( A_hst3__{{p.name}}_{{t[0]|lower}}{{d}}d({% for dd in range(d)%}bound{{dd+1}}(1):bound{{dd+1}}(2){% if not loop.last %},{%- endif %}{%endfor%}) )
+  allocate( A_dev1__{{p.name}}_{{t[0]|lower}}{{d}}d({% for dd in range(d)%}bound{{dd+1}}(1):bound{{dd+1}}(2){% if not loop.last %},{%- endif %}{%endfor%}) )
+  allocate( A_dev2__{{p.name}}_{{t[0]|lower}}{{d}}d({% for dd in range(d)%}bound{{dd+1}}(1):bound{{dd+1}}(2){% if not loop.last %},{%- endif %}{%endfor%}) )
+  {%- if t=="complex" or t=="integer" %}
+  allocate( A_rtmp__{{p.name}}_{{d}}d({% for dd in range(d)%}bound{{dd+1}}(1):bound{{dd+1}}(2){% if not loop.last %},{%- endif %}{%endfor%}) )
+  {%endif%}
+  !
+  ! init
+  {%- if t=="complex" %}
+  call random_number( A_rtmp__{{p.name}}_{{d}}d )
+  A_hst1__{{p.name}}_{{t[0]|lower}}{{d}}d=A_rtmp__{{p.name}}_{{d}}d
+  call random_number( A_rtmp__{{p.name}}_{{d}}d )
+  A_hst1__{{p.name}}_{{t[0]|lower}}{{d}}d=A_hst1__{{p.name}}_{{t[0]|lower}}{{d}}d+cmplx(0.0,1.0)*A_rtmp__{{p.name}}_{{d}}d
+  {% elif t=="integer" %}
+  call random_number( A_rtmp__{{p.name}}_{{d}}d )
+  A_hst1__{{p.name}}_{{t[0]|lower}}{{d}}d=int( 1000*A_rtmp__{{p.name}}_{{d}}d )
+  {%else%}
+  call random_number( A_hst1__{{p.name}}_{{t[0]|lower}}{{d}}d )
+  {%endif%}
+  !
+  ! mem copy h2d
+  call dev_memcpy(A_dev1__{{p.name}}_{{t[0]|lower}}{{d}}d, A_hst1__{{p.name}}_{{t[0]|lower}}{{d}}d)
+  !
+  ! mem copy
+  call dev_memcpy(A_dev2__{{p.name}}_{{t[0]|lower}}{{d}}d, A_dev1__{{p.name}}_{{t[0]|lower}}{{d}}d )
+  !
+  {%- if t=="complex" %}
+  ! make cmplx conjg
+  call dev_conjg( A_dev2__{{p.name}}_{{t[0]|lower}}{{d}}d )
+  {%endif%}
+  !
+  ! mem copy d2h
+  call dev_memcpy(A_hst2__{{p.name}}_{{t[0]|lower}}{{d}}d, A_dev2__{{p.name}}_{{t[0]|lower}}{{d}}d)
+  !
+  {%- if t=="complex" %}
+  ! retrieve conjg data
+  call dev_conjg( A_hst2__{{p.name}}_{{t[0]|lower}}{{d}}d )
+  {%endif%}
+  !
+  ! mem copy h2h
+  call dev_memcpy(A_hst3__{{p.name}}_{{t[0]|lower}}{{d}}d, A_hst2__{{p.name}}_{{t[0]|lower}}{{d}}d)
+  !
+  ! check
+  if ( any(abs(A_hst3__{{p.name}}_{{t[0]|lower}}{{d}}d -A_hst1__{{p.name}}_{{t[0]|lower}}{{d}}d )> thr) ) then
+     write(0,"(3x,a)") "FAILED" 
+     nfail=nfail+1
+  else
+     write(0,"(3x,a)") "passed" 
+     npass=npass+1
+  endif
+  !
+  deallocate(A_hst1__{{p.name}}_{{t[0]|lower}}{{d}}d)
+  deallocate(A_hst2__{{p.name}}_{{t[0]|lower}}{{d}}d)
+  deallocate(A_hst3__{{p.name}}_{{t[0]|lower}}{{d}}d)
+  deallocate(A_dev1__{{p.name}}_{{t[0]|lower}}{{d}}d)
+  deallocate(A_dev2__{{p.name}}_{{t[0]|lower}}{{d}}d)
+  !
+  t1=wallclock()
+  write(0,"(3x,a,f12.6,' sec')") "Timing: ", t1-t0
+  !
+{% endfor %}
+{% endfor %}
+{% endfor %}
+
+  !
+  ! summary
+  !
+  write(0,"(/,a)") "Test SUMMARY:"
+  write(0,"(3x,a,i5)") "# passed: ", npass
+  write(0,"(3x,a,i5)") "# failed: ", nfail
+  write(0,"()")
+
+end program test_memcpy
+

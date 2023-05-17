@@ -1,0 +1,77 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>4.3 Band structure, Fermi surface</TITLE>
+<META NAME="description" CONTENT="4.3 Band structure, Fermi surface">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node9.html">
+<LINK REL="previous" HREF="node7.html">
+<LINK REL="next" HREF="node9.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node9.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node5.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html68"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node9.html">4.4 Projection over atomic states,</A>
+<B> Up:</B> <A
+ HREF="node5.html">4 Usage</A>
+<B> Previous:</B> <A
+ HREF="node7.html">4.2 About Bader's analysis</A>
+ &nbsp; <B>  <A ID="tex2html69"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A ID="SECTION00053000000000000000">
+4.3 Band structure, Fermi surface</A>
+</H2>
+
+<P>
+The code <TT>bands.x</TT> reads data file(s), extracts eigenvalues,
+regroups them into bands (the algorithm used to order bands and to resolve
+crossings may not work in all circumstances, though). The output is written
+to a file in a simple format that can be directly read and converted to
+plottable format by auxiliary code
+<TT>plotband.x</TT>. Unpredictable plots may results if k-points are not 
+in sequence along lines, or if two consecutive points are the same. 
+The code <TT>bands.x</TT> performs as well a 
+symmetry analysis of the band structure. For a complete input description,
+see <TT>Doc/INPUT_bands.*</TT>. See Example 01, Example 04 and Example 06 
+for simple band plots.
+
+<P>
+The plotting of Fermi surfaces can be performed using code <TT>fs.x</TT>.
+The resulting file in .bxsf format can be read and plotted
+using XCrySDen. See Example 02 for an example of Fermi surface 
+visualization (Ni, including the spin-polarized case).
+
+<P>
+<BR><HR>
+
+</BODY>
+</HTML>

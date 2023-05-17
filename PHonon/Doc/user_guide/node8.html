@@ -1,0 +1,146 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>4.1 Single-q calculation</TITLE>
+<META NAME="description" CONTENT="4.1 Single-q calculation">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node9.html">
+<LINK REL="previous" HREF="node7.html">
+<LINK REL="next" HREF="node9.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node9.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html72"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node9.html">4.2 Calculation of interatomic force</A>
+<B> Up:</B> <A
+ HREF="node7.html">4 Using PHonon</A>
+<B> Previous:</B> <A
+ HREF="node7.html">4 Using PHonon</A>
+ &nbsp; <B>  <A ID="tex2html73"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A ID="SECTION00051000000000000000">
+4.1 Single-<B>q</B> calculation</A>
+</H2>
+
+<P>
+The phonon code <TT>ph.x</TT> calculates normal modes at a given <B>q</B>-vector, 
+starting from data files produced by <TT>pw.x</TT> with a simple SCF calculation.
+NOTE: the alternative procedure in which a band-structure calculation 
+with <TT>calculation='phonon'</TT> was performed as an intermediate step is no
+longer implemented since version 4.1. It is also no longer needed to
+specify <TT>lnscf=.true.</TT> for <!-- MATH
+ ${\bf q}\ne 0$
+ -->
+<IMG
+ STYLE="height: 1.52ex; vertical-align: -0.47ex; " SRC="img1.png"
+ ALT="$\bf q$">≠ 0.
+
+<P>
+The output data files appear in the directory specified by the
+variable <TT>outdir</TT>, with names specified by the variable 
+<TT>prefix</TT>. After the output file(s) has been produced (do not remove 
+any of the files, unless you know which are used and which are not), 
+you can run <TT>ph.x</TT>.
+
+<P>
+The first input line of <TT>ph.x</TT> is a job identifier. At the second line the
+namelist <TT>&amp;INPUTPH</TT> starts. The meaning of the variables in the namelist
+(most of them having a default value) is described in file 
+<TT>Doc/INPUT_PH.*</TT>. Variables <TT>outdir</TT> and <TT>prefix</TT> 
+must be the same as in the input data of <TT>pw.x</TT>. Presently
+you can specify <TT>amass(i)</TT> (a real variable) the atomic mass 
+of atomic type <I>i</I> or you can use the default one deduced from the
+periodic table on the basis of the element name. If 
+<TT>amass(i)</TT> is not given as input of <TT>ph.x</TT>, the one given as
+input in <TT>pw.x</TT> is used. When this is <TT>0</TT> the default one is used.
+
+<P>
+After the namelist you must specify the <B>q</B>-vector of the phonon mode,
+in Cartesian coordinates and in units of 2<I>π</I>/<I>a</I>.
+
+<P>
+Notice that the dynamical matrix calculated by <TT>ph.x</TT> at <IMG
+ STYLE="height: 1.52ex; vertical-align: -0.47ex; " SRC="img1.png"
+ ALT="$\bf q$"> = 0 does not
+contain the non-analytic term occurring in polar materials, i.e. there is no
+LO-TO splitting in insulators. Moreover no Acoustic Sum Rule (ASR) is
+applied. In order to have the complete dynamical matrix at <IMG
+ STYLE="height: 1.52ex; vertical-align: -0.47ex; " SRC="img1.png"
+ ALT="$\bf q$"> = 0 
+including the non-analytic terms, you need to calculate effective charges 
+by specifying option <TT>epsil=.true.</TT> to <TT>ph.x</TT>. This is however not 
+possible (because not physical!) for metals (i.e. any system subject to 
+a broadening).
+
+<P>
+At <IMG
+ STYLE="height: 1.52ex; vertical-align: -0.47ex; " SRC="img1.png"
+ ALT="$\bf q$"> = 0, use program <TT>dynmat.x</TT> to calculate the correct LO-TO 
+splitting, IR cross sections, and to impose various forms of ASR. 
+If <TT>ph.x</TT> was instructed to calculate Raman coefficients, 
+<TT>dynmat.x</TT> will also calculate Raman cross sections
+for a typical experimental setup.
+Input documentation in the header of <TT>PHonon/PH/dynmat.f90</TT>.
+
+<P>
+See Example 01 for a simple phonon calculations in Si, Example 06 for 
+fully-relativistic calculations (LDA) on Pt, Example 07 for 
+fully-relativistic GGA calculations.
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A
+ HREF="node9.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html72"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node9.html">4.2 Calculation of interatomic force</A>
+<B> Up:</B> <A
+ HREF="node7.html">4 Using PHonon</A>
+<B> Previous:</B> <A
+ HREF="node7.html">4 Using PHonon</A>
+ &nbsp; <B>  <A ID="tex2html73"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

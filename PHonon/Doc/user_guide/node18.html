@@ -1,0 +1,264 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>6 Troubleshooting</TITLE>
+<META NAME="description" CONTENT="6 Troubleshooting">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node19.html">
+<LINK REL="previous" HREF="node17.html">
+<LINK REL="next" HREF="node19.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node19.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="user_guide.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node17.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html92"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node19.html">A. Appendix: Electron-phonon coefficients</A>
+<B> Up:</B> <A
+ HREF="user_guide.html">User's Guide for the PHonon</A>
+<B> Previous:</B> <A
+ HREF="node17.html">5 Parallelism</A>
+ &nbsp; <B>  <A ID="tex2html93"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H1><A ID="SECTION00070000000000000000">
+6 Troubleshooting</A>
+</H1>
+
+<P>
+
+<H4><A ID="SECTION00070010000000000000">
+6.0.0.1 ph.x stops with <EM>error reading file</EM></A>
+</H4>
+The data file produced by <TT>pw.x</TT> is bad or incomplete or produced
+by an incompatible version of the code.
+
+<P>
+
+<H4><A ID="SECTION00070020000000000000">
+6.0.0.2 ph.x mumbles something like <EM>cannot recover</EM> or <EM>error
+  reading recover file</EM></A>
+</H4> 
+You have a bad restart file from a preceding failed execution.
+Remove all files <TT>recover*</TT> in <TT>outdir</TT>.
+
+<P>
+
+<H4><A ID="SECTION00070030000000000000">
+6.0.0.3 ph.x says <EM>occupation numbers probably wrong</EM> and
+ continues</A>
+</H4> You have a
+metallic or spin-polarized system but occupations are not set to 
+<TT>`smearing'</TT>.
+
+<P>
+
+<H4><A ID="SECTION00070040000000000000">
+6.0.0.4 ph.x does not yield acoustic modes with zero frequency at 
+<IMG
+ STYLE="height: 1.52ex; vertical-align: -0.47ex; " SRC="img1.png"
+ ALT="$\bf q$"> = 0</A>
+</H4>
+This may not be an error: the Acoustic Sum Rule (ASR) is never exactly
+verified, because the system is never exactly translationally
+invariant as it should be.  The calculated frequency of the acoustic
+mode is typically less than 10 cm<SUP>-1</SUP>, but in some cases it may be
+much higher, up to 100 cm<SUP>-1</SUP>. The ultimate test is to diagonalize
+the dynamical matrix with program <TT>dynmat.x</TT>, imposing the ASR. If you
+obtain an acoustic mode with a much smaller <I>ω</I> (let us say 
+<!-- MATH
+ $< 1 \mbox{cm}^{-1}$
+ -->
+&lt; 1cm<SUP>-1</SUP> ) 
+with all other modes virtually unchanged, you can trust your results.
+
+<P>
+``The problem is [...] in the fact that the XC 
+energy is computed in real space on a discrete grid and hence the
+total energy is invariant (...) only for translation in the FFT
+grid. Increasing the charge density cutoff increases the grid density
+thus making the integral more exact thus reducing the problem,
+unfortunately rather slowly...This problem is usually more severe for
+GGA  than with LDA because the GGA functionals have functional forms
+that vary more strongly with the position; particularly so for
+isolated molecules or system with significant portions of ``vacuum''
+because in the exponential tail of the charge density a) the finite
+cutoff  (hence there is an effect due to cutoff) induces oscillations
+in rho and b) the reduced gradient is diverging.''(info by Stefano de
+Gironcoli, June 2008) 
+
+<P>
+
+<H4><A ID="SECTION00070050000000000000">
+6.0.0.5 ph.x yields really lousy phonons, with bad or ``negative''
+  frequencies or wrong symmetries or gross ASR violations</A>
+</H4> 
+Possible reasons:
+
+<UL>
+<LI>if this happens only for acoustic modes at <IMG
+ STYLE="height: 1.52ex; vertical-align: -0.47ex; " SRC="img1.png"
+ ALT="$\bf q$"> = 0 that should
+  have <I>ω</I> = 0: Acoustic Sum Rule violation, see the item before
+  this one.
+</LI>
+<LI>wrong data file read.
+</LI>
+<LI>wrong atomic masses given in input will yield wrong frequencies
+  (but the content of file fildyn should be valid, since the force
+  constants, not the dynamical matrix, are written to file). 
+</LI>
+<LI>convergence threshold for either SCF (<TT>conv_thr</TT>) or phonon
+  calculation (<TT>tr2_ph</TT>) too large: try to reduce them. 
+</LI>
+<LI>maybe your system does have negative or strange phonon
+  frequencies, with the approximations you used. A negative frequency
+  signals a mechanical instability of the chosen structure. Check that
+  the structure is reasonable, and check the following parameters: 
+
+<UL>
+<LI>The cutoff for wavefunctions, <TT>ecutwfc</TT>
+</LI>
+<LI>For USPP and PAW: the cutoff for the charge density, <TT>ecutrho</TT>
+</LI>
+<LI>The <B>k</B>-point grid, especially for metallic systems.
+</LI>
+</UL>
+</LI>
+<LI>For metallic systems: it has been observed that the convergence with
+  respect to the k-point grid and smearing is very slow in presence of
+  semicore states, and for phonon wave-vectors that are not commensurate i
+  with the k-point grid (that is, <!-- MATH
+ ${\bf q}\ne {\bf k}_i-{\bf k}_j$
+ -->
+<IMG
+ STYLE="height: 1.52ex; vertical-align: -0.47ex; " SRC="img1.png"
+ ALT="$\bf q$">≠<IMG
+ STYLE="height: 2.21ex; vertical-align: -0.59ex; " SRC="img4.png"
+ ALT="$\bf k_{i}^{}$"> - <IMG
+ STYLE="height: 2.56ex; vertical-align: -0.97ex; " SRC="img5.png"
+ ALT="$\bf k_{j}^{}$">)
+</LI>
+</UL>
+Note that ``negative'' frequencies are actually imaginary: the negative
+sign flags eigenvalues of the dynamical matrix for which <!-- MATH
+ $\omega^2 <
+0$
+ -->
+<I>ω</I><SUP>2</SUP> &lt; 0. 
+
+<P>
+
+<H4><A ID="SECTION00070060000000000000">
+6.0.0.6 <EM>Wrong degeneracy</EM> error in star_q</A>
+</H4>
+Verify the <B>q</B>-vector for which you are calculating phonons. In order to
+check whether a symmetry operation belongs to the small group of <IMG
+ STYLE="height: 1.52ex; vertical-align: -0.47ex; " SRC="img1.png"
+ ALT="$\bf q$">,
+the code compares <IMG
+ STYLE="height: 1.52ex; vertical-align: -0.47ex; " SRC="img1.png"
+ ALT="$\bf q$"> and the rotated <IMG
+ STYLE="height: 1.52ex; vertical-align: -0.47ex; " SRC="img1.png"
+ ALT="$\bf q$">, with an acceptance tolerance of  
+10<SUP>-5</SUP> (set in routine <TT>PW/src/eqvect.f90</TT>). You may run into trouble if
+your <B>q</B>-vector differs from a high-symmetry point by an amount in that
+order of magnitude.
+
+<P>
+
+<H4><A ID="SECTION00070070000000000000">
+6.0.0.7 Mysterious symmetry-related errors</A>
+</H4> 
+Symmetry-related errors like <EM>symmetry operation is non orthogonal</EM>, 
+or <EM>Wrong representation</EM>, or <EM>Wrong degeneracy</EM>, are almost 
+invariably a consequence of atomic positions that are close to, 
+but not sufficiently close to, symmetry positions. If such errors occur,
+set the Bravais lattice using the correct <TT>ibrav</TT> value (i.e. do
+not use <TT>ibrav=0</TT>), use Wyckoff positions if known. This must be
+done in the self-consistent calculation.
+
+<P>
+
+<BR><HR>
+<!--Table of Child-Links-->
+<A ID="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><UL>
+<LI><UL>
+<LI><A ID="tex2html94"
+  HREF="node18.html#SECTION00070010000000000000">6.0.0.1 ph.x stops with <EM>error reading file</EM></A>
+<LI><A ID="tex2html95"
+  HREF="node18.html#SECTION00070020000000000000">6.0.0.2 ph.x mumbles something like <EM>cannot recover</EM> or <EM>error
+  reading recover file</EM></A>
+<LI><A ID="tex2html96"
+  HREF="node18.html#SECTION00070030000000000000">6.0.0.3 ph.x says <EM>occupation numbers probably wrong</EM> and
+ continues</A>
+<LI><A ID="tex2html97"
+  HREF="node18.html#SECTION00070040000000000000">6.0.0.4 ph.x does not yield acoustic modes with zero frequency at 
+<IMG
+ STYLE="height: 1.52ex; vertical-align: -0.47ex; " SRC="img1.png"
+ ALT="$\bf q$"> = 0</A>
+<LI><A ID="tex2html98"
+  HREF="node18.html#SECTION00070050000000000000">6.0.0.5 ph.x yields really lousy phonons, with bad or ``negative''
+  frequencies or wrong symmetries or gross ASR violations</A>
+<LI><A ID="tex2html99"
+  HREF="node18.html#SECTION00070060000000000000">6.0.0.6 <EM>Wrong degeneracy</EM> error in star_q</A>
+<LI><A ID="tex2html100"
+  HREF="node18.html#SECTION00070070000000000000">6.0.0.7 Mysterious symmetry-related errors</A>
+</UL></UL></UL>
+<!--End of Table of Child-Links-->
+<HR>
+<!--Navigation Panel-->
+<A
+ HREF="node19.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="user_guide.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node17.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html92"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node19.html">A. Appendix: Electron-phonon coefficients</A>
+<B> Up:</B> <A
+ HREF="user_guide.html">User's Guide for the PHonon</A>
+<B> Previous:</B> <A
+ HREF="node17.html">5 Parallelism</A>
+ &nbsp; <B>  <A ID="tex2html93"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

@@ -1,0 +1,251 @@
+!
+#include<device_macros.h>
+!
+interface dev_memcpy
+    !
+{%- for t in types %}
+{%- for p in kinds[t] %}
+{%- for d in range(1,dimensions+1) %}
+    subroutine {{p.name}}_dev_memcpy_{{t[0]|lower}}{{d}}d(array_out, array_in, &
+                                            {% for dd in range(d) -%} 
+                                            {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, &
+                                            {% endif %}{% endfor %} )
+      use iso_fortran_env
+      implicit none
+      !   
+      {{t}}({{p.val}}), intent(inout) :: array_out({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+      {{t}}({{p.val}}), intent(in)    :: array_in({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+      integer, optional, intent(in) :: {% for dd in range(d) %} {{ "range%s(2)"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+      integer, optional, intent(in) :: {% for dd in range(d) %} {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+#if defined(__CUDA)
+      attributes(device) :: array_out, array_in
+#endif
+       !
+    end subroutine {{p.name}}_dev_memcpy_{{t[0]|lower}}{{d}}d
+    !
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+    !
+#if defined(__HAVE_DEVICE)
+{%- for t in types %}
+{%- for p in kinds[t] %}
+{%- for d in range(1,dimensions+1) %}
+    subroutine {{p.name}}_dev_memcpy_h2h_{{t[0]|lower}}{{d}}d(array_out, array_in, &
+                                            {% for dd in range(d) -%} 
+                                            {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, &
+                                            {% endif %}{% endfor %} )
+      use iso_fortran_env
+      implicit none
+      !   
+      {{t}}({{p.val}}), intent(inout) :: array_out({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+      {{t}}({{p.val}}), intent(in)    :: array_in({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+      integer, optional, intent(in) :: {% for dd in range(d) %} {{ "range%s(2)"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+      integer, optional, intent(in) :: {% for dd in range(d) %} {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+       !
+    end subroutine {{p.name}}_dev_memcpy_h2h_{{t[0]|lower}}{{d}}d
+    !
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+#endif
+    !
+#if defined(__HAVE_DEVICE)
+{%- for t in types %}
+{%- for p in kinds[t] %}
+{%- for d in range(1,dimensions+1) %}
+    subroutine {{p.name}}_memcpy_h2d_{{t[0]|lower}}{{d}}d(array_out, array_in, &
+                                             {% for dd in range(d) -%} 
+                                             {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }} {% if not loop.last %}, &
+                                             {% endif %}{% endfor %} )
+#if defined(__CUDA)
+       use cudafor
+#endif  
+       use iso_fortran_env
+       implicit none
+       !   
+       {{t}}({{p.val}}), intent(inout) :: array_out({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %}) 
+       {{t}}({{p.val}}), intent(in)    :: array_in({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %}) 
+       integer, optional, intent(in) :: {% for dd in range(d) %} {{ "range%s(2)"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+       integer, optional, intent(in) :: {% for dd in range(d) %} {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+#if defined(__CUDA)
+       attributes(device) :: array_out
+#endif
+       !
+    end subroutine {{p.name}}_memcpy_h2d_{{t[0]|lower}}{{d}}d
+    !
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+    !
+{%- for t in types %}
+{%- for p in kinds[t] %}
+{%- for d in range(1,dimensions+1) %}
+    subroutine {{p.name}}_memcpy_d2h_{{t[0]|lower}}{{d}}d(array_out, array_in, &
+                                             {% for dd in range(d) -%} 
+                                             {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }} {% if not loop.last %}, &
+                                             {% endif %}{% endfor %} )
+#if defined(__CUDA)
+       use cudafor
+#endif 
+       use iso_fortran_env
+       implicit none
+       !
+       {{t}}({{p.val}}), intent(inout) :: array_out({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+       {{t}}({{p.val}}), intent(in)    :: array_in({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+       integer, optional, intent(in) :: {% for dd in range(d) %} {{ "range%s(2)"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+       integer, optional, intent(in) :: {% for dd in range(d) %} {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+#if defined(__CUDA)
+       attributes(device) :: array_in
+#endif
+       !
+    end subroutine {{p.name}}_memcpy_d2h_{{t[0]|lower}}{{d}}d
+    !
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+#endif
+    !
+end interface dev_memcpy
+!
+interface dev_memcpy_async
+    !
+{%- for t in types %}
+{%- for p in kinds[t] %}
+{%- for d in range(1,dimensions+1) %}
+    subroutine {{p.name}}_memcpy_d2h_async_{{t[0]|lower}}{{d}}d(array_out, array_in, stream, &
+                                             {% for dd in range(d) -%} 
+                                             {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }} {% if not loop.last %}, &
+                                             {% endif %}{% endfor %} )
+#if defined(__CUDA)
+       use cudafor
+#endif 
+       use iso_fortran_env
+       implicit none
+       !
+       {{t}}({{p.val}}), intent(inout) :: array_out({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+       {{t}}({{p.val}}), intent(in)    :: array_in({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+#if defined(__CUDA)
+       integer(kind=cuda_Stream_Kind), intent(in) :: stream
+#else
+       integer, intent(in) :: stream
+#endif
+       integer, optional, intent(in) :: {%for dd in range(d)%}{{ "range%s(2)"|format(dd+1)}}{% if not loop.last %}, {%- endif %}{% endfor %}
+       integer, optional, intent(in) :: {%for dd in range(d)%}{{ "lbound%s"|format(dd+1)}}{% if not loop.last %}, {%- endif %}{% endfor %}
+#if defined(__CUDA)
+       attributes(device) :: array_in
+#endif
+       !
+    end subroutine {{p.name}}_memcpy_d2h_async_{{t[0]|lower}}{{d}}d
+    !
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+    !
+#if defined(__HAVE_DEVICE)
+{%- for t in types %}
+{%- for p in kinds[t] %}
+{%- for d in range(1,dimensions+1) %}
+    subroutine {{p.name}}_memcpy_h2d_async_{{t[0]|lower}}{{d}}d(array_out, array_in, stream, &
+                                             {% for dd in range(d) -%} 
+                                             {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }} {% if not loop.last %}, &
+                                             {% endif %}{% endfor %} )
+#if defined(__CUDA)
+       use cudafor
+#endif 
+       use iso_fortran_env
+       implicit none
+       !
+       {{t}}({{p.val}}), intent(inout) :: array_out({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+       {{t}}({{p.val}}), intent(in)    :: array_in({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+#if defined(__CUDA)
+       integer(kind=cuda_Stream_Kind), intent(in) :: stream
+#else
+       integer, intent(in) :: stream
+#endif
+       integer, optional, intent(in) :: {%for dd in range(d)%}{{ "range%s(2)"|format(dd+1)}}{% if not loop.last %}, {%- endif %}{% endfor %}
+       integer, optional, intent(in) :: {%for dd in range(d)%}{{ "lbound%s"|format(dd+1)}}{% if not loop.last %}, {%- endif %}{% endfor %}
+#if defined(__CUDA)
+       attributes(device) :: array_out
+#endif
+       !
+    end subroutine {{p.name}}_memcpy_h2d_async_{{t[0]|lower}}{{d}}d
+    !
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+    !
+#endif
+    !
+end interface dev_memcpy_async
+!
+interface 
+    !
+    subroutine dev_stream_sync(stream)
+#if defined(__CUDA)
+       use cudafor
+#endif
+       implicit none
+#if defined(__CUDA)
+       integer(kind=cuda_Stream_Kind), intent(in) :: stream
+#else
+       integer, intent(in) :: stream
+#endif
+    !
+    end subroutine dev_stream_sync
+    !
+end interface 
+!
+interface dev_memset
+    !
+{%- for t in types %}
+{%- for p in kinds[t] %}
+{%- for d in range(1,dimensions+1) %}
+    subroutine {{p.name}}_dev_memset_{{t[0]|lower}}{{d}}d(array_out, val, &
+                                            {% for dd in range(d) %}
+                                            {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, &
+                                            {%- endif %}{% endfor %} )
+       use iso_fortran_env
+       implicit none
+       !
+       {{t}}({{p.val}}), intent(inout) :: array_out({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+       {{t}}({{p.val}}), intent(in)    :: val
+       integer, optional, intent(in) :: {% for dd in range(d) %} {{ "range%s(2)"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+       integer, optional, intent(in) :: {% for dd in range(d) %} {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+#if defined(__CUDA)
+       attributes(device) :: array_out
+#endif
+       !
+    end subroutine {{p.name}}_dev_memset_{{t[0]|lower}}{{d}}d
+    !
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+    !
+#if defined(__HAVE_DEVICE)
+    !
+{%- for t in types %}
+{%- for p in kinds[t] %}
+{%- for d in range(1,dimensions+1) %}
+    subroutine {{p.name}}_dev_memset_h_{{t[0]|lower}}{{d}}d(array_out, val, &
+                                            {% for dd in range(d) %}
+                                            {{ "range%s"|format(dd+1) }}, {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, &
+                                            {%- endif %}{% endfor %} )
+       use iso_fortran_env
+       implicit none
+       !
+       {{t}}({{p.val}}), intent(inout) :: array_out({% for dd in range(d) %}:{% if not loop.last %}, {%- endif %}{% endfor %})
+       {{t}}({{p.val}}), intent(in)    :: val
+       integer, optional, intent(in) :: {% for dd in range(d) %} {{ "range%s(2)"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+       integer, optional, intent(in) :: {% for dd in range(d) %} {{ "lbound%s"|format(dd+1) }}{% if not loop.last %}, {%- endif %}{% endfor %}
+       !
+    end subroutine {{p.name}}_dev_memset_h_{{t[0]|lower}}{{d}}d
+    !
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+    !
+#endif
+    !
+end interface dev_memset
+!

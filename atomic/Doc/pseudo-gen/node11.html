@@ -1,0 +1,160 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>3 A worked example: Ti</TITLE>
+<META NAME="description" CONTENT="3 A worked example: Ti">
+<META NAME="keywords" CONTENT="pseudo-gen">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="pseudo-gen.css">
+
+<LINK REL="next" HREF="node15.html">
+<LINK REL="previous" HREF="node6.html">
+<LINK REL="next" HREF="node12.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node12.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="pseudo-gen.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node10.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html107"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node12.html">3.1 Single-projector, norm-conserving, no semicore</A>
+<B> Up:</B> <A
+ HREF="pseudo-gen.html">User's Guide for LD1</A>
+<B> Previous:</B> <A
+ HREF="node10.html">2.4 Checking for transferability</A>
+ &nbsp; <B>  <A ID="tex2html108"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H1><A ID="SECTION00040000000000000000">
+3 A worked example: Ti</A>
+</H1>
+<P>
+<EM>Let us consider the Ti atom: <I>Z</I> = 22, electronic configuration: 
+<!-- MATH
+ $1s^2 2s^2 2p^6 3s^2 3p^6 3d^2 4s^2$
+ -->
+1<I>s</I><SUP>2</SUP>2<I>s</I><SUP>2</SUP>2<I>p</I><SUP>6</SUP>3<I>s</I><SUP>2</SUP>3<I>p</I><SUP>6</SUP>3<I>d</I><SUP>2</SUP>4<I>s</I><SUP>2</SUP>, with PBE XC functional.
+The input data for the AE calculation is simple:
+</EM><PRE>
+ &amp;input
+   atom='Ti', dft='PBE', config='[Ar] 3d2 4s2 4p0'
+ /
+</PRE><EM>
+and yields the total energy and Kohn-Sham levels. Let us concentrate
+on the outermost states:
+</EM><PRE>
+     3 0     3S 1( 2.00)        -4.6035        -2.3017       -62.6334
+     3 1     3P 1( 6.00)        -2.8562        -1.4281       -38.8608
+     3 2     3D 1( 2.00)        -0.3130        -0.1565        -4.2588
+     4 0     4S 1( 2.00)        -0.3283        -0.1641        -4.4667
+     4 1     4P 1( 0.00)        -0.1078        -0.0539        -1.4663
+</PRE><EM>
+and on their spatial extension:
+</EM><PRE>
+s(3S/3S) =  1.000000  &lt;r&gt; =   1.0069  &lt;r2&gt; =    1.1699  r(max) =   0.8702
+s(3P/3P) =  1.000000  &lt;r&gt; =   1.0860  &lt;r2&gt; =    1.3907  r(max) =   0.8985
+s(3D/3D) =  1.000000  &lt;r&gt; =   1.6171  &lt;r2&gt; =    3.5729  r(max) =   0.9811
+s(4S/4S) =  1.000000  &lt;r&gt; =   3.5138  &lt;r2&gt; =   14.2491  r(max) =   2.9123
+s(4P/4P) =  1.000000  &lt;r&gt; =   4.8653  &lt;r2&gt; =   27.9369  r(max) =   3.8227
+</PRE><EM>
+Note that the 3<I>d</I> state has a small spatial extension, comparable to that of
+3<I>s</I> and 3<I>p</I> states and much smaller than for 4<I>s</I> and 4<I>p</I> states; the
+3<I>d</I> energy is instead comparable to that of 4<I>s</I> and 4<I>p</I> states and much
+higher than the 3<I>s</I> and 3<I>p</I> energies.. Much of the chemistry of Ti is 
+determined by its 3<I>d</I> states. What should we do? We have the choice among 
+several possibilities:
+</EM>
+<OL>
+<LI>single-projector NC-PP with 4 electrons in valence (3<I>d</I><SUP>2</SUP>4<I>s</I><SUP>2</SUP>),
+with nonlinear core correction;
+</LI>
+<LI>single-projector NC-PP with 12 electrons in valence 
+(<!-- MATH
+ $3s^2 3p^6 3d^2 4s^2$
+ -->
+3<I>s</I><SUP>2</SUP>3<I>p</I><SUP>6</SUP>3<I>d</I><SUP>2</SUP>4<I>s</I><SUP>2</SUP>);
+</LI>
+<LI>multiple-projector US-PP with 12 electrons in valence;
+</LI>
+<LI>multiple-projector US-PP with 4 electrons in valence and 
+      nonlinear core correction;
+</LI>
+<LI>...
+</LI>
+</OL><EM>
+The PP of case 1) will be hard due to the presence of 3<I>d</I> states, and 
+its transferability may turn out not be sufficient for all purposes;
+PP's for 2) will be even harder due to the presence of 3<I>d</I> and
+semicore 3<I>s</I> and 3<I>p</I> states; PP 3) can be made soft, but generating
+one is not trivial; PP 4) may suffer from insufficient transferability.
+</EM>
+<P>
+<BR><HR>
+<!--Table of Child-Links-->
+<A ID="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A ID="tex2html109"
+  HREF="node12.html">3.1 Single-projector, norm-conserving, no semicore</A>
+<UL>
+<LI><A ID="tex2html110"
+  HREF="node12.html#SECTION00041100000000000000">3.1.1 Generation</A>
+<LI><A ID="tex2html111"
+  HREF="node12.html#SECTION00041200000000000000">3.1.2 Testing</A>
+</UL>
+<BR>
+<LI><A ID="tex2html112"
+  HREF="node13.html">3.2 Single-projector, norm-conserving, with semicore states</A>
+<LI><A ID="tex2html113"
+  HREF="node14.html">3.3 Testing in molecules and solids</A>
+</UL>
+<!--End of Table of Child-Links-->
+<HR>
+<!--Navigation Panel-->
+<A
+ HREF="node12.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="pseudo-gen.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node10.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html107"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node12.html">3.1 Single-projector, norm-conserving, no semicore</A>
+<B> Up:</B> <A
+ HREF="pseudo-gen.html">User's Guide for LD1</A>
+<B> Previous:</B> <A
+ HREF="node10.html">2.4 Checking for transferability</A>
+ &nbsp; <B>  <A ID="tex2html108"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

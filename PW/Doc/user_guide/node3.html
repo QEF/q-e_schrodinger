@@ -1,0 +1,101 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>1.1 What can PWscf do</TITLE>
+<META NAME="description" CONTENT="1.1 What can PWscf do">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node4.html">
+<LINK REL="previous" HREF="node2.html">
+<LINK REL="next" HREF="node4.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node4.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node2.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node2.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html107"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node4.html">1.2 People</A>
+<B> Up:</B> <A
+ HREF="node2.html">1 Introduction</A>
+<B> Previous:</B> <A
+ HREF="node2.html">1 Introduction</A>
+ &nbsp; <B>  <A ID="tex2html108"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A ID="SECTION00021000000000000000">
+1.1 What can <TT>PWscf</TT> do</A>
+</H2>
+
+<P>
+<TT>PWscf</TT> performs many different kinds of
+self-consistent calculations of electronic-structure
+properties within
+Density-Functional Theory (DFT), using a Plane-Wave (PW) basis set and pseudopotentials (PP).
+In particular:
+
+<UL>
+<LI>ground-state energy and one-electron (Kohn-Sham) orbitals, 
+        atomic forces, stresses;
+</LI>
+<LI>structural optimization, also with variable cell;
+</LI>
+<LI>molecular dynamics on the Born-Oppenheimer surface, also with variable cell;
+</LI>
+<LI>macroscopic polarization (and orbital magnetization) via 
+    Berry Phases;
+</LI>
+<LI>various forms of finite electric fields, with a sawtooth potential
+    or with the modern theory of polarization;
+</LI>
+<LI>Effective Screening Medium (ESM) method;
+</LI>
+<LI>self-consistent continuum solvation (SCCS) model, if patched with
+    ENVIRON (<TT>http://www.quantum-environment.org/</TT>).
+</LI>
+</UL>
+<TT>PWscf</TT> works for both insulators and metals, 
+in any crystal structure, for many exchange-correlation (XC) functionals
+(including spin polarization, DFT+U, meta-GGA, nonlocal and hybrid 
+functionals), for
+norm-conserving (Hamann-Schluter-Chiang) PPs (NCPPs) in 
+separable form or Ultrasoft (Vanderbilt) PPs (USPPs)
+or Projector Augmented Waves (PAW) method.
+Noncollinear magnetism and spin-orbit interactions 
+are also implemented.
+
+<P>
+Please note that NEB calculations are no longer performed by <TT>pw.x</TT>,
+but are instead carried out by <TT>neb.x</TT> (see main user guide), 
+a dedicated code for path optimization which can use <TT>PWscf</TT> as 
+computational engine.
+
+<P>
+<BR><HR>
+
+</BODY>
+</HTML>

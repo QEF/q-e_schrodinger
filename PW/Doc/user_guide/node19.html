@@ -1,0 +1,330 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>4.5 Understanding the time report</TITLE>
+<META NAME="description" CONTENT="4.5 Understanding the time report">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node20.html">
+<LINK REL="previous" HREF="node18.html">
+<LINK REL="next" HREF="node20.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node20.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node14.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node18.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html195"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node20.html">4.6 Restarting</A>
+<B> Up:</B> <A
+ HREF="node14.html">4 Performances</A>
+<B> Previous:</B> <A
+ HREF="node18.html">4.4 Parallelization issues</A>
+ &nbsp; <B>  <A ID="tex2html196"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A ID="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A ID="tex2html197"
+  HREF="node19.html#SECTION00055100000000000000">4.5.1 Serial execution</A>
+<LI><A ID="tex2html198"
+  HREF="node19.html#SECTION00055200000000000000">4.5.2 Parallel execution</A>
+<UL>
+<LI><A ID="tex2html199"
+  HREF="node19.html#SECTION00055210000000000000">4.5.2.1 Quick estimate of parallelization parameters</A>
+<LI><A ID="tex2html200"
+  HREF="node19.html#SECTION00055220000000000000">4.5.2.2 Automatic guess of parallelization parameters</A>
+<LI><A ID="tex2html201"
+  HREF="node19.html#SECTION00055230000000000000">4.5.2.3 Typical symptoms of bad/inadequate parallelization</A>
+</UL></UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H2><A ID="SECTION00055000000000000000">
+4.5 Understanding the time report</A>
+</H2>
+
+<P>
+The time report printed at the end of a <TT>pw.x</TT> run contains a lot of useful 
+information that can be used to understand bottlenecks and improve 
+performances.
+
+<P>
+
+<H3><A ID="SECTION00055100000000000000">
+4.5.1 Serial execution</A>
+</H3>
+The following applies to calculations taking a sizable amount of time
+(at least minutes): for short calculations (seconds), the time spent in 
+the various initializations dominates. Any discrepancy with the following
+picture signals some anomaly.
+
+<P>
+
+<UL>
+<LI>For a typical job with norm-conserving PPs, the total (wall) time is mostly 
+  spent in routine "electrons", calculating the self-consistent solution. 
+</LI>
+<LI>Most of the time spent in "electrons" is used by routine "c_bands", 
+  calculating Kohn-Sham states. "sum_band" (calculating the charge density),
+  "v_of_rho" (calculating the potential), "mix_rho" (charge density mixing)
+  should take a small fraction of the time.
+</LI>
+<LI>Most of the time spent in "c_bands" is used by routines "cegterg" (k-points)
+  or "regterg" (Gamma-point only), performing iterative diagonalization of
+  the Kohn-Sham Hamiltonian in the PW basis set. 
+</LI>
+<LI>Most of the time spent in "*egterg" is used by routine "h_psi",
+  calculating <I>Hψ</I> products. "cdiaghg" (k-points) or "rdiaghg" (Gamma-only), 
+  performing subspace diagonalization, should take only a small fraction.
+</LI>
+<LI>Among the "general routines", most of the time is spent in FFT on Kohn-Sham
+  states: "fftw", and to a smaller extent in other FFTs, "fft" and "ffts", 
+  and in "calbec", calculating <!-- MATH
+ $\langle\psi|\beta\rangle$
+ -->
+〈<I>ψ</I>| <I>β</I>〉 products. 
+</LI>
+<LI>Forces and stresses typically take a fraction of the order of 10 to 20%
+  of the total time.
+</LI>
+</UL>
+For PAW and Ultrasoft PP, you will see a larger contribution by "sum_band" 
+and a nonnegligible "newd" contribution to the time spent in "electrons", 
+but the overall picture is unchanged. You may drastically reduce the
+overhead of Ultrasoft PPs by using input option "tqr=.true.".
+
+<P>
+
+<H3><A ID="SECTION00055200000000000000">
+4.5.2 Parallel execution</A>
+</H3>
+
+<P>
+The various parallelization levels should be used wisely in order to 
+achieve good results. Let us summarize the effects of them on CPU:
+
+<UL>
+<LI>Parallelization on FFT speeds up (with varying efficiency) almost 
+  all routines, with the notable exception of "cdiaghg" and "rdiaghg".
+</LI>
+<LI>Parallelization on k-points speeds up (almost linearly) "c_bands" and 
+  called routines; speeds up partially "sum_band"; does not speed up
+  at all "v_of_rho", "newd", "mix_rho".
+</LI>
+<LI>Linear-algebra parallelization speeds up (not always) "cdiaghg"
+  and "rdiaghg".
+</LI>
+<LI>"task-group" parallelization speeds up "fftw".
+</LI>
+<LI>OpenMP parallelization speeds up "fftw", plus selected parts of the 
+  calculation, plus (depending on the availability of OpenMP-aware
+  libraries) some linear algebra operations.
+</LI>
+</UL>
+and on RAM:
+
+<UL>
+<LI>Parallelization on FFT distributes most arrays across processors
+  (i.e. all G-space and R-spaces arrays) but not all of them (in
+  particular, not subspace Hamiltonian and overlap matrices).
+</LI>
+<LI>Linear-algebra parallelization also distributes subspace Hamiltonian
+  and overlap matrices.
+</LI>
+<LI>All other parallelization levels do not distribute any memory.
+</LI>
+</UL>
+In an ideally parallelized run, you should observe the following:
+
+<UL>
+<LI>CPU and wall time do not differ by much, if OpenMP is not active, or:
+  CPU time approaches wall time times the number of OpenMP threads,
+  if OpenMP is active.
+</LI>
+<LI>Time usage is still dominated by the same routines as for the serial run.
+</LI>
+<LI>Routine "fft_scatter" (called by parallel FFT) takes a sizable part of
+  the time spent in FFTs but does not dominate it.
+</LI>
+</UL>
+
+<P>
+
+<H4><A ID="SECTION00055210000000000000">
+4.5.2.1 Quick estimate of parallelization parameters</A>
+</H4>
+
+<P>
+You need to know
+
+<UL>
+<LI>the number of k-points, <I>N</I><SUB>k</SUB>
+</LI>
+<LI>the third dimension of the (smooth) FFT grid, <I>N</I><SUB>3</SUB>
+</LI>
+<LI>the number of Kohn-Sham states, <I>M</I>
+</LI>
+</UL>
+These data allow to set bounds on parallelization:
+
+<UL>
+<LI>k-point parallelization is limited to <I>N</I><SUB>k</SUB> processor pools: 
+  <TT>-nk Nk</TT>
+</LI>
+<LI>FFT parallelization shouldn't exceed <I>N</I><SUB>3</SUB> processors, i.e. if you
+  run with <TT>-nk Nk</TT>, use <!-- MATH
+ $N=N_k\times N_3$
+ -->
+<I>N</I> = <I>N</I><SUB>k</SUB>×<I>N</I><SUB>3</SUB> MPI processes at most (<TT>mpirun -np N ...</TT>)
+</LI>
+<LI>Unless <I>M</I> is a few hundreds or more, don't bother using linear-algebra
+  parallelization
+</LI>
+</UL>
+You will need to experiment a bit to find the best compromise. In order
+to have good load balancing among MPI processes, the number of k-point
+pools should be an integer divisor of <I>N</I><SUB>k</SUB>; the number of processors for
+FFT parallelization should be an integer divisor of <I>N</I><SUB>3</SUB>. 
+
+<P>
+
+<H4><A ID="SECTION00055220000000000000">
+4.5.2.2 Automatic guess of parallelization parameters</A>
+</H4>
+
+<P>
+Since v.7.1, the code tries to guess a reasonable set of parameters
+for the k-point, linear-algebra, and task-group parallelizations, if
+they are not explicitly provided in the command line. The logic is
+as follows:
+
+<UL>
+<LI>if the number of processors <I>N</I><SUB>p</SUB> exceeds <I>N</I><SUB>3</SUB>, one uses k-point
+  parallelization on the smallest number <I>N</I><SUB>k</SUB> such that
+  <!-- MATH
+ $N_p/N_k \le N_3/2$
+ -->
+<I>N</I><SUB>p</SUB>/<I>N</I><SUB>k</SUB>≤<I>N</I><SUB>3</SUB>/2;
+</LI>
+<LI>if the number of processors <I>N</I><SUB>p</SUB>/<I>N</I><SUB>k</SUB> still exceeds <I>N</I><SUB>3</SUB>, one uses
+  task-group parallelization on the smallest <I>N</I><SUB>t</SUB> that ensures
+  <!-- MATH
+ $N_p/N_k/N_t\le N_3/4$
+ -->
+<I>N</I><SUB>p</SUB>/<I>N</I><SUB>k</SUB>/<I>N</I><SUB>t</SUB>≤<I>N</I><SUB>3</SUB>/4;
+</LI>
+<LI>linear-algebra parallelization is done on <I>n</I><SUB>d</SUB><SUP>2</SUP> processors
+  (<!-- MATH
+ $n_d^2\le N_p/N_k/N_t$
+ -->
+<I>n</I><SUB>d</SUB><SUP>2</SUP>≤<I>N</I><SUB>p</SUB>/<I>N</I><SUB>k</SUB>/<I>N</I><SUB>t</SUB>) with <I>n</I><SUB>d</SUB> such that <!-- MATH
+ $M/n_d\sim 100$
+ -->
+<I>M</I>/<I>n</I><SUB>d</SUB>∼100.
+</LI>
+</UL>
+
+<P>
+
+<H4><A ID="SECTION00055230000000000000">
+4.5.2.3 Typical symptoms of bad/inadequate parallelization</A>
+</H4>
+
+<P>
+
+<UL>
+<LI><EM>a large fraction of time is spent in "v_of_rho", "newd", "mix_rho"</EM>, or
+<BR><EM>the time doesn't scale well or doesn't scale at all by increasing the 
+  number of processors for k-point parallelization.</EM>  Solution:
+
+<UL>
+<LI>use (also) FFT parallelization if possible
+</LI>
+</UL>
+</LI>
+<LI><EM>a disproportionate time is spent in "cdiaghg"/"rdiaghg".</EM> Solutions:
+
+<UL>
+<LI>use (also) k-point parallelization if possible
+</LI>
+<LI>use linear-algebra parallelization, with scalapack if possible.
+</LI>
+</UL>
+</LI>
+<LI><EM>a disproportionate time is spent in "fft_scatter"</EM>, or
+<EM>in "fft_scatter" the difference between CPU and wall time is large.</EM> Solutions:
+
+<UL>
+<LI>if you do not have fast (better than Gigabit ethernet) communication
+    hardware, do not try FFT parallelization on more than 4 or 8 procs.
+</LI>
+<LI>use (also) k-point parallelization if possible
+</LI>
+</UL>
+</LI>
+<LI><EM>the time doesn't scale well or doesn't scale at all by increasing the 
+  number of processors for FFT parallelization.</EM>
+    Solutions:
+
+<UL>
+<LI>use "task groups": try command-line option <TT>-ntg 4</TT> or
+    <TT>-ntg 8</TT>. This may improve your scaling.
+</LI>
+</UL>
+</LI>
+</UL>
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A
+ HREF="node20.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node14.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node18.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html195"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node20.html">4.6 Restarting</A>
+<B> Up:</B> <A
+ HREF="node14.html">4 Performances</A>
+<B> Previous:</B> <A
+ HREF="node18.html">4.4 Parallelization issues</A>
+ &nbsp; <B>  <A ID="tex2html196"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

@@ -1,0 +1,172 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>3.4 Optimization and dynamics</TITLE>
+<META NAME="description" CONTENT="3.4 Optimization and dynamics">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node12.html">
+<LINK REL="previous" HREF="node10.html">
+<LINK REL="next" HREF="node12.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node12.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node10.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html158"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node12.html">3.5 Direct interface with CASINO</A>
+<B> Up:</B> <A
+ HREF="node7.html">3 Using PWscf</A>
+<B> Previous:</B> <A
+ HREF="node10.html">3.3 Electronic structure calculations</A>
+ &nbsp; <B>  <A ID="tex2html159"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A ID="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><UL>
+<LI><A ID="tex2html160"
+  HREF="node11.html#SECTION00044010000000000000">3.4.0.1 Structural optimization</A>
+<LI><A ID="tex2html161"
+  HREF="node11.html#SECTION00044020000000000000">3.4.0.2 Molecular Dynamics</A>
+<LI><A ID="tex2html162"
+  HREF="node11.html#SECTION00044030000000000000">3.4.0.3 Variable-cell optimization</A>
+<LI><A ID="tex2html163"
+  HREF="node11.html#SECTION00044040000000000000">3.4.0.4 Variable-cell molecular dynamics</A>
+</UL></UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H2><A ID="SECTION00044000000000000000">
+3.4 Optimization and dynamics</A>
+</H2>
+
+<P>
+
+<H4><A ID="SECTION00044010000000000000">
+3.4.0.1 Structural optimization</A>
+</H4>
+For fixed-cell optimization, specify <TT>calculation='relax'</TT> and 
+add namelist &amp;IONS. All options for a single SCF calculation apply, 
+plus a few others. You may follow a structural optimization with a
+non-SCF band-structure calculation. See example 2.
+
+<P>
+
+<H4><A ID="SECTION00044020000000000000">
+3.4.0.2 Molecular Dynamics</A>
+</H4> 
+Specify <TT>calculation='md'</TT>, the time step <TT>dt</TT>,
+and possibly the number of MD stops <TT>nstep</TT>.
+Use variable <TT>ion_dynamics</TT> in namelist &amp;IONS
+for a fine-grained control of the kind of dynamics.
+Other options for setting the initial temperature
+and for thermalization using velocity rescaling are available.
+Remember: this is MD on the electronic ground state, not
+Car-Parrinello MD.
+See example 3.
+
+<P>
+
+<H4><A ID="SECTION00044030000000000000">
+3.4.0.3 Variable-cell optimization</A>
+</H4>
+
+<P>
+Variable-cell calculations (both optimization and dynamics) are performed
+with plane waves and G-vectors <EM>calculated for the starting cell</EM>.
+Only the last step, after convergence has been achieved, is performed
+for the converged structure, with plane waves and G-vectors
+<EM>calculated for the final cell</EM>. Small differences between the
+two last steps are thus to be expected and give an estimate of the
+convergence of the variable-cell optimization with respect to the
+plane-wave basis. A large difference means that you are far from
+convergence in the plane-wave basis set and you need to increase the
+cutoff(s) <TT>ecutwfc</TT> and/or (if applicable) <TT>ecutrho</TT>.
+
+<P>
+
+<H4><A ID="SECTION00044040000000000000">
+3.4.0.4 Variable-cell molecular dynamics</A>
+</H4>
+
+<P>
+"A common mistake many new users make is to set the time step <TT>dt</TT>
+improperly to the same order of magnitude as for CP algorithm, or
+not setting <TT>dt</TT> at all. This will produce a ``not evolving dynamics''.
+Good values for the original RMW (Wentzcovitch) dynamics are 
+<TT>dt</TT> <!-- MATH
+ $= 50 \div 70$
+ -->
+= 50÷70. The choice of the cell mass is a
+delicate matter. An
+off-optimal mass will make convergence slower. Too small masses, as
+well as too long time steps, can make the algorithm unstable. A good
+cell mass will make the oscillation times for internal degrees of
+freedom comparable to cell degrees of freedom in non-damped
+Variable-Cell MD. Test calculations are advisable before extensive
+calculation. I have tested the damping algorithm that I have developed
+and it has worked well so far. It allows for a much longer time step
+(dt=<!-- MATH
+ $100 \div 150$
+ -->
+100÷150) than the RMW one and is much more stable with very
+small cell masses, which is useful when the cell shape, not the
+internal degrees of freedom, is far out of equilibrium. It also
+converges in a smaller number of steps than RMW." (Info from Cesar Da
+Silva: the new damping algorithm is the default since v. 3.1).
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A
+ HREF="node12.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node10.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html158"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node12.html">3.5 Direct interface with CASINO</A>
+<B> Up:</B> <A
+ HREF="node7.html">3 Using PWscf</A>
+<B> Previous:</B> <A
+ HREF="node10.html">3.3 Electronic structure calculations</A>
+ &nbsp; <B>  <A ID="tex2html159"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

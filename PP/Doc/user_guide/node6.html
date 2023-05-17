@@ -1,0 +1,163 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>4.1 Plotting selected quantities</TITLE>
+<META NAME="description" CONTENT="4.1 Plotting selected quantities">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node7.html">
+<LINK REL="previous" HREF="node5.html">
+<LINK REL="next" HREF="node7.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node7.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node5.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node5.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html62"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node7.html">4.2 About Bader's analysis</A>
+<B> Up:</B> <A
+ HREF="node5.html">4 Usage</A>
+<B> Previous:</B> <A
+ HREF="node5.html">4 Usage</A>
+ &nbsp; <B>  <A ID="tex2html63"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A ID="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><UL>
+<LI><A ID="tex2html64"
+  HREF="node6.html#SECTION00051010000000000000">4.1.0.1 Planar averages</A>
+<LI><A ID="tex2html65"
+  HREF="node6.html#SECTION00051020000000000000">4.1.0.2 All-electron charge</A>
+</UL></UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H2><A ID="SECTION00051000000000000000">
+4.1 Plotting selected quantities</A>
+</H2>
+
+<P>
+The main postprocessing code <TT>pp.x</TT> extracts the specified data
+from the data files produced by <TT>PWscf</TT> (<TT>pw.x</TT> executable) or <TT>CP</TT> 
+(<TT>cp.x</TT> executable); prepares data for plotting by writing them into 
+formats that can be read by several plotting programs.
+
+<P>
+Quantities that can be read or calculated are:
+<BLOCKQUOTE>
+charge density
+<BR>
+spin polarization
+<BR>
+various potentials
+<BR>
+local density of states at <I>E</I><SUB>F</SUB>
+<BR>
+local density of electronic entropy
+<BR>
+STM images
+<BR>
+selected squared wavefunction
+<BR>
+ELF (electron localization function)
+<BR>
+RDG (reduced density gradient)
+<BR>
+integrated local density of states
+
+</BLOCKQUOTE>
+Various types of plotting (along a line, on a plane, three-dimensional, polar)
+and output formats (including the popular cube format) can be specified.
+Moreover data can be saved to an intermediate (formatted) file so that
+more data sets can be summed or subracted in a later run.
+The output files can be directly read by the free plotting system Gnuplot
+(1D or 2D plots), or by code <TT>plotrho.x</TT> that comes with <TT>PostProc</TT> 
+and produces PostScript 2D plots,
+or by advanced plotting software XCrySDen (3D plots).
+
+<P>
+See file <TT>PP/Doc/INPUT_PP.*</TT> for a detailed description of the input
+for code <TT>pp.x</TT>.
+See Example 01 for an example of a charge density plot, Example 03
+for an example of STM image simulation.
+
+<P>
+
+<H4><A ID="SECTION00051010000000000000">
+4.1.0.1 Planar averages</A>
+</H4>
+Code <TT>plan_avg.x</TT> calculates planar averages of Kohn-Sham orbitals.
+Input documentation is in the header of<TT>PP/src/plan_avg.f90</TT>.
+
+<P>
+Code <TT>average.x</TT> calculates planar averages of quantities produced
+by <TT>pp.x</TT> (e.g. potentials, charge, magnetization densities).
+Note that <TT>average.x</TT> reads the intermediate file produced
+by <TT>pp.x</TT>, not data files produced by <TT>pw.x</TT>. Examples of usage 
+of <TT>average.x</TT> can be found in <TT>PP/examples/WorkFct_example/</TT> 
+and in <TT>PP/examples/dipole_example/</TT>.
+
+<P>
+
+<H4><A ID="SECTION00051020000000000000">
+4.1.0.2 All-electron charge</A>
+</H4>
+<TT>pawplot.x</TT> produces plots of the all-electron charge
+for PAW calculations. Input documentation in the header of
+<TT>PP/src/pawplot.f90</TT>. 
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A
+ HREF="node7.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node5.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node5.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html62"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node7.html">4.2 About Bader's analysis</A>
+<B> Up:</B> <A
+ HREF="node5.html">4 Usage</A>
+<B> Previous:</B> <A
+ HREF="node5.html">4 Usage</A>
+ &nbsp; <B>  <A ID="tex2html63"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

@@ -1,0 +1,10 @@
+deviceXlib_mod.o : device_auxfunc_mod.o
+deviceXlib_mod.o : device_fbuff_mod.o
+deviceXlib_mod.o : device_memcpy_mod.o
+device_fbuff_mod.o : device_fbuff.o
+test_fbuff.o : device_fbuff.o
+test_fbuff.o : tester.o
+test_fbufl.o : device_fbuff.o
+test_fbufl.o : tester.o
+test_memcpy_async.o : timer_mod.o
+test_memcpy.o : timer_mod.o

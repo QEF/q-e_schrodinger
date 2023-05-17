@@ -1,0 +1,59 @@
+#! /bin/sh
+#
+# This script is a simple wrapper calling the autoconf configuration
+# script (configure) in config/
+# Dependencies may be also directly generated 
+#
+##================================================================
+##
+#MANUAL=" Usage
+#   configure [-h, --help] [<conf_flags>]
+#
+# -h, --help           print this manual    
+# <conf_flags>         these flags will be passed to 
+#                      the autoconf configure
+#
+# After configuration, the make.sys file will created in the
+# WanT home (current) directory
+# 
+#"
+##
+##================================================================
+#
+
+
+# run from directory where this script is
+auxdir=`echo $0 | sed 's/\(.*\)\/.*/\1/'` # extract pathname
+if [ "$auxdir" != "configure" ] ; then cd $auxdir ; fi
+
+
+#
+# detect the simplest cases
+#
+case $1 in
+  ("-h" | "--help" )      echo "$MANUAL"     ; ./config/configure --help ; exit 0 ;;
+esac
+
+#
+# run the autoconf configure with the
+# given cong_flags
+#
+
+test -e ./make.inc                 && rm ./make.inc
+test -e ./config/make.inc          && rm ./config/make.inc
+test -e ./config/configure.msg     && rm ./config/configure.msg
+
+./config/configure $*
+
+#
+# copy make.inc in the home dir
+# and final clean up
+#
+test -e ./config/make.inc     && mv ./config/make.inc    .
+#test -e config.log            && mv config.log           ./config/
+test -e config.status         && mv config.status        ./config/
+test -e configure.msg         && mv configure.msg        ./config/
+#
+
+exit 0
+

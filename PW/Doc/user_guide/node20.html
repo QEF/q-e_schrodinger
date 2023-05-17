@@ -1,0 +1,152 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>4.6 Restarting</TITLE>
+<META NAME="description" CONTENT="4.6 Restarting">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="previous" HREF="node19.html">
+<LINK REL="next" HREF="node21.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node21.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node14.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node19.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html202"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node21.html">5 Troubleshooting</A>
+<B> Up:</B> <A
+ HREF="node14.html">4 Performances</A>
+<B> Previous:</B> <A
+ HREF="node19.html">4.5 Understanding the time report</A>
+ &nbsp; <B>  <A ID="tex2html203"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A ID="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A ID="tex2html204"
+  HREF="node20.html#SECTION00056100000000000000">4.6.1 Signal trapping (experimental!)</A>
+</UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H2><A ID="SECTION00056000000000000000">
+4.6 Restarting</A>
+</H2>
+
+<P>
+Since QE 5.1 restarting from an arbitrary point of the code is no more supported.
+
+<P>
+The code must terminate properly in order for restart to be possible. A clean stop can be triggered by one the following three conditions:
+
+<OL>
+<LI>The amount of time specified by the input variable max_seconds is reached
+</LI>
+<LI>The user creates a file named "$prefix.EXIT" either in the working
+directory or in output directory "$outdir" 
+(variables $outdir and $prefix as specified in the control namelist)
+</LI>
+<LI>(experimental) The code is compiled with signal-trapping support and one of the trapped signals is received (see the next section for details).
+</LI>
+</OL>
+
+<P>
+After the condition is met, the code will try to stop cleanly as soon as possible, which can take a while for large calculation. Writing the files to disk can also be a long process. In order to be safe you need to reserve sufficient time for the stop process to complete.
+
+<P>
+If the previous execution of the code has stopped properly, restarting is possible setting restart_mode=``restart'' in the control namelist.
+
+<P>
+
+<H3><A ID="SECTION00056100000000000000">
+4.6.1 Signal trapping (experimental!)</A>
+</H3>
+In order to compile signal-trapping add "-D__TERMINATE_GRACEFULLY" to MANUAL_DFLAGS in the make.doc file. Currently the code intercepts SIGINT, SIGTERM, SIGUSR1, SIGUSR2, SIGXCPU; signals can be added or removed editing the file <TT>clib/custom_signals.c</TT>.
+
+<P>
+Common queue systems will send a signal some time before killing a job. The exact behaviour depends on the queue systems and could be configured. Some examples:
+
+<P>
+With PBS:
+
+<UL>
+<LI>send the default signal (SIGTERM) 120 seconds before the end:
+<BR>  <TT>#PBS -l signal=@120</TT>
+
+<P>
+</LI>
+<LI>send signal SIGUSR1 10 minutes before the end:
+<BR>  <TT>#PBS -l signal=SIGUSR1@600</TT>
+
+<P>
+</LI>
+<LI>you cand also send a signal manually with qsig
+</LI>
+<LI>or send a signal and then stop:
+<BR>   <TT>qdel -W 120 jobid</TT>
+<BR>
+will send SIGTERM, wait 2 minutes than force stop.
+</LI>
+</UL>
+
+<P>
+With LoadLeveler (untested): the SIGXCPU signal will be sent when wall <I>softlimit</I> is reached, it will then stop the job when <I>hardlimit</I> is reached. You can specify both limits as:
+<BR>  <TT># @ wall_clock_limit = hardlimit,softlimit</TT>
+<BR>
+e.g. you can give pw.x thirty minutes to stop using:
+<BR>  <TT># @ wall_clock_limit = 5:00,4:30</TT>
+<BR>
+<P>
+<HR>
+<!--Navigation Panel-->
+<A
+ HREF="node21.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node14.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node19.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html202"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node21.html">5 Troubleshooting</A>
+<B> Up:</B> <A
+ HREF="node14.html">4 Performances</A>
+<B> Previous:</B> <A
+ HREF="node19.html">4.5 Understanding the time report</A>
+ &nbsp; <B>  <A ID="tex2html203"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

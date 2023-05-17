@@ -562,7 +562,7 @@ cutg:  DO ig=ngpos+1,ngm
        CALL mp_max( gtop , intra_bgrp_comm)
        CALL mp_min( gnext, intra_bgrp_comm)
        ! The following criterion is rather arbitrary: it should as small as
-       ! possible but slightly larger than the expected numerical noise
+       ! possible but slightly larger than the expected numerical noise 
        IF ( ABS ( gnext-gtop ) < 1.0e-7*gcut_(np) ) gcut_(np) = MAX(gnext,gtop)
     END DO
     !

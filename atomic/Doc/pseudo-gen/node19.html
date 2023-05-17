@@ -1,0 +1,393 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>A..4 Numerical solution</TITLE>
+<META NAME="description" CONTENT="A..4 Numerical solution">
+<META NAME="keywords" CONTENT="pseudo-gen">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="pseudo-gen.css">
+
+<LINK REL="previous" HREF="node18.html">
+<LINK REL="next" HREF="node20.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node20.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node15.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node18.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html136"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node20.html">B. Equations for the Troullier-Martins</A>
+<B> Up:</B> <A
+ HREF="node15.html">A. Atomic Calculations</A>
+<B> Previous:</B> <A
+ HREF="node18.html">A..3 Scalar-relativistic case</A>
+ &nbsp; <B>  <A ID="tex2html137"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A ID="SECTION00054000000000000000">
+A..4 Numerical solution</A>
+</H2>
+<P>
+<EM>The radial (scalar-relativistic) KS equation is integrated 
+on a radial grid. It is convenient to
+have a denser grid close to the nucleus and a coarser one far
+away. Traditionally a logarithmic grid is used: 
+<!-- MATH
+ $r_i=r_0\mbox{exp}(i\Delta x)$
+ -->
+<I>r</I><SUB>i</SUB> = <I>r</I><SUB>0</SUB>exp(<I>iΔx</I>). With this grid, one has
+</EM>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+\int_0^\infty f(r) d r = \int_0^\infty f(x) r(x) dx
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<IMG
+ STYLE="height: 5.42ex; vertical-align: -2.19ex; " SRC="img75.png"
+ ALT="$\displaystyle \int_{0}^{\infty}$"><I>f</I> (<I>r</I>)<I>dr</I> = <IMG
+ STYLE="height: 5.42ex; vertical-align: -2.19ex; " SRC="img75.png"
+ ALT="$\displaystyle \int_{0}^{\infty}$"><I>f</I> (<I>x</I>)<I>r</I>(<I>x</I>)<I>dx</I>
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(15)</TD></TR>
+</TABLE>
+</DIV><EM>
+and
+</EM>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+{d f(r)\over d r}={1\over r} {d f(x)\over d x},\qquad
+{d^2 f(r)\over d r^2}=-{1\over r^2} {d f(x)\over d x}
++ {1\over r^2} {d^2 f(x)\over d x^2}.
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<IMG
+ STYLE="height: 5.01ex; vertical-align: -1.69ex; " SRC="img76.png"
+ ALT="$\displaystyle {d f(r)\over d r}$"> = <IMG
+ STYLE="height: 4.84ex; vertical-align: -1.69ex; " SRC="img15.png"
+ ALT="$\displaystyle {1\over r}$"><IMG
+ STYLE="height: 5.01ex; vertical-align: -1.69ex; " SRC="img77.png"
+ ALT="$\displaystyle {d f(x)\over d x}$">,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<IMG
+ STYLE="height: 5.13ex; vertical-align: -1.69ex; " SRC="img78.png"
+ ALT="$\displaystyle {d^2 f(r)\over d r^2}$"> = - <IMG
+ STYLE="height: 4.84ex; vertical-align: -1.69ex; " SRC="img79.png"
+ ALT="$\displaystyle {1\over r^2}$"><IMG
+ STYLE="height: 5.01ex; vertical-align: -1.69ex; " SRC="img77.png"
+ ALT="$\displaystyle {d f(x)\over d x}$"> + <IMG
+ STYLE="height: 4.84ex; vertical-align: -1.69ex; " SRC="img79.png"
+ ALT="$\displaystyle {1\over r^2}$"><IMG
+ STYLE="height: 5.13ex; vertical-align: -1.69ex; " SRC="img80.png"
+ ALT="$\displaystyle {d^2 f(x)\over d x^2}$">.
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(16)</TD></TR>
+</TABLE>
+</DIV><EM>
+We start with a given self-consistent potential <I>V</I> and
+a trial eigenvalue <I>ε</I>. The equation is integrated
+from <I>r</I> = 0 outwards to <I>r</I><SUB>t</SUB>, the outermost classical 
+(nonrelativistic for simplicity) turning point, defined
+by <!-- MATH
+ ${l(l+1) /r_t^2} + \left(V(r_t)-\epsilon\right)=0$
+ -->
+<I>l</I> (<I>l</I>+1)/<I>r</I><SUB>t</SUB><SUP>2</SUP> + <IMG
+ STYLE="height: 2.33ex; vertical-align: -0.60ex; " SRC="img81.png"
+ ALT="$\left(\vphantom{V(r_t)-\epsilon}\right.$"><I>V</I>(<I>r</I><SUB>t</SUB>) - <I>ε</I><IMG
+ STYLE="height: 2.33ex; vertical-align: -0.60ex; " SRC="img82.png"
+ ALT="$\left.\vphantom{V(r_t)-\epsilon}\right)$"> = 0.
+In a logarithmic grid (see above) the equation to solve becomes:
+</EM>
+<BR>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{eqnarray}
+{1\over r^2} {d^2 R_{nl}(x)\over d x^2} & = &
+  {1\over r^2} {d R_{nl}(x)\over d x} + 
+  \left( {l(l+1)\over r^2} + 
+  M(r)\left(V(r)-\epsilon\right) \right) R_{nl}(r) \nonumber \\
+ & & \mbox{} - {\alpha^2\over 4M(r)} {dV(r)\over dr} 
+      \left({1\over r} {dR_{nl}(x)\over dx} +
+            \langle\kappa\rangle {R_{nl}(r)\over r}\right).
+\end{eqnarray}
+ -->
+<TABLE CELLPADDING="0" ALIGN="CENTER" WIDTH="100%">
+<TR VALIGN="MIDDLE"><TD NOWRAP ALIGN="RIGHT"><IMG
+ STYLE="height: 4.84ex; vertical-align: -1.69ex; " SRC="img79.png"
+ ALT="$\displaystyle {1\over r^2}$"><IMG
+ STYLE="height: 5.13ex; vertical-align: -1.69ex; " SRC="img83.png"
+ ALT="$\displaystyle {d^2 R_{nl}(x)\over d x^2}$"></TD>
+<TD WIDTH="10" ALIGN="CENTER" NOWRAP>=</TD>
+<TD ALIGN="LEFT" NOWRAP><IMG
+ STYLE="height: 4.84ex; vertical-align: -1.69ex; " SRC="img79.png"
+ ALT="$\displaystyle {1\over r^2}$"><IMG
+ STYLE="height: 5.01ex; vertical-align: -1.69ex; " SRC="img84.png"
+ ALT="$\displaystyle {d R_{nl}(x)\over d x}$"> + <IMG
+ STYLE="height: 5.60ex; vertical-align: -2.23ex; " SRC="img65.png"
+ ALT="$\displaystyle \left(\vphantom{ {l(l+1)\over r^2} + M(r)\left(V(r)-\epsilon\right)
+}\right.$"><IMG
+ STYLE="height: 5.01ex; vertical-align: -1.69ex; " SRC="img32.png"
+ ALT="$\displaystyle {l(l+1)\over r^2}$"> + <I>M</I>(<I>r</I>)<IMG
+ STYLE="height: 2.33ex; vertical-align: -0.60ex; " SRC="img66.png"
+ ALT="$\displaystyle \left(\vphantom{V(r)-\epsilon}\right.$"><I>V</I>(<I>r</I>) - <I>ε</I><IMG
+ STYLE="height: 2.33ex; vertical-align: -0.60ex; " SRC="img67.png"
+ ALT="$\displaystyle \left.\vphantom{V(r)-\epsilon}\right)$"><IMG
+ STYLE="height: 5.60ex; vertical-align: -2.23ex; " SRC="img68.png"
+ ALT="$\displaystyle \left.\vphantom{ {l(l+1)\over r^2} + M(r)\left(V(r)-\epsilon\right)
+}\right)$"><I>R</I><SUB>nl</SUB>(<I>r</I>)</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+&nbsp;</TD></TR>
+<TR VALIGN="MIDDLE"><TD NOWRAP ALIGN="RIGHT">&nbsp;</TD>
+<TD>&nbsp;</TD>
+<TD ALIGN="LEFT" NOWRAP>&nbsp; - <IMG
+ STYLE="height: 5.65ex; vertical-align: -2.19ex; " SRC="img69.png"
+ ALT="$\displaystyle {\alpha^2\over 4M(r)}$"><IMG
+ STYLE="height: 5.01ex; vertical-align: -1.69ex; " SRC="img70.png"
+ ALT="$\displaystyle {dV(r)\over dr}$"><IMG
+ STYLE="height: 5.60ex; vertical-align: -2.23ex; " SRC="img85.png"
+ ALT="$\displaystyle \left(\vphantom{{1\over r} {dR_{nl}(x)\over dx} +
+\langle\kappa\rangle {R_{nl}(r)\over r}}\right.$"><IMG
+ STYLE="height: 4.84ex; vertical-align: -1.69ex; " SRC="img15.png"
+ ALT="$\displaystyle {1\over r}$"><IMG
+ STYLE="height: 5.01ex; vertical-align: -1.69ex; " SRC="img84.png"
+ ALT="$\displaystyle {d R_{nl}(x)\over d x}$"> + 〈<I>κ</I>〉<IMG
+ STYLE="height: 5.01ex; vertical-align: -1.69ex; " SRC="img11.png"
+ ALT="$\displaystyle {R_{nl}(r)\over r}$"><IMG
+ STYLE="height: 5.60ex; vertical-align: -2.23ex; " SRC="img86.png"
+ ALT="$\displaystyle \left.\vphantom{{1\over r} {dR_{nl}(x)\over dx} +
+\langle\kappa\rangle {R_{nl}(r)\over r}}\right)$">.</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(17)</TD></TR>
+</TABLE></DIV>
+<BR CLEAR="ALL">
+<EM>
+This determines <!-- MATH
+ ${d^2 R_{nl}(x)/d x^2}$
+ -->
+<I>d</I><SUP>2</SUP><I>R</I><SUB>nl</SUB>(<I>x</I>)/<I>dx</I><SUP>2</SUP> which is used to
+determine <!-- MATH
+ ${d R_{nl}(x)/ dx}$
+ -->
+<I>dR</I><SUB>nl</SUB>(<I>x</I>)/<I>dx</I> which in turn is used to
+determine <I>R</I><SUB>nl</SUB>(<I>r</I>), using predictor-corrector or whatever
+classical integration method. <!-- MATH
+ ${dV(r)/dr}$
+ -->
+<I>dV</I>(<I>r</I>)/<I>dr</I> is evaluated
+numerically from any finite difference method. The series
+is started using the known (?) asymptotic behavior of <I>R</I><SUB>nl</SUB>(<I>r</I>) 
+close to the nucleus (with ionic charge <I>Z</I>)
+</EM>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+R_{nl}(r)\simeq r^\gamma,\qquad \gamma={l\sqrt{l^2-\alpha^2 Z^2}+
+(l+1)\sqrt{(l+1)^2-\alpha^2 Z^2}\over 2l+1}.
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<I>R</I><SUB>nl</SUB>(<I>r</I>) <IMG
+ STYLE="height: 1.05ex; vertical-align: 0.04ex; " SRC="img87.png"
+ ALT="$\displaystyle \simeq$"> <I>r</I><SUP><I>γ</I></SUP>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<I>γ</I> = <IMG
+ STYLE="height: 5.54ex; vertical-align: -1.79ex; " SRC="img88.png"
+ ALT="$\displaystyle {l\sqrt{l^2-\alpha^2 Z^2}+
+(l+1)\sqrt{(l+1)^2-\alpha^2 Z^2}\over 2l+1}$">.
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(18)</TD></TR>
+</TABLE>
+</DIV><EM>
+The number of nodes is counted. If there are too few (many)
+nodes, the trial eigenvalue is increased (decreased) and
+the procedure is restarted until the correct number <I>n</I> - <I>l</I> - 1
+of nodes is reached. Then a second integration is started 
+inward, starting from a suitably large <!-- MATH
+ $r\sim 10r_t$
+ -->
+<I>r</I>∼10<I>r</I><SUB>t</SUB> down 
+to <I>r</I><SUB>t</SUB>, using as a starting point the asymptotic behavior 
+of <I>R</I><SUB>nl</SUB>(<I>r</I>) at large <I>r</I>: 
+</EM>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+R_{nl}(r)\simeq e^{-k(r)r},\qquad
+k(r)=\sqrt{{l(l+1)\over r^2} + \left(V(r)-\epsilon\right)}.
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<I>R</I><SUB>nl</SUB>(<I>r</I>) <IMG
+ STYLE="height: 1.05ex; vertical-align: 0.04ex; " SRC="img87.png"
+ ALT="$\displaystyle \simeq$"> <I>e</I><SUP>-k(r)r</SUP>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<I>k</I>(<I>r</I>) = <IMG
+ STYLE="height: 5.60ex; vertical-align: -1.73ex; " SRC="img89.png"
+ ALT="$\displaystyle \sqrt{{{l(l+1)\over r^2} + \left(V(r)-\epsilon\right)}}$">.
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(19)</TD></TR>
+</TABLE>
+</DIV><EM>
+The two pieces are continuously joined at <I>r</I><SUB>t</SUB> and a correction to the trial 
+eigenvalue is estimated using perturbation theory (see below). The procedure 
+is iterated to self-consistency.
+</EM>
+<P>
+<EM>The perturbative estimate of correction to trial eigenvalues is described in
+the following for the nonrelativistic case (it is not worth to make relativistic
+corrections on top of a correction). The trial eigenvector <I>R</I><SUB>nl</SUB>(<I>r</I>) will have 
+a cusp at <I>r</I><SUB>t</SUB> if the trial eigenvalue is not a true eigenvalue:
+</EM>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+A = {d R_{nl}(r_t^+)\over dr} - {d R_{nl}(r_t^-)\over dr} \ne 0.
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<I>A</I> = <IMG
+ STYLE="height: 5.13ex; vertical-align: -1.69ex; " SRC="img90.png"
+ ALT="$\displaystyle {d R_{nl}(r_t^+)\over dr}$"> - <IMG
+ STYLE="height: 5.01ex; vertical-align: -1.69ex; " SRC="img91.png"
+ ALT="$\displaystyle {d R_{nl}(r_t^-)\over dr}$">≠0.
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(20)</TD></TR>
+</TABLE>
+</DIV><EM>
+Such discontinuity in the first derivative translates into a
+<!-- MATH
+ $\delta(r_t)$
+ -->
+<I>δ</I>(<I>r</I><SUB>t</SUB>) in the second derivative:
+</EM>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+{d^2  R_{nl}(r)\over dr^2} = {d^2 \widetilde R_{nl}(r)\over dr^2}
+  + A \delta(r-r_t)
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<IMG
+ STYLE="height: 5.13ex; vertical-align: -1.69ex; " SRC="img16.png"
+ ALT="$\displaystyle {d^2 R_{nl}(r)\over dr^2}$"> = <IMG
+ STYLE="height: 5.54ex; vertical-align: -1.69ex; " SRC="img92.png"
+ ALT="$\displaystyle {d^2 \widetilde R_{nl}(r)\over dr^2}$"> + <I>Aδ</I>(<I>r</I> - <I>r</I><SUB>t</SUB>)
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(21)</TD></TR>
+</TABLE>
+</DIV><EM>
+where the tilde denotes the function obtained by matching the
+second derivatives in the <I>r</I> &lt; <I>r</I><SUB>t</SUB> and <I>r</I> &gt; <I>r</I><SUB>t</SUB> regions.
+This means that we are actually solving a different problem in which 
+<I>V</I>(<I>r</I>) is replaced by <!-- MATH
+ $V(r)+\Delta V(r)$
+ -->
+<I>V</I>(<I>r</I>) + <I>ΔV</I>(<I>r</I>), 
+given by
+</EM>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+\Delta V(r) = -{\hbar^2 \over 2m} {A\over R_{nl}(r_t)}\delta(r-r_t).
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<I>ΔV</I>(<I>r</I>) = - <IMG
+ STYLE="height: 5.13ex; vertical-align: -1.69ex; " SRC="img7.png"
+ ALT="$\displaystyle {\hbar^2\over 2m}$"><IMG
+ STYLE="height: 5.48ex; vertical-align: -2.19ex; " SRC="img93.png"
+ ALT="$\displaystyle {A\over R_{nl}(r_t)}$"><I>δ</I>(<I>r</I> - <I>r</I><SUB>t</SUB>).
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(22)</TD></TR>
+</TABLE>
+</DIV><EM>
+The energy difference between the solution to such fictitious potential 
+and the solution to the real potential can be estimated from
+perturbation theory:
+</EM>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+\Delta\epsilon_{nl} = - \langle\psi|\Delta V |\psi\rangle
+                     =   {\hbar^2 \over 2m} R_{nl}(r_t) A.
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<I>Δε</I><SUB>nl</SUB> = - 〈<I>ψ</I>| <I>ΔV</I>| <I>ψ</I>〉 = <IMG
+ STYLE="height: 5.13ex; vertical-align: -1.69ex; " SRC="img7.png"
+ ALT="$\displaystyle {\hbar^2\over 2m}$"><I>R</I><SUB>nl</SUB>(<I>r</I><SUB>t</SUB>)<I>A</I>.
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(23)</TD></TR>
+</TABLE>
+</DIV>
+<P><HR>
+<!--Navigation Panel-->
+<A
+ HREF="node20.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node15.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node18.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html136"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node20.html">B. Equations for the Troullier-Martins</A>
+<B> Up:</B> <A
+ HREF="node15.html">A. Atomic Calculations</A>
+<B> Previous:</B> <A
+ HREF="node18.html">A..3 Scalar-relativistic case</A>
+ &nbsp; <B>  <A ID="tex2html137"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

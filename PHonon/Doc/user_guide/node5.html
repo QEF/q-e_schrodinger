@@ -1,0 +1,138 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>3.1 Structure of the PHonon package</TITLE>
+<META NAME="description" CONTENT="3.1 Structure of the PHonon package">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node6.html">
+<LINK REL="previous" HREF="node4.html">
+<LINK REL="next" HREF="node6.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node6.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node4.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node4.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html57"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node6.html">3.2 Compilation</A>
+<B> Up:</B> <A
+ HREF="node4.html">3 Installation</A>
+<B> Previous:</B> <A
+ HREF="node4.html">3 Installation</A>
+ &nbsp; <B>  <A ID="tex2html58"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A ID="SECTION00041000000000000000">
+3.1 Structure of the <TT>PHonon</TT> package</A>
+</H2>
+
+<P>
+<TT>PHonon</TT> has the following directory structure,
+contained in a subdirectory <TT>PHonon/</TT>
+of the main Q<SMALL>UANTUM </SMALL>ESPRESSO tree:
+
+<P>
+<TABLE CELLPADDING=3>
+<TR><TD ALIGN="LEFT"><TT>Doc/</TT></TD>
+<TD ALIGN="LEFT">: contains the user_guide and input data description</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>examples/</TT></TD>
+<TD ALIGN="LEFT">: some running examples</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>PH/</TT></TD>
+<TD ALIGN="LEFT">: source files for phonon calculations 
+                   and analysis</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>Gamma/</TT></TD>
+<TD ALIGN="LEFT">: source files for Gamma-only phonon calculation</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>FD/</TT></TD>
+<TD ALIGN="LEFT">: source files for FInite-Difference calculations</TD>
+</TR>
+</TABLE>
+<BR><EM>Important Notice:</EM> since v.5.4, many modules and routines that were
+common to all linear-response Q<SMALL>UANTUM </SMALL>ESPRESSO codes are moved into the new 
+<TT>LR_Modules</TT> subdirectory of the main tree. Since v.6.0, the
+<TT>D3</TT> code for anharmonic force constant calculations has been 
+superseded by the <TT>D3Q</TT> code, available on
+<TT>https://sourceforge.net/projects/d3q/</TT> and automatically
+downloadable from Q<SMALL>UANTUM </SMALL>ESPRESSO.
+
+<P>
+The codes available in the <TT>PHonon</TT> package can perform the following 
+types of calculations:
+
+<UL>
+<LI>phonon frequencies and eigenvectors at a generic wave vector,
+  using Density-Functional Perturbation Theory;
+</LI>
+<LI>effective charges and dielectric tensors;
+</LI>
+<LI>electron-phonon interaction coefficients for metals;
+</LI>
+<LI>interatomic force constants in real space;
+</LI>
+<LI>Infrared and Raman (nonresonant) cross section.
+</LI>
+</UL>
+
+<P>
+<EM>Note:</EM> since v.5.4, packages <TT>PlotPhon</TT> (for phonon
+plotting) and <TT>QHA</TT> (vibrational free energy in the
+Quasi-Harmonic approximations), contribute by the late Prof.
+Eyvaz Isaev, are no longer bundled with <TT>PHonon</TT>. Their latest
+version can be found in the tarballs of v.5.3 of QE.
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A
+ HREF="node6.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node4.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node4.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html57"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node6.html">3.2 Compilation</A>
+<B> Up:</B> <A
+ HREF="node4.html">3 Installation</A>
+<B> Previous:</B> <A
+ HREF="node4.html">3 Installation</A>
+ &nbsp; <B>  <A ID="tex2html58"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

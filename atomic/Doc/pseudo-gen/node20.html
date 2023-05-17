@@ -1,0 +1,551 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>B. Equations for the Troullier-Martins method</TITLE>
+<META NAME="description" CONTENT="B. Equations for the Troullier-Martins method">
+<META NAME="keywords" CONTENT="pseudo-gen">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="pseudo-gen.css">
+
+<LINK REL="next" HREF="node21.html">
+<LINK REL="previous" HREF="node15.html">
+<LINK REL="next" HREF="node21.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node21.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="pseudo-gen.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node19.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html138"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node21.html">References</A>
+<B> Up:</B> <A
+ HREF="pseudo-gen.html">User's Guide for LD1</A>
+<B> Previous:</B> <A
+ HREF="node19.html">A..4 Numerical solution</A>
+ &nbsp; <B>  <A ID="tex2html139"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H1><A ID="SECTION00060000000000000000">
+B. Equations for the Troullier-Martins method</A>
+</H1>
+<P>
+<EM>We assume a pseudowavefunction <I>R</I><SUP>ps</SUP> having the following form:
+</EM>
+<BR>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{eqnarray}
+R^{ps}(r)&=&r^{l+1}e^{p(r)} \quad r\le r_c \\
+R^{ps}(r)&=&R(r)         \quad r\ge r_c
+\end{eqnarray}
+ -->
+<TABLE CELLPADDING="0" ALIGN="CENTER" WIDTH="100%">
+<TR VALIGN="MIDDLE"><TD NOWRAP ALIGN="RIGHT"><I>R</I><SUP>ps</SUP>(<I>r</I>)</TD>
+<TD WIDTH="10" ALIGN="CENTER" NOWRAP>=</TD>
+<TD ALIGN="LEFT" NOWRAP><I>r</I><SUP>l+1</SUP><I>e</I><SUP>p(r)</SUP>&nbsp;&nbsp;&nbsp;&nbsp;<I>r</I>≤<I>r</I><SUB>c</SUB></TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(24)</TD></TR>
+<TR VALIGN="MIDDLE"><TD NOWRAP ALIGN="RIGHT"><I>R</I><SUP>ps</SUP>(<I>r</I>)</TD>
+<TD WIDTH="10" ALIGN="CENTER" NOWRAP>=</TD>
+<TD ALIGN="LEFT" NOWRAP><I>R</I>(<I>r</I>)&nbsp;&nbsp;&nbsp;&nbsp;<I>r</I>≥<I>r</I><SUB>c</SUB></TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(25)</TD></TR>
+</TABLE></DIV>
+<BR CLEAR="ALL">
+<EM>
+where
+</EM>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+p(r)=c_0+c_2r^2+c_4r^4+c_6r^6+c_8r^8+c_{10}r^{10}+c_{12}r^{12}.
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<I>p</I>(<I>r</I>) = <I>c</I><SUB>0</SUB> + <I>c</I><SUB>2</SUB><I>r</I><SUP>2</SUP> + <I>c</I><SUB>4</SUB><I>r</I><SUP>4</SUP> + <I>c</I><SUB>6</SUB><I>r</I><SUP>6</SUP> + <I>c</I><SUB>8</SUB><I>r</I><SUP>8</SUP> + <I>c</I><SUB>10</SUB><I>r</I><SUP>10</SUP> + <I>c</I><SUB>12</SUB><I>r</I><SUP>12</SUP>.
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(26)</TD></TR>
+</TABLE>
+</DIV><EM>
+On this pseudowavefunction we impose the norm conservation
+condition:
+</EM>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+\int_{r<r_c} (R^{ps}(r))^2 dr=\int_{r<r_c} (R(r))^2 dr
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<IMG
+ STYLE="height: 5.54ex; vertical-align: -2.39ex; " SRC="img94.png"
+ ALT="$\displaystyle \int_{{r&lt;r_c}}^{}$">(<I>R</I><SUP>ps</SUP>(<I>r</I>))<SUP>2</SUP><I>dr</I> = <IMG
+ STYLE="height: 5.54ex; vertical-align: -2.39ex; " SRC="img94.png"
+ ALT="$\displaystyle \int_{{r&lt;r_c}}^{}$">(<I>R</I>(<I>r</I>))<SUP>2</SUP><I>dr</I>
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(27)</TD></TR>
+</TABLE>
+</DIV><EM>
+and continuity conditions on the wavefunction and its derivatives up
+to order four at the matching point:
+</EM>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+{d^nR^{ps}(r_c)\over dr^n}={d^nR(r_c)\over dr^n}, \quad n=0,...,4
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<IMG
+ STYLE="height: 5.01ex; vertical-align: -1.69ex; " SRC="img95.png"
+ ALT="$\displaystyle {d^nR^{ps}(r_c)\over dr^n}$"> = <IMG
+ STYLE="height: 5.01ex; vertical-align: -1.69ex; " SRC="img96.png"
+ ALT="$\displaystyle {d^nR(r_c)\over dr^n}$">,&nbsp;&nbsp;&nbsp;&nbsp;<I>n</I> = 0,..., 4
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(28)</TD></TR>
+</TABLE>
+</DIV>
+<P>
+<EM>• Continuity of the wavefunction:
+</EM>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+R^{ps}(r_c)=r_c^{l+1}e^{p(r_c)}=R(r_c)
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<I>R</I><SUP>ps</SUP>(<I>r</I><SUB>c</SUB>) = <I>r</I><SUB>c</SUB><SUP>l+1</SUP><I>e</I><SUP>p(r<SUB>c</SUB>)</SUP> = <I>R</I>(<I>r</I><SUB>c</SUB>)
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(29)</TD></TR>
+</TABLE>
+</DIV>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+p(r_c) = \mbox{log}{R(r_c)\over r_c^{l+1}}
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<I>p</I>(<I>r</I><SUB>c</SUB>) = log<IMG
+ STYLE="height: 5.54ex; vertical-align: -2.26ex; " SRC="img97.png"
+ ALT="$\displaystyle {R(r_c)\over r_c^{l+1}}$">
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(30)</TD></TR>
+</TABLE>
+</DIV>
+<P>
+<EM>• Continuity of the first derivative of the wavefunction:
+</EM>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+{dR^{ps}(r)\over dr} = (l+1)r^le^{p(r)} + r^{l+1}e^{p(r)}p'(r)
+                         ={l+1\over r}R^{ps}(r) + p'(r)R^{ps}(r)
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<IMG
+ STYLE="height: 5.01ex; vertical-align: -1.69ex; " SRC="img98.png"
+ ALT="$\displaystyle {dR^{ps}(r)\over dr}$"> = (<I>l</I> + 1)<I>r</I><SUP>l</SUP><I>e</I><SUP>p(r)</SUP> + <I>r</I><SUP>l+1</SUP><I>e</I><SUP>p(r)</SUP><I>p'</I>(<I>r</I>) = <IMG
+ STYLE="height: 4.90ex; vertical-align: -1.69ex; " SRC="img99.png"
+ ALT="$\displaystyle {l+1\over r}$"><I>R</I><SUP>ps</SUP>(<I>r</I>) + <I>p'</I>(<I>r</I>)<I>R</I><SUP>ps</SUP>(<I>r</I>)
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(31)</TD></TR>
+</TABLE>
+</DIV><EM>
+that is
+</EM>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+p'(r_c) = {dR(r_c)\over dr} {1\over R^{ps}(r_c)} -
+           {l+1\over r_c}.
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<I>p'</I>(<I>r</I><SUB>c</SUB>) = <IMG
+ STYLE="height: 5.01ex; vertical-align: -1.69ex; " SRC="img100.png"
+ ALT="$\displaystyle {dR(r_c)\over dr}$"><IMG
+ STYLE="height: 5.36ex; vertical-align: -2.19ex; " SRC="img101.png"
+ ALT="$\displaystyle {1\over R^{ps}(r_c)}$"> - <IMG
+ STYLE="height: 5.25ex; vertical-align: -2.04ex; " SRC="img102.png"
+ ALT="$\displaystyle {l+1\over r_c}$">.
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(32)</TD></TR>
+</TABLE>
+</DIV>
+<P>
+<EM>• Continuity of the second  derivative of the wavefunction:
+</EM>
+<BR>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{eqnarray}
+{d^2R^{ps}(r)\over d^2r}
+   & = &
+     {d\over dr}\left((l+1)r^le^{p(r)} + r^{l+1}e^{p(r)}p'(r)\right) 
+\nonumber \\& = &
+     l(l+1)r^{l-1}e^{p(r)} + 2(l+1)r^le^{p(r)}p'(r) +
+     r^{l+1}e^{p(r)}\left[p'(r)\right]^2 + r^{l+1}e^{p(r)}p''(r)
+\nonumber\\& = &
+     \left( {l(l+1)\over r^2}+ {2(l+1)\over r}p'(r) +
+            \left[p'(r)\right]^2 + p''(r) \right) r^{l+1}e^{p(r)}.
+\end{eqnarray}
+ -->
+<TABLE CELLPADDING="0" ALIGN="CENTER" WIDTH="100%">
+<TR VALIGN="MIDDLE"><TD NOWRAP ALIGN="RIGHT"><IMG
+ STYLE="height: 5.13ex; vertical-align: -1.69ex; " SRC="img103.png"
+ ALT="$\displaystyle {d^2R^{ps}(r)\over d^2r}$"></TD>
+<TD WIDTH="10" ALIGN="CENTER" NOWRAP>=</TD>
+<TD ALIGN="LEFT" NOWRAP><IMG
+ STYLE="height: 4.90ex; vertical-align: -1.69ex; " SRC="img53.png"
+ ALT="$\displaystyle {d \over dr}$"><IMG
+ STYLE="height: 2.80ex; vertical-align: -0.77ex; " SRC="img104.png"
+ ALT="$\displaystyle \left(\vphantom{(l+1)r^le^{p(r)} + r^{l+1}e^{p(r)}p'(r)}\right.$">(<I>l</I> + 1)<I>r</I><SUP>l</SUP><I>e</I><SUP>p(r)</SUP> + <I>r</I><SUP>l+1</SUP><I>e</I><SUP>p(r)</SUP><I>p'</I>(<I>r</I>)<IMG
+ STYLE="height: 2.80ex; vertical-align: -0.77ex; " SRC="img105.png"
+ ALT="$\displaystyle \left.\vphantom{(l+1)r^le^{p(r)} + r^{l+1}e^{p(r)}p'(r)}\right)$"></TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+&nbsp;</TD></TR>
+<TR VALIGN="MIDDLE"><TD NOWRAP ALIGN="RIGHT">&nbsp;</TD>
+<TD WIDTH="10" ALIGN="CENTER" NOWRAP>=</TD>
+<TD ALIGN="LEFT" NOWRAP><I>l</I> (<I>l</I> + 1)<I>r</I><SUP>l-1</SUP><I>e</I><SUP>p(r)</SUP> +2(<I>l</I> + 1)<I>r</I><SUP>l</SUP><I>e</I><SUP>p(r)</SUP><I>p'</I>(<I>r</I>) + <I>r</I><SUP>l+1</SUP><I>e</I><SUP>p(r)</SUP><IMG
+ STYLE="height: 2.33ex; vertical-align: -0.60ex; " SRC="img106.png"
+ ALT="$\displaystyle \left[\vphantom{p'(r)}\right.$"><I>p'</I>(<I>r</I>)<IMG
+ STYLE="height: 2.86ex; vertical-align: -0.58ex; " SRC="img107.png"
+ ALT="$\displaystyle \left.\vphantom{p'(r)}\right]^{2}_{}$"> + <I>r</I><SUP>l+1</SUP><I>e</I><SUP>p(r)</SUP><I>p''</I>(<I>r</I>)</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+&nbsp;</TD></TR>
+<TR VALIGN="MIDDLE"><TD NOWRAP ALIGN="RIGHT">&nbsp;</TD>
+<TD WIDTH="10" ALIGN="CENTER" NOWRAP>=</TD>
+<TD ALIGN="LEFT" NOWRAP><IMG
+ STYLE="height: 5.60ex; vertical-align: -2.23ex; " SRC="img108.png"
+ ALT="$\displaystyle \left(\vphantom{ {l(l+1)\over r^2}+ {2(l+1)\over r}p'(r) +
+\left[p'(r)\right]^2 + p''(r) }\right.$"><IMG
+ STYLE="height: 5.01ex; vertical-align: -1.69ex; " SRC="img32.png"
+ ALT="$\displaystyle {l(l+1)\over r^2}$"> + <IMG
+ STYLE="height: 5.01ex; vertical-align: -1.69ex; " SRC="img109.png"
+ ALT="$\displaystyle {2(l+1)\over r}$"><I>p'</I>(<I>r</I>) + <IMG
+ STYLE="height: 2.33ex; vertical-align: -0.60ex; " SRC="img106.png"
+ ALT="$\displaystyle \left[\vphantom{p'(r)}\right.$"><I>p'</I>(<I>r</I>)<IMG
+ STYLE="height: 2.86ex; vertical-align: -0.58ex; " SRC="img107.png"
+ ALT="$\displaystyle \left.\vphantom{p'(r)}\right]^{2}_{}$"> + <I>p''</I>(<I>r</I>)<IMG
+ STYLE="height: 5.60ex; vertical-align: -2.23ex; " SRC="img110.png"
+ ALT="$\displaystyle \left.\vphantom{ {l(l+1)\over r^2}+ {2(l+1)\over r}p'(r) +
+\left[p'(r)\right]^2 + p''(r) }\right)$"><I>r</I><SUP>l+1</SUP><I>e</I><SUP>p(r)</SUP>.</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(33)</TD></TR>
+</TABLE></DIV>
+<BR CLEAR="ALL">
+<EM>
+From the radial Schrödinger equation:
+</EM>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+{d^2R^{ps}(r)\over dr^2} =
+    \left ( {l(l+1)\over r^2} +{2m\over\hbar^2}(V(r)-\epsilon)\right)R^{ps}(r)
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<IMG
+ STYLE="height: 5.13ex; vertical-align: -1.69ex; " SRC="img111.png"
+ ALT="$\displaystyle {d^2R^{ps}(r)\over dr^2}$"> = <IMG
+ STYLE="height: 5.60ex; vertical-align: -2.23ex; " SRC="img112.png"
+ ALT="$\displaystyle \left(\vphantom{ {l(l+1)\over r^2} +{2m\over\hbar^2}(V(r)-\epsilon)}\right.$"><IMG
+ STYLE="height: 5.01ex; vertical-align: -1.69ex; " SRC="img32.png"
+ ALT="$\displaystyle {l(l+1)\over r^2}$"> + <IMG
+ STYLE="height: 4.84ex; vertical-align: -1.69ex; " SRC="img113.png"
+ ALT="$\displaystyle {2m\over\hbar^2}$">(<I>V</I>(<I>r</I>) - <I>ε</I>)<IMG
+ STYLE="height: 5.60ex; vertical-align: -2.23ex; " SRC="img114.png"
+ ALT="$\displaystyle \left.\vphantom{ {l(l+1)\over r^2} +{2m\over\hbar^2}(V(r)-\epsilon)}\right)$"><I>R</I><SUP>ps</SUP>(<I>r</I>)
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(34)</TD></TR>
+</TABLE>
+</DIV><EM>
+that is
+</EM>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+p''(r_c) = {2m\over\hbar^2}(V(r_c)-\epsilon) - 2 {l+1\over r_c}p'(r_c)
+         -\left[p'(r_c)\right]^2
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<I>p''</I>(<I>r</I><SUB>c</SUB>) = <IMG
+ STYLE="height: 4.84ex; vertical-align: -1.69ex; " SRC="img113.png"
+ ALT="$\displaystyle {2m\over\hbar^2}$">(<I>V</I>(<I>r</I><SUB>c</SUB>) - <I>ε</I>) - 2<IMG
+ STYLE="height: 5.25ex; vertical-align: -2.04ex; " SRC="img102.png"
+ ALT="$\displaystyle {l+1\over r_c}$"><I>p'</I>(<I>r</I><SUB>c</SUB>) - <IMG
+ STYLE="height: 2.33ex; vertical-align: -0.60ex; " SRC="img115.png"
+ ALT="$\displaystyle \left[\vphantom{p'(r_c)}\right.$"><I>p'</I>(<I>r</I><SUB>c</SUB>)<IMG
+ STYLE="height: 2.86ex; vertical-align: -0.58ex; " SRC="img116.png"
+ ALT="$\displaystyle \left.\vphantom{p'(r_c)}\right]^{2}_{}$">
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(35)</TD></TR>
+</TABLE>
+</DIV>
+<P>
+<EM>• Continuity of the third and fourth derivatives of the
+wavefunction. This is assured if the third and fourth derivatives of
+<I>p</I>(<I>r</I>) are continuous. By direct derivation of the expression of
+<I>p''</I>(<I>r</I>):
+</EM>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+p'''(r_c) = {2m\over\hbar^2}V'(r_c) + 2 {l+1\over r^2_c}p'(r_c)
+          - 2{l+1\over r_c}p''(r_c) -2 p'(r_c)p''(r_c)
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<I>p'''</I>(<I>r</I><SUB>c</SUB>) = <IMG
+ STYLE="height: 4.84ex; vertical-align: -1.69ex; " SRC="img113.png"
+ ALT="$\displaystyle {2m\over\hbar^2}$"><I>V'</I>(<I>r</I><SUB>c</SUB>) + 2<IMG
+ STYLE="height: 5.42ex; vertical-align: -2.26ex; " SRC="img117.png"
+ ALT="$\displaystyle {l+1\over r^2_c}$"><I>p'</I>(<I>r</I><SUB>c</SUB>) - 2<IMG
+ STYLE="height: 5.25ex; vertical-align: -2.04ex; " SRC="img102.png"
+ ALT="$\displaystyle {l+1\over r_c}$"><I>p''</I>(<I>r</I><SUB>c</SUB>) - 2<I>p'</I>(<I>r</I><SUB>c</SUB>)<I>p''</I>(<I>r</I><SUB>c</SUB>)
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(36)</TD></TR>
+</TABLE>
+</DIV>
+<P>
+<BR>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{eqnarray}
+p''''(r_c) & = & {2m\over\hbar^2}V''(r_c) - 4 {l+1\over r^3_c}p'(r_c)
+                 + 4{l+1\over r^2_c}p''(r) \nonumber \\& & \mbox{}
+            - 2{l+1\over r_c}p'''(r_c)
+           - 2 \left[p''(r_c)p''(r_c)\right]^2 -2 p'(r_c)p'''(r_c)
+\end{eqnarray}
+ -->
+<TABLE CELLPADDING="0" ALIGN="CENTER" WIDTH="100%">
+<TR VALIGN="MIDDLE"><TD NOWRAP ALIGN="RIGHT"><I>p''''</I>(<I>r</I><SUB>c</SUB>)</TD>
+<TD WIDTH="10" ALIGN="CENTER" NOWRAP>=</TD>
+<TD ALIGN="LEFT" NOWRAP><IMG
+ STYLE="height: 4.84ex; vertical-align: -1.69ex; " SRC="img113.png"
+ ALT="$\displaystyle {2m\over\hbar^2}$"><I>V''</I>(<I>r</I><SUB>c</SUB>) - 4<IMG
+ STYLE="height: 5.42ex; vertical-align: -2.26ex; " SRC="img118.png"
+ ALT="$\displaystyle {l+1\over r^3_c}$"><I>p'</I>(<I>r</I><SUB>c</SUB>) + 4<IMG
+ STYLE="height: 5.42ex; vertical-align: -2.26ex; " SRC="img117.png"
+ ALT="$\displaystyle {l+1\over r^2_c}$"><I>p''</I>(<I>r</I>)</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+&nbsp;</TD></TR>
+<TR VALIGN="MIDDLE"><TD NOWRAP ALIGN="RIGHT">&nbsp;</TD>
+<TD>&nbsp;</TD>
+<TD ALIGN="LEFT" NOWRAP>&nbsp; -2<IMG
+ STYLE="height: 5.25ex; vertical-align: -2.04ex; " SRC="img102.png"
+ ALT="$\displaystyle {l+1\over r_c}$"><I>p'''</I>(<I>r</I><SUB>c</SUB>) - 2<IMG
+ STYLE="height: 2.33ex; vertical-align: -0.60ex; " SRC="img119.png"
+ ALT="$\displaystyle \left[\vphantom{p''(r_c)p''(r_c)}\right.$"><I>p''</I>(<I>r</I><SUB>c</SUB>)<I>p''</I>(<I>r</I><SUB>c</SUB>)<IMG
+ STYLE="height: 2.86ex; vertical-align: -0.58ex; " SRC="img120.png"
+ ALT="$\displaystyle \left.\vphantom{p''(r_c)p''(r_c)}\right]^{2}_{}$"> -2<I>p'</I>(<I>r</I><SUB>c</SUB>)<I>p'''</I>(<I>r</I><SUB>c</SUB>)</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(37)</TD></TR>
+</TABLE></DIV>
+<BR CLEAR="ALL">
+<P>
+<EM>The additional condition: <I>V''</I>(0) = 0 is imposed. 
+The screened potential is
+</EM>
+<BR>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{eqnarray}
+V(r)&=&{\hbar^2\over2m}\left({1\over R^{ps}(r)}{d^2R^{ps}(r)\over dr^2}
+     - {l(l+1)\over r^2}\right)+\epsilon \\
+    &=&{\hbar^2\over2m}\left( 2{l+1\over r} p'(r)+\left[p(r)\right]^2+p''(r)
+       \right)+\epsilon
+\end{eqnarray}
+ -->
+<TABLE CELLPADDING="0" ALIGN="CENTER" WIDTH="100%">
+<TR VALIGN="MIDDLE"><TD NOWRAP ALIGN="RIGHT"><I>V</I>(<I>r</I>)</TD>
+<TD WIDTH="10" ALIGN="CENTER" NOWRAP>=</TD>
+<TD ALIGN="LEFT" NOWRAP><IMG
+ STYLE="height: 5.13ex; vertical-align: -1.69ex; " SRC="img7.png"
+ ALT="$\displaystyle {\hbar^2\over 2m}$"><IMG
+ STYLE="height: 5.60ex; vertical-align: -2.23ex; " SRC="img121.png"
+ ALT="$\displaystyle \left(\vphantom{{1\over R^{ps}(r)}{d^2R^{ps}(r)\over dr^2}
+- {l(l+1)\over r^2}}\right.$"><IMG
+ STYLE="height: 5.36ex; vertical-align: -2.19ex; " SRC="img122.png"
+ ALT="$\displaystyle {1\over R^{ps}(r)}$"><IMG
+ STYLE="height: 5.13ex; vertical-align: -1.69ex; " SRC="img111.png"
+ ALT="$\displaystyle {d^2R^{ps}(r)\over dr^2}$"> - <IMG
+ STYLE="height: 5.01ex; vertical-align: -1.69ex; " SRC="img32.png"
+ ALT="$\displaystyle {l(l+1)\over r^2}$"><IMG
+ STYLE="height: 5.60ex; vertical-align: -2.23ex; " SRC="img123.png"
+ ALT="$\displaystyle \left.\vphantom{{1\over R^{ps}(r)}{d^2R^{ps}(r)\over dr^2}
+- {l(l+1)\over r^2}}\right)$"> + <I>ε</I></TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(38)</TD></TR>
+<TR VALIGN="MIDDLE"><TD NOWRAP ALIGN="RIGHT">&nbsp;</TD>
+<TD WIDTH="10" ALIGN="CENTER" NOWRAP>=</TD>
+<TD ALIGN="LEFT" NOWRAP><IMG
+ STYLE="height: 5.13ex; vertical-align: -1.69ex; " SRC="img7.png"
+ ALT="$\displaystyle {\hbar^2\over 2m}$"><IMG
+ STYLE="height: 5.60ex; vertical-align: -2.23ex; " SRC="img124.png"
+ ALT="$\displaystyle \left(\vphantom{ 2{l+1\over r} p'(r)+\left[p(r)\right]^2+p''(r)
+}\right.$">2<IMG
+ STYLE="height: 4.90ex; vertical-align: -1.69ex; " SRC="img99.png"
+ ALT="$\displaystyle {l+1\over r}$"><I>p'</I>(<I>r</I>) + <IMG
+ STYLE="height: 2.33ex; vertical-align: -0.60ex; " SRC="img125.png"
+ ALT="$\displaystyle \left[\vphantom{p(r)}\right.$"><I>p</I>(<I>r</I>)<IMG
+ STYLE="height: 2.74ex; vertical-align: -0.58ex; " SRC="img126.png"
+ ALT="$\displaystyle \left.\vphantom{p(r)}\right]^{2}_{}$"> + <I>p''</I>(<I>r</I>)<IMG
+ STYLE="height: 5.60ex; vertical-align: -2.23ex; " SRC="img127.png"
+ ALT="$\displaystyle \left.\vphantom{ 2{l+1\over r} p'(r)+\left[p(r)\right]^2+p''(r)
+}\right)$"> + <I>ε</I></TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(39)</TD></TR>
+</TABLE></DIV>
+<BR CLEAR="ALL">
+<P>
+<EM>Keeping only lower-order terms in <I>r</I>:
+</EM>
+<BR>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{eqnarray}
+V(r) &\simeq&{\hbar^2\over2m}\left( 2{l+1\over r} (2c_2r + 4c_4r^3)
+               + 4c_2^2r^2 + 2c_2 + 12c_4r^2\right) + \epsilon \\
+     &   =  & {\hbar^2\over2m}\left( 2c_2(2l+3) + 
+              \left((2l+5)c_4+c_2^2\right) r^2\right)+ \epsilon .
+\end{eqnarray}
+ -->
+<TABLE CELLPADDING="0" ALIGN="CENTER" WIDTH="100%">
+<TR VALIGN="MIDDLE"><TD NOWRAP ALIGN="RIGHT"><I>V</I>(<I>r</I>)</TD>
+<TD WIDTH="10" ALIGN="CENTER" NOWRAP><IMG
+ STYLE="height: 1.05ex; vertical-align: 0.04ex; " SRC="img87.png"
+ ALT="$\displaystyle \simeq$"></TD>
+<TD ALIGN="LEFT" NOWRAP><IMG
+ STYLE="height: 5.13ex; vertical-align: -1.69ex; " SRC="img7.png"
+ ALT="$\displaystyle {\hbar^2\over 2m}$"><IMG
+ STYLE="height: 5.60ex; vertical-align: -2.23ex; " SRC="img128.png"
+ ALT="$\displaystyle \left(\vphantom{ 2{l+1\over r} (2c_2r + 4c_4r^3)
++ 4c_2^2r^2 + 2c_2 + 12c_4r^2}\right.$">2<IMG
+ STYLE="height: 4.90ex; vertical-align: -1.69ex; " SRC="img99.png"
+ ALT="$\displaystyle {l+1\over r}$">(2<I>c</I><SUB>2</SUB><I>r</I> + 4<I>c</I><SUB>4</SUB><I>r</I><SUP>3</SUP>) + 4<I>c</I><SUB>2</SUB><SUP>2</SUP><I>r</I><SUP>2</SUP> +2<I>c</I><SUB>2</SUB> +12<I>c</I><SUB>4</SUB><I>r</I><SUP>2</SUP><IMG
+ STYLE="height: 5.60ex; vertical-align: -2.23ex; " SRC="img129.png"
+ ALT="$\displaystyle \left.\vphantom{ 2{l+1\over r} (2c_2r + 4c_4r^3)
++ 4c_2^2r^2 + 2c_2 + 12c_4r^2}\right)$"> + <I>ε</I></TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(40)</TD></TR>
+<TR VALIGN="MIDDLE"><TD NOWRAP ALIGN="RIGHT">&nbsp;</TD>
+<TD WIDTH="10" ALIGN="CENTER" NOWRAP>=</TD>
+<TD ALIGN="LEFT" NOWRAP><IMG
+ STYLE="height: 5.13ex; vertical-align: -1.69ex; " SRC="img7.png"
+ ALT="$\displaystyle {\hbar^2\over 2m}$"><IMG
+ STYLE="height: 2.80ex; vertical-align: -0.77ex; " SRC="img130.png"
+ ALT="$\displaystyle \left(\vphantom{ 2c_2(2l+3) +
+\left((2l+5)c_4+c_2^2\right) r^2}\right.$">2<I>c</I><SUB>2</SUB>(2<I>l</I> + 3) + <IMG
+ STYLE="height: 2.80ex; vertical-align: -0.77ex; " SRC="img131.png"
+ ALT="$\displaystyle \left(\vphantom{(2l+5)c_4+c_2^2}\right.$">(2<I>l</I> + 5)<I>c</I><SUB>4</SUB> + <I>c</I><SUB>2</SUB><SUP>2</SUP><IMG
+ STYLE="height: 2.80ex; vertical-align: -0.77ex; " SRC="img132.png"
+ ALT="$\displaystyle \left.\vphantom{(2l+5)c_4+c_2^2}\right)$"><I>r</I><SUP>2</SUP><IMG
+ STYLE="height: 2.80ex; vertical-align: -0.77ex; " SRC="img133.png"
+ ALT="$\displaystyle \left.\vphantom{ 2c_2(2l+3) +
+\left((2l+5)c_4+c_2^2\right) r^2}\right)$"> + <I>ε</I>.</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(41)</TD></TR>
+</TABLE></DIV>
+<BR CLEAR="ALL">
+<EM>
+The additional constraint is:
+</EM>
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+(2l+5)c_4+c_2^2=0.
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+(2<I>l</I> + 5)<I>c</I><SUB>4</SUB> + <I>c</I><SUB>2</SUB><SUP>2</SUP> = 0.
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(42)</TD></TR>
+</TABLE>
+</DIV>
+<P><HR>
+<!--Navigation Panel-->
+<A
+ HREF="node21.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="pseudo-gen.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node19.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html138"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node21.html">References</A>
+<B> Up:</B> <A
+ HREF="pseudo-gen.html">User's Guide for LD1</A>
+<B> Previous:</B> <A
+ HREF="node19.html">A..4 Numerical solution</A>
+ &nbsp; <B>  <A ID="tex2html139"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

@@ -1,0 +1,115 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>4.8 Other tools</TITLE>
+<META NAME="description" CONTENT="4.8 Other tools">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="previous" HREF="node12.html">
+<LINK REL="next" HREF="node14.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node14.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node5.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node12.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html78"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node14.html">5 Troubleshooting</A>
+<B> Up:</B> <A
+ HREF="node5.html">4 Usage</A>
+<B> Previous:</B> <A
+ HREF="node12.html">4.7 Interfaces to/from other code</A>
+ &nbsp; <B>  <A ID="tex2html79"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+<!--Table of Child-Links-->
+<A ID="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><UL>
+<LI><A ID="tex2html80"
+  HREF="node13.html#SECTION00058010000000000000">4.8.0.1 Exchange-correlation</A>
+<LI><A ID="tex2html81"
+  HREF="node13.html#SECTION00058020000000000000">4.8.0.2 Wavefunction conversion</A>
+<LI><A ID="tex2html82"
+  HREF="node13.html#SECTION00058030000000000000">4.8.0.3 Dielectric function</A>
+<LI><A ID="tex2html83"
+  HREF="node13.html#SECTION00058040000000000000">4.8.0.4 Core-level shifts</A>
+</UL></UL>
+<!--End of Table of Child-Links-->
+<HR>
+
+<H2><A ID="SECTION00058000000000000000">
+4.8 Other tools</A>
+</H2>
+
+<P>
+
+<H4><A ID="SECTION00058010000000000000">
+4.8.0.1 Exchange-correlation</A>
+</H4>
+Code <TT>ppacf.x</TT> computes the coupling constant dependency of the
+exchange correlation potential <!-- MATH
+ $E_{xc,\lambda}, \lambda \in [0:1]$
+ -->
+<I>E</I><SUB>xc, <I>λ</I></SUB>, <I>λ</I>∈[0 : 1]
+and the spatial distribution of the exchange-correlation energy density
+and kinetic correlation energy density according to:
+Y. Jiao, E. Schröder, and P. Hyldgaard, Phys. Rev. B 97, 085115 (2018).
+See <TT>PP/Doc/INPUT_PPACF.html</TT>.
+
+<P>
+
+<H4><A ID="SECTION00058020000000000000">
+4.8.0.2 Wavefunction conversion</A>
+</H4>
+Code <TT>wfck2r.x</TT> converts Kohn-Sham orbitals from reciprocal to real 
+space. It is a useful starting point if you need to access wavefunctions
+and perform postprocessing operations that are not implemented in Q<SMALL>UANTUM </SMALL>ESPRESSO.
+
+<P>
+
+<H4><A ID="SECTION00058030000000000000">
+4.8.0.3 Dielectric function</A>
+</H4>
+Code <TT>epsilon.x</TT> calculates RPA frequency-dependent complex dielectric 
+function. Documentation is in file <TT>Doc/eps_man.tex</TT>.
+
+<P>
+
+<H4><A ID="SECTION00058040000000000000">
+4.8.0.4 Core-level shifts</A>
+</H4>
+Code <TT>initial_state.x</TT> calculates the initial state contribution
+to the Core-level shift. See <TT>CLS_IS_example/</TT> for
+an example, and <TT>CLS_FS_example/</TT> for the corresponding
+final state calculation of Core-level shifts.
+
+<P>
+<BR><HR>
+
+</BODY>
+</HTML>

@@ -1,0 +1,136 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>2.4 Checking for transferability</TITLE>
+<META NAME="description" CONTENT="2.4 Checking for transferability">
+<META NAME="keywords" CONTENT="pseudo-gen">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="pseudo-gen.css">
+
+<LINK REL="previous" HREF="node9.html">
+<LINK REL="next" HREF="node11.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node11.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node6.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node9.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html105"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node11.html">3 A worked example: Ti</A>
+<B> Up:</B> <A
+ HREF="node6.html">2 Step-by-step Pseudopotential generation</A>
+<B> Previous:</B> <A
+ HREF="node9.html">2.3 Generating the pseudopotential</A>
+ &nbsp; <B>  <A ID="tex2html106"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A ID="SECTION00034000000000000000"></A>
+<A ID="trans"></A>
+<BR>
+2.4 Checking for transferability
+</H2><EM>
+A simple way to check for correctness and to get a feeling for 
+the transferability of a PP, with little effort, is to test the 
+results of PP and AE atomic calculations on atomic configurations 
+differing from the starting one. The error on total energy 
+differences between PP and AE results gives a feeling on how 
+good the PP is. Just to give an idea: an error <!-- MATH
+ $\sim 0.001$
+ -->
+∼0.001 Ry 
+is very good, ∼0.01 Ry may still be acceptable.
+The code <TT>ld1.x</TT> has a ``testing'' mode in which it does
+exactly the above operation. You provide the input PP file and
+a number of test configurations.
+</EM>
+<P>
+<EM>You are advised to perform also the test with a basis set of spherical
+Bessel functions <I>j</I><SUB>l</SUB>(<I>qr</I>). In addition to revealing the presence of
+``ghosts'', this test also gives an idea of the smoothness of the 
+potential: the dependence of energy levels upon the cutoff in the kinetic 
+energy is basically the same for the pseudo-atom in the basis of <I>j</I><SUB>l</SUB>(<I>qr</I>)'s
+and for the same pseudo-atom in a solid-state calculation using PW's.
+</EM>
+<P>
+<EM>Another way to check for transferability is to compare AE and pseudo (PS) 
+logarithmic derivatives, also calculated by <TT>ld1.x</TT>. Typically 
+this comparison is done on the reference configuration,
+but not necessarily so. You should supply on input:
+</EM><DL class="COMPACT">
+<DT>&ndash;</DT>
+<DD>the radius <I>r</I><SUB>d</SUB> at which logarithmic derivatives are 
+          calculated (<I>r</I><SUB>d</SUB> should be of the order of the
+          ionic or covalent radius, and larger than any of the <I>r</I><SUB>c</SUB>'s)
+</DD>
+<DT>&ndash;</DT>
+<DD>the energy range <!-- MATH
+ $E_{min}, E_{max}$
+ -->
+<I>E</I><SUB>min</SUB>, <I>E</I><SUB>max</SUB> and the number 
+          of points for the plot. The energy range
+          should cover the typical valence one-electron energy 
+          range expected in the targeted application of the PP. 
+</DD>
+</DL><EM>
+The files containing logarithmic derivatives can be easily read and 
+plotted using for instance the plotting program <TT>gnuplot</TT> 
+or <TT>xmgrace</TT>. 
+Sizable discrepancies between AE and PS logarithmic derivatives 
+are a sign of trouble (unless your energy range is too large or 
+not centered around the range of pseudization energies, of course).
+</EM>
+<P>
+<EM>Note that the above checks, based on atomic calculations only,
+do not replace the usual checks (convergence tests, bond lengths,
+etc) one has to perform in at least some simple solid-state or 
+molecular systems before starting a serious calculation.
+</EM>
+<P><HR>
+<!--Navigation Panel-->
+<A
+ HREF="node11.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node6.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node9.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html105"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node11.html">3 A worked example: Ti</A>
+<B> Up:</B> <A
+ HREF="node6.html">2 Step-by-step Pseudopotential generation</A>
+<B> Previous:</B> <A
+ HREF="node9.html">2.3 Generating the pseudopotential</A>
+ &nbsp; <B>  <A ID="tex2html106"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

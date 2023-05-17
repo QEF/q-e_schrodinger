@@ -1,0 +1,344 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>A. Appendix: Electron-phonon coefficients</TITLE>
+<META NAME="description" CONTENT="A. Appendix: Electron-phonon coefficients">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node20.html">
+<LINK REL="previous" HREF="node18.html">
+<LINK REL="next" HREF="node20.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node20.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="user_guide.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node18.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html101"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node20.html">About this document ...</A>
+<B> Up:</B> <A
+ HREF="user_guide.html">User's Guide for the PHonon</A>
+<B> Previous:</B> <A
+ HREF="node18.html">6 Troubleshooting</A>
+ &nbsp; <B>  <A ID="tex2html102"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H1><A ID="SECTION00080000000000000000">
+A. Appendix: Electron-phonon coefficients</A>
+</H1>
+
+<P>
+The electron-phonon coefficients <I>g</I>
+are defined as
+
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+g_{{\bf q}\nu}({\bf k},i,j) =\left({\hbar\over 2M\omega_{{\bf q}\nu}}\right)^{1/2}
+\langle\psi_{i,{\bf k}}| {dV_{SCF}\over d {\hat u}_{{\bf q}\nu} }\cdot
+                   \hat \epsilon_{{\bf q}\nu}|\psi_{j,{\bf k}+{\bf q}}\rangle.
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<I>g</I><SUB><IMG
+ STYLE="height: 1.05ex; vertical-align: -0.40ex; " SRC="img6.png"
+ ALT="$\scriptstyle \bf q$"><I>ν</I></SUB>(<IMG
+ STYLE="height: 1.63ex; vertical-align: -0.02ex; " SRC="img7.png"
+ ALT="$\displaystyle \bf k$">, <I>i</I>, <I>j</I>) = <IMG
+ STYLE="height: 5.83ex; vertical-align: -2.28ex; " SRC="img8.png"
+ ALT="$\displaystyle \left(\vphantom{{\hbar\over 2M\omega_{{\bf q}\nu}}}\right.$"><IMG
+ STYLE="height: 5.54ex; vertical-align: -2.34ex; " SRC="img9.png"
+ ALT="$\displaystyle {\hbar\over 2M\omega_{{\bf q}\nu}}$"><IMG
+ STYLE="height: 6.35ex; vertical-align: -2.32ex; " SRC="img10.png"
+ ALT="$\displaystyle \left.\vphantom{{\hbar\over 2M\omega_{{\bf q}\nu}}}\right)^{{1/2}}_{}$">〈<I>ψ</I><SUB>i,<IMG
+ STYLE="height: 1.11ex; vertical-align: -0.02ex; " SRC="img11.png"
+ ALT="$\scriptstyle \bf k$"></SUB>|<IMG
+ STYLE="height: 5.54ex; vertical-align: -2.34ex; " SRC="img12.png"
+ ALT="$\displaystyle {dV_{SCF}\over d {\hat u}_{{\bf q}\nu}}$">⋅<IMG
+ STYLE="height: 2.56ex; vertical-align: -0.97ex; " SRC="img13.png"
+ ALT="$\displaystyle \hat{\epsilon}_{{{\bf q}\nu}}^{}$">| <I>ψ</I><SUB>j,<IMG
+ STYLE="height: 1.11ex; vertical-align: -0.02ex; " SRC="img11.png"
+ ALT="$\scriptstyle \bf k$">+<IMG
+ STYLE="height: 1.05ex; vertical-align: -0.40ex; " SRC="img6.png"
+ ALT="$\scriptstyle \bf q$"></SUB>〉.
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(1)</TD></TR>
+</TABLE>
+</DIV>
+The phonon linewidth <!-- MATH
+ $\gamma_{{\bf q}\nu}$
+ -->
+<I>γ</I><SUB><IMG
+ STYLE="height: 1.05ex; vertical-align: -0.40ex; " SRC="img6.png"
+ ALT="$\scriptstyle \bf q$"><I>ν</I></SUB> is defined by
+
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+\gamma_{{\bf q}\nu} = 2\pi\omega_{{\bf q}\nu} \sum_{ij}
+                \int {d^3k\over \Omega_{BZ}}  |g_{{\bf q}\nu}({\bf k},i,j)|^2
+                    \delta(e_{{\bf q},i} - e_F)  \delta(e_{{\bf k}+{\bf q},j} - e_F),
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<I>γ</I><SUB><IMG
+ STYLE="height: 1.05ex; vertical-align: -0.40ex; " SRC="img6.png"
+ ALT="$\scriptstyle \bf q$"><I>ν</I></SUB> = 2<I>πω</I><SUB><IMG
+ STYLE="height: 1.05ex; vertical-align: -0.40ex; " SRC="img6.png"
+ ALT="$\scriptstyle \bf q$"><I>ν</I></SUB><IMG
+ STYLE="height: 4.60ex; vertical-align: -2.65ex; " SRC="img14.png"
+ ALT="$\displaystyle \sum_{{ij}}^{}$"><IMG
+ STYLE="height: 4.31ex; vertical-align: -1.59ex; " SRC="img15.png"
+ ALT="$\displaystyle \int$"><IMG
+ STYLE="height: 5.42ex; vertical-align: -1.96ex; " SRC="img16.png"
+ ALT="$\displaystyle {d^3k\over \Omega_{BZ}}$">| <I>g</I><SUB><IMG
+ STYLE="height: 1.05ex; vertical-align: -0.40ex; " SRC="img6.png"
+ ALT="$\scriptstyle \bf q$"><I>ν</I></SUB>(<IMG
+ STYLE="height: 1.63ex; vertical-align: -0.02ex; " SRC="img7.png"
+ ALT="$\displaystyle \bf k$">, <I>i</I>, <I>j</I>)|<SUP>2</SUP><I>δ</I>(<I>e</I><SUB><IMG
+ STYLE="height: 1.05ex; vertical-align: -0.40ex; " SRC="img6.png"
+ ALT="$\scriptstyle \bf q$">, i</SUB> - <I>e</I><SUB>F</SUB>)<I>δ</I>(<I>e</I><SUB><IMG
+ STYLE="height: 1.11ex; vertical-align: -0.02ex; " SRC="img11.png"
+ ALT="$\scriptstyle \bf k$">+<IMG
+ STYLE="height: 1.05ex; vertical-align: -0.40ex; " SRC="img6.png"
+ ALT="$\scriptstyle \bf q$">, j</SUB> - <I>e</I><SUB>F</SUB>),
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(2)</TD></TR>
+</TABLE>
+</DIV>
+while the electron-phonon coupling constant <!-- MATH
+ $\lambda_{{\bf q}\nu}$
+ -->
+<I>λ</I><SUB><IMG
+ STYLE="height: 1.05ex; vertical-align: -0.40ex; " SRC="img6.png"
+ ALT="$\scriptstyle \bf q$"><I>ν</I></SUB> for
+mode <I>ν</I> at wavevector <IMG
+ STYLE="height: 1.52ex; vertical-align: -0.47ex; " SRC="img1.png"
+ ALT="$\bf q$"> is defined as
+
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+\lambda_{{\bf q}\nu} ={\gamma_{{\bf q}\nu} \over \pi\hbar N(e_F)\omega^2_{{\bf q}\nu}}
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<I>λ</I><SUB><IMG
+ STYLE="height: 1.05ex; vertical-align: -0.40ex; " SRC="img6.png"
+ ALT="$\scriptstyle \bf q$"><I>ν</I></SUB> = <IMG
+ STYLE="height: 5.19ex; vertical-align: -2.57ex; " SRC="img17.png"
+ ALT="$\displaystyle {\gamma_{{\bf q}\nu} \over \pi\hbar N(e_F)\omega^2_{{\bf q}\nu}}$">
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(3)</TD></TR>
+</TABLE>
+</DIV>
+where <I>N</I>(<I>e</I><SUB>F</SUB>) is the DOS at the Fermi level.
+The spectral function is defined as
+
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+\alpha^2F(\omega) = {1\over 2\pi N(e_F)}\sum_{{\bf q}\nu}
+                    \delta(\omega-\omega_{{\bf q}\nu})
+                    {\gamma_{{\bf q}\nu}\over\hbar\omega_{{\bf q}\nu}}.
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<I>α</I><SUP>2</SUP><I>F</I>(<I>ω</I>) = <IMG
+ STYLE="height: 5.36ex; vertical-align: -2.19ex; " SRC="img18.png"
+ ALT="$\displaystyle {1\over 2\pi N(e_F)}$"><IMG
+ STYLE="height: 4.43ex; vertical-align: -2.47ex; " SRC="img19.png"
+ ALT="$\displaystyle \sum_{{{\bf q}\nu}}^{}$"><I>δ</I>(<I>ω</I> - <I>ω</I><SUB><IMG
+ STYLE="height: 1.05ex; vertical-align: -0.40ex; " SRC="img6.png"
+ ALT="$\scriptstyle \bf q$"><I>ν</I></SUB>)<IMG
+ STYLE="height: 4.95ex; vertical-align: -2.34ex; " SRC="img20.png"
+ ALT="$\displaystyle {\gamma_{{\bf q}\nu}\over\hbar\omega_{{\bf q}\nu}}$">.
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(4)</TD></TR>
+</TABLE>
+</DIV>
+The electron-phonon mass enhancement parameter <I>λ</I>
+can also be defined as the first reciprocal momentum of 
+the spectral function:
+
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+\lambda = \sum_{{\bf q}\nu} \lambda_{{\bf q}\nu} =
+2 \int {\alpha^2F(\omega) \over \omega} d\omega.
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<I>λ</I> = <IMG
+ STYLE="height: 4.43ex; vertical-align: -2.47ex; " SRC="img19.png"
+ ALT="$\displaystyle \sum_{{{\bf q}\nu}}^{}$"><I>λ</I><SUB><IMG
+ STYLE="height: 1.05ex; vertical-align: -0.40ex; " SRC="img6.png"
+ ALT="$\scriptstyle \bf q$"><I>ν</I></SUB> = 2<IMG
+ STYLE="height: 4.31ex; vertical-align: -1.59ex; " SRC="img15.png"
+ ALT="$\displaystyle \int$"><IMG
+ STYLE="height: 5.13ex; vertical-align: -1.69ex; " SRC="img21.png"
+ ALT="$\displaystyle {\alpha^2F(\omega) \over \omega}$"><I>dω</I>.
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(5)</TD></TR>
+</TABLE>
+</DIV>
+
+<P>
+Note that a factor <I>M</I><SUP>-1/2</SUP> is hidden in the definition of
+normal modes as used in the code.
+
+<P>
+McMillan:
+
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+T_c = {\Theta_D \over 1.45} \mbox{exp} \left [
+         {-1.04(1+\lambda)\over \lambda(1-0.62\mu^*)-\mu^*}\right ]
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<I>T</I><SUB>c</SUB> = <IMG
+ STYLE="height: 4.90ex; vertical-align: -1.69ex; " SRC="img22.png"
+ ALT="$\displaystyle {\Theta_D \over 1.45}$">exp<IMG
+ STYLE="height: 5.83ex; vertical-align: -2.28ex; " SRC="img23.png"
+ ALT="$\displaystyle \left[\vphantom{
+{-1.04(1+\lambda)\over \lambda(1-0.62\mu^*)-\mu^*}}\right.$"><IMG
+ STYLE="height: 5.54ex; vertical-align: -2.19ex; " SRC="img24.png"
+ ALT="$\displaystyle {-1.04(1+\lambda)\over \lambda(1-0.62\mu^*)-\mu^*}$"><IMG
+ STYLE="height: 5.83ex; vertical-align: -2.28ex; " SRC="img25.png"
+ ALT="$\displaystyle \left.\vphantom{
+{-1.04(1+\lambda)\over \lambda(1-0.62\mu^*)-\mu^*}}\right]$">
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(6)</TD></TR>
+</TABLE>
+</DIV>
+or (better?)
+
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+T_c = {\omega_{log}\over 1.2} \mbox{exp} \left [
+         {-1.04(1+\lambda)\over \lambda(1-0.62\mu^*)-\mu^*}\right ]
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<I>T</I><SUB>c</SUB> = <IMG
+ STYLE="height: 4.25ex; vertical-align: -1.61ex; " SRC="img26.png"
+ ALT="$\displaystyle {\omega_{log}\over 1.2}$">exp<IMG
+ STYLE="height: 5.83ex; vertical-align: -2.28ex; " SRC="img23.png"
+ ALT="$\displaystyle \left[\vphantom{
+{-1.04(1+\lambda)\over \lambda(1-0.62\mu^*)-\mu^*}}\right.$"><IMG
+ STYLE="height: 5.54ex; vertical-align: -2.19ex; " SRC="img24.png"
+ ALT="$\displaystyle {-1.04(1+\lambda)\over \lambda(1-0.62\mu^*)-\mu^*}$"><IMG
+ STYLE="height: 5.83ex; vertical-align: -2.28ex; " SRC="img25.png"
+ ALT="$\displaystyle \left.\vphantom{
+{-1.04(1+\lambda)\over \lambda(1-0.62\mu^*)-\mu^*}}\right]$">
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(7)</TD></TR>
+</TABLE>
+</DIV>
+where
+
+<P></P>
+<DIV ALIGN="CENTER">
+<!-- MATH
+ \begin{equation}
+\omega_{log} = \mbox{exp} \left [ {2\over\lambda} \int {d\omega\over\omega}
+                                  \alpha^2F(\omega) \mbox{log}\omega \right ]
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP>
+<I>ω</I><SUB>log</SUB> = exp<IMG
+ STYLE="height: 5.83ex; vertical-align: -2.28ex; " SRC="img27.png"
+ ALT="$\displaystyle \left[\vphantom{ {2\over\lambda} \int {d\omega\over\omega}
+\alpha^2F(\omega) \mbox{log}\omega }\right.$"><IMG
+ STYLE="height: 4.84ex; vertical-align: -1.69ex; " SRC="img28.png"
+ ALT="$\displaystyle {2\over\lambda}$"><IMG
+ STYLE="height: 4.31ex; vertical-align: -1.59ex; " SRC="img15.png"
+ ALT="$\displaystyle \int$"><IMG
+ STYLE="height: 4.90ex; vertical-align: -1.69ex; " SRC="img29.png"
+ ALT="$\displaystyle {d\omega\over\omega}$"><I>α</I><SUP>2</SUP><I>F</I>(<I>ω</I>)log<I>ω</I><IMG
+ STYLE="height: 5.83ex; vertical-align: -2.28ex; " SRC="img30.png"
+ ALT="$\displaystyle \left.\vphantom{ {2\over\lambda} \int {d\omega\over\omega}
+\alpha^2F(\omega) \mbox{log}\omega }\right]$">
+</TD>
+<TD WIDTH=10 ALIGN="RIGHT">
+(8)</TD></TR>
+</TABLE>
+</DIV>
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A
+ HREF="node20.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="user_guide.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node18.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html101"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node20.html">About this document ...</A>
+<B> Up:</B> <A
+ HREF="user_guide.html">User's Guide for the PHonon</A>
+<B> Previous:</B> <A
+ HREF="node18.html">6 Troubleshooting</A>
+ &nbsp; <B>  <A ID="tex2html102"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

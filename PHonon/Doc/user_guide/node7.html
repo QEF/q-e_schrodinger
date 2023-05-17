@@ -1,0 +1,115 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>4 Using PHonon</TITLE>
+<META NAME="description" CONTENT="4 Using PHonon">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node17.html">
+<LINK REL="previous" HREF="node4.html">
+<LINK REL="next" HREF="node8.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node8.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="user_guide.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node6.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html61"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node8.html">4.1 Single-q calculation</A>
+<B> Up:</B> <A
+ HREF="user_guide.html">User's Guide for the PHonon</A>
+<B> Previous:</B> <A
+ HREF="node6.html">3.2 Compilation</A>
+ &nbsp; <B>  <A ID="tex2html62"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H1><A ID="SECTION00050000000000000000">
+4 Using <TT>PHonon</TT></A>
+</H1>
+
+<P>
+Phonon calculation is presently a two-step process.
+First, you have to find the ground-state atomic and electronic configuration;
+Second, you can calculate phonons using Density-Functional Perturbation Theory.
+Further processing to calculate Interatomic Force Constants, to add macroscopic
+electric field and impose Acoustic Sum Rules at <IMG
+ STYLE="height: 1.52ex; vertical-align: -0.47ex; " SRC="img1.png"
+ ALT="$\bf q$"> = 0 may be needed.
+In the following, we will indicate by <IMG
+ STYLE="height: 1.52ex; vertical-align: -0.47ex; " SRC="img1.png"
+ ALT="$\bf q$"> the phonon wavevectors, 
+while <IMG
+ STYLE="height: 1.63ex; vertical-align: -0.02ex; " SRC="img3.png"
+ ALT="$\bf k$"> will indicate Bloch vectors used for summing over the 
+Brillouin Zone.
+
+<P>
+The main code <TT>ph.x</TT> can be used whenever <TT>PWscf</TT> can be used, with the
+exceptions of hybrid and meta-GGA functionals, external electric fields,
+constraints on magnetization, nonperiodic boundary conditions.
+USPP and PAW are not implemented for higher-order response calculations.
+See the header of file <TT>PHonon/PH/phonon.f90</TT> for a complete and
+updated list of what <TT>PHonon</TT> can and cannot do.
+
+<P>
+Since version 4.0 it is possible to safely stop execution of <TT>ph.x</TT> code using
+the same mechanism of the <TT>pw.x</TT> code, i.e. by creating a file 
+<TT>prefix.EXIT</TT> in the working directory. Execution can be resumed by 
+setting <TT>recover=.true.</TT> in the subsequent input data.
+Moreover the execution can be (cleanly) stopped after a given time is elapsed,
+using variable <TT>max_seconds</TT>. See <TT>example/Recover_example/</TT>.
+
+<P>
+<BR><HR>
+<!--Table of Child-Links-->
+<A ID="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL>
+<LI><A ID="tex2html63"
+  HREF="node8.html">4.1 Single-<B>q</B> calculation</A>
+<LI><A ID="tex2html64"
+  HREF="node9.html">4.2 Calculation of interatomic force constants in real space</A>
+<LI><A ID="tex2html65"
+  HREF="node10.html">4.3 Calculation of electron-phonon interaction coefficients</A>
+<LI><A ID="tex2html66"
+  HREF="node11.html">4.4 DFPT with the tetrahedron method</A>
+<LI><A ID="tex2html67"
+  HREF="node12.html">4.5 Calculation of electron-phonon interaction coefficients with the tetrahedron method</A>
+<LI><A ID="tex2html68"
+  HREF="node13.html">4.6 Phonons for two-dimensional crystals</A>
+<LI><A ID="tex2html69"
+  HREF="node14.html">4.7 Phonons from DFPT+<I>U</I></A>
+<LI><A ID="tex2html70"
+  HREF="node15.html">4.8 Fourier interpolation of phonon potential</A>
+<LI><A ID="tex2html71"
+  HREF="node16.html">4.9 Calculation of phonon-renormalization of electron bands</A>
+</UL>
+<!--End of Table of Child-Links-->
+<BR><HR>
+
+</BODY>
+</HTML>

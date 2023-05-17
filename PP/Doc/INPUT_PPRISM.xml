@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="input_xx.xsl"?>
+<!-- FILE AUTOMATICALLY CREATED: DO NOT EDIT, CHANGES WILL BE LOST -->
+    
+<input_description distribution="Quantum ESPRESSO" package="PWscf" program="pprism.x" >
+   <toc>
+   </toc>
+   <intro>
+<b>Purpose of pprism.x:</b> data analysis and plotting for 3D-RISM or Laue-RISM.
+
+The code performs two steps:
+
+(1) reads the output file produced by pw.x, extract and calculate
+    solvent&apos;s quantities (solvent charge, solvent potential, ...)
+
+(2) writes solvent&apos;s quantities to file in a suitable format for
+    various types of plotting and various plotting programs
+
+The input data of this program is read from standard input
+or from file and has the following format:
+
+NAMELIST <b>&amp;INPUTPP</b>
+   containing the variables for step (1), followed by
+
+NAMELIST <b>&amp;PLOT</b>
+   containing the variables for step (2)
+
+The two steps can be performed independently. In order to perform
+only step (2), leave namelist &amp;INPUTPP blank. In order to perform
+only step (1), do not specify namelist &amp;PLOT
+
+Intermediate results from step 1 can be saved to disk (see
+variable <ref>filplot</ref> in &amp;INPUTPP) and later read in step 2.
+Since the file with intermediate results is formatted, it
+can be safely transferred to a different machine.
+
+All output quantities are in ATOMIC (RYDBERG) UNITS unless
+otherwise explicitly specified.
+   </intro>
+   <namelist name="INPUTPP" >
+      <var name="prefix" type="CHARACTER" >
+         <default> &apos;pwscf&apos;
+         </default>
+         <info>
+prefix of files saved by program pw.x
+         </info>
+      </var>
+      <var name="outdir" type="CHARACTER" >
+         <info>
+directory containing the input data, i.e. the same as in pw.x
+         </info>
+         <default>
+value of the <tt>ESPRESSO_TMPDIR</tt> environment variable if set;
+current directory (&apos;./&apos;) otherwise
+         </default>
+      </var>
+      <var name="filplot" type="CHARACTER" >
+         <default> &quot;<ref>prefix</ref>&quot;.pprism
+         </default>
+         <info>
+file &quot;filplot&quot; contains solvent&apos;s quantities
+(can be saved for further processing)
+         </info>
+      </var>
+      <var name="lpunch" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+punch solvent&apos;s quantities to <ref>fileplot</ref>, or not
+         </info>
+      </var>
+   </namelist>
+   <namelist name="PLOT" >
+      <var name="iflag" type="INTEGER" >
+         <status> REQUIRED
+         </status>
+         <info>
+0 1D plot of the spherical average
+1 1D plot
+2 2D plot
+3 3D plot
+4 2D polar plot on a sphere
+         </info>
+      </var>
+      <var name="output_format" type="INTEGER" >
+         <status> REQUIRED
+         </status>
+         <info>
+(ignored on 1D plot)
+
+0  = format suitable for gnuplot   (1D)
+
+1  = obsolete format no longer supported
+
+2  = format suitable for plotrho   (2D)
+
+3  = format suitable for XCRYSDEN  (2D or user-supplied 3D region)
+
+4  = obsolete format no longer supported
+
+5  = format suitable for XCRYSDEN  (3D, using entire FFT grid)
+
+6  = format as gaussian cube file  (3D)
+     (can be read by many programs)
+
+7  = format suitable for gnuplot   (2D) x, y, f(x,y)
+         </info>
+      </var>
+      <var name="fileout" type="CHARACTER" >
+         <default> &quot;<ref>prefix</ref>&quot;.3drism
+         </default>
+         <info>
+name of the file to which the plot is written
+         </info>
+      </var>
+      <var name="interpolation" type="CHARACTER" >
+         <default> &apos;fourier&apos;
+         </default>
+         <options>
+            <info>
+Type of interpolation:
+            </info>
+            <opt val="'fourier'" >
+            </opt>
+            <opt val="'bspline'" > (EXPERIMENTAL)
+            </opt>
+         </options>
+      </var>
+      <choose>
+         <when test="iflag = 0" >
+            <label> the following variables are REQUIRED:
+            </label>
+            <dimension name="x0" start="1" end="3" type="REAL" >
+               <info>
+3D vector, origin of the line
+(in alat units)
+               </info>
+            </dimension>
+            <var name="nx" type="INTEGER" >
+               <info>
+number of radial grids
+               </info>
+            </var>
+            <var name="lebedev" type="INTEGER" >
+               <info>
+number of spherical grids of Lebedev quadrature
+(only for <ref>interpolation</ref> = &apos;bspline&apos;)
+               </info>
+            </var>
+         </when>
+         <elsewhen test="iflag = 1" >
+            <label> the following variables are REQUIRED:
+            </label>
+            <dimension name="e1" start="1" end="3" type="REAL" >
+               <info>
+3D vector which determines the plotting line
+(in alat units)
+               </info>
+            </dimension>
+            <dimension name="x0" start="1" end="3" type="REAL" >
+               <info>
+3D vector, origin of the line (in alat units)
+               </info>
+            </dimension>
+            <var name="nx" type="INTEGER" >
+               <info>
+number of points in the line:
+
+rho(i) = rho( x0 + e1 * (i-1)/(nx-1) ), i=1, nx
+               </info>
+            </var>
+         </elsewhen>
+         <elsewhen test="iflag = 2" >
+            <label> the following variables are REQUIRED:
+            </label>
+            <dimensiongroup start="1" end="3" type="REAL" >
+               <dimension name="e1" >
+               </dimension>
+               <dimension name="e2" >
+               </dimension>
+               <info>
+3D vectors which determine the plotting plane (in alat units)
+
+BEWARE: <b>e1</b> and <b>e2</b> must be orthogonal
+               </info>
+            </dimensiongroup>
+            <dimension name="x0" start="1" end="3" type="REAL" >
+               <info>
+3D vector, origin of the plane (in alat units)
+               </info>
+            </dimension>
+            <vargroup type="INTEGER" >
+               <var name="nx" >
+               </var>
+               <var name="ny" >
+               </var>
+               <info>
+Number of points in the plane:
+
+rho(i,j) = rho( x0 + e1 * (i-1)/(nx-1)
+           + e2 * (j-1)/(ny-1) ), i=1,nx ; j=1,ny
+               </info>
+            </vargroup>
+         </elsewhen>
+         <elsewhen test="iflag = 3" >
+            <label> the following variables are OPTIONAL:
+            </label>
+            <dimensiongroup start="1" end="3" type="REAL" >
+               <dimension name="e1" >
+               </dimension>
+               <dimension name="e2" >
+               </dimension>
+               <dimension name="e3" >
+               </dimension>
+               <info>
+3D vectors which determine the plotting parallelepiped
+(if present, must be orthogonal)
+
+<ref>e1</ref>, <ref>e2</ref>, and <ref>e3</ref> are in alat units !
+               </info>
+            </dimensiongroup>
+            <dimension name="x0" start="1" end="3" type="REAL" >
+               <info>
+3D vector, origin of the parallelepiped
+
+<ref>x0</ref> is in alat units !
+               </info>
+            </dimension>
+            <vargroup type="INTEGER" >
+               <var name="nx" >
+               </var>
+               <var name="ny" >
+               </var>
+               <var name="nz" >
+               </var>
+               <info>
+Number of points in the parallelepiped:
+
+rho(i,j,k) = rho( x0 + e1 * (i-1)/nx
+                 + e2 * (j-1)/ny
+                 + e3 * (k-1)/nz ),
+            i = 1, nx ; j = 1, ny ; k = 1, nz
+
+- If <ref>output_format</ref> = 3 (XCRYSDEN), the above variables
+  are used to determine the grid to plot.
+
+- If <ref>output_format</ref> = 5 (XCRYSDEN), the above variables
+  are ignored, the entire FFT grid is written in the
+  XCRYSDEN format - works for any crystal axis (VERY FAST)
+
+- If <ref>e1</ref>, <ref>e2</ref>, <ref>e3</ref>, <ref>x0</ref> are present,
+  and <ref>e1</ref>, <ref>e2</ref>, <ref>e3</ref> are parallel to xyz
+  and parallel to crystal axis, a subset of the FFT
+  grid that approximately covers the parallelepiped
+  defined by <ref>e1</ref>, <ref>e2</ref>, <ref>e3</ref>, <ref>x0</ref>, is
+  written - untested, might be obsolete
+
+- Otherwise, the required 3D grid is generated from the
+  Fourier components (may be VERY slow)
+               </info>
+            </vargroup>
+         </elsewhen>
+         <elsewhen test="iflag = 4" >
+            <label> the following variables are REQUIRED:
+            </label>
+            <var name="radius" type="REAL" >
+               <info>
+Radius of the sphere (alat units), centered at (0,0,0)
+               </info>
+            </var>
+            <vargroup type="INTEGER" >
+               <var name="nx" >
+               </var>
+               <var name="ny" >
+               </var>
+               <info>
+Number of points in the polar plane:
+
+phi(i)   = 2 pi * (i - 1)/(nx-1), i=1, nx
+theta(j) =   pi * (j - 1)/(ny-1), j=1, ny
+               </info>
+            </vargroup>
+         </elsewhen>
+      </choose>
+   </namelist>
+</input_description>

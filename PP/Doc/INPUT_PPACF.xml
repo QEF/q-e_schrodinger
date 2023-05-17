@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="input_xx.xsl"?>
+<!-- FILE AUTOMATICALLY CREATED: DO NOT EDIT, CHANGES WILL BE LOST -->
+    
+<input_description distribution="Quantum ESPRESSO" package="PWscf" program="ppacf.x" >
+   <toc>
+   </toc>
+   <intro>
+<b>Purpose of ppacf.x:</b>
+ACF analysis and print files to track signatures of binding
+(<a href="https://journals.aps.org/prb/abstract/10.1103/PhysRevB.97.085115">PRB 97, 085115 (2018)</a>).
+
+For an illustration of how to use this code to set hybrid mixing
+value, please refer to JCP 148, 194115 (2018) <a href="https://doi.org/10.1063/1.5012870">doi: 10.1063/1.5012870</a>.
+
+The code reads the output produced by <b>pw.x,</b> extracts and calculates
+$E_{c}^{nl}$, $T_{c}^{nl}$, $E_{c,\lambda}^{LDA}$, $E_{c,\lambda}^{nl}$,
+$E_{xc,\lambda}$, $T_c^{LDA}$.
+If <ref>lfock</ref> is set to .True., the code also computes the total Fock
+exchange value.
+
+With flag <ref>code_num</ref> = 2, the codes can read output produced by <b>VASP.</b>
+
+With flag <ref>lplot</ref>, the codes also out puts files containing spatial
+variation in most of these quantities.
+
+
+The input data of this program is read from standard input or from file
+and has the following format:
+
+<b>Structure of the input data:</b>
+<b>============================</b>
+
+<b>&amp;PPACF</b>
+<b>...</b>
+<b>/</b>
+
+Intermediate results can be saved to disk (see variable <ref>lplot</ref> in <b>&amp;PPACF)</b>
+and later read by pp.x.
+Since the file with intermediate results is formatted, it can be safely
+transferred to a different machine. This also allows plotting of a
+linear combination (for instance, energy density differences) by saving
+two intermediate files and combining them (see variables in <b>&amp;PLOT</b>
+from pp.x .)
+
+All output quantities are in ATOMIC (RYDBERG) UNITS unless otherwise
+explicitly specified.
+   </intro>
+   <namelist name="PPACF" >
+      <var name="prefix" type="CHARACTER" >
+         <info>
+prefix of files saved by program pw.x
+prepended to input/output filenames:
+prefix.ecnl, prefix.tcnl, etc.
+         </info>
+      </var>
+      <var name="outdir" type="CHARACTER" >
+         <info>
+directory containing the output data from pw.x, i.e. the same as in pw.x
+         </info>
+         <default>
+value of the <tt>ESPRESSO_TMPDIR</tt> environment variable if set;
+current directory (&apos;./&apos;) otherwise
+         </default>
+      </var>
+      <var name="n_lambda" type="INTEGER" >
+         <info>
+Number of fragments in coupling-constant scaling curve.
+In the default case, only $\lambda=0$ and $\lambda=1$ ends are calculated.
+         </info>
+         <default>
+1
+         </default>
+      </var>
+      <var name="lplot" type="LOGICAL" >
+         <info>
+If .True. print out the spatial distribution of energy density.
+prefix.tclda             the LDA component of kinetic-correlation energy density.
+prefix.tcnl(prefix.tcgc) the non-local (gradient corrected) component of kinetic-correlation energy density.
+prefix.exlda             the LDA component of exchange energy density.
+prefix.eclda             the LDA component of correlation energy density.
+prefix.exgc              the gradient-corrected component of exchange energy density.
+prefix.ecnl(prefix.ecgc) the non-local(gradient-corrected) component of correlation energy density.
+prefix.vcnl                  If vdW-DF: the non-local correlation-potential variation (at nspin=1).
+prefix.vcnl1,2                 If spin-vdW-DF: spin-reolved non-local correlation-potential variations.
+         </info>
+         <default>
+.False.
+         </default>
+      </var>
+      <choose>
+         <when test="lplot=.True." >
+            <label>
+Option for plot (lplot=.True.):
+            </label>
+            <var name="ltks" type="LOGICAL" >
+               <default>
+.True.
+               </default>
+               <info>
+If .True. also print out
+prefix.tks               the Kohn-Sham kinetic energy density.
+                         In case of spin-polarized calculations, prefix.tks1 and prefix.tks2
+                         save the spin-up and spin-down components.
+               </info>
+            </var>
+         </when>
+      </choose>
+      <var name="lfock" type="LOGICAL" >
+         <info>
+If .True. calculate the Fock exchange based on input Kohn-Sham orbitals.
+         </info>
+         <default>
+.False.
+         </default>
+      </var>
+      <choose>
+         <when test="lfock=.True." >
+            <label>
+Option for Fock exchange (lfock=.True.):
+            </label>
+            <var name="use_ace" type="LOGICAL" >
+               <info>
+If .True. use Lin Lin&apos;s ACE (J. Chem. Theory Comput. 12(5), 2242-2249 (2016),
+<a href="https://doi.org/10.1021/acs.jctc.6b00092">doi: 10.1021/acs.jctc.6b00092</a>).
+               </info>
+               <default>
+.True.
+               </default>
+            </var>
+         </when>
+      </choose>
+      <var name="code_num" type="INTEGER" >
+         <info>
+Select from which code to read output files.
+  1 = Quantum ESPRESSO
+  2 = VASP
+      The codes will read vasprun.xml and CHGCAR from VASP
+      calculations.
+      Please note that in VASP-based analysis:
+      - Core charge is ignored.
+      - The ppacf-from-VASP-read-in only works for VASP
+        calculations done in PBE, revPBE, vdW-DF, vdW-DF2, or vdW-DF-cx
+      - The ppacf-from-VASP-read-in only always uses the full Ecnl kernel
+        for coupling-constant scaling analysis of vdW-DF versions.
+      - Wavefunction based analysis (Fock exchange energy and
+        Kohn-Sham kinetic energy) are not available from VASP
+      - When <ref>lplot</ref> = .True., the code will also print out
+        charge density in prefix.chg (prefix.chg1 and prefix.chg2
+        save the spin-up and spin-down components in case of
+        spin-polarized calculations), which can be processed by <b>pp.x.</b>
+         </info>
+         <default>
+1
+         </default>
+      </var>
+      <var name="vdW_analysis" type="INTEGER" >
+         <info>
+Select type of vdw kernel table used in ppacf coupling-constant scaling
+analysis of nonlocal-correlations in vdW-DF versions:
+- vdW_analysis = 0: Full Ecnl kenel of vdW-DF method
+- vdW_analysis = 1: The cumulant- or susceptibility-Ecnl kernel component
+- vdW_analysis = 2: The pure-vdW-Ecnl kernel component
+See IOP JCPM (2020) for presentation of the latter two (non-default) options
+         </info>
+         <default>
+o
+         </default>
+      </var>
+   </namelist>
+</input_description>

@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>4.6 Wannier functions</TITLE>
+<META NAME="description" CONTENT="4.6 Wannier functions">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node12.html">
+<LINK REL="previous" HREF="node10.html">
+<LINK REL="next" HREF="node12.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node12.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node5.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node10.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html74"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node12.html">4.7 Interfaces to/from other code</A>
+<B> Up:</B> <A
+ HREF="node5.html">4 Usage</A>
+<B> Previous:</B> <A
+ HREF="node10.html">4.5 Color plot of the</A>
+ &nbsp; <B>  <A ID="tex2html75"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A ID="SECTION00056000000000000000">
+4.6 Wannier functions</A>
+</H2>
+
+<P>
+There are several Wannier-related utilities in <TT>PostProc</TT>:
+
+<OL>
+<LI>The "Poor Man Wannier" code <TT>pmw.x</TT>, to be used
+in conjunction with DFT+U calculations: see Example 05.
+</LI>
+<LI>The interface with Wannier90 code, <TT>pw2wannier.x</TT>:
+see the documentation in <TT>W90/</TT> (you may install the 
+Wannier90 plug-in via <TT>make w90</TT> ). For spin-current
+matrix elements, implemented in routine <TT>compute_shc</TT>:
+``it writes .sIu and .sHu files used for
+WANNIER-BERRI (https://github.com/stepan-tsirkin/wannier-berri/),
+and also will be utilized through postw90.x
+(https://github.com/manxkim/wannier90/tree/SHC/src) in Wannier90.
+In WANNIER-BERRI, .sHu and .sIu files can be used to calculate the
+quantity "opt_SHCryoo". In Wannier90, add "berry_task = shc" and
+"shc_ryoo=.true.". in the input parameters of postw90.x. They
+activate the calculation of SHC using .sHu and .sIu.''
+</LI>
+<LI>The <TT>wannier_ham.x</TT> code generates a model Hamiltonian 
+in Wannier functions basis: see <TT>PP/examples/WannierHam_example/</TT>.
+</LI>
+</OL>
+Note that the <TT>wfdd.x</TT> code has been moved to <TT>CP</TT>.
+
+<P>
+<BR><HR>
+
+</BODY>
+</HTML>

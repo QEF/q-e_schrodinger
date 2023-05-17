@@ -1,0 +1,90 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>4.7 Interfaces to/from other code</TITLE>
+<META NAME="description" CONTENT="4.7 Interfaces to/from other code">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node13.html">
+<LINK REL="previous" HREF="node11.html">
+<LINK REL="next" HREF="node13.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node13.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node5.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node11.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html76"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node13.html">4.8 Other tools</A>
+<B> Up:</B> <A
+ HREF="node5.html">4 Usage</A>
+<B> Previous:</B> <A
+ HREF="node11.html">4.6 Wannier functions</A>
+ &nbsp; <B>  <A ID="tex2html77"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A ID="SECTION00057000000000000000">
+4.7 Interfaces to/from other code</A>
+</H2>
+
+<P>
+Codes <TT>pw2bgw.x</TT> convert data files from <TT>pw.x</TT> to a format suitable
+for usage by the Berkeley GW code. See file <TT>Doc/INPUT_pw2bgw.*</TT>
+for input data documentation. Code <TT>bgw2pw.x</TT>, performing the
+inverse conversion, no longer works: a copy that worked for the old
+file format is kept for reference in <TT>bgw2pw.f90.orig</TT>.
+
+<P>
+Code <TT>pw2gw.x</TT> converts data files from <TT>pw.x</TT> to a format suitable 
+for usage by another GW code, computes optical properties in single-particle 
+approach (Fermi Golden Rule). See file <TT>Doc/INPUT_pw2gw.html</TT>
+for input data documentation, directory <TT>pw2gw_example/</TT>
+for an example of usage.
+
+<P>
+Code <TT>open_grid.x</TT> writes Kohn-Sham orbitals for the complete
+k-point grid (not symmetry-independent points only) in real space.
+Useful for further processing. It can be used to generate the
+Kohn-Sham state data required in <TT>pw2wannier.x</TT> and Wannier90
+from the initial SCF calculation, bypassing the non-SCF calculation
+step.
+
+<P>
+Code <TT>pw2critic.x</TT> is an interface to the CRITIC2 code by
+Alberto Otero-de-la-Roza. This program creates a <TT>pwc</TT> file
+containing the Kohn-Sham orbitals from an SCF calculation (or from the
+output of <TT>open_grid.x</TT>). These orbitals are used for
+post-processing in CRITIC2.
+
+<P>
+Code <TT>pw_export.f90</TT> no longer works and is no longer present.
+
+<P>
+<BR><HR>
+
+</BODY>
+</HTML>

@@ -1,0 +1,191 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>3.1 Input data</TITLE>
+<META NAME="description" CONTENT="3.1 Input data">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node9.html">
+<LINK REL="previous" HREF="node7.html">
+<LINK REL="next" HREF="node9.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node9.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html142"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node9.html">3.2 Data files</A>
+<B> Up:</B> <A
+ HREF="node7.html">3 Using PWscf</A>
+<B> Previous:</B> <A
+ HREF="node7.html">3 Using PWscf</A>
+ &nbsp; <B>  <A ID="tex2html143"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A ID="SECTION00041000000000000000">
+3.1 Input data</A>
+</H2>
+
+<P>
+Input data 
+is organized as several namelists, followed by other fields (``cards'')
+introduced by keywords. The namelists are
+
+<P>
+<TABLE CELLPADDING=3>
+<TR><TD ALIGN="LEFT">&amp;CONTROL:</TD>
+<TD ALIGN="LEFT">general variables controlling the run</TD>
+</TR>
+<TR><TD ALIGN="LEFT">&amp;SYSTEM:</TD>
+<TD ALIGN="LEFT">structural information on the system under investigation</TD>
+</TR>
+<TR><TD ALIGN="LEFT">&amp;ELECTRONS:</TD>
+<TD ALIGN="LEFT">electronic variables: self-consistency, smearing</TD>
+</TR>
+<TR><TD ALIGN="LEFT">&amp;IONS (optional):</TD>
+<TD ALIGN="LEFT">ionic variables: relaxation, dynamics</TD>
+</TR>
+<TR><TD ALIGN="LEFT">&amp;CELL (optional):</TD>
+<TD ALIGN="LEFT">variable-cell optimization or dynamics</TD>
+</TR>
+</TABLE>    
+<BR>
+Optional namelist may be omitted if the calculation to be performed
+does not require them. This depends on the value of variable 
+<TT>calculation</TT>
+in namelist &amp;CONTROL. Most variables in namelists have default values. Only
+the following variables in &amp;SYSTEM must always be specified:
+
+<P>
+<TABLE CELLPADDING=3>
+<TR><TD ALIGN="LEFT"><TT>nat</TT></TD>
+<TD ALIGN="LEFT">(integer)</TD>
+<TD ALIGN="LEFT">number of atoms in the unit cell</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>ntyp</TT></TD>
+<TD ALIGN="LEFT">(integer)</TD>
+<TD ALIGN="LEFT">number of types of atoms in the unit cell</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>ecutwfc</TT></TD>
+<TD ALIGN="LEFT">(real)</TD>
+<TD ALIGN="LEFT">kinetic energy cutoff (Ry) for wavefunctions.</TD>
+</TR>
+</TABLE>    
+<BR>
+plus the variables needed to describe the crystal structure, e.g.:
+<TABLE CELLPADDING=3>
+<TR><TD ALIGN="LEFT"><TT>ibrav</TT></TD>
+<TD ALIGN="LEFT">(integer)</TD>
+<TD ALIGN="LEFT">Bravais-lattice index</TD>
+</TR>
+<TR><TD ALIGN="LEFT"><TT>celldm</TT></TD>
+<TD ALIGN="LEFT">(real, dimension 6)</TD>
+<TD ALIGN="LEFT">crystallographic constants</TD>
+</TR>
+</TABLE>    
+<BR>
+Alternative ways to input structural data are described in files
+<TT>PW/Doc/INPUT_PW.*</TT>. For metallic systems, you have to specify
+how metallicity is treated in variable <TT>occupations</TT>.
+If you choose <TT>occupations='smearing'</TT>, you have
+to specify the smearing type <TT>smearing</TT> and the smearing width 
+<TT>degauss</TT>. Spin-polarized systems are as a rule treated as metallic 
+system, unless the total magnetization, <TT>tot_magnetization</TT>
+is set to a fixed value, or if occupation numbers are fixed
+(<TT>occupations='from input'</TT> and card OCCUPATIONS).
+
+<P>
+Detailed explanations of the meaning of all variables are found in files
+<TT>PW/Doc/INPUT_PW.*</TT>. Almost all variables have default 
+values, which may or may not fit your needs.
+
+<P>
+Comment lines in namelists can be introduced by a "!", exactly as in fortran 
+code. 
+
+<P>
+After the namelists, you have several fields (``cards'')
+introduced by keywords with self-explanatory names:
+<BLOCKQUOTE>
+ATOMIC_SPECIES
+<BR>
+ATOMIC_POSITIONS
+<BR>
+K_POINTS
+<BR>
+CELL_PARAMETERS (optional)
+<BR>
+OCCUPATIONS (optional)
+<BR>
+</BLOCKQUOTE>
+The keywords may be followed on the same line by an option. Unknown
+fields are ignored. 
+See the files mentioned above for details on the available ``cards''.
+
+<P>
+Comments lines in ``cards'' can be introduced by either a ``!'' or a ``#''
+character in the first position of a line.
+
+<P>
+Note about k-points: The k-point grid can be either automatically generated 
+or manually provided as a list of k-points and a weight in the Irreducible
+Brillouin Zone only of the Bravais lattice of the crystal. The code will 
+generate (unless instructed not to do so: see variable <TT>nosym</TT>) all
+required k-points
+and weights if the symmetry of the system is lower than the symmetry of the
+Bravais lattice. The automatic generation of k-points follows the convention
+of Monkhorst and Pack.
+
+<P>
+<HR>
+<!--Navigation Panel-->
+<A
+ HREF="node9.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node7.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html142"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node9.html">3.2 Data files</A>
+<B> Up:</B> <A
+ HREF="node7.html">3 Using PWscf</A>
+<B> Previous:</B> <A
+ HREF="node7.html">3 Using PWscf</A>
+ &nbsp; <B>  <A ID="tex2html143"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>

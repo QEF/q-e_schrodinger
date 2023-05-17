@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="input_xx.xsl"?>
+<!-- FILE AUTOMATICALLY CREATED: DO NOT EDIT, CHANGES WILL BE LOST -->
+    
+<input_description distribution="Quantum ESPRESSO" package="PWscf" program="oscdft_et.x" >
+   <toc>
+   </toc>
+   <intro>
+<b>Input data format:</b> { } = optional, [ ] = it depends, | = or
+
+<b>Purpose of oscdft_et.x:</b>
+This calculates the electronic coupling of an electron transfer process.
+This requires two scf calculations:
+- one calculation has the system constrained to its initial state and,
+- the other calculation has the system constrained to its final state,
+with both calculation using the same atomic positions.
+The transferring electron is constrained to the donor atom in the initial state
+while it is constrained to the acceptor atom in the final state.
+
+<b>Structure of the input data:</b>
+===============================================================================
+
+    &amp;OSCDFT_ET_NAMELIST
+      ...
+    /
+   </intro>
+   <namelist name="OSCDFT_ET_NAMELIST" >
+      <var name="initial_prefix" type="CHARACTER" >
+         <status> REQUIRED
+         </status>
+         <info>
+prefix of the initial pw.x calculation.
+         </info>
+      </var>
+      <var name="final_prefix" type="CHARACTER" >
+         <status> REQUIRED
+         </status>
+         <info>
+prefix of the final pw.x calculation.
+         </info>
+      </var>
+      <var name="initial_dir" type="CHARACTER" >
+         <status> REQUIRED
+         </status>
+         <info>
+The directory containing the input data of the initial pw.x calculation,
+i.e. the same as in pw.x.
+         </info>
+      </var>
+      <var name="final_dir" type="CHARACTER" >
+         <status> REQUIRED
+         </status>
+         <info>
+The directory containing the input data of the final pw.x calculation,
+i.e. the same as in pw.x.
+         </info>
+      </var>
+      <var name="print_matrix" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+If .TRUE., prints the occupation matrices.
+         </info>
+      </var>
+      <var name="print_eigvect" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+If .TRUE., prints the occupation eigenvectors.
+         </info>
+      </var>
+      <var name="print_debug" type="LOGICAL" >
+         <default> .FALSE.
+         </default>
+         <info>
+If .TRUE., prints additional debug informations.
+         </info>
+      </var>
+   </namelist>
+</input_description>

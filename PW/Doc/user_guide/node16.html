@@ -1,0 +1,87 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//en">
+
+<!--Converted with LaTeX2HTML 2021.2 (Released July 1, 2021) -->
+<HTML lang="en">
+<HEAD>
+<TITLE>4.2 Memory requirements</TITLE>
+<META NAME="description" CONTENT="4.2 Memory requirements">
+<META NAME="keywords" CONTENT="user_guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2021.2">
+
+<LINK REL="STYLESHEET" HREF="user_guide.css">
+
+<LINK REL="next" HREF="node17.html">
+<LINK REL="previous" HREF="node15.html">
+<LINK REL="next" HREF="node17.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A
+ HREF="node17.html">
+<IMG WIDTH="37" HEIGHT="24" ALT="next" SRC="next.png"></A> 
+<A
+ HREF="node14.html">
+<IMG WIDTH="26" HEIGHT="24" ALT="up" SRC="up.png"></A> 
+<A
+ HREF="node15.html">
+<IMG WIDTH="63" HEIGHT="24" ALT="previous" SRC="prev.png"></A> 
+<A ID="tex2html189"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A
+ HREF="node17.html">4.3 File space requirements</A>
+<B> Up:</B> <A
+ HREF="node14.html">4 Performances</A>
+<B> Previous:</B> <A
+ HREF="node15.html">4.1 Execution time</A>
+ &nbsp; <B>  <A ID="tex2html190"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H2><A ID="SECTION00052000000000000000">
+4.2 Memory requirements</A>
+</H2>
+
+<P>
+A typical self-consistency or molecular-dynamics run requires a maximum
+memory in the order of <I>O</I> double precision complex numbers, where
+<P><!-- MATH
+ \begin{displaymath}
+O = m M N + P N + p N_1 N_2 N_3 + q N_{r1} N_{r2} N_{r3}
+\end{displaymath}
+ -->
+</P>
+<DIV ALIGN="CENTER">
+<I>O</I> = <I>mMN</I> + <I>PN</I> + <I>pN</I><SUB>1</SUB><I>N</I><SUB>2</SUB><I>N</I><SUB>3</SUB> + <I>qN</I><SUB>r1</SUB><I>N</I><SUB>r2</SUB><I>N</I><SUB>r3</SUB>
+</DIV><P></P>
+with <I>m</I>, <I>p</I>, <I>q</I> = small factors; all other variables have the same meaning as
+above. Note that if the <I>Γ</I> -point only (<I>k</I> = 0) is used to sample the 
+Brillouin Zone, the value of N will be cut into half.
+
+<P>
+For hybrid DFTs, additional storage of <I>O</I><SUB>x</SUB> double precision complex 
+numbers is needed (for Fourier-transformed Kohn-Sham states), with
+<!-- MATH
+ $O_x = x N_q M N_1N_2N_3$
+ -->
+<I>O</I><SUB>x</SUB> = <I>xN</I><SUB>q</SUB><I>MN</I><SUB>1</SUB><I>N</I><SUB>2</SUB><I>N</I><SUB>3</SUB> and <I>x</I> = 0.5 for <I>Γ</I> -only 
+calculations, <I>x</I> = 1 otherwise.
+
+<P>
+The memory required by the phonon code follows the same patterns, with
+somewhat larger factors <I>m</I>, <I>p</I>, <I>q</I>.
+
+<P>
+<BR><HR>
+
+</BODY>
+</HTML>
