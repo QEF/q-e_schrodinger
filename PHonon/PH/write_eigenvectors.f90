@@ -257,47 +257,21 @@ subroutine writexsf (xsffile, gamma, nat, atm, a0, at, tau, ityp, z)
 end subroutine writexsf
 !
 !-----------------------------------------------------------------------
-subroutine writespm (nat, w2, z, zstar, iout)
+subroutine writespm (nat, freq, intens, is_raman, iout)
   !-----------------------------------------------------------------------
   !
   !   write frequencies and intensities on output file in a spm-friendly way
   !
   use kinds, only: dp
-  use constants, only: ry_to_cmm1, amu_ry
   implicit none
   ! input
   integer, intent(in) :: nat, iout
-  real(DP), intent(in) :: w2(3*nat), zstar(3, 3, nat)
-  complex(DP), intent(in) :: z(3*nat,3*nat)
+  real(DP), intent(in) :: freq(3*nat), intens(3*nat)
+  logical, intent(in) :: is_raman
   ! local
-  integer nat3, na, ipol, jpol, nu
-  real(DP):: freq(3*nat), infrared(3*nat)
-  real(DP):: irfac, polar(3), znorm
+  integer nat3, nu
   !
   nat3=3*nat
-  !
-  ! Compute IR intensities (stolen from dynmat_sub::RamanIR)
-  !
-  irfac = 4.80324d0**2/2.d0*amu_ry
-  !
-  do nu = 1, 3*nat
-    do ipol = 1, 3
-       polar(ipol)=0.0d0
-    end do
-    do na=1, nat
-       do ipol=1, 3
-          do jpol=1, 3
-             polar(ipol) = polar(ipol) +  &
-                  zstar(ipol,jpol,na)*z((na-1)*3+jpol, nu)
-          end do
-       end do
-    end do
-    !
-    infrared(nu) = 2.d0*(polar(1)**2+polar(2)**2+polar(3)**2)*irfac
-    !
-    ! Check for nan
-    if(infrared(nu) /= infrared(nu)) infrared(nu) = 0.0
-  end do
   !
   !  write frequencies and intensities
   !
@@ -312,9 +286,17 @@ subroutine writespm (nat, w2, z, zstar, iout)
   write(iout, '(" s_j_x_label")')
   write(iout, '(" s_j_y_label")')
   write(iout, '(" :::")')
-  write(iout, '('' "Infrared Vibrational Frequencies" '')')
-  write(iout, '("  r_j_Frequency_(cm-1) ")')
-  write(iout, '("  r_matsci_Intensity_(D^2/A^2/amu) ")')
+  !
+  if (is_raman) then
+    write(iout, '('' "Raman Vibrational Frequencies" '')')
+    write(iout, '("  r_j_Frequency_(cm-1) ")')
+    write(iout, '("  r_matsci_Raman_Activity_(A^4/amu) ")')
+  else
+    write(iout, '('' "Infrared Vibrational Frequencies" '')')
+    write(iout, '("  r_j_Frequency_(cm-1) ")')
+    write(iout, '("  r_matsci_Intensity_(D^2/A^2/amu) ")')
+  end if
+  !
   write(iout, '(" m_column[3] { ")')
   write(iout, '("  s_m_data_name")')
   write(iout, '("  s_m_column_name")')
@@ -322,23 +304,32 @@ subroutine writespm (nat, w2, z, zstar, iout)
   write(iout, '("  b_m_visible")')
   write(iout, '("  :::")')
   write(iout, '(''  1 r_j_Frequency_(cm-1)  "Frequency (cm-1)"  10 1'')')
-  write(iout, '(''  2 r_matsci_Intensity_(D^2/A^2/amu)  "Intensity (D^2/A^2/amu)"  10 1'')')
+  !
+  if (is_raman) then
+    write(iout, '(''  2 r_matsci_Raman_Activity_(A^4/amu)  "Intensity (A^4/amu)"  10 1'')')
+  else
+    write(iout, '(''  2 r_matsci_Intensity_(D^2/A^2/amu)  "Intensity (D^2/A^2/amu)"  10 1'')')
+  end if
+  !
   write(iout, '(''  3 s_j_Symmetry  "Symmetry"  10 1'')')
   write(iout, '("  :::")')
   write(iout, '(" } ")')
   !
   write(iout, '(" m_row[", i0, "] { ")') nat3
   write(iout, '("  r_j_Frequency_(cm-1)")')
-  write(iout, '("  r_matsci_Intensity_(D^2/A^2/amu)")')
+  !
+  if (is_raman) then
+    write(iout, '("  r_matsci_Raman_Activity_(A^4/amu)")')
+  else
+    write(iout, '("  r_matsci_Intensity_(D^2/A^2/amu)")')
+  end if
+  !
   write(iout, '("  s_j_Symmetry")')
   write(iout, '("  :::")')
   !
   do nu = 1, nat3
-    freq(nu) = sqrt(abs(w2(nu)))
-    if (w2(nu).lt.0.0_DP) freq(nu) = -freq(nu)
-    !
     write(iout, '(2x, i0, 1x, f15.6, 1x, f15.6, 1x, ''"Ap    "'')') nu, &
-      freq(nu)*ry_to_cmm1, infrared(nu)
+      freq(nu), intens(nu)
   end do
   !
   write(iout, '("  :::")')
@@ -356,57 +347,28 @@ subroutine writespm (nat, w2, z, zstar, iout)
   write(iout, '(" } ")')
   write(iout, '("} ")')
   !
-  return
-  !
 end subroutine writespm
 !
 !-----------------------------------------------------------------------
-subroutine writevib (nat,ntyp,amass,ityp,q,w2,z,zstar,iout)
+subroutine writevib (nat, freq, ir_intens, raman_act, ntyp, amass, ityp, z, iout)
   !-----------------------------------------------------------------------
   !
   !   write frequencies and vibrations on output file in a vib-friendly way
   !
   use kinds, only: dp
-  use constants, only: amu_ry, ry_to_thz, ry_to_cmm1
+  use constants, only: amu_ry
   implicit none
   ! input
-  integer, intent(in) :: nat, iout,ntyp
-  integer ityp(nat)
-  real(DP), intent(in) :: q(3), w2(3*nat), amass(ntyp), zstar(3, 3, nat)
-  real(DP):: irfac, polar(3), znorm
+  integer, intent(in) :: nat, iout, ntyp, ityp(nat)
+  real(DP), intent(in) :: freq(3*nat), ir_intens(3*nat), raman_act(3*nat), &
+     amass(ntyp)
   complex(DP), intent(in) :: z(3*nat,3*nat)
   ! local
-  integer nat3, na, nta, ipol, jpol, i, j, nu
-  integer :: exists(3*nat)
-  real(DP):: freq(3*nat), infrared(3*nat)
+  integer :: nat3, na, nta, ipol, i, j, nu, exists(3*nat)
+  real(DP) :: znorm
   complex(DP) :: z_(3*nat,3*nat)
   !
   nat3=3*nat
-  exists(:) = 1
-  !
-  !
-  ! Compute IR intensities (stolen from dynmat_sub::RamanIR)
-  !
-  irfac = 4.80324d0**2/2.d0*amu_ry
-  !
-  do nu = 1, 3*nat
-    do ipol = 1, 3
-       polar(ipol)=0.0d0
-    end do
-    do na=1, nat
-       do ipol=1, 3
-          do jpol=1, 3
-             polar(ipol) = polar(ipol) +  &
-                  zstar(ipol,jpol,na)*z((na-1)*3+jpol, nu)
-          end do
-       end do
-    end do
-    !
-    infrared(nu) = 2.d0*(polar(1)**2+polar(2)**2+polar(3)**2)*irfac
-    !
-    ! Check for nan
-    if(infrared(nu) /= infrared(nu)) infrared(nu) = 0.0
-  end do
   !
   !  write frequencies and phonon eigenvectors
   !
@@ -417,13 +379,6 @@ subroutine writevib (nat,ntyp,amass,ityp,q,w2,z,zstar,iout)
           z_((na-1)*3+ipol,i) = z((na-1)*3+ipol,i)* sqrt(amu_ry*amass(nta))
        end do
     end do
-  end do
-
-  do i = 1,nat3
-     !
-     freq(i)= sqrt(abs(w2(i))) * ry_to_cmm1
-     if (w2(i) < 0.0) freq(i) = -freq(i)
-     !
   end do
   !
   write(iout, '("{ ")')
@@ -444,9 +399,15 @@ subroutine writevib (nat,ntyp,amass,ityp,q,w2,z,zstar,iout)
   write(iout, '("  s_m_units")')
   write(iout, '("  :::")')
   write(iout, '(''  1 r_j_Frequency  "Frequency"  10 1 ""'')')
-  write(iout, '(''  2 s_j_Symmetry  "Symmetry"  10 1 ""'')')
+  write(iout, '(''  2 s_j_Symmetry  "Symmetry"  10 0 ""'')')
   write(iout, '(''  3 r_j_Intensity  "Intensity"  10 1 ""'')')
-  write(iout, '(''  4 r_j_Raman_Act  "Raman Act"  10 0 ""'')')
+  !
+  IF(ANY(abs(raman_act).gt.1.d-12)) THEN
+    ! Raman present
+    write(iout, '(''  4 r_j_Raman_Act  "Raman Act"  10 1 ""'')')
+  ELSE
+    write(iout, '(''  4 r_j_Raman_Act  "Raman Act"  10 0 ""'')')
+  END IF
   write(iout, '(''  5 r_j_Raman_Int  "Raman Int"  10 0 ""'')')
   !
   j = 6
@@ -489,8 +450,8 @@ subroutine writevib (nat,ntyp,amass,ityp,q,w2,z,zstar,iout)
     !
     znorm = sqrt(znorm)
     !
-    write(iout, '("  ", i0, 1x, f20.10, '' "" '', f20.10, "0 0 0", 99999f15.9)') &
-      i, freq(i), infrared(i), ((DBLE(z((na-1)*3+ipol,i))/znorm, ipol=1,3), na=1,nat)
+    write(iout, '("  ", i0, 1x, f20.10, '' "" '', f20.10, 1x, f20.10, 1x, "0", 99999f15.9)') &
+      i, freq(i), ir_intens(i), raman_act(i), ((DBLE(z((na-1)*3+ipol,i))/znorm, ipol=1,3), na=1,nat)
   end do
   !
   write(iout, '("  :::")')
@@ -499,6 +460,7 @@ subroutine writevib (nat,ntyp,amass,ityp,q,w2,z,zstar,iout)
   write(iout, '("  s_m_exists")')
   write(iout, '("  :::")')
   !
+  exists(:) = 1
   do i = 1, nat3
     write(iout, '("  ", i0, 1x, 99999i0)') i, exists
   end do
@@ -506,7 +468,5 @@ subroutine writevib (nat,ntyp,amass,ityp,q,w2,z,zstar,iout)
   write(iout, '("  :::")')
   write(iout, '(" } ")')
   write(iout, '("}")')
-  !
-  return
   !
 end subroutine writevib
