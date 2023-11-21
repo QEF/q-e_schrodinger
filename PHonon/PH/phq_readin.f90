@@ -79,6 +79,7 @@ SUBROUTINE phq_readin()
       skip_upperfan
   USE read_namelists_module, ONLY : check_namelist_read
   USE open_close_input_file, ONLY : open_input_file, close_input_file
+  USE d3hess_mod,            ONLY: AUTOMATIC_NAME
   !
   IMPLICIT NONE
   !
@@ -951,7 +952,7 @@ SUBROUTINE phq_readin()
   !
   ! If dftd3_hess is not specified, use a default name set from prefix
   !
-  IF ( dftd3_hess == ' ' ) dftd3_hess = trim(prefix)//'.hess'
+  IF ( dftd3_hess == ' ' ) dftd3_hess = AUTOMATIC_NAME
   dftd3_hess = TRIM(tmp_dir)//TRIM(dftd3_hess)
 
   CALL save_ph_input_variables()
