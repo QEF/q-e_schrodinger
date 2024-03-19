@@ -283,7 +283,7 @@ program dynmat
    SUBROUTINE dump_ir_raman(prefix, nat, omega, w2, z, zstar, eps0, dchi_dtau)
       !
       USE kinds, ONLY: DP
-      USE constants, ONLY : RY_TO_CMM1, amu_ry
+      USE constants, ONLY : RY_TO_CMM1, amu_ry, eps8
       implicit none
       ! input
       CHARACTER(len=*), INTENT(in) :: prefix
@@ -379,6 +379,17 @@ program dynmat
       OPEN(unit=iunit, file=TRIM(filename), status='unknown', form='formatted')
       CALL writevib(nat, freq, infrared, raman_act, ntyp, amass, ityp, z, iunit)
       CLOSE(unit=iunit)
+      !
+      IF ( ANY(zstar .GT. eps8) ) THEN
+         ! Check if Born charges are present (occupations = fixed)
+         filename = 'born.charges'
+         iunit = find_free_unit()
+         OPEN(unit=iunit, file=TRIM(filename), status='unknown', form='formatted')
+         WRITE(iunit, '(9f24.12)') ((eps0(ipol,jpol), jpol=1,3), ipol=1,3)
+         WRITE(iunit, '(*(f24.12))') &
+            (((zstar(ipol,jpol,na), jpol=1,3), ipol=1,3), na=1,nat)
+         CLOSE(unit=iunit)
+      END IF
       !
    END SUBROUTINE dump_ir_raman
    !
