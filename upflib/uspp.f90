@@ -21,7 +21,7 @@ MODULE uspp
   !
   USE upf_kinds,   ONLY: DP
   USE upf_params,  ONLY: lmaxx, lqmax
-  USE upf_spinorb, ONLY: is_spinorbit, fcoef, fcoef_d 
+  USE upf_spinorb, ONLY: is_spinorbit, fcoef
   IMPLICIT NONE
   PRIVATE
   SAVE
@@ -29,11 +29,10 @@ MODULE uspp
   PUBLIC :: nlx, lpx, lpl, ap, aainit, indv, nhtol, nhtolm, ofsbeta, &
             nkb, nkbus, vkb, dvan, deeq, qq_at, qq_nt, nhtoj, ijtoh, beta, &
             becsum, ebecsum
-  PUBLIC :: lpx_d, lpl_d, ap_d, indv_d, nhtol_d, nhtolm_d, ofsbeta_d, &
-            dvan_d, qq_nt_d, nhtoj_d, ijtoh_d, becsum_d, ebecsum_d
+  PUBLIC :: indv_d, nhtol_d, dvan_d, qq_nt_d, nhtoj_d, ijtoh_d, becsum_d, ebecsum_d
   PUBLIC :: okvan, nlcc_any
   PUBLIC :: qq_so,   dvan_so,   deeq_nc,   fcoef 
-  PUBLIC :: dvan_so_d, fcoef_d
+  PUBLIC :: dvan_so_d
   PUBLIC :: dbeta
   !
   PUBLIC :: allocate_uspp, deallocate_uspp
@@ -49,21 +48,12 @@ MODULE uspp
        lpl(nlx,nlx,mx)    ! list of combined angular momenta  LM
   REAL(DP) :: ap(lqmax*lqmax,nlx,nlx)
                           ! Clebsch-Gordan coefficients for spherical harmonics
-  ! GPU vars
-  INTEGER, ALLOCATABLE ::  & ! for each pair of combined momenta lm(1),lm(2): 
-       lpx_d(:,:),         & ! maximum combined angular momentum LM
-       lpl_d(:,:,:)          ! list of combined angular momenta  LM
-  REAL(DP), ALLOCATABLE :: ap_d(:,:,:)
-#if defined (__CUDA)
-  attributes(DEVICE) :: lpx_d, lpl_d, ap_d
-#endif
-  !
   !
   INTEGER :: nkb,        &! total number of beta functions, with struct.fact.
              nkbus        ! as above, for US-PP only
   !
   INTEGER, ALLOCATABLE PINMEM ::&
-       indv(:,:),        &! indes linking  atomic beta's to beta's in the solid
+       indv(:,:),        &! index linking  atomic beta's to beta's in the solid
        nhtol(:,:),       &! correspondence n <-> angular momentum l
        nhtolm(:,:),      &! correspondence n <-> combined lm index for (l,m)
        ijtoh(:,:,:),     &! correspondence beta indexes ih,jh -> composite index ijh
@@ -73,11 +63,9 @@ MODULE uspp
   !
   INTEGER, ALLOCATABLE :: indv_d(:,:)
   INTEGER, ALLOCATABLE :: nhtol_d(:,:)
-  INTEGER, ALLOCATABLE :: nhtolm_d(:,:)
   INTEGER, ALLOCATABLE :: ijtoh_d(:,:,:)
-  INTEGER, ALLOCATABLE :: ofsbeta_d(:)
 #if defined (__CUDA)
-  attributes(DEVICE) :: indv_d, nhtol_d, nhtolm_d, ijtoh_d, ofsbeta_d
+  attributes(DEVICE) :: indv_d, nhtol_d, ijtoh_d
 #endif
 
   LOGICAL :: &
@@ -212,14 +200,6 @@ CONTAINS
     deallocate(rr)
     deallocate(r)
     !
-#if defined (__CUDA)
-    IF (ALLOCATED(ap_d)) DEALLOCATE(ap_d)
-    ALLOCATE(ap_d, SOURCE=ap)
-    IF (ALLOCATED(lpx_d)) DEALLOCATE(lpx_d)
-    ALLOCATE(lpx_d, SOURCE=lpx)
-    IF (ALLOCATED(lpl_d)) DEALLOCATE(lpl_d)
-    ALLOCATE(lpl_d, SOURCE=lpl)
-#endif
     return
   end subroutine aainit
   !
@@ -366,6 +346,7 @@ CONTAINS
        !$acc enter data create(qq_so)
        allocate( dvan_so(nhm,nhm,nspin,nsp) )
        allocate( fcoef(nhm,nhm,2,2,nsp) )
+       !$acc enter data create(fcoef)
     else
        allocate( dvan(nhm,nhm,nsp) )
     endif
@@ -382,13 +363,11 @@ CONTAINS
       if (nhm>0) then
         allocate( indv_d(nhm,nsp)   )
         allocate( nhtol_d(nhm,nsp)  )
-        allocate( nhtolm_d(nhm,nsp) )
         allocate( nhtoj_d(nhm,nsp)  )
         allocate( ijtoh_d(nhm,nhm,nsp) )
         allocate( qq_nt_d(nhm,nhm,nsp) )
         if ( lspinorb ) then
            allocate( dvan_so_d(nhm,nhm,nspin,nsp) )
-           allocate( fcoef_d(nhm,nhm,2,2,nsp) )
         else
            allocate( dvan_d(nhm,nhm,nsp) )
         endif
@@ -398,7 +377,6 @@ CONTAINS
         endif
         !
       endif
-      allocate( ofsbeta_d(nat) )
       !
     endif
     !
@@ -440,36 +418,25 @@ CONTAINS
       !$acc exit data delete( deeq_nc )
       DEALLOCATE( deeq_nc )
     ENDIF
-    IF( ALLOCATED( fcoef ) )      DEALLOCATE( fcoef )
+    IF( ALLOCATED( fcoef ) ) THEN
+      !$acc exit data delete( fcoef )
+      DEALLOCATE( fcoef )
+    ENDIF
     IF( ALLOCATED( beta ) )       DEALLOCATE( beta )
     IF( ALLOCATED( dbeta ) )      DEALLOCATE( dbeta )
     !
     ! GPU variables
-    IF( ALLOCATED( ap_d ) )       DEALLOCATE( ap_d )
-    IF( ALLOCATED( lpx_d ) )      DEALLOCATE( lpx_d )
-    IF( ALLOCATED( lpl_d ) )      DEALLOCATE( lpl_d )
     IF( ALLOCATED( indv_d ) )     DEALLOCATE( indv_d )
     IF( ALLOCATED( nhtol_d ) )    DEALLOCATE( nhtol_d )
-    IF( ALLOCATED( nhtolm_d ) )   DEALLOCATE( nhtolm_d )
     IF( ALLOCATED( ijtoh_d ) )    DEALLOCATE( ijtoh_d )
-    IF( ALLOCATED( ofsbeta_d)) DEALLOCATE( ofsbeta_d )
     IF( ALLOCATED( becsum_d ) )   DEALLOCATE( becsum_d )
     IF( ALLOCATED( ebecsum_d ) )  DEALLOCATE( ebecsum_d )
     IF( ALLOCATED( dvan_d ) )     DEALLOCATE( dvan_d )
     IF( ALLOCATED( qq_nt_d ) )    DEALLOCATE( qq_nt_d )
     IF( ALLOCATED( nhtoj_d ) )    DEALLOCATE( nhtoj_d )
     IF( ALLOCATED( dvan_so_d ) )  DEALLOCATE( dvan_so_d )
-    IF( ALLOCATED( fcoef_d ) )    DEALLOCATE( fcoef_d )
     !
   END SUBROUTINE deallocate_uspp
   !
-  ! In the following, allocations are not checked and assume
-  ! to be dimensioned correctly.
-  !
-  ! intento is used to specify what the variable will  be used for :
-  !  0 -> in , the variable needs to be synchronized but won't be changed
-  !  1 -> inout , the variable needs to be synchronized AND will be changed
-  !  2 -> out , NO NEED to synchronize the variable, everything will be overwritten
-  ! 
 END MODULE uspp
 

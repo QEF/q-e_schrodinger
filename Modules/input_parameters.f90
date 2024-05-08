@@ -404,7 +404,7 @@ MODULE input_parameters
         REAL(DP) :: starting_magnetization( nsx ) = 0.0_DP
         !! PW ONLY
 
-        !!!PARAMETERS FOR TWO-CHEM-CALCULATIONS
+        !  PARAMETERS FOR TWO-CHEM-CALCULATIONS
         REAL(DP) :: degauss_cond = 0.0_DP 
         !broadening for conduction band
         INTEGER ::  nbnd_cond = 0 
@@ -1758,7 +1758,7 @@ MODULE input_parameters
 !
 !    ATOMIC_SPECIES
 !
-        CHARACTER(len=3)  :: atom_label(nsx) = 'XX'
+        CHARACTER(len=6)  :: atom_label(nsx) = 'XX'
         !! label of the atomic species being read
         CHARACTER(len=80) :: atom_pfile(nsx) = 'YY'
         !! pseudopotential file name

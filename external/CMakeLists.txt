@@ -37,7 +37,7 @@ endif()
 ###########################################################
 if("pw2qmcpack" IN_LIST QE_ENABLE_PLUGINS OR QE_ENABLE_PW2QMCPACK)
   message(STATUS "Installing pw2qmcpack via submodule")
-  #qe_git_submodule_update(external/pw2qmcpack)
+  qe_git_submodule_update(external/pw2qmcpack)
   add_subdirectory(pw2qmcpack)
 endif()
 

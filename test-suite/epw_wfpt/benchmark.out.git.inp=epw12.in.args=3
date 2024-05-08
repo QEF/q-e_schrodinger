@@ -1,0 +1,416 @@
+                                                                                      
+                                       ``:oss/                                        
+                           `.+s+.     .+ys--yh+     `./ss+.                           
+                          -sh//yy+`   +yy   +yy    -+h+-oyy                           
+                          -yh- .oyy/.-sh.   .syo-.:sy-  /yh                           
+                 `.-.`    `yh+   -oyyyo.     `/syys:    oys      `.`                  
+               `/+ssys+-` `sh+      `                   oys`   .:osyo`                
+               -yh- ./syyooyo`                          .sys+/oyo--yh/                
+               `yy+    .-:-.                             `-/+/:`  -sh-                
+                /yh.                                              oys                 
+          ``..---hho---------`   .---------..`      `.-----.`    -hd+---.             
+       `./osmNMMMMMMMMMMMMMMMs. +NNMMMMMMMMNNmh+.   yNMMMMMNm-  oNMMMMMNmo++:`        
+       +sy--/sdMMMhyyyyyyyNMMh- .oyNMMmyyyyyhNMMm+` -yMMMdyyo:` .oyyNMMNhs+syy`       
+       -yy/   /MMM+.`-+/``mMMy-   `mMMh:`````.dMMN:` `MMMy-`-dhhy```mMMy:``+hs        
+        -yy+` /MMMo:-mMM+`-oo/.    mMMh:     `dMMN/`  dMMm:`dMMMMy..MMMo-.+yo`        
+         .sys`/MMMMNNMMMs-         mMMmyooooymMMNo:   oMMM/sMMMMMM++MMN//oh:          
+          `sh+/MMMhyyMMMs- `-`     mMMMMMMMMMNmy+-`   -MMMhMMMsmMMmdMMd/yy+           
+    `-/+++oyy-/MMM+.`/hh/.`mNm:`   mMMd+/////:-.`      NMMMMMd/:NMMMMMy:/yyo/:.`      
+   +os+//:-..-oMMMo:--:::-/MMMo. .-mMMd+---`           hMMMMN+. oMMMMMo. `-+osyso:`   
+   syo     `mNMMMMMNNNNNNNNMMMo.oNNMMMMMNNNN:`         +MMMMs:`  dMMMN/`     ``:syo   
+   /yh`     :syyyyyyyyyyyyyyyy+.`+syyyyyyyyo:`         .oyys:`   .oyys:`        +yh   
+   -yh-        ````````````````    `````````              ``        ``          oys   
+   -+h/------------------------::::::::://////++++++++++++++++++++++///////::::/yd:   
+   shdddddddddddddddddddddddddddddhhhhhhhhyyyyyssssssssssssssssyyyyyyyhhhhhhhddddh`   
+                                                                                      
+ Lee, H., Poncé, S., Bushick, K., Hajinazar, S., Lafuente-Bartolome, J.,Leveillee, J.,
+    Lian, C., Lihm, J., Macheda, F., Mori, H., Paudyal, H., Sio, W., Tiwari, S.,      
+ Zacharias, M., Zhang, X., Bonini, N., Kioupakis, E., Margine, E.R., and Giustino F., 
+                                                     npj Comput Mater 9, 156 (2023)   
+                                                                                      
+
+     Program EPW v.5.8 starts on  9Jan2024 at 13:58: 4 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+         "P. Giannozzi et al., J. Chem. Phys. 152 154105 (2020);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI), running on     4 processors
+
+     MPI processes distributed on     1 nodes
+     K-points division:     npool     =       4
+     33086 MiB available memory on the printing compute node when the environment starts
+ 
+     Reading input from epw12.in
+
+     Reading supplied temperature list.
+                      
+     ------------------------------------------------------------------------ 
+                   RESTART - RESTART - RESTART - RESTART                         
+     Restart is done without reading PWSCF save file.                  
+     Be aware that some consistency checks are therefore not done.                  
+     ------------------------------------------------------------------------ 
+                      
+
+     --                                                                         
+
+     bravais-lattice index     =            0
+     lattice parameter (a_0)   =       0.0000  a.u.
+     unit-cell volume          =       0.0000 (a.u.)^3
+     number of atoms/cell      =            0
+     number of atomic types    =            0
+     kinetic-energy cut-off    =       0.0000  Ry
+     charge density cut-off    =       0.0000  Ry
+     Exchange-correlation= not set
+                           (  -1  -1  -1  -1  -1  -1  -1)
+
+
+     celldm(1)=    0.00000  celldm(2)=    0.00000  celldm(3)=    0.00000
+     celldm(4)=    0.00000  celldm(5)=    0.00000  celldm(6)=    0.00000
+
+     crystal axes: (cart. coord. in units of a_0)
+               a(1) = (  0.0000  0.0000  0.0000 )  
+               a(2) = (  0.0000  0.0000  0.0000 )  
+               a(3) = (  0.0000  0.0000  0.0000 )  
+
+     reciprocal axes: (cart. coord. in units 2 pi/a_0)
+               b(1) = (  0.0000  0.0000  0.0000 )  
+               b(2) = (  0.0000  0.0000  0.0000 )  
+               b(3) = (  0.0000  0.0000  0.0000 )  
+
+
+     Atoms inside the unit cell: 
+
+   Cartesian axes
+
+     site n.  atom      mass           positions (a_0 units)
+
+ 
+     No symmetry!
+
+     G cutoff =    0.0000  (      0 G-vectors)     FFT grid: (  0,  0,  0)
+     number of k points=    0
+                       cart. coord. in units 2pi/a_0
+     EPW          :      0.00s CPU      0.00s WALL
+
+     EPW          :      0.00s CPU      0.00s WALL
+
+
+     -------------------------------------------------------------------
+     Using BAs.ukk from disk
+     -------------------------------------------------------------------
+
+     Symmetries of Bravais lattice:  48
+     Symmetries of crystal:          24
+
+     Do not need to read .epb files; read .fmt files
+
+
+     Computes the analytic long-range interaction for polar materials [lpolar]
+      
+     Use zone-centred Wigner-Seitz cells 
+     Number of WS vectors for electrons       19
+     Number of WS vectors for phonons       19
+     Number of WS vectors for electron-phonon       19
+     Maximum number of cores for efficient parallelization      114
+     Results may improve by using use_ws == .TRUE. 
+
+     Reading Hamiltonian, Dynamical matrix and EP vertex in Wann rep from file
+
+
+     Reading interatomic force constants
+
+     Read Z* and epsilon
+     IFC last   -0.0055063
+      Imposed simple ASR
+
+     Finished reading ifcs
+
+
+     Finished reading Wann rep data from file
+
+     ===================================================================
+     Memory usage:  VmHWM =        52Mb
+                   VmPeak =      3742Mb
+     ===================================================================
+     
+     Using uniform q-mesh:     2    2    2
+     Size of q point mesh for interpolation:          8
+     Using k-mesh file: kpath.GammaX.txt
+     WARNING: k-point weigths do not add up to 1 [loadkmesh_para]
+     Size of k point mesh for interpolation:         12
+     Max number of k points per pool:                4
+
+     Fermi energy coarse grid =   8.071856 eV
+
+     ===================================================================
+
+     Fermi energy is read from the input file: Ef =   8.700000 eV
+
+     ===================================================================
+
+              ibndmin =     1  ebndmin =    -7.012 eV
+              ibndmax =     4  ebndmax =     8.072 eV
+
+
+     Number of ep-matrix elements per pool :          192 ~=    1.50 Kb (@ 8 bytes/ DP)
+      
+     A selecq.fmt file was found but re-created because selecqread == .FALSE. 
+     We only need to compute        8 q-points
+      
+
+     ===================================================================
+     Electron Self-Energy using the Allen-Heine-Cardona Theory
+      - Active part
+     ===================================================================
+     AHC active state window:   -100.000 eV to    100.000 eV
+     Fermi energy:     8.700000 eV
+     Gaussian Broadening:   0.020000 eV, ngauss=   1
+
+
+     ===================================================================
+     Electron Self-Energy using the Allen-Heine-Cardona Theory
+      - Static part
+     ===================================================================
+     AHC active state window:   -100.000 eV to    100.000 eV
+ 
+     Average over degenerate eigenstates is performed
+
+     ===================================================================
+     Electron Self-Energy using the Allen-Heine-Cardona Theory
+     WARNING: only the eigenstates within the Fermi window are meaningful
+     ===================================================================
+     Temperature:    0.010K
+
+     ik =       1 coord.:    0.0000000   0.0000000   0.0000000
+     -------------------------------------------------------------------
+     E(   1 )= -15.7116 eV   Re[Sigma]=     -24.882990 meV Im[Sigma]=       0.104399 meV
+     E(   2 )=  -0.6281 eV   Re[Sigma]=      35.714906 meV Im[Sigma]=       0.461179 meV
+     E(   3 )=  -0.6281 eV   Re[Sigma]=      35.714906 meV Im[Sigma]=       0.461179 meV
+     E(   4 )=  -0.6281 eV   Re[Sigma]=      35.714906 meV Im[Sigma]=       0.461179 meV
+     -------------------------------------------------------------------
+
+
+     ik =       2 coord.:    0.1000000   0.1000000   0.0000000
+     -------------------------------------------------------------------
+     E(   1 )= -15.1382 eV   Re[Sigma]=     -25.145265 meV Im[Sigma]=       0.106908 meV
+     E(   2 )=  -1.6740 eV   Re[Sigma]=      20.591462 meV Im[Sigma]=       3.041972 meV
+     E(   3 )=  -0.9873 eV   Re[Sigma]=      53.223925 meV Im[Sigma]=       0.938287 meV
+     E(   4 )=  -0.9873 eV   Re[Sigma]=      53.240745 meV Im[Sigma]=       0.938241 meV
+     -------------------------------------------------------------------
+
+
+     ik =       3 coord.:    0.2000000   0.2000000   0.0000000
+     -------------------------------------------------------------------
+     E(   1 )= -13.5632 eV   Re[Sigma]=     -30.646719 meV Im[Sigma]=       0.180528 meV
+     E(   2 )=  -4.4301 eV   Re[Sigma]=     110.012740 meV Im[Sigma]=      14.594791 meV
+     E(   3 )=  -1.9454 eV   Re[Sigma]=      66.505739 meV Im[Sigma]=       1.947787 meV
+     E(   4 )=  -1.9454 eV   Re[Sigma]=      66.516281 meV Im[Sigma]=       1.947489 meV
+     -------------------------------------------------------------------
+
+
+     ik =       4 coord.:    0.3000000   0.3000000   0.0000000
+     -------------------------------------------------------------------
+     E(   1 )= -11.4692 eV   Re[Sigma]=    -307.183206 meV Im[Sigma]=     792.527327 meV
+     E(   2 )=  -7.8728 eV   Re[Sigma]=      25.202564 meV Im[Sigma]=       2.200926 meV
+     E(   3 )=  -3.1658 eV   Re[Sigma]=     -22.018335 meV Im[Sigma]=       1.340088 meV
+     E(   4 )=  -3.1657 eV   Re[Sigma]=     -22.010639 meV Im[Sigma]=       1.340226 meV
+     -------------------------------------------------------------------
+
+
+     ik =       5 coord.:    0.4000000   0.4000000   0.0000000
+     -------------------------------------------------------------------
+     E(   1 )= -10.6871 eV   Re[Sigma]=     -21.554463 meV Im[Sigma]=       1.159634 meV
+     E(   2 )=  -9.6559 eV   Re[Sigma]=     -21.621356 meV Im[Sigma]=       1.708341 meV
+     E(   3 )=  -4.1821 eV   Re[Sigma]=     -15.056424 meV Im[Sigma]=       0.728227 meV
+     E(   4 )=  -4.1821 eV   Re[Sigma]=     -15.048115 meV Im[Sigma]=       0.728212 meV
+     -------------------------------------------------------------------
+
+
+     ik =       6 coord.:    0.5000000   0.5000000   0.0000000
+     -------------------------------------------------------------------
+     E(   1 )= -11.7689 eV   Re[Sigma]=      50.468801 meV Im[Sigma]=      15.787085 meV
+     E(   2 )=  -8.9352 eV   Re[Sigma]=     108.624669 meV Im[Sigma]=      34.743482 meV
+     E(   3 )=  -4.5772 eV   Re[Sigma]=      41.095999 meV Im[Sigma]=      16.678159 meV
+     E(   4 )=  -4.5772 eV   Re[Sigma]=      41.095999 meV Im[Sigma]=      16.678159 meV
+     -------------------------------------------------------------------
+
+
+     ===================================================================
+     ik ibnd E_nk [eV] Re[Sigma_active] Im[Sigma_active] Sigma_low_DW Sigma_high_DW Sigma_upperfan [meV]
+     ===================================================================
+        1     1   -7.011620    -28.149532      0.104399     -1.777648     53.828675    -48.784485
+        2     1   -6.438163    -28.404908      0.106908     -1.128025     56.624017    -52.236349
+        3     1   -4.863199    -33.867071      0.180528      0.758415     64.310244    -61.848307
+        4     1   -2.769165   -310.312534    792.527327      3.499850     74.508536    -74.879058
+        5     1   -1.987064    -17.863238      1.159634     -3.198582    142.001034   -142.493677
+        6     1   -3.068897     52.859230     15.787085     -2.111809    108.935006   -109.213627
+  
+        1     2    8.071856     51.691615      0.461179      0.592549    434.630290   -451.199548
+        2     2    7.025994     35.269033      3.041972     -1.021545    405.510678   -419.166704
+        3     2    4.269906    121.301869     14.594791     -3.883031    327.272344   -334.678443
+        4     2    0.827224     32.295282      2.200926     -4.707632    226.613664   -228.998751
+        5     2   -0.955912    -24.642695      1.708341      6.085517     83.287121    -86.351299
+        6     2   -0.235184    105.652687     34.743482      7.166565     86.758299    -90.952882
+  
+        1     3    8.071856     51.691615      0.461179      0.592549    434.630290   -451.199548
+        2     3    7.712731     68.334282      0.938287      1.074426    420.245485   -436.430268
+        3     3    6.754554     79.309493      1.947787      1.562077    382.778281   -397.144112
+        4     3    5.534234    -12.072699      1.340088      0.603785    336.788269   -347.337690
+        5     3    4.517891     -7.428692      0.728227     -1.443517    299.851146   -306.035360
+        6     3    4.122817     47.832653     16.678159     -2.527378    285.812398   -290.021674
+  
+        1     4    8.071856     51.691615      0.461179      0.592549    434.630290   -451.199548
+        2     4    7.712747     68.332186      0.938241      1.075144    420.265778   -436.432363
+        3     4    6.754597     79.304470      1.947489      1.562539    382.795833   -397.146562
+        4     4    5.534277    -12.076980      1.340226      0.603997    336.802155   -347.339811
+        5     4    4.517907     -7.429955      0.728212     -1.443418    299.861856   -306.036598
+        6     4    4.122817     47.832653     16.678159     -2.527378    285.812398   -290.021674
+  
+     Temperature:  600.000K
+
+     ik =       1 coord.:    0.0000000   0.0000000   0.0000000
+     -------------------------------------------------------------------
+     E(   1 )= -15.7116 eV   Re[Sigma]=     -42.185754 meV Im[Sigma]=       0.207612 meV
+     E(   2 )=  -0.6281 eV   Re[Sigma]=      41.966245 meV Im[Sigma]=       0.800071 meV
+     E(   3 )=  -0.6281 eV   Re[Sigma]=      41.966245 meV Im[Sigma]=       0.800071 meV
+     E(   4 )=  -0.6281 eV   Re[Sigma]=      41.966245 meV Im[Sigma]=       0.800071 meV
+     -------------------------------------------------------------------
+
+
+     ik =       2 coord.:    0.1000000   0.1000000   0.0000000
+     -------------------------------------------------------------------
+     E(   1 )= -15.1382 eV   Re[Sigma]=     -44.702168 meV Im[Sigma]=       0.221434 meV
+     E(   2 )=  -1.6740 eV   Re[Sigma]=      40.552453 meV Im[Sigma]=       4.795745 meV
+     E(   3 )=  -0.9873 eV   Re[Sigma]=      73.235645 meV Im[Sigma]=       1.588721 meV
+     E(   4 )=  -0.9873 eV   Re[Sigma]=      73.267536 meV Im[Sigma]=       1.588646 meV
+     -------------------------------------------------------------------
+
+
+     ik =       3 coord.:    0.2000000   0.2000000   0.0000000
+     -------------------------------------------------------------------
+     E(   1 )= -13.5632 eV   Re[Sigma]=     -64.497421 meV Im[Sigma]=       0.431115 meV
+     E(   2 )=  -4.4301 eV   Re[Sigma]=     405.524348 meV Im[Sigma]=      74.238661 meV
+     E(   3 )=  -1.9454 eV   Re[Sigma]=     119.200550 meV Im[Sigma]=       4.055334 meV
+     E(   4 )=  -1.9454 eV   Re[Sigma]=     119.219746 meV Im[Sigma]=       4.054652 meV
+     -------------------------------------------------------------------
+
+
+     ik =       4 coord.:    0.3000000   0.3000000   0.0000000
+     -------------------------------------------------------------------
+     E(   1 )= -11.4692 eV   Re[Sigma]=   -1064.555520 meV Im[Sigma]=    1700.910240 meV
+     E(   2 )=  -7.8728 eV   Re[Sigma]=      91.084358 meV Im[Sigma]=       5.870611 meV
+     E(   3 )=  -3.1658 eV   Re[Sigma]=     -35.666929 meV Im[Sigma]=       2.399248 meV
+     E(   4 )=  -3.1657 eV   Re[Sigma]=     -35.652365 meV Im[Sigma]=       2.399488 meV
+     -------------------------------------------------------------------
+
+
+     ik =       5 coord.:    0.4000000   0.4000000   0.0000000
+     -------------------------------------------------------------------
+     E(   1 )= -10.6871 eV   Re[Sigma]=     -53.355911 meV Im[Sigma]=       2.438442 meV
+     E(   2 )=  -9.6559 eV   Re[Sigma]=     -12.522830 meV Im[Sigma]=       3.069446 meV
+     E(   3 )=  -4.1821 eV   Re[Sigma]=     -13.301344 meV Im[Sigma]=       1.378652 meV
+     E(   4 )=  -4.1821 eV   Re[Sigma]=     -13.286093 meV Im[Sigma]=       1.378623 meV
+     -------------------------------------------------------------------
+
+
+     ik =       6 coord.:    0.5000000   0.5000000   0.0000000
+     -------------------------------------------------------------------
+     E(   1 )= -11.7689 eV   Re[Sigma]=      37.673816 meV Im[Sigma]=      23.122333 meV
+     E(   2 )=  -8.9352 eV   Re[Sigma]=     154.965883 meV Im[Sigma]=      95.575583 meV
+     E(   3 )=  -4.5772 eV   Re[Sigma]=      48.653712 meV Im[Sigma]=      34.569036 meV
+     E(   4 )=  -4.5772 eV   Re[Sigma]=      48.653712 meV Im[Sigma]=      34.569036 meV
+     -------------------------------------------------------------------
+
+
+     ===================================================================
+     ik ibnd E_nk [eV] Re[Sigma_active] Im[Sigma_active] Sigma_low_DW Sigma_high_DW Sigma_upperfan [meV]
+     ===================================================================
+        1     1   -7.011620    -64.386485      0.207612      2.633257    184.857528   -165.290054
+        2     1   -6.438163    -65.400735      0.221434      1.154071    191.874993   -172.330497
+        3     1   -4.863199    -80.588273      0.431115     -1.779267    209.468571   -191.598452
+        4     1   -2.769165  -1073.600923   1700.910240     -3.402689    229.534721   -217.086629
+        5     1   -1.987064    -76.388122      2.438442     22.593082    415.008312   -414.569183
+        6     1   -3.068897      6.740948     23.122333     28.376984    337.009152   -334.453268
+  
+        1     2    8.071856     91.626016      0.800071     -0.877752   1107.887997  -1156.670016
+        2     2    7.025994     82.713522      4.795745     -1.035755   1038.632073  -1079.757387
+        3     2    4.269906    427.872309     74.238661      1.471863    852.973733   -876.793558
+        4     2    0.827224     88.530703      5.870611     10.473576    614.794352   -622.714273
+        5     2   -0.955912    -14.776172      3.069446     -2.987257    244.300011   -239.059412
+        6     2   -0.235184    155.564704     95.575583     -2.402554    249.575263   -247.771530
+  
+        1     3    8.071856     91.626016      0.800071     -0.877752   1107.887997  -1156.670016
+        2     3    7.712731    118.117275      1.588721     -0.059459   1072.331654  -1117.153825
+        3     3    6.754554    151.306739      4.055334      0.153580    979.843612  -1012.103381
+        4     3    5.534234    -19.761486      2.399248     -3.535449    866.682750   -879.052744
+        5     3    4.517891    -10.833773      1.378652     -9.802937    776.158099   -768.822732
+        6     3    4.122817     45.902083     34.569036    -12.987215    741.846651   -726.107807
+  
+        1     4    8.071856     91.626016      0.800071     -0.877752   1107.887997  -1156.670016
+        2     4    7.712747    118.114216      1.588646     -0.058857   1072.369410  -1117.157233
+        3     4    6.754597    151.297282      4.054652      0.153824    979.876555  -1012.107914
+        4     4    5.534277    -19.768988      2.399488     -3.535437    866.708869   -879.056809
+        5     4    4.517907    -10.836315      1.378623     -9.802888    776.178029   -768.824919
+        6     4    4.122817     45.902083     34.569036    -12.987215    741.846651   -726.107807
+  
+     ===================================================================
+     Memory usage:  VmHWM =        54Mb
+                   VmPeak =      3750Mb
+     ===================================================================
+
+
+     Unfolding on the coarse grid
+     elphon_wrap  :      0.01s CPU      0.01s WALL (       1 calls)
+
+     INITIALIZATION: 
+
+
+
+
+     Electron-Phonon interpolation
+     ephwann      :      0.05s CPU      0.06s WALL (       1 calls)
+     ep-interp    :      0.01s CPU      0.01s WALL (       8 calls)
+     ep-int-ahc   :      0.01s CPU      0.01s WALL (       1 calls)
+
+     DynW2B       :      0.00s CPU      0.00s WALL (      16 calls)
+     HamW2B       :      0.00s CPU      0.00s WALL (      78 calls)
+     ephW2Bp      :      0.00s CPU      0.00s WALL (      16 calls)
+     ephW2B       :      0.00s CPU      0.01s WALL (      80 calls)
+     sthW2Bp      :      0.00s CPU      0.00s WALL (      16 calls)
+     vmewan2bloch :      0.00s CPU      0.00s WALL (      32 calls)
+     vmewan2bloch :      0.00s CPU      0.00s WALL (      32 calls)
+
+
+     Total program execution
+     EPW          :      0.06s CPU      0.07s WALL
+
+     % Copyright (C) 2016-2023 EPW-Collaboration                                    
+                                                                                    
+     ===============================================================================
+     Please consider citing the following papers.                                   
+                                                                                                 
+     % Paper describing the method on which EPW relies                                           
+       F. Giustino and M. L. Cohen and S. G. Louie, Phys. Rev. B 76, 165108 (2007)               
+                                                                                                 
+     % Papers describing the EPW software                                                        
+       H. Lee et al., npj Comput. Mater. 9, 156 (2023)                                           
+       S. Ponc\'e, E.R. Margine, C. Verdi and F. Giustino, Comput. Phys. Commun. 209, 116 (2016) 
+       J. Noffsinger et al., Comput. Phys. Commun. 181, 2140 (2010)                              
+                                                                                                 
+                                                                                             
+     % Since you used the [lpolar] input, please consider also citing                        
+       C. Verdi and F. Giustino, Phys. Rev. Lett. 115, 176401 (2015)                         
+                                                                                             
+     % Since you used the [wfpt] input, please consider also citing                          
+       J.-M. Lihm and C.-H. Park, PRX 11, 041053 (2021)                                      
+                                                                                    
+     For your convenience, this information is also reported in the                 
+     functionality-dependent EPW.bib file.                                          
+     ===============================================================================
+                                                                                    

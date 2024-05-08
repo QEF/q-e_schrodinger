@@ -7,7 +7,7 @@
 !
 !----------------------------------------------------------------------------
 program d3hess
-  USE io_global,        ONLY: stdout, ionode, ionode_id
+  USE io_global,        ONLY: ionode, ionode_id
   USE io_files,         ONLY: prefix, tmp_dir
   USE kinds,            ONLY: DP
   USE mp,               ONLY: mp_bcast
@@ -15,12 +15,6 @@ program d3hess
   USE mp_world,         ONLY: world_comm
   USE environment,      ONLY: environment_start, environment_end
   USE d3hess_mod,       ONLY: q_gamma, debug, step, d3hess_sub
-  !
-  USE cell_base,        ONLY: alat, at, bg
-  USE ions_base,        ONLY: nat, tau, ityp, atm
-  USE funct,            ONLY: get_dft_short
-  USE dftd3_api,        ONLY: dftd3_init, dftd3_set_functional, get_atomic_number, dftd3_pbc_dispersion
-  USE dftd3_qe,         ONLY: dftd3, dftd3_pbc_gdisp_new, dftd3_pbc_hdisp
   !
   IMPLICIT NONE
   INTEGER :: ios

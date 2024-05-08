@@ -18,7 +18,8 @@ HTMLS = INPUT_BAND_INTERPOLATION.html \
 	INPUT_PPRISM.html \
 	INPUT_PROJWFC.html \
 	INPUT_pw2bgw.html \
-	INPUT_pw2gw.html
+	INPUT_pw2gw.html \
+	INPUT_pw2wannier90.html
 
 PDFS = eps_man.pdf user_guide.pdf
 AUXS = $(PDFS:.pdf=.aux)
@@ -44,9 +45,6 @@ $(HTMLS): %.html: %.def input_xx.xsl
 	$(HELPDOC) $<
 
 $(TXTS): %.txt: %.def input_xx.xsl
-	$(HELPDOC) $<
-
-$(XMLS): %.xml: %.def input_xx.xsl
 	$(HELPDOC) $<
 
 input_xx.xsl:

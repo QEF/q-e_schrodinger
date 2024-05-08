@@ -113,14 +113,7 @@ SUBROUTINE addusforce_g( forcenl )
   ALLOCATE( ylmk0(ngm_l,lmaxq*lmaxq), qmod(ngm_l) )
   !$acc data create(ylmk0,qmod)
   !
-#if defined(__CUDA)
-  !$acc host_data use_device(g,gg,ylmk0)
-  CALL ylmr2_gpu( lmaxq*lmaxq, ngm_l, g(1,ngm_s), gg(ngm_s), ylmk0 )
-  !$acc end host_data
-#else
   CALL ylmr2( lmaxq*lmaxq, ngm_l, g(1,ngm_s), gg(ngm_s), ylmk0 )
-  !$acc update device(ylmk0)
-#endif
   !
   !$acc parallel loop
   DO ig = 1, ngm_l
@@ -142,14 +135,7 @@ SUBROUTINE addusforce_g( forcenl )
         DO ih = 1, nh(nt)
            DO jh = ih, nh(nt)
               ijh = ijh + 1
-#if defined(__CUDA)
-              !$acc host_data use_device(qmod,qgm,ylmk0)
-              CALL qvan2_gpu( ngm_l, ih, jh, nt, qmod, qgm(1,ijh), ylmk0 )
-              !$acc end host_data
-#else
               CALL qvan2( ngm_l, ih, jh, nt, qmod, qgm(1,ijh), ylmk0 )
-              !$acc update self(ylmk0)
-#endif
            ENDDO
         ENDDO
         !

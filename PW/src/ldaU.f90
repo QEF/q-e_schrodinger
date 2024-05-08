@@ -1,5 +1,5 @@
 !
-! Copyright (C) 2001-2022 Quantum ESPRESSO group
+! Copyright (C) 2001-2023 Quantum ESPRESSO group
 ! This file is distributed under the terms of the
 ! GNU General Public License. See the file `License'
 ! in the root directory of the present distribution,
@@ -8,8 +8,7 @@
 !--------------------------------------------------------------------------
 MODULE ldaU
   !--------------------------------------------------------------------------
-  !
-  ! The quantities needed in DFT+U and extended DFT+U calculations.
+  !! The quantities needed in DFT+U and extended DFT+U calculations.
   !
   USE kinds,         ONLY : DP
   USE upf_params,    ONLY : lqmax
@@ -22,11 +21,11 @@ MODULE ldaU
   SAVE
   !
   COMPLEX(DP), ALLOCATABLE :: wfcU(:,:)
+  !! atomic wfcs with U term
 #if defined(__CUDA)
   ! while waiting for a better implementation
   attributes(PINNED) :: wfcU
 #endif
-  !! atomic wfcs with U term
   COMPLEX(DP), ALLOCATABLE :: d_spin_ldau(:,:,:)
   !! the rotations in spin space for all symmetries
   REAL(DP) :: eth
@@ -134,9 +133,9 @@ MODULE ldaU
   REAL(DP), ALLOCATABLE :: q_ps(:,:,:)
   !! (matrix elements on AE and PS atomic wfcs)
   !!
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  !!!!!!!!!!!!!!!!!!!!! Hubbard V part !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !****************************************************
+  !                Hubbard V part                     !
+  !****************************************************
   !
   ! Inter atomic interaction should be cut off at some distance 
   ! that is the reason of having so many unitcell information. 
@@ -315,8 +314,11 @@ CONTAINS
              ll(l0b+1:l0b+2*Hubbard_l3(nt)+1,nt) = &
              Hubbard_l3(nt)
           ENDIF
-       ENDDO   
-       !
+       ENDDO  
+       IF (noncolin) THEN
+          IF ( .NOT. ALLOCATED (d_spin_ldau) ) ALLOCATE( d_spin_ldau(2,2,48) )
+          CALL comp_dspinldau()
+       ENDIF
     ELSEIF ( lda_plus_u_kind == 1 ) THEN
        !
        ! DFT+U(+J) : Liechtenstein's formulation
@@ -379,6 +381,11 @@ CONTAINS
        lba = .FALSE.
        !
        DO nt = 1, ntyp
+          !
+          IF (noncolin) THEN
+             IF ( .NOT. ALLOCATED (d_spin_ldau) ) ALLOCATE( d_spin_ldau(2,2,48) )
+             CALL comp_dspinldau()
+          ENDIF
           !
           ! Here we account for the remaining cases when we need to 
           ! setup is_hubbard

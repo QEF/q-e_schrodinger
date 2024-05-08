@@ -10,7 +10,7 @@ if(QE_ENABLE_FOX)
         set(FoX_ENABLE_EXAMPLES
             OFF
             CACHE BOOL "" FORCE)
-    #qe_git_submodule_update(external/fox)
+        qe_git_submodule_update(external/fox)
         add_subdirectory(fox EXCLUDE_FROM_ALL)
         target_link_libraries(qe_fox INTERFACE ${fox_targets})
         qe_fix_fortran_modules(${fox_targets})

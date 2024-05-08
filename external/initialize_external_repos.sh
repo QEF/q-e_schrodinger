@@ -28,7 +28,7 @@ function init_component()
   RECORD_HASH=`grep $SUBMODULE_NAME $commit_hash_file | awk '{print $1}'`
   echo "    hash $RECORD_HASH"
 
-  SUBMODULE_URL=`git config --file ../.gitmodules --get submodule.external/$SUBMODULE_NAME.URL`
+  SUBMODULE_URL=`git config --file ./gitmodules --get submodule.external/$SUBMODULE_NAME.URL`
   echo "  Cloning ${SUBMODULE_URL} into ${SUBMODULE_NAME}."
 
   git init ${SUBMODULE_NAME}
@@ -36,6 +36,7 @@ function init_component()
     git remote add origin ${SUBMODULE_URL}
     git fetch --depth 1 origin ${RECORD_HASH}
     git checkout -b recorded_HEAD FETCH_HEAD
+    rm -rf .git
   cd ..
 }
 

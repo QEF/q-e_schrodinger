@@ -396,12 +396,12 @@ SUBROUTINE vcsmd( conv_ions )
   END IF
   !
   WRITE( stdout, * ) ' new positions in cryst coord'
-  WRITE( stdout,'(A3,3X,3F14.9)') ( atm(ityp(na)), tau(:,na), na = 1, nat )
+  WRITE( stdout,'(A6,3X,3F14.9)') ( atm(ityp(na)), tau(:,na), na = 1, nat )
   WRITE( stdout, * ) ' new positions in cart coord (alat unit)'
   !
   CALL cryst_to_cart( nat, tau, at, 1 )
   !
-  WRITE( stdout,'(A3,3X,3F14.9)') ( atm(ityp(na)), tau(:,na), na = 1, nat )
+  WRITE( stdout,'(A6,3X,3F14.9)') ( atm(ityp(na)), tau(:,na), na = 1, nat )
   WRITE( stdout, '(/5X,"Ekin = ",F14.8," Ry    T = ",F6.1," K ", &
        &       " Etot = ",0PF17.8)') ekint, tnew, edyn + e_start
   !
@@ -453,9 +453,9 @@ SUBROUTINE vcsmd( conv_ions )
   !
   RETURN
   !
-101 FORMAT(1X,4D12.5,I6)
-103 FORMAT(1X,6D12.5,I6)
-104 FORMAT(1X,2D12.5,I6)
-105 FORMAT(1X,3D12.5,I6)
+101 FORMAT(1X,4E13.5,I6)
+103 FORMAT(1X,6E13.5,I6)
+104 FORMAT(1X,2E13.5,I6)
+105 FORMAT(1X,3E13.5,I6)
   !
 END SUBROUTINE vcsmd

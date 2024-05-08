@@ -9,6 +9,7 @@ MODFLAGS=$(BASEMOD_FLAGS)
 
 MODULES = \
 additional_kpoints.o \
+atomic_wfc_mod.o \
 autopilot.o \
 basic_algebra_routines.o \
 becmod.o \
@@ -44,6 +45,7 @@ io_global.o  \
 ions_base.o \
 kind.o \
 lmdif.o \
+makov_payne.o \
 mdiis.o \
 mm_dispersion.o \
 mp_bands.o \
@@ -60,6 +62,7 @@ parser.o \
 plugin_flags.o \
 plugin_arguments.o \
 plugin_variables.o \
+printout_base.o \
 pw_dot.o \
 qmmm.o \
 random_numbers.o \
@@ -220,8 +223,6 @@ stack.o
 # GPU versions of modules
 MODULES += \
   wavefunctions_gpu.o \
-  becmod_gpu.o \
-  becmod_subs_gpu.o \
   cuda_subroutines.o \
   random_numbers_gpu.o
 

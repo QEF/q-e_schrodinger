@@ -85,7 +85,7 @@ SUBROUTINE read_file_ph( needwf_ph )
   USE pw_restart_new,   ONLY : read_collected_wfc
   USE fft_base,         ONLY : dffts
   !
-  USE wvfct_gpum,       ONLY : using_et, using_wg, using_wg_d
+  USE wvfct_gpum,       ONLY : using_et
   USE wavefunctions_gpum, ONLY : using_evc
   USE pw_restart_new,   ONLY : read_xml_file
   !
@@ -119,12 +119,7 @@ SUBROUTINE read_file_ph( needwf_ph )
   CALL divide_et_impera( nkstot, xk, wk, isk, nks )
   CALL using_et(1)
   CALL poolscatter( nbnd, nkstot, et, nks, et )
-  CALL using_wg(1)
   CALL poolscatter( nbnd, nkstot, wg, nks, wg )
-#if defined(__CUDA)
-  ! Updating wg here. Should not be done and will be removed ASAP.
-  CALL using_wg_d(0)
-#endif
   !
   ! ... allocate_wfc_k also computes no. of plane waves and k+G indices
   ! ... FIXME: the latter should be read from file, not recomputed
@@ -176,14 +171,13 @@ SUBROUTINE read_file_new ( needwf )
   !
   USE io_global,      ONLY : stdout
   USE io_files,       ONLY : nwordwfc, iunwfc, wfc_dir, tmp_dir, restart_dir
-  USE gvect,          ONLY : ngm, g
   USE gvecw,          ONLY : gcutw
   USE klist,          ONLY : nkstot, nks, xk, wk
   USE lsda_mod,       ONLY : isk
   USE wvfct,          ONLY : nbnd, et, wg
   USE pw_restart_new, ONLY : read_xml_file
   !
-  USE wvfct_gpum,     ONLY : using_et, using_wg, using_wg_d
+  USE wvfct_gpum,     ONLY : using_et
   !
   IMPLICIT NONE
   !
@@ -218,12 +212,7 @@ SUBROUTINE read_file_new ( needwf )
      CALL divide_et_impera( nkstot, xk, wk, isk, nks )
      CALL using_et(1)
      CALL poolscatter( nbnd, nkstot, et, nks, et )
-     CALL using_wg(1)
      CALL poolscatter( nbnd, nkstot, wg, nks, wg )
-#if defined(__CUDA)
-     ! Updating wg here. Should not be done and will be removed ASAP.
-     CALL using_wg_d(0)
-#endif
      !
      ! ... allocate_wfc_k also computes no. of plane waves and k+G indices
      ! ... FIXME: the latter should be read from file, not recomputed
@@ -258,8 +247,8 @@ SUBROUTINE post_xml_init (  )
   USE ions_base,            ONLY : nat, nsp, tau, ityp
   USE cell_base,            ONLY : omega
   USE recvec_subs,          ONLY : ggen, ggens
-  USE gvect,                ONLY : ecutrho, gg, ngm, g, gcutm, mill, mill_d, &
-          ngm_g, ig_l2g, eigts1, eigts2, eigts3, gstart, gshells, g_d, gg_d
+  USE gvect,                ONLY : ecutrho, gg, ngm, g, gcutm, mill, ngm_g, &
+                                   ig_l2g, eigts1, eigts2, eigts3, gstart, gshells
   USE gvecs,                ONLY : ngms, gcutms 
   USE gvecw,                ONLY : ecutwfc
   USE fft_rho,              ONLY : rho_g2r
@@ -283,11 +272,14 @@ SUBROUTINE post_xml_init (  )
   USE rism_module,          ONLY : rism_tobe_alive, rism_pot3d
   USE rism3d_facade,        ONLY : lrism3d, rism3d_initialize, rism3d_read_to_restart
   USE xc_lib,               ONLY : xclib_dft_is_libxc, xclib_init_libxc
+  USE beta_mod,             ONLY : init_tab_beta
+  USE klist,                ONLY : qnorm
   !
   IMPLICIT NONE
   !
-  REAL(DP) :: ehart, etxc, vtxc, etotefield, charge
+  REAL(DP) :: ehart, etxc, vtxc, etotefield, charge, qmax
   CHARACTER(LEN=37) :: dft_name
+  INTEGER :: ierr
   !
   ! ... initialize Libxc if needed
   !
@@ -328,12 +320,6 @@ SUBROUTINE post_xml_init (  )
   CALL allocate_fft()
   CALL ggen ( dfftp, gamma_only, at, bg, gcutm, ngm_g, ngm, &
        g, gg, mill, ig_l2g, gstart ) 
-#if defined(__CUDA)
-  ! FIXME: to be moved inside ggen
-  mill_d = mill
-  g_d    = g
-  gg_d   = gg
-#endif
   !$acc update device(mill, g, gg)
   !
   CALL ggens( dffts, gamma_only, at, g, gg, mill, gcutms, ngms ) 
@@ -366,8 +352,20 @@ SUBROUTINE post_xml_init (  )
   CALL init_vloc()
   IF (tbeta_smoothing) CALL init_us_b0(ecutwfc,intra_bgrp_comm)
   IF (tq_smoothing) CALL init_us_0(ecutrho,intra_bgrp_comm)
-  CALL init_us_1(nat, ityp, omega, ngm, g, gg, intra_bgrp_comm)
+  !
+  ! qmax is the maximum |G|, for all G needed by the charge density
+  !
+  qmax = sqrt(ecutrho)*cell_factor
+  CALL init_us_1(nat, ityp, omega, qmax, intra_bgrp_comm)
+  !
+  ! fill interpolation table for beta functions 
+  ! qmax is the maximum |q+G|, for all G needed by the wavefunctions
+  !
+  qmax = (qnorm + sqrt(ecutwfc))*cell_factor
+  CALL init_tab_beta ( qmax, omega, intra_bgrp_comm, ierr )
+  !
   IF ( lda_plus_u .AND. ( Hubbard_projectors == 'pseudo' ) ) CALL init_q_aeps()
+  !
   CALL init_tab_atwfc(omega, intra_bgrp_comm)
   !
   CALL struc_fact( nat, tau, nsp, ityp, ngm, g, bg, dfftp%nr1, dfftp%nr2,&
