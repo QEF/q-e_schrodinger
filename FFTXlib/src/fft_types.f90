@@ -193,14 +193,14 @@ CONTAINS
 
 !=----------------------------------------------------------------------------=!
 
-  SUBROUTINE fft_type_allocate( desc, at, bg, gcutm, comm, fft_fact, nyfft  )
+  SUBROUTINE fft_type_allocate( desc, at, bg, gcutm, comm, fft_fact, s, nsym, nyfft  )
   !
   ! routine allocating arrays of fft_type_descriptor, called by fft_type_init
   !
     TYPE (fft_type_descriptor) :: desc
     REAL(DP), INTENT(IN) :: at(3,3), bg(3,3)
     REAL(DP), INTENT(IN) :: gcutm
-    INTEGER, INTENT(IN), OPTIONAL :: fft_fact(3)
+    INTEGER, INTENT(IN), OPTIONAL :: fft_fact(3), s(3, 3, 48), nsym
     INTEGER, INTENT(IN), OPTIONAL :: nyfft
     INTEGER, INTENT(in) :: comm ! mype starting from 0
     INTEGER :: nx, ny, ierr, nzfft, i, nsubbatches
@@ -279,7 +279,7 @@ CONTAINS
        desc%iproc(iproc2,iproc3) = iproc
     end do
 
-    CALL realspace_grid_init( desc, at, bg, gcutm, fft_fact )
+    CALL realspace_grid_init( desc, at, bg, gcutm, fft_fact, s, nsym )
 
     ALLOCATE( desc%nr2p ( desc%nproc2 ), desc%i0r2p( desc%nproc2 ) ) ; desc%nr2p = 0 ; desc%i0r2p = 0
     ALLOCATE( desc%nr2p_offset ( desc%nproc2 ) ) ; desc%nr2p_offset = 0
@@ -936,7 +936,7 @@ CONTAINS
 
 !=----------------------------------------------------------------------------=!
 
-  SUBROUTINE fft_type_init( dfft, smap, pers, lgamma, lpara, comm, at, bg, gcut_in, dual_in, fft_fact, nyfft, nmany, use_pd )
+  SUBROUTINE fft_type_init( dfft, smap, pers, lgamma, lpara, comm, at, bg, gcut_in, dual_in, fft_fact, s, nsym, nyfft, nmany, use_pd )
 
      USE stick_base
 
@@ -950,7 +950,7 @@ CONTAINS
      REAL(DP), INTENT(IN) :: bg(3,3)
      REAL(DP), INTENT(IN) :: at(3,3)
      REAL(DP), OPTIONAL, INTENT(IN) :: dual_in
-     INTEGER, INTENT(IN), OPTIONAL :: fft_fact(3)
+     INTEGER, INTENT(IN), OPTIONAL :: fft_fact(3), s(3, 3, 48), nsym
      INTEGER, INTENT(IN) :: nyfft
      INTEGER, INTENT(IN) :: nmany
      LOGICAL, OPTIONAL, INTENT(IN) :: use_pd ! whether to use pencil decomposition
@@ -1000,7 +1000,7 @@ CONTAINS
      !write (*,*) 'FFT_TYPE_INIT pers, gkcut,gcut', pers, gkcut, gcut
 
      IF( .NOT. ALLOCATED( dfft%nsp ) ) THEN
-        CALL fft_type_allocate( dfft, at, bg, gcut, comm, fft_fact=fft_fact, nyfft=nyfft )
+        CALL fft_type_allocate( dfft, at, bg, gcut, comm, fft_fact=fft_fact, s=s, nsym=nsym, nyfft=nyfft )
      ELSE
         IF( dfft%comm /= comm ) THEN
            CALL fftx_error__(' fft_type_init ', ' FFT already allocated with a different communicator ', 1 )
@@ -1059,7 +1059,7 @@ CONTAINS
 
 !=----------------------------------------------------------------------------=!
 
-     SUBROUTINE realspace_grid_init( dfft, at, bg, gcutm, fft_fact )
+     SUBROUTINE realspace_grid_init( dfft, at, bg, gcutm, fft_fact, s, nsym )
        !
        ! ... Sets optimal values for dfft%nr[123] and dfft%nr[123]x
        ! ... If input dfft%nr[123] are non-zero, leaves them unchanged
@@ -1071,7 +1071,7 @@ CONTAINS
        !
        REAL(DP), INTENT(IN) :: at(3,3), bg(3,3)
        REAL(DP), INTENT(IN) :: gcutm
-       INTEGER, INTENT(IN), OPTIONAL :: fft_fact(3)
+       INTEGER, INTENT(IN), OPTIONAL :: fft_fact(3), s(3, 3, 48), nsym
        TYPE(fft_type_descriptor), INTENT(INOUT) :: dfft
      !write (6,*) ' inside realspace_grid_init' ; FLUSH(6)
        !
@@ -1098,6 +1098,12 @@ CONTAINS
             dfft%nr1 = good_fft_order( dfft%nr1, fft_fact(1) )
             dfft%nr2 = good_fft_order( dfft%nr2, fft_fact(2) )
             dfft%nr3 = good_fft_order( dfft%nr3, fft_fact(3) )
+            !
+            IF ( PRESENT(s) .AND. PRESENT(nsym) ) THEN
+               IF (.NOT. fix_grid_sym( dfft%nr1, dfft%nr2, dfft%nr3, s, nsym) ) &
+                  WRITE(stdout, *) 'Bad FFT (maybe fixed) in realspace_grid_init'
+            ENDIF
+            !
          ELSE
             dfft%nr1 = good_fft_order( dfft%nr1 )
             dfft%nr2 = good_fft_order( dfft%nr2 )
@@ -1236,7 +1242,60 @@ CONTAINS
           (k < 0 .OR. k >= dfft%nr3 )
      !
    END SUBROUTINE fft_index_to_3d
+!
+   FUNCTION fix_grid_sym ( nr1, nr2, nr3, s, nsym ) RESULT ( compatible )
+      !---------------------------------------------------------------------
+      !! Check that symmetry operations and FFT grid are compatible
+      !! Needed to prevent trouble with real-space symmetrization
+      !
+      IMPLICIT NONE
+      !
+      INTEGER, INTENT(INOUT) :: nr1, nr2, nr3
+      INTEGER, INTENT(IN) :: s(3, 3, 48), nsym
+      LOGICAL :: compatible, bad
+      INTEGER :: isym,i,j, val, nrs(3)
+      !
+      nrs = (/ nr1, nr2, nr3 /)
+      !
+      compatible = .true.
+      DO isym = 1, nsym
+         DO i = 1, 3
+            DO j = 1, 3
+               !
+               IF ( i .EQ. j ) CYCLE
+               !
+               val = s(j, i, isym) * nrs(i)
+               IF ( MOD( val, nrs(j) ) /= 0 ) THEN
 
+                  ! Checking for very specific case, where one FFT dim is smaller
+                  ! than other and symmetry factor is 1.
+                  IF ( ABS(s(j, i, isym)) == 1 .AND. nrs(i) < nrs(j)) THEN
+                     WRITE(stdout, *) 'Fixing bad FFT dim ', i, j, val, &
+                        s(j, i, isym), 'nrs = ', nrs(i), nrs(j)
+                     !
+                     nrs(i) = nrs(j)
+                  ENDIF
+               ENDIF
+            ENDDO
+         ENDDO
+         !
+         nr1 = nrs(1)
+         nr2 = nrs(2)
+         nr3 = nrs(3)
+         !
+         bad = ( MOD( s(2,1,isym)*nr1, nr2) /= 0 .OR. &
+                 MOD( s(3,1,isym)*nr1, nr3) /= 0 .OR. &
+                 MOD( s(1,2,isym)*nr2, nr1) /= 0 .OR. &
+                 MOD( s(3,2,isym)*nr2, nr3) /= 0 .OR. &
+                 MOD( s(1,3,isym)*nr3, nr1) /= 0 .OR. &
+                 MOD( s(2,3,isym)*nr3, nr2) /= 0 )
+         !
+         IF ( bad ) compatible = .false.
+         !
+      ENDDO
+      !
+    END FUNCTION fix_grid_sym
+    !
 !=----------------------------------------------------------------------------=!
 END MODULE fft_types
 !=----------------------------------------------------------------------------=!
