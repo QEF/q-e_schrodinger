@@ -84,6 +84,7 @@ program dynmat
   !
   integer, parameter :: ntypx = 10
   character(len=256):: fildyn, filout, filmol, filxsf, fileig
+  character(len=256) :: prefix, filspm, filvib
   character(len=3) :: atm(ntypx)
   character(len=10) :: asr
   logical :: lread, gamma, loto_2d
@@ -98,7 +99,8 @@ program dynmat
   integer :: ibrav, nqs
   integer, allocatable :: itau(:)
   namelist /input/ amass, asr, axis, fildyn, filout, filmol, filxsf, &
-                   fileig, lperm, lplasma, q, loto_2d, remove_interaction_blocks 
+                   fileig, lperm, lplasma, q, loto_2d, &
+                   remove_interaction_blocks, prefix, filspm, filvib
   !
   ! code is parallel-compatible but not parallel
   !
@@ -113,6 +115,9 @@ program dynmat
   filout='dynmat.out'
   filmol='dynmat.mold'
   filxsf='dynmat.axsf'
+  prefix=' '
+  filspm=' '
+  filvib=' '
   fileig=' '
   amass(:)=0.0d0
   q(:)=0.0d0
@@ -134,6 +139,13 @@ program dynmat
   CALL mp_bcast(fileig,ionode_id, world_comm)
   CALL mp_bcast(filxsf,ionode_id, world_comm)
   CALL mp_bcast(q,ionode_id, world_comm)
+  CALL mp_bcast(prefix,ionode_id, world_comm)
+  CALL mp_bcast(filspm,ionode_id, world_comm)
+  CALL mp_bcast(filvib,ionode_id, world_comm)
+  !
+  IF ( trim( prefix ) /= ' ' ) THEN
+     fildyn = trim(prefix) // '.save/' // trim(fildyn)
+  END IF
   !
   IF (ionode) inquire(file=fildyn,exist=lread)
   CALL mp_bcast(lread, ionode_id, world_comm)
@@ -222,6 +234,9 @@ program dynmat
                WRITE(6,'(5x,a)') 'BEWARE: phonon contribution to &
                & permittivity computed with TO-LO splitting'
         ENDIF
+        !
+        CALL dump_ir_raman(prefix, nat, omega, w2, z, zstar, eps0, dchi_dtau)
+        !
      ENDIF
   ENDIF
   !
@@ -264,4 +279,118 @@ program dynmat
         END IF 
       END DO  
    END SUBROUTINE remove_interaction  
+   !
+   SUBROUTINE dump_ir_raman(prefix, nat, omega, w2, z, zstar, eps0, dchi_dtau)
+      !
+      USE kinds, ONLY: DP
+      USE constants, ONLY : RY_TO_CMM1, amu_ry, eps8
+      implicit none
+      ! input
+      CHARACTER(len=*), INTENT(in) :: prefix
+      integer, intent(in) :: nat
+      real(DP), intent(in) :: omega, w2(3*nat), zstar(3,3,nat), eps0(3,3), &
+           dchi_dtau(3,3,3,nat)
+      complex(DP), intent(in) :: z(3*nat,3*nat)
+      !
+      INTEGER, EXTERNAL :: find_free_unit
+      ! local
+      integer na, nu, ipol, jpol, lpol, nat3, iunit
+      logical noraman
+      real(DP) :: freq(3*nat), infrared(3*nat), raman(3, 3, 3*nat), &
+         raman_act(3*nat), polar(3), irfac, alpha, beta2
+      character(len=256) :: filename
+      !
+      nat3 = 3 * nat
+      !
+      !   conversion factor for IR cross sections from
+      !   (Ry atomic units * e^2)  to  (Debye/A)^2/amu
+      !   1 Ry mass unit = 2 * mass of one electron = 2 amu
+      !   1 e = 4.80324x10^(-10) esu = 4.80324 Debye/A
+      !     (1 Debye = 10^(-18) esu*cm = 0.2081928 e*A)
+      !
+      irfac = 4.80324d0**2/2.d0*amu_ry
+      !
+      noraman = .true.
+      do nu = 1, nat3
+         !
+         freq(nu) = sqrt(abs(w2(nu)))*RY_TO_CMM1
+         if (w2(nu).lt.0.0) freq(nu) = -freq(nu)
+         !
+         polar(:) = 0._DP
+         !
+         do na=1,nat
+            do ipol=1,3
+               do jpol=1,3
+                  polar(ipol) = polar(ipol) +  &
+                       zstar(ipol,jpol,na)*z((na-1)*3+jpol,nu)
+               end do
+            end do
+         end do
+         !
+         infrared(nu) = 2.d0*(polar(1)**2+polar(2)**2+polar(3)**2)*irfac
+         !
+         ! Check for nan
+         if(infrared(nu) /= infrared(nu)) infrared(nu) = 0.0
+         !
+         do ipol=1,3
+            do jpol=1,3
+               raman(ipol,jpol,nu)=0.0d0
+               do na=1,nat
+                  do lpol=1,3
+                     raman(ipol,jpol,nu) = raman(ipol,jpol,nu) + &
+                          dchi_dtau(ipol,jpol,lpol,na) * z((na-1)*3+lpol,nu)
+                  end do
+               end do
+               noraman=noraman .and. abs(raman(ipol,jpol,nu)).lt.1.d-12
+            end do
+         end do
+         !   Raman cross sections are in units of bohr^4/(Ry mass unit)
+      end do
+      !
+      filename = TRIM(prefix) // ".vib.spm"
+      iunit = find_free_unit()
+      OPEN(unit=iunit, file=TRIM(filename), status='unknown', form='formatted')
+      CALL writespm(nat, freq, infrared, .FALSE., iunit)
+      CLOSE(unit=iunit)
+      !
+      IF(noraman) THEN
+         raman_act(:) = 0._DP
+      ELSE
+         !
+         do nu = 1, nat3
+            !
+            alpha = (raman(1,1,nu) + raman(2,2,nu) + raman(3,3,nu))/3.d0
+            beta2 = ( (raman(1,1,nu) - raman(2,2,nu))**2 + &
+                      (raman(1,1,nu) - raman(3,3,nu))**2 + &
+                      (raman(2,2,nu) - raman(3,3,nu))**2 + 6.d0 * &
+                      (raman(1,2,nu)**2 + raman(1,3,nu)**2 + raman(2,3,nu)**2) )/2.d0
+            raman_act(nu) = (45.d0*alpha**2 + 7.0d0*beta2)*amu_ry
+         end do
+         !
+         filename = TRIM(prefix) // ".raman_vib.spm"
+         iunit = find_free_unit()
+         OPEN(unit=iunit, file=TRIM(filename), status='unknown', form='formatted')
+         CALL writespm(nat, freq, raman_act, .TRUE., iunit)
+         CLOSE(unit=iunit)
+      END IF
+      !
+      filename = TRIM(prefix) // ".vib"
+      iunit = find_free_unit()
+      OPEN(unit=iunit, file=TRIM(filename), status='unknown', form='formatted')
+      CALL writevib(nat, freq, infrared, raman_act, ntyp, amass, ityp, z, iunit)
+      CLOSE(unit=iunit)
+      !
+      IF ( ANY(zstar .GT. eps8) ) THEN
+         ! Check if Born charges are present (occupations = fixed)
+         filename = 'born.charges'
+         iunit = find_free_unit()
+         OPEN(unit=iunit, file=TRIM(filename), status='unknown', form='formatted')
+         WRITE(iunit, '(9f24.12)') ((eps0(ipol,jpol), jpol=1,3), ipol=1,3)
+         WRITE(iunit, '(*(f24.12))') &
+            (((zstar(ipol,jpol,na), jpol=1,3), ipol=1,3), na=1,nat)
+         CLOSE(unit=iunit)
+      END IF
+      !
+   END SUBROUTINE dump_ir_raman
+   !
 end program dynmat

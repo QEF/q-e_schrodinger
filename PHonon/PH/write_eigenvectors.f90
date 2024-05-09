@@ -255,3 +255,218 @@ subroutine writexsf (xsffile, gamma, nat, atm, a0, at, tau, ityp, z)
  return
  !
 end subroutine writexsf
+!
+!-----------------------------------------------------------------------
+subroutine writespm (nat, freq, intens, is_raman, iout)
+  !-----------------------------------------------------------------------
+  !
+  !   write frequencies and intensities on output file in a spm-friendly way
+  !
+  use kinds, only: dp
+  implicit none
+  ! input
+  integer, intent(in) :: nat, iout
+  real(DP), intent(in) :: freq(3*nat), intens(3*nat)
+  logical, intent(in) :: is_raman
+  ! local
+  integer nat3, nu
+  !
+  nat3=3*nat
+  !
+  !  write frequencies and intensities
+  !
+  write(iout, '("{ ")')
+  write(iout, '(" s_m_m2io_version")')
+  write(iout, '(" :::")')
+  write(iout, '(" 2.0.0 ")')
+  write(iout, '("} ")')
+  write(iout, '("")')
+  write(iout, '("f_m_table { ")')
+  write(iout, '(" s_j_spectrum_type")')
+  write(iout, '(" s_j_x_label")')
+  write(iout, '(" s_j_y_label")')
+  write(iout, '(" :::")')
+  !
+  if (is_raman) then
+    write(iout, '('' "Raman Vibrational Frequencies" '')')
+    write(iout, '("  r_j_Frequency_(cm-1) ")')
+    write(iout, '("  r_matsci_Raman_Activity_(A^4/amu) ")')
+  else
+    write(iout, '('' "Infrared Vibrational Frequencies" '')')
+    write(iout, '("  r_j_Frequency_(cm-1) ")')
+    write(iout, '("  r_matsci_Intensity_(D^2/A^2/amu) ")')
+  end if
+  !
+  write(iout, '(" m_column[3] { ")')
+  write(iout, '("  s_m_data_name")')
+  write(iout, '("  s_m_column_name")')
+  write(iout, '("  i_m_width")')
+  write(iout, '("  b_m_visible")')
+  write(iout, '("  :::")')
+  write(iout, '(''  1 r_j_Frequency_(cm-1)  "Frequency (cm-1)"  10 1'')')
+  !
+  if (is_raman) then
+    write(iout, '(''  2 r_matsci_Raman_Activity_(A^4/amu)  "Intensity (A^4/amu)"  10 1'')')
+  else
+    write(iout, '(''  2 r_matsci_Intensity_(D^2/A^2/amu)  "Intensity (D^2/A^2/amu)"  10 1'')')
+  end if
+  !
+  write(iout, '(''  3 s_j_Symmetry  "Symmetry"  10 1'')')
+  write(iout, '("  :::")')
+  write(iout, '(" } ")')
+  !
+  write(iout, '(" m_row[", i0, "] { ")') nat3
+  write(iout, '("  r_j_Frequency_(cm-1)")')
+  !
+  if (is_raman) then
+    write(iout, '("  r_matsci_Raman_Activity_(A^4/amu)")')
+  else
+    write(iout, '("  r_matsci_Intensity_(D^2/A^2/amu)")')
+  end if
+  !
+  write(iout, '("  s_j_Symmetry")')
+  write(iout, '("  :::")')
+  !
+  do nu = 1, nat3
+    write(iout, '(2x, i0, 1x, f15.6, 1x, f15.6, 1x, ''"Ap    "'')') nu, &
+      freq(nu), intens(nu)
+  end do
+  !
+  write(iout, '("  :::")')
+  write(iout, '(" } ")')
+  !
+  write(iout, '(" m_exists[", i0, "] { ")') nat3
+  write(iout, '(" s_m_exists")')
+  write(iout, '(" :::")')
+  !
+  do nu = 1, nat3
+    write(iout, '("  ", i0, " 111")') nu
+  end do
+  !
+  write(iout, '("  :::")')
+  write(iout, '(" } ")')
+  write(iout, '("} ")')
+  !
+end subroutine writespm
+!
+!-----------------------------------------------------------------------
+subroutine writevib (nat, freq, ir_intens, raman_act, ntyp, amass, ityp, z, iout)
+  !-----------------------------------------------------------------------
+  !
+  !   write frequencies and vibrations on output file in a vib-friendly way
+  !
+  use kinds, only: dp
+  use constants, only: amu_ry
+  implicit none
+  ! input
+  integer, intent(in) :: nat, iout, ntyp, ityp(nat)
+  real(DP), intent(in) :: freq(3*nat), ir_intens(3*nat), raman_act(3*nat), &
+     amass(ntyp)
+  complex(DP), intent(in) :: z(3*nat,3*nat)
+  ! local
+  integer :: nat3, na, nta, ipol, i, j, nu, exists(3*nat)
+  real(DP) :: znorm
+  complex(DP) :: z_(3*nat,3*nat)
+  !
+  nat3=3*nat
+  !
+  !  write frequencies and phonon eigenvectors
+  !
+  do i = 1,nat3
+    do na = 1,nat
+       nta = ityp(na)
+       do ipol = 1,3
+          z_((na-1)*3+ipol,i) = z((na-1)*3+ipol,i)* sqrt(amu_ry*amass(nta))
+       end do
+    end do
+  end do
+  !
+  write(iout, '("{ ")')
+  write(iout, '(" s_m_m2io_version")')
+  write(iout, '(" :::")')
+  write(iout, '(" 2.0.0 ")')
+  write(iout, '("} ")')
+  write(iout, '("")')
+  write(iout, '("f_m_table { ")')
+  write(iout, '(" i_j_atom_total")')
+  write(iout, '(" :::")')
+  write(iout, '(" ", i0)') nat
+  write(iout, '(" m_column[", i0, "] { ")') nat3 + 5
+  write(iout, '("  s_m_data_name")')
+  write(iout, '("  s_m_column_name")')
+  write(iout, '("  i_m_width")')
+  write(iout, '("  b_m_visible")')
+  write(iout, '("  s_m_units")')
+  write(iout, '("  :::")')
+  write(iout, '(''  1 r_j_Frequency  "Frequency"  10 1 ""'')')
+  write(iout, '(''  2 s_j_Symmetry  "Symmetry"  10 0 ""'')')
+  write(iout, '(''  3 r_j_Intensity  "Intensity"  10 1 ""'')')
+  !
+  IF(ANY(abs(raman_act).gt.1.d-12)) THEN
+    ! Raman present
+    write(iout, '(''  4 r_j_Raman_Act  "Raman Act"  10 1 ""'')')
+  ELSE
+    write(iout, '(''  4 r_j_Raman_Act  "Raman Act"  10 0 ""'')')
+  END IF
+  write(iout, '(''  5 r_j_Raman_Int  "Raman Int"  10 0 ""'')')
+  !
+  j = 6
+  do i = 1, nat
+    write(iout, '("  ", i0, " r_j_x", i0, ''  "x'', i0, ''"  10 0 ""'')') &
+      j, i, i
+    j = j + 1
+    write(iout, '("  ", i0, " r_j_y", i0, ''  "y'', i0, ''"  10 0 ""'')') &
+      j, i, i
+    j = j + 1
+    write(iout, '("  ", i0, " r_j_z", i0, ''  "z'', i0, ''"  10 0 ""'')') &
+      j, i, i
+    j = j + 1
+  end do
+  !
+  write(iout, '("  :::")')
+  write(iout, '(" } ")')
+  !
+  write(iout, '(" m_row[", i0, "] { ")') nat3
+  write(iout, '("  r_j_Frequency")')
+  write(iout, '("  s_j_Symmetry")')
+  write(iout, '("  r_j_Intensity")')
+  write(iout, '("  r_j_Raman_Act")')
+  write(iout, '("  r_j_Raman_Int")')
+  !
+  do i = 1, nat
+    write(iout, '("  r_j_x", i0)') i
+    write(iout, '("  r_j_y", i0)') i
+    write(iout, '("  r_j_z", i0)') i
+  end do
+  !
+  write(iout, '("  :::")')
+  !
+  do i = 1, nat3
+    !
+    znorm = 0.0d0
+    do j = 1, nat3
+      znorm = znorm + abs(z(j,i))**2
+    end do
+    !
+    znorm = sqrt(znorm)
+    !
+    write(iout, '("  ", i0, 1x, f20.10, '' "" '', f20.10, 1x, f20.10, 1x, "0", 99999f15.9)') &
+      i, freq(i), ir_intens(i), raman_act(i), ((DBLE(z((na-1)*3+ipol,i))/znorm, ipol=1,3), na=1,nat)
+  end do
+  !
+  write(iout, '("  :::")')
+  write(iout, '(" } ")')
+  write(iout, '(" m_exists[", i0, "] { ")') nat3
+  write(iout, '("  s_m_exists")')
+  write(iout, '("  :::")')
+  !
+  exists(:) = 1
+  do i = 1, nat3
+    write(iout, '("  ", i0, 1x, 99999i0)') i, exists
+  end do
+  !
+  write(iout, '("  :::")')
+  write(iout, '(" } ")')
+  write(iout, '("}")')
+  !
+end subroutine writevib
