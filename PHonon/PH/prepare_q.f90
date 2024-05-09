@@ -138,7 +138,7 @@ SUBROUTINE prepare_q(auxdyn, do_band, do_iq, setup_pw, iq)
      !
      IF ( lgamma .and. .not. elph_mat ) THEN
         !
-        IF ( .NOT. (lgauss .OR. ltetra)) THEN
+        IF ( .NOT. (lgauss .OR. ltetra) .AND. start_irr .LE. 1) THEN
            !
            ! ... in the case of an insulator at q=0 one has to calculate
            ! ... the dielectric constant and the Born eff. charges
