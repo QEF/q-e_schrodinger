@@ -36,7 +36,6 @@ function init_component()
     git remote add origin ${SUBMODULE_URL}
     git fetch --depth 1 origin ${RECORD_HASH}
     git checkout -b recorded_HEAD FETCH_HEAD
-    rm -rf .git
   cd ..
 }
 
